@@ -1,10 +1,13 @@
 use std::time::Duration;
 
-use rusqlite::{params, Connection, DatabaseName, OptionalExtension, Result};
+use rusqlite::{params, types::Type, Connection, DatabaseName, OptionalExtension, Result};
+use serde::{de::DeserializeOwned, Serialize};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 2;
+use crate::domain::metadata::MetadataEntry;
+
+pub const CURRENT_SCHEMA_VERSION: i64 = 3;
 
 struct Migration {
     version: i64,
@@ -12,7 +15,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 2] = [
+const MIGRATIONS: [Migration; 3] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -96,6 +99,22 @@ CREATE INDEX IF NOT EXISTS idx_import_fingerprints_source_key
     ON import_fingerprints(source_key);
 "#,
     },
+    Migration {
+        version: 3,
+        name: "knot_field_parity_v1",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN description TEXT;
+ALTER TABLE knot_hot ADD COLUMN priority INTEGER;
+ALTER TABLE knot_hot ADD COLUMN knot_type TEXT;
+ALTER TABLE knot_hot ADD COLUMN tags_json TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE knot_hot ADD COLUMN notes_json TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE knot_hot ADD COLUMN handoff_capsules_json TEXT NOT NULL DEFAULT '[]';
+
+UPDATE knot_hot
+SET description = COALESCE(description, body)
+WHERE description IS NULL;
+"#,
+    },
 ];
 
 pub fn open_connection(path: &str) -> Result<Connection> {
@@ -173,6 +192,16 @@ fn now_utc_rfc3339() -> String {
         .expect("RFC3339 formatting for UTC timestamp should never fail")
 }
 
+fn to_json_text<T: Serialize + ?Sized>(value: &T) -> Result<String> {
+    serde_json::to_string(value)
+        .map_err(|err| rusqlite::Error::ToSqlConversionFailure(Box::new(err)))
+}
+
+fn from_json_text<T: DeserializeOwned>(raw: String, column: usize) -> Result<T> {
+    serde_json::from_str(&raw)
+        .map_err(|err| rusqlite::Error::FromSqlConversionFailure(column, Type::Text, Box::new(err)))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KnotCacheRecord {
     pub id: String,
@@ -180,6 +209,12 @@ pub struct KnotCacheRecord {
     pub state: String,
     pub updated_at: String,
     pub body: Option<String>,
+    pub description: Option<String>,
+    pub priority: Option<i64>,
+    pub knot_type: Option<String>,
+    pub tags: Vec<String>,
+    pub notes: Vec<MetadataEntry>,
+    pub handoff_capsules: Vec<MetadataEntry>,
     pub workflow_etag: Option<String>,
     pub created_at: Option<String>,
 }
@@ -190,22 +225,38 @@ pub struct UpsertKnotHot<'a> {
     pub state: &'a str,
     pub updated_at: &'a str,
     pub body: Option<&'a str>,
+    pub description: Option<&'a str>,
+    pub priority: Option<i64>,
+    pub knot_type: Option<&'a str>,
+    pub tags: &'a [String],
+    pub notes: &'a [MetadataEntry],
+    pub handoff_capsules: &'a [MetadataEntry],
     pub workflow_etag: Option<&'a str>,
     pub created_at: Option<&'a str>,
 }
 
 pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()> {
+    let tags_json = to_json_text(args.tags)?;
+    let notes_json = to_json_text(args.notes)?;
+    let handoff_capsules_json = to_json_text(args.handoff_capsules)?;
     conn.execute(
         r#"
 INSERT INTO knot_hot (
-    id, title, state, updated_at, body, workflow_etag, created_at
+    id, title, state, updated_at, body, description, priority, knot_type,
+    tags_json, notes_json, handoff_capsules_json, workflow_etag, created_at
 )
-VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
     state = excluded.state,
     updated_at = excluded.updated_at,
     body = excluded.body,
+    description = excluded.description,
+    priority = excluded.priority,
+    knot_type = excluded.knot_type,
+    tags_json = excluded.tags_json,
+    notes_json = excluded.notes_json,
+    handoff_capsules_json = excluded.handoff_capsules_json,
     workflow_etag = excluded.workflow_etag,
     created_at = COALESCE(knot_hot.created_at, excluded.created_at)
 "#,
@@ -215,6 +266,12 @@ ON CONFLICT(id) DO UPDATE SET
             args.state,
             args.updated_at,
             args.body,
+            args.description,
+            args.priority,
+            args.knot_type,
+            tags_json,
+            notes_json,
+            handoff_capsules_json,
             args.workflow_etag,
             args.created_at
         ],
@@ -227,20 +284,30 @@ ON CONFLICT(id) DO UPDATE SET
 pub fn get_knot_hot(conn: &Connection, id: &str) -> Result<Option<KnotCacheRecord>> {
     conn.query_row(
         r#"
-SELECT id, title, state, updated_at, body, workflow_etag, created_at
+SELECT id, title, state, updated_at, body, description, priority, knot_type,
+       tags_json, notes_json, handoff_capsules_json, workflow_etag, created_at
 FROM knot_hot
 WHERE id = ?1
 "#,
         params![id],
         |row| {
+            let tags_json: String = row.get(8)?;
+            let notes_json: String = row.get(9)?;
+            let handoff_capsules_json: String = row.get(10)?;
             Ok(KnotCacheRecord {
                 id: row.get(0)?,
                 title: row.get(1)?,
                 state: row.get(2)?,
                 updated_at: row.get(3)?,
                 body: row.get(4)?,
-                workflow_etag: row.get(5)?,
-                created_at: row.get(6)?,
+                description: row.get(5)?,
+                priority: row.get(6)?,
+                knot_type: row.get(7)?,
+                tags: from_json_text(tags_json, 8)?,
+                notes: from_json_text(notes_json, 9)?,
+                handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
+                workflow_etag: row.get(11)?,
+                created_at: row.get(12)?,
             })
         },
     )
@@ -250,7 +317,8 @@ WHERE id = ?1
 pub fn list_knot_hot(conn: &Connection) -> Result<Vec<KnotCacheRecord>> {
     let mut stmt = conn.prepare(
         r#"
-SELECT id, title, state, updated_at, body, workflow_etag, created_at
+SELECT id, title, state, updated_at, body, description, priority, knot_type,
+       tags_json, notes_json, handoff_capsules_json, workflow_etag, created_at
 FROM knot_hot
 ORDER BY updated_at DESC, id ASC
 "#,
@@ -259,14 +327,23 @@ ORDER BY updated_at DESC, id ASC
     let mut rows = stmt.query([])?;
     let mut result = Vec::new();
     while let Some(row) = rows.next()? {
+        let tags_json: String = row.get(8)?;
+        let notes_json: String = row.get(9)?;
+        let handoff_capsules_json: String = row.get(10)?;
         result.push(KnotCacheRecord {
             id: row.get(0)?,
             title: row.get(1)?,
             state: row.get(2)?,
             updated_at: row.get(3)?,
             body: row.get(4)?,
-            workflow_etag: row.get(5)?,
-            created_at: row.get(6)?,
+            description: row.get(5)?,
+            priority: row.get(6)?,
+            knot_type: row.get(7)?,
+            tags: from_json_text(tags_json, 8)?,
+            notes: from_json_text(notes_json, 9)?,
+            handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
+            workflow_etag: row.get(11)?,
+            created_at: row.get(12)?,
         });
     }
 

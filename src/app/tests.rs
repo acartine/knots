@@ -1,13 +1,10 @@
-use super::{App, AppError};
+use super::{App, AppError, UpdateKnotPatch};
+use crate::domain::metadata::MetadataEntryInput;
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
 fn unique_workspace() -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("system clock before UNIX_EPOCH")
-        .as_nanos();
-    let root = std::env::temp_dir().join(format!("knots-app-test-{}", nanos));
+    let root = std::env::temp_dir().join(format!("knots-app-test-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
     root
 }
@@ -134,6 +131,106 @@ fn edge_commands_update_cache_and_round_trip() {
         .list_edges(&src.id, "both")
         .expect("edges should list after removal");
     assert!(after.is_empty());
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn update_knot_applies_parity_fields_and_metadata_arrays() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let created = app
+        .create_knot("Parity", Some("legacy body"), "work_item")
+        .expect("knot should be created");
+
+    let updated = app
+        .update_knot(
+            &created.id,
+            UpdateKnotPatch {
+                title: Some("Parity updated".to_string()),
+                description: Some("full description".to_string()),
+                priority: Some(1),
+                status: Some("implementing".to_string()),
+                knot_type: Some("task".to_string()),
+                add_tags: vec!["migration".to_string(), "beads".to_string()],
+                remove_tags: vec![],
+                add_note: Some(MetadataEntryInput {
+                    content: "carry context".to_string(),
+                    username: Some("acartine".to_string()),
+                    datetime: Some("2026-02-23T10:00:00Z".to_string()),
+                    agentname: Some("codex".to_string()),
+                    model: Some("gpt-5".to_string()),
+                    version: Some("0.1".to_string()),
+                }),
+                add_handoff_capsule: Some(MetadataEntryInput {
+                    content: "next owner details".to_string(),
+                    username: Some("acartine".to_string()),
+                    datetime: Some("2026-02-23T10:05:00Z".to_string()),
+                    agentname: Some("codex".to_string()),
+                    model: Some("gpt-5".to_string()),
+                    version: Some("0.1".to_string()),
+                }),
+                force: false,
+            },
+        )
+        .expect("update should succeed");
+
+    assert_eq!(updated.title, "Parity updated");
+    assert_eq!(updated.state, "implementing");
+    assert_eq!(updated.description.as_deref(), Some("full description"));
+    assert_eq!(updated.priority, Some(1));
+    assert_eq!(updated.knot_type.as_deref(), Some("task"));
+    assert_eq!(
+        updated.tags,
+        vec!["migration".to_string(), "beads".to_string()]
+    );
+    assert_eq!(updated.notes.len(), 1);
+    assert_eq!(updated.notes[0].content, "carry context");
+    assert_eq!(updated.handoff_capsules.len(), 1);
+    assert_eq!(updated.handoff_capsules[0].content, "next owner details");
+
+    let shown = app
+        .show_knot(&created.id)
+        .expect("show should succeed")
+        .expect("knot should exist");
+    assert_eq!(shown.description.as_deref(), Some("full description"));
+    assert_eq!(shown.notes.len(), 1);
+    assert_eq!(shown.handoff_capsules.len(), 1);
+    assert_eq!(count_json_files(&root.join(".knots/index")), 2);
+    assert!(count_json_files(&root.join(".knots/events")) >= 8);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn update_knot_requires_at_least_one_change() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+    let created = app
+        .create_knot("Noop", None, "idea")
+        .expect("knot should be created");
+
+    let result = app.update_knot(
+        &created.id,
+        UpdateKnotPatch {
+            title: None,
+            description: None,
+            priority: None,
+            status: None,
+            knot_type: None,
+            add_tags: vec![],
+            remove_tags: vec![],
+            add_note: None,
+            add_handoff_capsule: None,
+            force: false,
+        },
+    );
+    assert!(matches!(result, Err(AppError::InvalidArgument(_))));
 
     let _ = std::fs::remove_dir_all(root);
 }

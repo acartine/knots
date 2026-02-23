@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
 use crate::db;
 use crate::events::EventWriter;
@@ -8,11 +8,7 @@ use super::service::ImportService;
 use super::source::{source_key, SourceKind};
 
 fn unique_workspace() -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("system clock before UNIX_EPOCH")
-        .as_nanos();
-    let root = std::env::temp_dir().join(format!("knots-import-test-{}", nanos));
+    let root = std::env::temp_dir().join(format!("knots-import-test-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("workspace should be creatable");
     root
 }
@@ -115,6 +111,50 @@ fn jsonl_resume_uses_checkpoint_and_idempotency() {
         .expect("replay import should succeed");
     assert_eq!(replay.imported_count, 0);
     assert_eq!(replay.skipped_count, 2);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn jsonl_import_maps_parity_fields_and_legacy_notes() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    std::fs::create_dir_all(db_path.parent().expect("db path parent should exist"))
+        .expect("db parent directory should be creatable");
+
+    let conn = db::open_connection(db_path.to_str().expect("utf8 path")).expect("db should open");
+    let writer = EventWriter::new(&root);
+    let service = ImportService::new(&conn, &writer);
+
+    let input = root.join("issues.jsonl");
+    std::fs::write(
+        &input,
+        concat!(
+            "{\"id\":\"P-1\",\"title\":\"Parity\",\"description\":\"desc\",\"notes\":\"legacy note\",",
+            "\"status\":\"open\",\"priority\":2,\"issue_type\":\"task\",",
+            "\"owner\":\"acartine\",\"created_by\":\"Andrew\",",
+            "\"labels\":[\"alpha\"],\"tags\":[\"beta\"],",
+            "\"created_at\":\"2026-02-23T10:00:00Z\",\"updated_at\":\"2026-02-23T10:05:00Z\"}\n"
+        ),
+    )
+    .expect("jsonl should be writable");
+
+    let summary = service
+        .import_jsonl(input.to_str().expect("utf8 path"), None, false)
+        .expect("import should succeed");
+    assert_eq!(summary.imported_count, 1);
+
+    let knot = db::get_knot_hot(&conn, "P-1")
+        .expect("knot query should succeed")
+        .expect("knot should exist");
+    assert_eq!(knot.description.as_deref(), Some("desc"));
+    assert_eq!(knot.priority, Some(2));
+    assert_eq!(knot.knot_type.as_deref(), Some("task"));
+    assert!(knot.tags.contains(&"alpha".to_string()));
+    assert!(knot.tags.contains(&"beta".to_string()));
+    assert_eq!(knot.notes.len(), 1);
+    assert_eq!(knot.notes[0].content, "legacy note");
+    assert_eq!(knot.notes[0].username, "acartine");
 
     let _ = std::fs::remove_dir_all(root);
 }

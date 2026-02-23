@@ -31,8 +31,9 @@ knots --repo-root . --db .knots/cache/state.sqlite ls
 - M1 Local Event + Cache Core: complete
 - M1.5 Import Ingestion: complete
 - M2 Dedicated Branch Sync: complete
-- M2.5 Public Repo Readiness: in progress
-- M2.6 Release + Curl Install: in progress
+- M2.5 Public Repo Readiness: complete
+- M2.6 Release + Curl Install: complete
+- M2.7 Field Parity + Migration Readiness: complete
 - M3+ Tiering, concurrency, and operability: pending
 
 ## Install with curl
@@ -71,10 +72,28 @@ Update state:
 knots state <knot-id> implementing
 ```
 
+Patch fields with one command:
+```bash
+knots update <knot-id> \
+  --title "Refine import reducer" \
+  --description "Carry full migration metadata" \
+  --priority 1 \
+  --status implementing \
+  --type task \
+  --add-tag migration \
+  --add-note "handoff context" \
+  --note-username acartine \
+  --note-datetime 2026-02-23T10:00:00Z \
+  --note-agentname codex \
+  --note-model gpt-5 \
+  --note-version 0.1
+```
+
 List and inspect:
 ```bash
 knots ls
 knots show <knot-id>
+knots show <knot-id> --json
 ```
 
 Sync from dedicated `knots` branch/worktree:
@@ -97,6 +116,12 @@ bd sync --flush-only
 knots import jsonl --file .beads/issues.jsonl
 knots import status
 ```
+
+Import supports parity fields when present:
+- `description`, `priority`, `issue_type`/`type`
+- `labels`/`tags`
+- `notes` as legacy string or structured array entries
+- `handoff_capsules` structured array entries
 
 Optional Dolt source import:
 ```bash

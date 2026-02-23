@@ -9,6 +9,7 @@ use serde_json::json;
 use uuid::Uuid;
 
 use crate::db::{self, EdgeDirection, EdgeRecord, KnotCacheRecord, UpsertKnotHot};
+use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
 use crate::domain::state::{InvalidStateTransition, KnotState, ParseKnotStateError};
 use crate::events::{
     new_event_id, now_utc_rfc3339, EventRecord, EventWriteError, EventWriter, FullEvent,
@@ -30,8 +31,29 @@ pub struct KnotView {
     pub state: String,
     pub updated_at: String,
     pub body: Option<String>,
+    pub description: Option<String>,
+    pub priority: Option<i64>,
+    #[serde(rename = "type")]
+    pub knot_type: Option<String>,
+    pub tags: Vec<String>,
+    pub notes: Vec<MetadataEntry>,
+    pub handoff_capsules: Vec<MetadataEntry>,
     pub workflow_etag: Option<String>,
     pub created_at: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateKnotPatch {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub priority: Option<i64>,
+    pub status: Option<String>,
+    pub knot_type: Option<String>,
+    pub add_tags: Vec<String>,
+    pub remove_tags: Vec<String>,
+    pub add_note: Option<MetadataEntryInput>,
+    pub add_handoff_capsule: Option<MetadataEntryInput>,
+    pub force: bool,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -39,6 +61,20 @@ pub struct EdgeView {
     pub src: String,
     pub kind: String,
     pub dst: String,
+}
+
+impl UpdateKnotPatch {
+    fn has_changes(&self) -> bool {
+        self.title.is_some()
+            || self.description.is_some()
+            || self.priority.is_some()
+            || self.status.is_some()
+            || self.knot_type.is_some()
+            || !self.add_tags.is_empty()
+            || !self.remove_tags.is_empty()
+            || self.add_note.is_some()
+            || self.add_handoff_capsule.is_some()
+    }
 }
 
 impl App {
@@ -100,6 +136,12 @@ impl App {
                 state: state.as_str(),
                 updated_at: &occurred_at,
                 body,
+                description: body,
+                priority: None,
+                knot_type: None,
+                tags: &[],
+                notes: &[],
+                handoff_capsules: &[],
                 workflow_etag: Some(&index_event_id),
                 created_at: Some(&occurred_at),
             },
@@ -155,6 +197,262 @@ impl App {
                 state: next.as_str(),
                 updated_at: &occurred_at,
                 body: current.body.as_deref(),
+                description: current.description.as_deref(),
+                priority: current.priority,
+                knot_type: current.knot_type.as_deref(),
+                tags: &current.tags,
+                notes: &current.notes,
+                handoff_capsules: &current.handoff_capsules,
+                workflow_etag: Some(&index_event_id),
+                created_at: current.created_at.as_deref(),
+            },
+        )?;
+
+        let updated =
+            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        Ok(KnotView::from(updated))
+    }
+
+    pub fn update_knot(&self, id: &str, patch: UpdateKnotPatch) -> Result<KnotView, AppError> {
+        if !patch.has_changes() {
+            return Err(AppError::InvalidArgument(
+                "update requires at least one field change".to_string(),
+            ));
+        }
+
+        let current =
+            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        let mut title = current.title.clone();
+        let mut state = current.state.clone();
+        let mut description = current.description.clone();
+        let mut body = current.body.clone();
+        let mut priority = current.priority;
+        let mut knot_type = current.knot_type.clone();
+        let mut tags = current.tags.clone();
+        let mut notes = current.notes.clone();
+        let mut handoff_capsules = current.handoff_capsules.clone();
+        let occurred_at = now_utc_rfc3339();
+        let mut full_events = Vec::new();
+
+        if let Some(next_state_raw) = patch.status.as_deref() {
+            let current_state = KnotState::from_str(&state)?;
+            let next_state = KnotState::from_str(next_state_raw)?;
+            current_state.validate_transition(next_state, patch.force)?;
+            if current_state != next_state {
+                state = next_state.as_str().to_string();
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotStateSet.as_str(),
+                    json!({
+                        "from": current_state.as_str(),
+                        "to": next_state.as_str(),
+                        "force": patch.force,
+                    }),
+                ));
+            }
+        }
+
+        if let Some(next_title_raw) = patch.title.as_deref() {
+            let next_title = next_title_raw.trim();
+            if next_title.is_empty() {
+                return Err(AppError::InvalidArgument(
+                    "title cannot be empty".to_string(),
+                ));
+            }
+            if next_title != title {
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotTitleSet.as_str(),
+                    json!({
+                        "from": &title,
+                        "to": next_title,
+                    }),
+                ));
+                title = next_title.to_string();
+            }
+        }
+
+        if let Some(next_description_raw) = patch.description.as_deref() {
+            let next_description = non_empty(next_description_raw);
+            if next_description != description {
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotDescriptionSet.as_str(),
+                    json!({
+                        "description": next_description,
+                    }),
+                ));
+                description = next_description;
+                body = description.clone();
+            }
+        }
+
+        if let Some(next_priority) = patch.priority {
+            if !(0..=4).contains(&next_priority) {
+                return Err(AppError::InvalidArgument(
+                    "priority must be between 0 and 4".to_string(),
+                ));
+            }
+            if priority != Some(next_priority) {
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotPrioritySet.as_str(),
+                    json!({
+                        "priority": next_priority,
+                    }),
+                ));
+                priority = Some(next_priority);
+            }
+        }
+
+        if let Some(next_type_raw) = patch.knot_type.as_deref() {
+            let next_type = non_empty(next_type_raw);
+            if next_type != knot_type {
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotTypeSet.as_str(),
+                    json!({
+                        "type": next_type,
+                    }),
+                ));
+                knot_type = next_type;
+            }
+        }
+
+        for tag in &patch.add_tags {
+            let normalized = normalize_tag(tag);
+            if normalized.is_empty() {
+                continue;
+            }
+            if !tags.iter().any(|existing| existing == &normalized) {
+                tags.push(normalized.clone());
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotTagAdd.as_str(),
+                    json!({ "tag": normalized }),
+                ));
+            }
+        }
+
+        for tag in &patch.remove_tags {
+            let normalized = normalize_tag(tag);
+            if normalized.is_empty() {
+                continue;
+            }
+            if tags.iter().any(|existing| existing == &normalized) {
+                tags.retain(|existing| existing != &normalized);
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotTagRemove.as_str(),
+                    json!({ "tag": normalized }),
+                ));
+            }
+        }
+
+        if let Some(input) = patch.add_note {
+            let entry = metadata_entry_from_input(input, &occurred_at)?;
+            if !notes
+                .iter()
+                .any(|existing| existing.entry_id == entry.entry_id)
+            {
+                notes.push(entry.clone());
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotNoteAdded.as_str(),
+                    json!({
+                        "entry_id": entry.entry_id,
+                        "content": entry.content,
+                        "username": entry.username,
+                        "datetime": entry.datetime,
+                        "agentname": entry.agentname,
+                        "model": entry.model,
+                        "version": entry.version,
+                    }),
+                ));
+            }
+        }
+
+        if let Some(input) = patch.add_handoff_capsule {
+            let entry = metadata_entry_from_input(input, &occurred_at)?;
+            if !handoff_capsules
+                .iter()
+                .any(|existing| existing.entry_id == entry.entry_id)
+            {
+                handoff_capsules.push(entry.clone());
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotHandoffCapsuleAdded.as_str(),
+                    json!({
+                        "entry_id": entry.entry_id,
+                        "content": entry.content,
+                        "username": entry.username,
+                        "datetime": entry.datetime,
+                        "agentname": entry.agentname,
+                        "model": entry.model,
+                        "version": entry.version,
+                    }),
+                ));
+            }
+        }
+
+        if full_events.is_empty() {
+            return Ok(KnotView::from(current));
+        }
+
+        for event in full_events {
+            self.writer.write(&EventRecord::full(event))?;
+        }
+
+        let terminal = KnotState::from_str(&state)
+            .map(|value| value.is_terminal())
+            .unwrap_or(false);
+        let index_event_id = new_event_id();
+        let idx_event = IndexEvent::with_identity(
+            index_event_id.clone(),
+            occurred_at.clone(),
+            IndexEventKind::KnotHead.as_str(),
+            json!({
+                "knot_id": id,
+                "title": &title,
+                "state": &state,
+                "updated_at": occurred_at,
+                "terminal": terminal,
+            }),
+        );
+        self.writer.write(&EventRecord::index(idx_event))?;
+
+        db::upsert_knot_hot(
+            &self.conn,
+            &UpsertKnotHot {
+                id,
+                title: &title,
+                state: &state,
+                updated_at: &occurred_at,
+                body: body.as_deref(),
+                description: description.as_deref(),
+                priority,
+                knot_type: knot_type.as_deref(),
+                tags: &tags,
+                notes: &notes,
+                handoff_capsules: &handoff_capsules,
                 workflow_etag: Some(&index_event_id),
                 created_at: current.created_at.as_deref(),
             },
@@ -285,6 +583,12 @@ impl App {
                 state: &current.state,
                 updated_at: &occurred_at,
                 body: current.body.as_deref(),
+                description: current.description.as_deref(),
+                priority: current.priority,
+                knot_type: current.knot_type.as_deref(),
+                tags: &current.tags,
+                notes: &current.notes,
+                handoff_capsules: &current.handoff_capsules,
                 workflow_etag: Some(&index_event_id),
                 created_at: current.created_at.as_deref(),
             },
@@ -317,6 +621,38 @@ fn parse_edge_direction(raw: &str) -> Result<EdgeDirection, AppError> {
     }
 }
 
+fn non_empty(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
+}
+
+fn normalize_tag(raw: &str) -> String {
+    raw.trim().to_ascii_lowercase()
+}
+
+fn metadata_entry_from_input(
+    input: MetadataEntryInput,
+    fallback_datetime: &str,
+) -> Result<MetadataEntry, AppError> {
+    if input.content.trim().is_empty() {
+        return Err(AppError::InvalidArgument(
+            "metadata content cannot be empty".to_string(),
+        ));
+    }
+    if let Some(raw) = input.datetime.as_deref() {
+        if normalize_datetime(Some(raw)).is_none() {
+            return Err(AppError::InvalidArgument(
+                "metadata datetime must be RFC3339".to_string(),
+            ));
+        }
+    }
+    Ok(MetadataEntry::from_input(input, fallback_datetime))
+}
+
 impl From<KnotCacheRecord> for KnotView {
     fn from(value: KnotCacheRecord) -> Self {
         Self {
@@ -325,6 +661,12 @@ impl From<KnotCacheRecord> for KnotView {
             state: value.state,
             updated_at: value.updated_at,
             body: value.body,
+            description: value.description,
+            priority: value.priority,
+            knot_type: value.knot_type,
+            tags: value.tags,
+            notes: value.notes,
+            handoff_capsules: value.handoff_capsules,
             workflow_etag: value.workflow_etag,
             created_at: value.created_at,
         }

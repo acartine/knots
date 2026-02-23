@@ -9,6 +9,7 @@ use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
 use crate::db::{self, UpsertKnotHot};
+use crate::domain::metadata::{normalize_datetime, normalize_text, MetadataEntry};
 use crate::events::{
     new_event_id, now_utc_rfc3339, EventRecord, EventWriter, FullEvent, FullEventKind, IndexEvent,
     IndexEventKind,
@@ -18,7 +19,7 @@ use super::errors::ImportError;
 use super::source::{
     ensure_dolt_available, fetch_dolt_rows, map_dependency_kind, map_source_state, merged_body,
     normalize_path, parse_since, parse_timestamp, source_issue_from_dolt_row, source_key,
-    SourceIssue, SourceKind,
+    SourceIssue, SourceKind, SourceMetadataEntry, SourceNotesField,
 };
 use super::store::{fingerprint_exists, insert_fingerprint, load_checkpoint};
 
@@ -280,6 +281,8 @@ ORDER BY last_run_at DESC, source_type ASC
             ));
         }
 
+        let issue_id = issue.id.trim().to_string();
+        let issue_title = issue.title.trim().to_string();
         let created_at =
             parse_timestamp(issue.created_at.as_deref().or(issue.updated_at.as_deref()))
                 .unwrap_or_else(now_utc_rfc3339);
@@ -300,7 +303,7 @@ ORDER BY last_run_at DESC, source_type ASC
         }
 
         let action = "issue_upsert";
-        let token = fingerprint(source_key, &issue.id, &updated_at, action);
+        let token = fingerprint(source_key, &issue_id, &updated_at, action);
         if fingerprint_exists(self.conn, &token)? {
             return Ok(Outcome::Skipped);
         }
@@ -310,30 +313,74 @@ ORDER BY last_run_at DESC, source_type ASC
         }
 
         let state = map_source_state(&issue)?;
-        let body = merged_body(&issue);
+        let description = merged_body(&issue);
+        let body = description.clone();
+        let knot_type =
+            normalize_non_empty(issue.type_name.as_deref().or(issue.issue_type.as_deref()));
+        let mut tags = collect_tags(&issue);
         let source_tag = format!("source:{}", source_ref);
+        tags.push(source_tag.clone());
+        dedupe_stable(&mut tags);
+
+        let notes = collect_notes(source_key, &issue, &issue_id, &created_at, &updated_at)?;
+        let handoff_capsules =
+            collect_handoff_capsules(source_key, &issue, &issue_id, &created_at, &updated_at)?;
 
         let created_event = FullEvent::with_identity(
             new_event_id(),
             created_at.clone(),
-            issue.id.clone(),
+            issue_id.clone(),
             FullEventKind::KnotCreated.as_str(),
             json!({
-                "title": issue.title,
+                "title": issue_title,
                 "state": state.as_str(),
                 "body": body,
+                "description": description,
                 "source": source_tag,
             }),
         );
         self.writer.write(&EventRecord::full(created_event))?;
 
-        for label in &issue.labels {
+        if let Some(description) = description.as_deref() {
             let event = FullEvent::with_identity(
                 new_event_id(),
                 created_at.clone(),
-                issue.id.clone(),
+                issue_id.clone(),
+                FullEventKind::KnotDescriptionSet.as_str(),
+                json!({ "description": description }),
+            );
+            self.writer.write(&EventRecord::full(event))?;
+        }
+
+        if let Some(priority) = issue.priority {
+            let event = FullEvent::with_identity(
+                new_event_id(),
+                created_at.clone(),
+                issue_id.clone(),
+                FullEventKind::KnotPrioritySet.as_str(),
+                json!({ "priority": priority }),
+            );
+            self.writer.write(&EventRecord::full(event))?;
+        }
+
+        if let Some(knot_type) = knot_type.as_deref() {
+            let event = FullEvent::with_identity(
+                new_event_id(),
+                created_at.clone(),
+                issue_id.clone(),
+                FullEventKind::KnotTypeSet.as_str(),
+                json!({ "type": knot_type }),
+            );
+            self.writer.write(&EventRecord::full(event))?;
+        }
+
+        for tag in &tags {
+            let event = FullEvent::with_identity(
+                new_event_id(),
+                created_at.clone(),
+                issue_id.clone(),
                 FullEventKind::KnotTagAdd.as_str(),
-                json!({ "tag": label }),
+                json!({ "tag": tag }),
             );
             self.writer.write(&EventRecord::full(event))?;
         }
@@ -344,23 +391,61 @@ ORDER BY last_run_at DESC, source_type ASC
                 let edge_event = FullEvent::with_identity(
                     new_event_id(),
                     created_at.clone(),
-                    issue.id.clone(),
+                    issue_id.clone(),
                     FullEventKind::KnotEdgeAdd.as_str(),
                     json!({"kind": kind, "dst": depends_on}),
                 );
                 self.writer.write(&EventRecord::full(edge_event))?;
                 self.conn.execute(
                     "INSERT OR IGNORE INTO edge (src, kind, dst) VALUES (?1, ?2, ?3)",
-                    params![issue.id, kind, depends_on],
+                    params![&issue_id, kind, depends_on],
                 )?;
             }
+        }
+
+        for note in &notes {
+            let event = FullEvent::with_identity(
+                new_event_id(),
+                note.datetime.clone(),
+                issue_id.clone(),
+                FullEventKind::KnotNoteAdded.as_str(),
+                json!({
+                    "entry_id": note.entry_id,
+                    "content": note.content,
+                    "username": note.username,
+                    "datetime": note.datetime,
+                    "agentname": note.agentname,
+                    "model": note.model,
+                    "version": note.version,
+                }),
+            );
+            self.writer.write(&EventRecord::full(event))?;
+        }
+
+        for capsule in &handoff_capsules {
+            let event = FullEvent::with_identity(
+                new_event_id(),
+                capsule.datetime.clone(),
+                issue_id.clone(),
+                FullEventKind::KnotHandoffCapsuleAdded.as_str(),
+                json!({
+                    "entry_id": capsule.entry_id,
+                    "content": capsule.content,
+                    "username": capsule.username,
+                    "datetime": capsule.datetime,
+                    "agentname": capsule.agentname,
+                    "model": capsule.model,
+                    "version": capsule.version,
+                }),
+            );
+            self.writer.write(&EventRecord::full(event))?;
         }
 
         if let Some(reason) = issue.close_reason.as_deref() {
             let comment_event = FullEvent::with_identity(
                 new_event_id(),
                 updated_at.clone(),
-                issue.id.clone(),
+                issue_id.clone(),
                 FullEventKind::KnotCommentAdded.as_str(),
                 json!({ "comment": reason }),
             );
@@ -373,8 +458,8 @@ ORDER BY last_run_at DESC, source_type ASC
             updated_at.clone(),
             IndexEventKind::KnotHead.as_str(),
             json!({
-                "knot_id": issue.id,
-                "title": issue.title,
+                "knot_id": &issue_id,
+                "title": &issue_title,
                 "state": state.as_str(),
                 "updated_at": updated_at,
                 "terminal": state.is_terminal(),
@@ -385,11 +470,17 @@ ORDER BY last_run_at DESC, source_type ASC
         db::upsert_knot_hot(
             self.conn,
             &UpsertKnotHot {
-                id: &issue.id,
-                title: &issue.title,
+                id: &issue_id,
+                title: &issue_title,
                 state: state.as_str(),
                 updated_at: &updated_at,
                 body: body.as_deref(),
+                description: description.as_deref(),
+                priority: issue.priority,
+                knot_type: knot_type.as_deref(),
+                tags: &tags,
+                notes: &notes,
+                handoff_capsules: &handoff_capsules,
                 workflow_etag: Some(&index_event_id),
                 created_at: Some(&created_at),
             },
@@ -399,7 +490,7 @@ ORDER BY last_run_at DESC, source_type ASC
             self.conn,
             &token,
             source_key,
-            &issue.id,
+            &issue_id,
             &updated_at,
             action,
         )?;
@@ -477,6 +568,228 @@ fn fingerprint(source_key: &str, knot_id: &str, occurred_at: &str, action: &str)
     hasher.update(occurred_at.as_bytes());
     hasher.update(b"|");
     hasher.update(action.as_bytes());
+    let digest = hasher.finalize();
+    let mut out = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        use std::fmt::Write as _;
+        let _ = write!(out, "{:02x}", byte);
+    }
+    out
+}
+
+fn normalize_non_empty(raw: Option<&str>) -> Option<String> {
+    let value = raw?.trim();
+    if value.is_empty() {
+        None
+    } else {
+        Some(value.to_string())
+    }
+}
+
+fn dedupe_stable(values: &mut Vec<String>) {
+    let mut seen = std::collections::HashSet::new();
+    values.retain(|item| seen.insert(item.clone()));
+}
+
+fn collect_tags(issue: &SourceIssue) -> Vec<String> {
+    let mut out = Vec::new();
+    out.extend(
+        issue
+            .labels
+            .iter()
+            .map(String::as_str)
+            .filter_map(|value| normalize_non_empty(Some(value)))
+            .map(|value| value.to_ascii_lowercase()),
+    );
+    out.extend(
+        issue
+            .tags
+            .iter()
+            .map(String::as_str)
+            .filter_map(|value| normalize_non_empty(Some(value)))
+            .map(|value| value.to_ascii_lowercase()),
+    );
+    dedupe_stable(&mut out);
+    out
+}
+
+fn collect_notes(
+    source_key: &str,
+    issue: &SourceIssue,
+    issue_id: &str,
+    created_at: &str,
+    updated_at: &str,
+) -> Result<Vec<MetadataEntry>, ImportError> {
+    let mut out = Vec::new();
+    match issue.notes.as_ref() {
+        Some(SourceNotesField::Text(text)) => {
+            if let Some(entry) =
+                metadata_from_legacy_text(source_key, issue, issue_id, "notes", text, 0, updated_at)
+            {
+                out.push(entry);
+            }
+        }
+        Some(SourceNotesField::Entries(entries)) => {
+            for (idx, entry) in entries.iter().enumerate() {
+                if let Some(mapped) = metadata_from_source_entry(
+                    source_key, issue, issue_id, "notes", entry, idx, created_at, updated_at,
+                )? {
+                    out.push(mapped);
+                }
+            }
+        }
+        None => {}
+    }
+    Ok(out)
+}
+
+fn collect_handoff_capsules(
+    source_key: &str,
+    issue: &SourceIssue,
+    issue_id: &str,
+    created_at: &str,
+    updated_at: &str,
+) -> Result<Vec<MetadataEntry>, ImportError> {
+    let mut out = Vec::new();
+    for (idx, entry) in issue.handoff_capsules.iter().enumerate() {
+        if let Some(mapped) = metadata_from_source_entry(
+            source_key,
+            issue,
+            issue_id,
+            "handoff_capsules",
+            entry,
+            idx,
+            created_at,
+            updated_at,
+        )? {
+            out.push(mapped);
+        }
+    }
+    Ok(out)
+}
+
+fn metadata_from_legacy_text(
+    source_key: &str,
+    issue: &SourceIssue,
+    issue_id: &str,
+    kind: &str,
+    text: &str,
+    index: usize,
+    fallback_datetime: &str,
+) -> Option<MetadataEntry> {
+    let content = normalize_non_empty(Some(text))?;
+    let username = normalize_text(
+        issue
+            .owner
+            .as_deref()
+            .or(issue.created_by.as_deref())
+            .or(Some("unknown")),
+        "unknown",
+    );
+    let datetime = normalize_datetime(Some(fallback_datetime))
+        .unwrap_or_else(|| fallback_datetime.to_string());
+    Some(MetadataEntry {
+        entry_id: deterministic_entry_id(
+            source_key, issue_id, kind, index, &content, &username, &datetime, "unknown",
+            "unknown", "unknown",
+        ),
+        content,
+        username,
+        datetime,
+        agentname: "unknown".to_string(),
+        model: "unknown".to_string(),
+        version: "unknown".to_string(),
+    })
+}
+
+fn metadata_from_source_entry(
+    source_key: &str,
+    issue: &SourceIssue,
+    issue_id: &str,
+    kind: &str,
+    entry: &SourceMetadataEntry,
+    index: usize,
+    created_at: &str,
+    updated_at: &str,
+) -> Result<Option<MetadataEntry>, ImportError> {
+    let Some(content) = entry
+        .content
+        .as_deref()
+        .and_then(|value| normalize_non_empty(Some(value)))
+    else {
+        return Ok(None);
+    };
+    let username = normalize_text(
+        entry
+            .username
+            .as_deref()
+            .or(issue.owner.as_deref())
+            .or(issue.created_by.as_deref())
+            .or(Some("unknown")),
+        "unknown",
+    );
+    let datetime = normalize_datetime(
+        entry
+            .datetime
+            .as_deref()
+            .or(issue.updated_at.as_deref())
+            .or(issue.created_at.as_deref())
+            .or(Some(updated_at))
+            .or(Some(created_at)),
+    )
+    .unwrap_or_else(|| updated_at.to_string());
+    let agentname = normalize_text(entry.agentname.as_deref().or(Some("unknown")), "unknown");
+    let model = normalize_text(entry.model.as_deref().or(Some("unknown")), "unknown");
+    let version = normalize_text(entry.version.as_deref().or(Some("unknown")), "unknown");
+    let entry_id = normalize_non_empty(entry.entry_id.as_deref()).unwrap_or_else(|| {
+        deterministic_entry_id(
+            source_key, issue_id, kind, index, &content, &username, &datetime, &agentname, &model,
+            &version,
+        )
+    });
+    Ok(Some(MetadataEntry {
+        entry_id,
+        content,
+        username,
+        datetime,
+        agentname,
+        model,
+        version,
+    }))
+}
+
+fn deterministic_entry_id(
+    source_key: &str,
+    issue_id: &str,
+    kind: &str,
+    index: usize,
+    content: &str,
+    username: &str,
+    datetime: &str,
+    agentname: &str,
+    model: &str,
+    version: &str,
+) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(source_key.as_bytes());
+    hasher.update(b"|");
+    hasher.update(issue_id.as_bytes());
+    hasher.update(b"|");
+    hasher.update(kind.as_bytes());
+    hasher.update(b"|");
+    hasher.update(index.to_string().as_bytes());
+    hasher.update(b"|");
+    hasher.update(content.as_bytes());
+    hasher.update(b"|");
+    hasher.update(username.as_bytes());
+    hasher.update(b"|");
+    hasher.update(datetime.as_bytes());
+    hasher.update(b"|");
+    hasher.update(agentname.as_bytes());
+    hasher.update(b"|");
+    hasher.update(model.as_bytes());
+    hasher.update(b"|");
+    hasher.update(version.as_bytes());
     let digest = hasher.finalize();
     let mut out = String::with_capacity(digest.len() * 2);
     for byte in digest {

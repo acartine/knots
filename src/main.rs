@@ -14,8 +14,10 @@ fn main() {
 }
 
 fn run() -> Result<(), app::AppError> {
+    use app::UpdateKnotPatch;
     use clap::Parser;
     use cli::{Commands, EdgeSubcommands, ImportSubcommands};
+    use domain::metadata::MetadataEntryInput;
 
     let cli = cli::Cli::parse();
     let app = app::App::open(&cli.db, cli.repo_root)?;
@@ -28,6 +30,38 @@ fn run() -> Result<(), app::AppError> {
         Commands::State(args) => {
             let knot = app.set_state(&args.id, &args.state, args.force)?;
             println!("updated {} -> {}", knot.id, knot.state);
+        }
+        Commands::Update(args) => {
+            let add_note = args.add_note.map(|content| MetadataEntryInput {
+                content,
+                username: args.note_username,
+                datetime: args.note_datetime,
+                agentname: args.note_agentname,
+                model: args.note_model,
+                version: args.note_version,
+            });
+            let add_handoff_capsule = args.add_handoff_capsule.map(|content| MetadataEntryInput {
+                content,
+                username: args.handoff_username,
+                datetime: args.handoff_datetime,
+                agentname: args.handoff_agentname,
+                model: args.handoff_model,
+                version: args.handoff_version,
+            });
+            let patch = UpdateKnotPatch {
+                title: args.title,
+                description: args.description,
+                priority: args.priority,
+                status: args.status,
+                knot_type: args.knot_type,
+                add_tags: args.add_tags,
+                remove_tags: args.remove_tags,
+                add_note,
+                add_handoff_capsule,
+                force: args.force,
+            };
+            let knot = app.update_knot(&args.id, patch)?;
+            println!("updated {} [{}] {}", knot.id, knot.state, knot.title);
         }
         Commands::Ls(args) => {
             let knots = app.list_knots()?;
@@ -60,6 +94,24 @@ fn run() -> Result<(), app::AppError> {
                     }
                     if let Some(body) = knot.body {
                         println!("body: {}", body);
+                    }
+                    if let Some(description) = knot.description {
+                        println!("description: {}", description);
+                    }
+                    if let Some(priority) = knot.priority {
+                        println!("priority: {}", priority);
+                    }
+                    if let Some(knot_type) = knot.knot_type {
+                        println!("type: {}", knot_type);
+                    }
+                    if !knot.tags.is_empty() {
+                        println!("tags: {}", knot.tags.join(", "));
+                    }
+                    if !knot.notes.is_empty() {
+                        println!("notes: {}", knot.notes.len());
+                    }
+                    if !knot.handoff_capsules.is_empty() {
+                        println!("handoff_capsules: {}", knot.handoff_capsules.len());
                     }
                 }
             }

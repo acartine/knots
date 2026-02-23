@@ -25,6 +25,7 @@ pub struct Cli {
 pub enum Commands {
     New(NewArgs),
     State(StateArgs),
+    Update(UpdateArgs),
     Ls(ListArgs),
     Show(ShowArgs),
     Sync(SyncArgs),
@@ -47,6 +48,71 @@ pub struct NewArgs {
 pub struct StateArgs {
     pub id: String,
     pub state: String,
+
+    #[arg(long)]
+    pub force: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct UpdateArgs {
+    pub id: String,
+
+    #[arg(long)]
+    pub title: Option<String>,
+
+    #[arg(long)]
+    pub description: Option<String>,
+
+    #[arg(long)]
+    pub priority: Option<i64>,
+
+    #[arg(long)]
+    pub status: Option<String>,
+
+    #[arg(long = "type")]
+    pub knot_type: Option<String>,
+
+    #[arg(long = "add-tag")]
+    pub add_tags: Vec<String>,
+
+    #[arg(long = "remove-tag")]
+    pub remove_tags: Vec<String>,
+
+    #[arg(long = "add-note")]
+    pub add_note: Option<String>,
+
+    #[arg(long = "note-username")]
+    pub note_username: Option<String>,
+
+    #[arg(long = "note-datetime")]
+    pub note_datetime: Option<String>,
+
+    #[arg(long = "note-agentname")]
+    pub note_agentname: Option<String>,
+
+    #[arg(long = "note-model")]
+    pub note_model: Option<String>,
+
+    #[arg(long = "note-version")]
+    pub note_version: Option<String>,
+
+    #[arg(long = "add-handoff-capsule")]
+    pub add_handoff_capsule: Option<String>,
+
+    #[arg(long = "handoff-username")]
+    pub handoff_username: Option<String>,
+
+    #[arg(long = "handoff-datetime")]
+    pub handoff_datetime: Option<String>,
+
+    #[arg(long = "handoff-agentname")]
+    pub handoff_agentname: Option<String>,
+
+    #[arg(long = "handoff-model")]
+    pub handoff_model: Option<String>,
+
+    #[arg(long = "handoff-version")]
+    pub handoff_version: Option<String>,
 
     #[arg(long)]
     pub force: bool,

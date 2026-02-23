@@ -43,13 +43,27 @@ pub struct SourceIssue {
     #[serde(default)]
     pub body: Option<String>,
     #[serde(default)]
-    pub notes: Option<String>,
+    pub notes: Option<SourceNotesField>,
+    #[serde(default)]
+    pub handoff_capsules: Vec<SourceMetadataEntry>,
     #[serde(default)]
     pub state: Option<String>,
     #[serde(default)]
     pub status: Option<String>,
     #[serde(default)]
+    pub priority: Option<i64>,
+    #[serde(default)]
+    pub owner: Option<String>,
+    #[serde(default)]
+    pub created_by: Option<String>,
+    #[serde(default, rename = "issue_type")]
+    pub issue_type: Option<String>,
+    #[serde(default, rename = "type")]
+    pub type_name: Option<String>,
+    #[serde(default)]
     pub labels: Vec<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
     #[serde(default)]
     pub dependencies: Vec<SourceDependency>,
     #[serde(default)]
@@ -60,6 +74,31 @@ pub struct SourceIssue {
     pub closed_at: Option<String>,
     #[serde(default)]
     pub close_reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum SourceNotesField {
+    Text(String),
+    Entries(Vec<SourceMetadataEntry>),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SourceMetadataEntry {
+    #[serde(default)]
+    pub entry_id: Option<String>,
+    #[serde(default)]
+    pub content: Option<String>,
+    #[serde(default)]
+    pub username: Option<String>,
+    #[serde(default)]
+    pub datetime: Option<String>,
+    #[serde(default)]
+    pub agentname: Option<String>,
+    #[serde(default)]
+    pub model: Option<String>,
+    #[serde(default)]
+    pub version: Option<String>,
 }
 
 pub fn normalize_path(raw: &str) -> Result<String, ImportError> {
@@ -132,7 +171,7 @@ pub fn map_dependency_kind(dep_type: Option<&str>) -> &'static str {
 
 pub fn merged_body(issue: &SourceIssue) -> Option<String> {
     let mut parts = Vec::new();
-    for item in [&issue.description, &issue.body, &issue.notes] {
+    for item in [&issue.description, &issue.body] {
         if let Some(value) = item.as_deref() {
             let trimmed = value.trim();
             if !trimmed.is_empty() {
