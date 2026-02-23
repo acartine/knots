@@ -1,0 +1,15 @@
+{
+  "name": "knots",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Release tooling for the Knots CLI",
+  "license": "MIT",
+  "scripts": {
+    "changeset": "changeset",
+    "version-packages": "changeset version && node ./scripts/release/sync-cargo-version.mjs",
+    "check-cargo-version": "node ./scripts/release/sync-cargo-version.mjs --check"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.28.0"
+  }
+}

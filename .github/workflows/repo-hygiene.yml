@@ -1,0 +1,26 @@
+name: Repo Hygiene
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  required-public-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify required files
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(README.md LICENSE SECURITY.md)
+          for file in "${required[@]}"; do
+            if [[ ! -f "${file}" ]]; then
+              echo "Missing required file: ${file}" >&2
+              exit 1
+            fi
+          done

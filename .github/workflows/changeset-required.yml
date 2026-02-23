@@ -1,0 +1,69 @@
+name: Changeset Required
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  enforce-changeset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require changeset for non-doc changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          head_sha="${{ github.sha }}"
+          mapfile -t changed_files < <(git diff --name-only "${base_sha}...${head_sha}")
+
+          if [[ "${#changed_files[@]}" -eq 0 ]]; then
+            echo "No changed files found; skipping changeset requirement."
+            exit 0
+          fi
+
+          has_non_doc_change=0
+          has_changeset_file=0
+
+          is_doc_or_chore() {
+            local file="$1"
+            case "${file}" in
+              *.md|docs/*|.github/*|LICENSE|SECURITY.md|AGENTS.md|CLAUDE.md)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          for file in "${changed_files[@]}"; do
+            if [[ "${file}" == .changeset/*.md && "${file}" != ".changeset/README.md" ]]; then
+              has_changeset_file=1
+              continue
+            fi
+
+            if is_doc_or_chore "${file}"; then
+              continue
+            fi
+
+            has_non_doc_change=1
+          done
+
+          if [[ "${has_non_doc_change}" -eq 0 ]]; then
+            echo "Only docs/chore files changed; changeset not required."
+            exit 0
+          fi
+
+          if [[ "${has_changeset_file}" -eq 0 ]]; then
+            echo "A changeset is required for non-doc changes." >&2
+            echo "Run: npm run changeset" >&2
+            exit 1
+          fi
+
+          echo "Changeset check passed."

@@ -1,0 +1,35 @@
+name: Changesets Version PR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  version-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install release tooling
+        run: npm install --no-audit --no-fund
+
+      - name: Create or update Version Packages PR
+        uses: changesets/action@v1
+        with:
+          title: Version Packages
+          commit: "chore: version packages"
+          version: npm run version-packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
