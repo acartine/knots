@@ -40,18 +40,18 @@ The installer pulls from GitHub Releases and installs to `${HOME}/.local/bin` by
 
 Latest release:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/acartine/knots/main/install.sh | sh
 ```
 
 Pinned release:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/install.sh \
+curl -fsSL https://raw.githubusercontent.com/acartine/knots/main/install.sh \
   | KNOTS_VERSION=v0.1.0 sh
 ```
 
 Custom install directory:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/install.sh \
+curl -fsSL https://raw.githubusercontent.com/acartine/knots/main/install.sh \
   | KNOTS_INSTALL_DIR="$HOME/.knots/bin" sh
 ```
 

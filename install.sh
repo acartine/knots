@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_REPO="cartine/knots"
+DEFAULT_REPO="acartine/knots"
 REPO="${KNOTS_GITHUB_REPO:-${DEFAULT_REPO}}"
 INSTALL_DIR="${KNOTS_INSTALL_DIR:-${HOME}/.local/bin}"
 API_BASE="${KNOTS_RELEASE_API_BASE:-https://api.github.com/repos}"
@@ -13,7 +13,7 @@ usage() {
 Knots installer
 
 Environment variables:
-  KNOTS_GITHUB_REPO         owner/repo source (default: cartine/knots)
+  KNOTS_GITHUB_REPO         owner/repo source (default: acartine/knots)
   KNOTS_VERSION             release tag (example: v0.1.0). default: latest
   KNOTS_INSTALL_DIR         target dir for knots binary (default: ~/.local/bin)
   KNOTS_RELEASE_API_BASE    override API base for latest-release lookup
