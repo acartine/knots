@@ -44,6 +44,9 @@ fn format_knot_row(knot: &KnotView, palette: &Palette) -> String {
 
 fn filter_summary(filter: &KnotListFilter) -> Option<String> {
     let mut parts = Vec::new();
+    if filter.include_all {
+        parts.push("all=true".to_string());
+    }
     if let Some(state) = filter.state.as_deref().and_then(non_empty) {
         parts.push(format!("state={state}"));
     }
@@ -144,6 +147,7 @@ mod tests {
     #[test]
     fn filter_summary_formats_only_active_filters() {
         let filter = KnotListFilter {
+            include_all: false,
             state: Some("implementing".to_string()),
             knot_type: Some("task".to_string()),
             tags: vec!["release".to_string(), "".to_string()],
@@ -161,5 +165,18 @@ mod tests {
     fn filter_summary_is_none_for_empty_filters() {
         let filter = KnotListFilter::default();
         assert!(filter_summary(&filter).is_none());
+    }
+
+    #[test]
+    fn filter_summary_includes_all_flag() {
+        let filter = KnotListFilter {
+            include_all: true,
+            state: None,
+            knot_type: None,
+            tags: Vec::new(),
+            query: None,
+        };
+        let summary = filter_summary(&filter).expect("summary should exist");
+        assert_eq!(summary, "all=true");
     }
 }

@@ -104,6 +104,8 @@ kno update <knot-id> \
 List and inspect:
 ```bash
 kno ls
+kno ls               # shipped knots hidden by default
+kno ls --all         # include shipped knots
 kno ls --state implementing --tag release
 kno ls --type task --query importer
 kno show <knot-id>

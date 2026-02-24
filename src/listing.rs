@@ -2,6 +2,7 @@ use crate::app::KnotView;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct KnotListFilter {
+    pub include_all: bool,
     pub state: Option<String>,
     pub knot_type: Option<String>,
     pub tags: Vec<String>,
@@ -10,7 +11,7 @@ pub struct KnotListFilter {
 
 pub fn apply_filters(knots: Vec<KnotView>, filter: &KnotListFilter) -> Vec<KnotView> {
     let normalized = NormalizedFilter::from(filter);
-    if normalized.is_empty() {
+    if normalized.has_no_user_filters() && normalized.include_all {
         return knots;
     }
 
@@ -22,6 +23,7 @@ pub fn apply_filters(knots: Vec<KnotView>, filter: &KnotListFilter) -> Vec<KnotV
 
 #[derive(Debug, Clone, Default)]
 struct NormalizedFilter {
+    include_all: bool,
     state: Option<String>,
     knot_type: Option<String>,
     tags: Vec<String>,
@@ -29,7 +31,7 @@ struct NormalizedFilter {
 }
 
 impl NormalizedFilter {
-    fn is_empty(&self) -> bool {
+    fn has_no_user_filters(&self) -> bool {
         self.state.is_none()
             && self.knot_type.is_none()
             && self.tags.is_empty()
@@ -40,6 +42,7 @@ impl NormalizedFilter {
 impl From<&KnotListFilter> for NormalizedFilter {
     fn from(value: &KnotListFilter) -> Self {
         Self {
+            include_all: value.include_all,
             state: normalize_scalar(value.state.as_deref()),
             knot_type: normalize_scalar(value.knot_type.as_deref()),
             tags: value
@@ -53,6 +56,10 @@ impl From<&KnotListFilter> for NormalizedFilter {
 }
 
 fn matches_filter(knot: &KnotView, filter: &NormalizedFilter) -> bool {
+    if should_hide_shipped(knot, filter) {
+        return false;
+    }
+
     if let Some(expected_state) = filter.state.as_deref() {
         let actual_state = knot.state.to_ascii_lowercase();
         if actual_state != expected_state {
@@ -76,6 +83,16 @@ fn matches_filter(knot: &KnotView, filter: &NormalizedFilter) -> bool {
     }
 
     true
+}
+
+fn should_hide_shipped(knot: &KnotView, filter: &NormalizedFilter) -> bool {
+    if filter.include_all {
+        return false;
+    }
+    if filter.state.as_deref() == Some("shipped") {
+        return false;
+    }
+    knot.state.trim().eq_ignore_ascii_case("shipped")
 }
 
 fn has_all_tags(knot: &KnotView, required_tags: &[String]) -> bool {
@@ -160,6 +177,7 @@ mod tests {
             ),
         ];
         let filter = KnotListFilter {
+            include_all: false,
             state: Some("ImPlementing".to_string()),
             knot_type: None,
             tags: Vec::new(),
@@ -192,6 +210,7 @@ mod tests {
             ),
         ];
         let filter = KnotListFilter {
+            include_all: false,
             state: None,
             knot_type: None,
             tags: vec!["migration".to_string(), "sync".to_string()],
@@ -224,6 +243,7 @@ mod tests {
             ),
         ];
         let filter = KnotListFilter {
+            include_all: false,
             state: None,
             knot_type: None,
             tags: Vec::new(),
@@ -256,6 +276,7 @@ mod tests {
             ),
         ];
         let filter = KnotListFilter {
+            include_all: false,
             state: Some("implementing".to_string()),
             knot_type: Some("task".to_string()),
             tags: vec!["release".to_string()],
@@ -265,5 +286,55 @@ mod tests {
         let filtered = apply_filters(knots, &filter);
         assert_eq!(filtered.len(), 1);
         assert_eq!(filtered[0].id, "K-1");
+    }
+
+    #[test]
+    fn excludes_shipped_by_default() {
+        let knots = vec![
+            knot("K-1", "Active", "implementing", Some("task"), &[], None),
+            knot("K-2", "Done", "shipped", Some("task"), &[], None),
+        ];
+        let filter = KnotListFilter::default();
+
+        let filtered = apply_filters(knots, &filter);
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].id, "K-1");
+    }
+
+    #[test]
+    fn includes_shipped_with_all_flag() {
+        let knots = vec![
+            knot("K-1", "Active", "implementing", Some("task"), &[], None),
+            knot("K-2", "Done", "shipped", Some("task"), &[], None),
+        ];
+        let filter = KnotListFilter {
+            include_all: true,
+            state: None,
+            knot_type: None,
+            tags: Vec::new(),
+            query: None,
+        };
+
+        let filtered = apply_filters(knots, &filter);
+        assert_eq!(filtered.len(), 2);
+    }
+
+    #[test]
+    fn allows_state_shipped_without_all_flag() {
+        let knots = vec![
+            knot("K-1", "Active", "implementing", Some("task"), &[], None),
+            knot("K-2", "Done", "shipped", Some("task"), &[], None),
+        ];
+        let filter = KnotListFilter {
+            include_all: false,
+            state: Some("shipped".to_string()),
+            knot_type: None,
+            tags: Vec::new(),
+            query: None,
+        };
+
+        let filtered = apply_filters(knots, &filter);
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].id, "K-2");
     }
 }

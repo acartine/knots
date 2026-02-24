@@ -73,6 +73,7 @@ fn run() -> Result<(), app::AppError> {
         }
         Commands::Ls(args) => {
             let filter = listing::KnotListFilter {
+                include_all: args.all,
                 state: args.state.clone(),
                 knot_type: args.knot_type.clone(),
                 tags: args.tags.clone(),

@@ -135,6 +135,9 @@ pub struct UpdateArgs {
 
 #[derive(Debug, Args)]
 pub struct ListArgs {
+    #[arg(short = 'a', long = "all")]
+    pub all: bool,
+
     #[arg(long)]
     pub json: bool,
 
