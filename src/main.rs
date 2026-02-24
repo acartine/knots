@@ -4,7 +4,10 @@ mod db;
 mod domain;
 mod events;
 mod imports;
+mod listing;
+mod self_manage;
 mod sync;
+mod ui;
 
 fn main() {
     if let Err(err) = run() {
@@ -20,6 +23,11 @@ fn run() -> Result<(), app::AppError> {
     use domain::metadata::MetadataEntryInput;
 
     let cli = cli::Cli::parse();
+    if let Some(outcome) = maybe_run_self_command(&cli.command)? {
+        println!("{outcome}");
+        return Ok(());
+    }
+
     let app = app::App::open(&cli.db, cli.repo_root)?;
 
     match cli.command {
@@ -64,16 +72,20 @@ fn run() -> Result<(), app::AppError> {
             println!("updated {} [{}] {}", knot.id, knot.state, knot.title);
         }
         Commands::Ls(args) => {
-            let knots = app.list_knots()?;
+            let filter = listing::KnotListFilter {
+                state: args.state.clone(),
+                knot_type: args.knot_type.clone(),
+                tags: args.tags.clone(),
+                query: args.query.clone(),
+            };
+            let knots = listing::apply_filters(app.list_knots()?, &filter);
             if args.json {
                 println!(
                     "{}",
                     serde_json::to_string_pretty(&knots).expect("json serialization should work")
                 );
             } else {
-                for knot in knots {
-                    println!("{} [{}] {}", knot.id, knot.state, knot.title);
-                }
+                ui::print_knot_list(&knots, &filter);
             }
         }
         Commands::Show(args) => match app.show_knot(&args.id)? {
@@ -244,7 +256,61 @@ fn run() -> Result<(), app::AppError> {
                 }
             }
         },
+        Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
+        Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
+        Commands::SelfManage(_) => unreachable!("self management commands return before app init"),
     }
 
     Ok(())
+}
+
+fn maybe_run_self_command(command: &cli::Commands) -> Result<Option<String>, app::AppError> {
+    use cli::Commands;
+
+    match command {
+        Commands::Upgrade(update_args) => {
+            self_manage::run_update(&self_manage::SelfUpdateOptions {
+                version: update_args.version.clone(),
+                repo: update_args.repo.clone(),
+                install_dir: update_args.install_dir.clone(),
+                script_url: update_args.script_url.clone(),
+            })?;
+            Ok(Some("updated kno binary".to_string()))
+        }
+        Commands::Uninstall(uninstall_args) => {
+            let result = self_manage::run_uninstall(&self_manage::SelfUninstallOptions {
+                bin_path: uninstall_args.bin_path.clone(),
+                remove_previous: uninstall_args.remove_previous,
+            })?;
+            let mut lines = vec![format!("removed {}", result.binary_path.display())];
+            if result.removed_previous {
+                lines.push("removed previous backups (kno.previous/knots.previous)".to_string());
+            }
+            Ok(Some(lines.join("\n")))
+        }
+        Commands::SelfManage(args) => match &args.command {
+            cli::SelfSubcommands::Update(update_args) => {
+                self_manage::run_update(&self_manage::SelfUpdateOptions {
+                    version: update_args.version.clone(),
+                    repo: update_args.repo.clone(),
+                    install_dir: update_args.install_dir.clone(),
+                    script_url: update_args.script_url.clone(),
+                })?;
+                Ok(Some("updated kno binary".to_string()))
+            }
+            cli::SelfSubcommands::Uninstall(uninstall_args) => {
+                let result = self_manage::run_uninstall(&self_manage::SelfUninstallOptions {
+                    bin_path: uninstall_args.bin_path.clone(),
+                    remove_previous: uninstall_args.remove_previous,
+                })?;
+                let mut lines = vec![format!("removed {}", result.binary_path.display())];
+                if result.removed_previous {
+                    lines
+                        .push("removed previous backups (kno.previous/knots.previous)".to_string());
+                }
+                Ok(Some(lines.join("\n")))
+            }
+        },
+        _ => Ok(None),
+    }
 }

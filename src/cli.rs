@@ -1,11 +1,22 @@
 use std::path::PathBuf;
 
+use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{Args, Parser, Subcommand};
 
+fn cli_styles() -> Styles {
+    Styles::styled()
+        .header(AnsiColor::BrightCyan.on_default() | Effects::BOLD)
+        .usage(AnsiColor::BrightYellow.on_default() | Effects::BOLD)
+        .literal(AnsiColor::BrightGreen.on_default() | Effects::BOLD)
+        .placeholder(AnsiColor::BrightMagenta.on_default())
+}
+
 #[derive(Debug, Parser)]
-#[command(name = "knots")]
+#[command(name = "kno")]
+#[command(bin_name = "kno")]
 #[command(version)]
-#[command(about = "A local-first, git-backed issue tracker")]
+#[command(about = "A local-first, git-backed agent memory manager")]
+#[command(styles = cli_styles())]
 pub struct Cli {
     #[arg(
         long,
@@ -26,11 +37,15 @@ pub enum Commands {
     New(NewArgs),
     State(StateArgs),
     Update(UpdateArgs),
+    Upgrade(SelfUpdateArgs),
+    Uninstall(SelfUninstallArgs),
     Ls(ListArgs),
     Show(ShowArgs),
     Sync(SyncArgs),
     Edge(EdgeArgs),
     Import(ImportArgs),
+    #[command(name = "self")]
+    SelfManage(SelfArgs),
 }
 
 #[derive(Debug, Args)]
@@ -122,6 +137,18 @@ pub struct UpdateArgs {
 pub struct ListArgs {
     #[arg(long)]
     pub json: bool,
+
+    #[arg(long)]
+    pub state: Option<String>,
+
+    #[arg(long = "type")]
+    pub knot_type: Option<String>,
+
+    #[arg(long = "tag")]
+    pub tags: Vec<String>,
+
+    #[arg(long)]
+    pub query: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -217,4 +244,43 @@ pub struct ImportDoltArgs {
 pub struct ImportStatusArgs {
     #[arg(long)]
     pub json: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct SelfArgs {
+    #[command(subcommand)]
+    pub command: SelfSubcommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum SelfSubcommands {
+    Update(SelfUpdateArgs),
+    Uninstall(SelfUninstallArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct SelfUpdateArgs {
+    #[arg(long)]
+    pub version: Option<String>,
+
+    #[arg(long)]
+    pub repo: Option<String>,
+
+    #[arg(long)]
+    pub install_dir: Option<PathBuf>,
+
+    #[arg(
+        long,
+        default_value = "https://raw.githubusercontent.com/acartine/knots/main/install.sh"
+    )]
+    pub script_url: String,
+}
+
+#[derive(Debug, Args)]
+pub struct SelfUninstallArgs {
+    #[arg(long)]
+    pub bin_path: Option<PathBuf>,
+
+    #[arg(long)]
+    pub remove_previous: bool,
 }

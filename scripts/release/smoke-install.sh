@@ -3,13 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 INSTALLER="${ROOT_DIR}/install.sh"
-VERSION="v$(node -e 'const fs=require("fs");const p=process.argv[1]; \
-  const v=JSON.parse(fs.readFileSync(p,"utf8")).version;process.stdout.write(v);' \
-  "${ROOT_DIR}/package.json" 2>/dev/null || true)"
-
-if [[ -z "${VERSION}" || "${VERSION}" == "v" ]]; then
-  VERSION="v0.1.0"
-fi
+KEEP_TMP="${KNOTS_SMOKE_KEEP_TMP:-0}"
+INSTALL_DIR_OVERRIDE="${KNOTS_SMOKE_INSTALL_DIR:-}"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "error: python3 is required for smoke installer test" >&2
@@ -31,9 +26,24 @@ case "$(uname -s | tr '[:upper:]' '[:lower:]')/$(uname -m | tr '[:upper:]' '[:lo
     ;;
 esac
 
-if [[ ! -x "${binary_path}" ]]; then
-  (cd "${ROOT_DIR}" && cargo build --release)
+if command -v sha256sum >/dev/null 2>&1; then
+  SHA_CMD=(sha256sum)
+elif command -v shasum >/dev/null 2>&1; then
+  SHA_CMD=(shasum -a 256)
+else
+  echo "error: no SHA256 tool found (need sha256sum or shasum)" >&2
+  exit 1
 fi
+
+(cd "${ROOT_DIR}" && cargo build --release)
+
+built_version="$("${binary_path}" --version | awk '{print $2}')"
+if [[ -z "${built_version}" ]]; then
+  echo "error: failed to read version from ${binary_path}" >&2
+  exit 1
+fi
+VERSION="v${built_version#v}"
+built_sha="$(${SHA_CMD[@]} "${binary_path}" | awk '{print $1}')"
 
 tmp="$(mktemp -d)"
 server_pid=""
@@ -43,7 +53,11 @@ cleanup() {
     kill "${server_pid}" >/dev/null 2>&1 || true
     wait "${server_pid}" 2>/dev/null || true
   fi
-  rm -rf "${tmp}"
+  if [[ "${KEEP_TMP}" == "1" ]]; then
+    echo "Retained smoke test artifacts at ${tmp}"
+  else
+    rm -rf "${tmp}"
+  fi
 }
 
 trap cleanup EXIT
@@ -82,6 +96,9 @@ server_pid=$!
 sleep 1
 
 install_dir="${tmp}/install"
+if [[ -n "${INSTALL_DIR_OVERRIDE}" ]]; then
+  install_dir="${INSTALL_DIR_OVERRIDE}"
+fi
 mkdir -p "${install_dir}"
 
 KNOTS_GITHUB_REPO="local/knots" \
@@ -98,13 +115,31 @@ KNOTS_VERSION="${VERSION}" \
 "${INSTALLER}"
 
 if [[ ! -x "${install_dir}/knots" ]]; then
-  echo "error: knots binary was not installed" >&2
+  echo "error: knots compatibility binary was not installed" >&2
   exit 1
 fi
 
-if [[ ! -x "${install_dir}/knots.previous" ]]; then
-  echo "error: knots.previous was not retained after pinned reinstall" >&2
+if [[ ! -x "${install_dir}/kno" ]]; then
+  echo "error: kno alias was not installed" >&2
+  exit 1
+fi
+
+if [[ ! -x "${install_dir}/kno.previous" ]]; then
+  echo "error: kno.previous was not retained after pinned reinstall" >&2
+  exit 1
+fi
+
+installed_version="$("${install_dir}/kno" --version | awk '{print $2}')"
+if [[ "${installed_version}" != "${built_version}" ]]; then
+  echo "error: installed version ${installed_version} != built version ${built_version}" >&2
+  exit 1
+fi
+
+installed_sha="$(${SHA_CMD[@]} "${install_dir}/kno" | awk '{print $1}')"
+if [[ "${installed_sha}" != "${built_sha}" ]]; then
+  echo "error: installed binary hash does not match locally built binary" >&2
   exit 1
 fi
 
 echo "Installer smoke test passed for ${VERSION} (${target_suffix})"
+echo "Installed binary matches local release build at ${install_dir}/kno"

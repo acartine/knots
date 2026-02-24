@@ -10,12 +10,12 @@ REQUESTED_VERSION="${KNOTS_VERSION:-}"
 
 usage() {
   cat <<'USAGE'
-Knots installer
+kno installer
 
 Environment variables:
   KNOTS_GITHUB_REPO         owner/repo source (default: acartine/knots)
   KNOTS_VERSION             release tag (example: v0.1.0). default: latest
-  KNOTS_INSTALL_DIR         target dir for knots binary (default: ~/.local/bin)
+  KNOTS_INSTALL_DIR         target dir for kno/knots binaries (default: ~/.local/bin)
   KNOTS_RELEASE_API_BASE    override API base for latest-release lookup
   KNOTS_RELEASE_DOWNLOAD_BASE  override download base for release assets
 USAGE
@@ -121,20 +121,24 @@ install_binary() {
     exit 1
   fi
 
-  local destination="${INSTALL_DIR}/knots"
-  local staging="${destination}.new"
+  local legacy_destination="${INSTALL_DIR}/knots"
+  local preferred_destination="${INSTALL_DIR}/kno"
+  local staging="${legacy_destination}.new"
 
-  if [[ -f "${destination}" ]]; then
-    cp "${destination}" "${INSTALL_DIR}/knots.previous"
+  if [[ -f "${legacy_destination}" ]]; then
+    cp "${legacy_destination}" "${INSTALL_DIR}/kno.previous"
+    cp "${legacy_destination}" "${INSTALL_DIR}/knots.previous"
   fi
 
   install -m 0755 "${extracted}" "${staging}"
-  mv "${staging}" "${destination}"
+  mv "${staging}" "${legacy_destination}"
+  ln -sfn "knots" "${preferred_destination}"
 }
 
 print_result() {
-  echo "Installed knots to ${INSTALL_DIR}/knots"
-  "${INSTALL_DIR}/knots" --version
+  echo "Installed kno to ${INSTALL_DIR}/kno"
+  echo "Compatibility binary at ${INSTALL_DIR}/knots"
+  "${INSTALL_DIR}/kno" --version
 }
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then

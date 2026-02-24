@@ -18,12 +18,12 @@ append-only events and a SQLite cache.
 ### Build from source
 ```bash
 cargo build --release
-./target/release/knots --help
+cargo run -- --help
 ```
 
 ### Run with a local repo + cache path
 ```bash
-knots --repo-root . --db .knots/cache/state.sqlite ls
+kno --repo-root . --db .knots/cache/state.sqlite ls
 ```
 
 ## Milestone status
@@ -58,23 +58,35 @@ curl -fsSL https://raw.githubusercontent.com/acartine/knots/main/install.sh \
 
 Verify install:
 ```bash
-knots --version
+kno --version
+```
+
+Update installed binary:
+```bash
+kno upgrade
+kno upgrade --version v0.2.0
+```
+
+Uninstall installed binary:
+```bash
+kno uninstall
+kno uninstall --remove-previous
 ```
 
 ## Core usage
 Create an issue:
 ```bash
-knots new "Document release pipeline" --state work_item
+kno new "Document release pipeline" --state work_item
 ```
 
 Update state:
 ```bash
-knots state <knot-id> implementing
+kno state <knot-id> implementing
 ```
 
 Patch fields with one command:
 ```bash
-knots update <knot-id> \
+kno update <knot-id> \
   --title "Refine import reducer" \
   --description "Carry full migration metadata" \
   --priority 1 \
@@ -91,21 +103,23 @@ knots update <knot-id> \
 
 List and inspect:
 ```bash
-knots ls
-knots show <knot-id>
-knots show <knot-id> --json
+kno ls
+kno ls --state implementing --tag release
+kno ls --type task --query importer
+kno show <knot-id>
+kno show <knot-id> --json
 ```
 
 Sync from dedicated `knots` branch/worktree:
 ```bash
-knots sync
+kno sync
 ```
 
 Manage dependency edges:
 ```bash
-knots edge add <src-id> blocked_by <dst-id>
-knots edge list <src-id> --direction outgoing
-knots edge remove <src-id> blocked_by <dst-id>
+kno edge add <src-id> blocked_by <dst-id>
+kno edge list <src-id> --direction outgoing
+kno edge remove <src-id> blocked_by <dst-id>
 ```
 
 ## Import from Beads
@@ -113,8 +127,8 @@ Export Beads to JSONL, then import.
 
 ```bash
 bd sync --flush-only
-knots import jsonl --file .beads/issues.jsonl
-knots import status
+kno import jsonl --file .beads/issues.jsonl
+kno import status
 ```
 
 Import supports parity fields when present:
@@ -125,7 +139,7 @@ Import supports parity fields when present:
 
 Optional Dolt source import:
 ```bash
-knots import dolt --repo /path/to/dolt/repo
+kno import dolt --repo /path/to/dolt/repo
 ```
 
 ## Release process
@@ -149,8 +163,41 @@ Run the installer smoke script before publishing major release process changes:
 scripts/release/smoke-install.sh
 ```
 
-The script validates both latest and pinned install flows and confirms `knots.previous` is
-retained after reinstall.
+The script validates both latest and pinned install flows and confirms `kno.previous` is
+retained after reinstall. It also verifies the installed binary exactly matches the local
+`cargo build --release` output (version + SHA-256 hash).
+
+Optional smoke test env vars:
+- `KNOTS_SMOKE_INSTALL_DIR=/absolute/path` keeps the installed binary at a persistent location.
+- `KNOTS_SMOKE_KEEP_TMP=1` retains temporary tarball/server artifacts after the run.
+
+### Toggle between release and local test binaries
+Use channel scripts to keep both binaries installed and switch with a symlink:
+
+```bash
+# Install GitHub release binary into ~/.local/bin/acartine_knots/release/kno
+scripts/release/channel-install.sh release
+
+# Install local smoke-tested build into ~/.local/bin/acartine_knots/local/kno
+scripts/release/channel-install.sh local
+
+# Switch active ~/.local/bin/kno symlink
+scripts/release/channel-use.sh release
+scripts/release/channel-use.sh local
+
+# Show current active target
+scripts/release/channel-use.sh show
+```
+
+You can override defaults with:
+- `KNOTS_CHANNEL_ROOT` (default: `~/.local/bin/acartine_knots`)
+- `KNOTS_ACTIVE_LINK` (default: `~/.local/bin/kno`)
+- `KNOTS_LEGACY_LINK` (default: `~/.local/bin/knots`)
+
+Knots remains supported as a compatibility alias:
+```bash
+knots --version
+```
 
 ## Security and support
 - Security policy: see `SECURITY.md`
