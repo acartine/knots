@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-d9a5-74e0-b48f-bce777518898",
+  "occurred_at": "2026-02-24T14:16:06.305083Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-4db0",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W4 CLI workflow selection and visibility",
+    "updated_at": "2026-02-24T14:16:06.305083Z"
+  }
+}

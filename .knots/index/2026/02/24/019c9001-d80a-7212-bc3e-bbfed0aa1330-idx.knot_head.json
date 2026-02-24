@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-d80a-7212-bc3e-bbfed0aa1330",
+  "occurred_at": "2026-02-24T14:16:05.893594Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-c97c",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W1.1 Define workflow schema contract",
+    "updated_at": "2026-02-24T14:16:05.893594Z"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-dc21-71c3-bd79-a134f9df0ddb",
+  "occurred_at": "2026-02-24T14:16:06.940184Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-810e",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W2.1 Add DB/cache support for workflow_id",
+    "updated_at": "2026-02-24T14:16:06.940184Z"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-da5a-7453-a78e-c3b1bcb529a7",
+  "occurred_at": "2026-02-24T14:16:06.485898Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-e41a",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W5.1 Unit tests for schema and transition validation",
+    "updated_at": "2026-02-24T14:16:06.485898Z"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d8b5-7263-8f22-d401ba2a300d",
+  "occurred_at": "2026-02-24T14:16:06.069518Z",
+  "knot_id": "knots-bc91",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: Create, update, state, and index projections write and read workflow_id consistently.",
+    "state": "work_item",
+    "title": "AC27/W2.2 Carry workflow_id in write paths and projections"
+  }
+}

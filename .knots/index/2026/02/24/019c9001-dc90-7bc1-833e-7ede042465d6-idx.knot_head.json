@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-dc90-7bc1-833e-7ede042465d6",
+  "occurred_at": "2026-02-24T14:16:07.051655Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-df3b",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W3.3 Preserve OCC/etag behavior with workflow-aware state changes",
+    "updated_at": "2026-02-24T14:16:07.051655Z"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d9fc-7ae3-b87f-9671ffd80c0f",
+  "occurred_at": "2026-02-24T14:16:06.396358Z",
+  "knot_id": "knots-df59",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: Workflow identity is visible and filterable in normal usage.",
+    "state": "work_item",
+    "title": "AC27/W4.3 Surface workflow_id in show/list outputs and filters"
+  }
+}

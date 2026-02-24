@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d9d7-7732-a5af-f3a99ff11e20",
+  "occurred_at": "2026-02-24T14:16:06.359478Z",
+  "knot_id": "knots-c2e7",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: CLI can list and show available workflows for operators.",
+    "state": "work_item",
+    "title": "AC27/W4.2 Add workflow inspection CLI commands"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d944-7b12-bc3a-9eba00c97611",
+  "occurred_at": "2026-02-24T14:16:06.212697Z",
+  "knot_id": "knots-fc8e",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: Each knot transition validates against its assigned workflow.",
+    "state": "work_item",
+    "title": "AC27/W3.2 Wire create/state/update to per-knot workflow"
+  }
+}

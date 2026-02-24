@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d923-7fe1-ab46-cd2535ddd88b",
+  "occurred_at": "2026-02-24T14:16:06.179672Z",
+  "knot_id": "knots-2f55",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: Transition checks consume workflow definition and retain force-bypass semantics.",
+    "state": "work_item",
+    "title": "AC27/W3.1 Refactor transition evaluation API"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-dc6a-7331-8c80-e6c5e2cf3f3b",
+  "occurred_at": "2026-02-24T14:16:07.013853Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-fc8e",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W3.2 Wire create/state/update to per-knot workflow",
+    "updated_at": "2026-02-24T14:16:07.013853Z"
+  }
+}

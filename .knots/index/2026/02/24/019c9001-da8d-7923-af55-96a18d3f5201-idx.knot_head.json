@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-da8d-7923-af55-96a18d3f5201",
+  "occurred_at": "2026-02-24T14:16:06.541975Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-23b0",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W5.3 Docs and migration notes update",
+    "updated_at": "2026-02-24T14:16:06.541975Z"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-dbb8-7701-812b-cc589dad8bb2",
+  "occurred_at": "2026-02-24T14:16:06.835581Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-ac27",
+    "state": "work_item",
+    "terminal": false,
+    "title": "Workflow designs / configurations",
+    "updated_at": "2026-02-24T14:16:06.835581Z"
+  }
+}

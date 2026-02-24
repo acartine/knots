@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d8ff-73b3-b258-6b1a2c030d24",
+  "occurred_at": "2026-02-24T14:16:06.143044Z",
+  "knot_id": "knots-3442",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: Transition validation is definition-driven, not hardcoded enum-only behavior.",
+    "state": "work_item",
+    "title": "AC27/W3 Workflow-aware transition engine"
+  }
+}

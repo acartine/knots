@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d86a-73d2-8597-ef306d7462b4",
+  "occurred_at": "2026-02-24T14:16:05.994274Z",
+  "knot_id": "knots-efb8",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: workflow_id is persisted and propagated.",
+    "state": "work_item",
+    "title": "AC27/W2 Persist workflow identity across model/events"
+  }
+}

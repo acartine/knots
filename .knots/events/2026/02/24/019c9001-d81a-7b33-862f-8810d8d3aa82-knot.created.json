@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d81a-7b33-862f-8810d8d3aa82",
+  "occurred_at": "2026-02-24T14:16:05.913999Z",
+  "knot_id": "knots-a87d",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: Parser validates unknown states, bad transitions, and missing initial or terminal states.",
+    "state": "work_item",
+    "title": "AC27/W1.2 Implement workflow parser + validator"
+  }
+}

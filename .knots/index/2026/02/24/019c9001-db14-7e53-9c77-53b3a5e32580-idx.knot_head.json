@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-db14-7e53-9c77-53b3a5e32580",
+  "occurred_at": "2026-02-24T14:16:06.671906Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-efb8",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W2 Persist workflow identity across model/events",
+    "updated_at": "2026-02-24T14:16:06.671906Z"
+  }
+}

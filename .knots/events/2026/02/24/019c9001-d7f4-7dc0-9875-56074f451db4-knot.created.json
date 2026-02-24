@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d7f4-7dc0-9875-56074f451db4",
+  "occurred_at": "2026-02-24T14:16:05.876352Z",
+  "knot_id": "knots-c97c",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: Schema for states, transitions, initial state, and terminal states is documented with examples.",
+    "state": "work_item",
+    "title": "AC27/W1.1 Define workflow schema contract"
+  }
+}

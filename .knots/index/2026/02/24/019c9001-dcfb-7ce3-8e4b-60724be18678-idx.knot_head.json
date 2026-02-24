@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-dcfb-7ce3-8e4b-60724be18678",
+  "occurred_at": "2026-02-24T14:16:07.1591Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-3ede",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W5.2 Integration tests for app/sync/import multi-workflow paths",
+    "updated_at": "2026-02-24T14:16:07.1591Z"
+  }
+}

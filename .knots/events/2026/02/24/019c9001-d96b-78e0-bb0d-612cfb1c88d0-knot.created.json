@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d96b-78e0-bb0d-612cfb1c88d0",
+  "occurred_at": "2026-02-24T14:16:06.251103Z",
+  "knot_id": "knots-df3b",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: workflow_etag behavior and stale checks remain correct after refactor.",
+    "state": "work_item",
+    "title": "AC27/W3.3 Preserve OCC/etag behavior with workflow-aware state changes"
+  }
+}

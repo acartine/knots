@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-da20-7ea1-abe8-d384345e368b",
+  "occurred_at": "2026-02-24T14:16:06.43208Z",
+  "knot_id": "knots-7aba",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: Multi-workflow support is fully tested and documented.",
+    "state": "work_item",
+    "title": "AC27/W5 Test matrix + docs + rollout notes"
+  }
+}

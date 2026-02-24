@@ -1,0 +1,9 @@
+{
+  "event_id": "019c9001-d857-7b01-aac5-ea469502b498",
+  "occurred_at": "2026-02-24T14:16:05.975494Z",
+  "knot_id": "knots-f498",
+  "type": "knot.type_set",
+  "data": {
+    "type": "task"
+  }
+}

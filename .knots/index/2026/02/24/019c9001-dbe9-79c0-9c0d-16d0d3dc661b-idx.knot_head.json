@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9001-dbe9-79c0-9c0d-16d0d3dc661b",
+  "occurred_at": "2026-02-24T14:16:06.88503Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-7aba",
+    "state": "work_item",
+    "terminal": false,
+    "title": "AC27/W5 Test matrix + docs + rollout notes",
+    "updated_at": "2026-02-24T14:16:06.88503Z"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-da8d-7923-af55-969287bf270b",
+  "occurred_at": "2026-02-24T14:16:06.541975Z",
+  "knot_id": "knots-23b0",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: README and architecture docs describe schema, defaults, and migration behavior.",
+    "state": "work_item",
+    "title": "AC27/W5.3 Docs and migration notes update"
+  }
+}

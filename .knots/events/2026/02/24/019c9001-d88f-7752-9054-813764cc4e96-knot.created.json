@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-d88f-7752-9054-813764cc4e96",
+  "occurred_at": "2026-02-24T14:16:06.031296Z",
+  "knot_id": "knots-810e",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: Migration and model structs include workflow_id without breaking existing records.",
+    "state": "work_item",
+    "title": "AC27/W2.1 Add DB/cache support for workflow_id"
+  }
+}

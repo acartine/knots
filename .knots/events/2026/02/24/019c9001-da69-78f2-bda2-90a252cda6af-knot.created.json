@@ -1,0 +1,11 @@
+{
+  "event_id": "019c9001-da69-78f2-bda2-90a252cda6af",
+  "occurred_at": "2026-02-24T14:16:06.505029Z",
+  "knot_id": "knots-3ede",
+  "type": "knot.created",
+  "data": {
+    "body": "Definition of done: End-to-end coverage for create, update, state, and sync with mixed workflows.",
+    "state": "work_item",
+    "title": "AC27/W5.2 Integration tests for app/sync/import multi-workflow paths"
+  }
+}
