@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8f84-e470-7623-b865-7ecec4398ac6",
+  "occurred_at": "2026-02-24T11:59:37.06734Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.5.2",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Implement rehydrate flow",
+    "updated_at": "2026-02-24T11:59:37.06734Z"
+  }
+}

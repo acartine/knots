@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8f92-cefd-78c0-a084-6b7d3e2e122a",
+  "occurred_at": "2026-02-24T12:14:49.080618Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.7.1",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Implement fsck command",
+    "updated_at": "2026-02-24T12:14:49.080618Z"
+  }
+}

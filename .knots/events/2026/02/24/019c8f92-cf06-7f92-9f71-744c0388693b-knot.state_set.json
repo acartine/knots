@@ -1,0 +1,11 @@
+{
+  "event_id": "019c8f92-cf06-7f92-9f71-744c0388693b",
+  "occurred_at": "2026-02-24T12:14:49.09471Z",
+  "knot_id": "knots-q3e.7.2",
+  "type": "knot.state_set",
+  "data": {
+    "force": true,
+    "from": "work_item",
+    "to": "shipped"
+  }
+}

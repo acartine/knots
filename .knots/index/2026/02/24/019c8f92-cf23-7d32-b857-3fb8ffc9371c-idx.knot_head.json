@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8f92-cf23-7d32-b857-3fb8ffc9371c",
+  "occurred_at": "2026-02-24T12:14:49.119378Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.8",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Optional: snapshot compaction/read path",
+    "updated_at": "2026-02-24T12:14:49.119378Z"
+  }
+}

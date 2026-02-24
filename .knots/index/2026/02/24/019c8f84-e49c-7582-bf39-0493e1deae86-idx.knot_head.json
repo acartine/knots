@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8f84-e49c-7582-bf39-0493e1deae86",
+  "occurred_at": "2026-02-24T11:59:37.111066Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.6.1",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Implement repo/cache locks and ordering",
+    "updated_at": "2026-02-24T11:59:37.111066Z"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8f92-cf17-7fb2-9afe-fc7a09b6f423",
+  "occurred_at": "2026-02-24T12:14:49.10716Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.7.3",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add perf regression harness",
+    "updated_at": "2026-02-24T12:14:49.10716Z"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8f92-cf2f-7001-aff6-334b81e39ad9",
+  "occurred_at": "2026-02-24T12:14:49.131121Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.9",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Optional: precondition embedding and stale-event filter",
+    "updated_at": "2026-02-24T12:14:49.131121Z"
+  }
+}
