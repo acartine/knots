@@ -1,5 +1,6 @@
 /target/
 /node_modules/
-/.knots/
+/.knots/*
+!/.knots/workflows.toml
 /.DS_Store
 /.claude/
