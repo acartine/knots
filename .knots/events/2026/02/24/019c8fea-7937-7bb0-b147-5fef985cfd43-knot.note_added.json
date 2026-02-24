@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8fea-7937-7bb0-b147-5fef985cfd43",
+  "occurred_at": "2026-02-24T13:50:34.29507Z",
+  "knot_id": "knots-ac27",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Acceptance Criteria:\n1. The current workflow is documented as part of workflow schema\n2. Workflows can be visualized in the UI\n3. Knots can use the workflow to support going backwards to a single state (the one it came from)\n4. Knots can use the workflow to support going forwards to one of multiple states (any that are supported)\n5. The cli commands support this concept elegantly",
+    "datetime": "2026-02-24T13:50:34.29507Z",
+    "entry_id": "019c8fea-7937-7bb0-b147-5fded6f80da5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

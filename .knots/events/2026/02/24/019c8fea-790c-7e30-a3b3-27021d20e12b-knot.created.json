@@ -1,0 +1,11 @@
+{
+  "event_id": "019c8fea-790c-7e30-a3b3-27021d20e12b",
+  "occurred_at": "2026-02-24T13:50:34.252566Z",
+  "knot_id": "knots-ac27",
+  "type": "knot.created",
+  "data": {
+    "body": "We need a documented schema for creating workflows.\n\na workflow must support states and transitions like this:\n\nidea -> work_item\nwork_item -> implementing\nimplementing -> implemented\nimplemented -> reviewing\nreviewing -> approved OR reviewing -> rejected\nrejected -> refining -> implemented (loop)\napproved -> shipped\n* -> deferred (pause)\n* -> abandoned (terminal)\n\na knot is always associated with a workflow definition.  currently it is hardcoded to the workflow definition above.\n\nwhat we want is to be able to define multiple workflows and create knots associated to the workflow we prefer depending upon the situation.",
+    "state": "work_item",
+    "title": "Workflow designs / configurations"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8fe3-fa01-76b0-b435-70cc77737fa0",
+  "occurred_at": "2026-02-24T13:43:28.508715Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "K-019c8f98-94db-7732-9e46-39503da573c2",
+    "state": "shipped",
+    "terminal": true,
+    "title": "test knot!t",
+    "updated_at": "2026-02-24T13:43:28.508715Z"
+  }
+}
