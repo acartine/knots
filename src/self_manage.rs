@@ -180,7 +180,10 @@ mod tests {
         .expect("uninstall should succeed");
 
         assert_eq!(
-            result.binary_path.file_name().and_then(|value| value.to_str()),
+            result
+                .binary_path
+                .file_name()
+                .and_then(|value| value.to_str()),
             Some("knots")
         );
         assert!(result.removed_previous);
