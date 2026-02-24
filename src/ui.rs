@@ -1,9 +1,9 @@
 use std::io::{self, IsTerminal};
 
-use crate::app::KnotView;
+use crate::list_layout::DisplayKnot;
 use crate::listing::KnotListFilter;
 
-pub fn print_knot_list(knots: &[KnotView], filter: &KnotListFilter) {
+pub fn print_knot_list(knots: &[DisplayKnot], filter: &KnotListFilter) {
     let palette = Palette::auto();
     println!("{}", palette.heading("Knots"));
     if let Some(summary) = filter_summary(filter) {
@@ -21,9 +21,12 @@ pub fn print_knot_list(knots: &[KnotView], filter: &KnotListFilter) {
     println!("{}", palette.dim(&format!("{} knot(s)", knots.len())));
 }
 
-fn format_knot_row(knot: &KnotView, palette: &Palette) -> String {
+fn format_knot_row(row: &DisplayKnot, palette: &Palette) -> String {
+    let knot = &row.knot;
+    let indent = indentation_prefix(row.depth, palette);
     let mut line = format!(
-        "{} {} {}",
+        "{}{} {} {}",
+        indent,
         palette.id(&knot.id),
         palette.state(&knot.state),
         knot.title
@@ -40,6 +43,14 @@ fn format_knot_row(knot: &KnotView, palette: &Palette) -> String {
     }
 
     line
+}
+
+fn indentation_prefix(depth: usize, palette: &Palette) -> String {
+    if depth == 0 {
+        return String::new();
+    }
+    let spaces = "  ".repeat(depth.saturating_sub(1));
+    palette.dim(&format!("{spaces}↳ "))
 }
 
 fn filter_summary(filter: &KnotListFilter) -> Option<String> {

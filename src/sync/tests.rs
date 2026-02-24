@@ -305,3 +305,106 @@ fn sync_reduces_description_tag_and_note_events() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn sync_classifies_old_knots_as_warm_and_terminal_as_cold() {
+    let root = unique_workspace();
+    init_repo(&root);
+    run_git(&root, &["checkout", "-b", "knots"]);
+
+    let warm_idx = root
+        .join(".knots")
+        .join("index")
+        .join("2025")
+        .join("01")
+        .join("01")
+        .join("0200-idx.knot_head.json");
+    std::fs::create_dir_all(
+        warm_idx
+            .parent()
+            .expect("warm index event parent directory should exist"),
+    )
+    .expect("warm index event directory should be creatable");
+    std::fs::write(
+        &warm_idx,
+        concat!(
+            "{\n",
+            "  \"event_id\": \"0200\",\n",
+            "  \"occurred_at\": \"2025-01-01T00:00:00Z\",\n",
+            "  \"type\": \"idx.knot_head\",\n",
+            "  \"data\": {\n",
+            "    \"knot_id\": \"K-warm\",\n",
+            "    \"title\": \"Warm candidate\",\n",
+            "    \"state\": \"work_item\",\n",
+            "    \"updated_at\": \"2025-01-01T00:00:00Z\",\n",
+            "    \"terminal\": false\n",
+            "  }\n",
+            "}\n"
+        ),
+    )
+    .expect("warm index event should be writable");
+
+    let cold_idx = root
+        .join(".knots")
+        .join("index")
+        .join("2026")
+        .join("02")
+        .join("23")
+        .join("0201-idx.knot_head.json");
+    std::fs::create_dir_all(
+        cold_idx
+            .parent()
+            .expect("cold index event parent directory should exist"),
+    )
+    .expect("cold index event directory should be creatable");
+    std::fs::write(
+        &cold_idx,
+        concat!(
+            "{\n",
+            "  \"event_id\": \"0201\",\n",
+            "  \"occurred_at\": \"2026-02-23T00:00:00Z\",\n",
+            "  \"type\": \"idx.knot_head\",\n",
+            "  \"data\": {\n",
+            "    \"knot_id\": \"K-cold\",\n",
+            "    \"title\": \"Cold candidate\",\n",
+            "    \"state\": \"shipped\",\n",
+            "    \"updated_at\": \"2026-02-23T00:00:00Z\",\n",
+            "    \"terminal\": true\n",
+            "  }\n",
+            "}\n"
+        ),
+    )
+    .expect("cold index event should be writable");
+
+    run_git(&root, &["add", ".knots"]);
+    run_git(&root, &["commit", "-m", "seed warm and cold"]);
+    run_git(&root, &["checkout", "main"]);
+
+    let db_path = root.join(".knots/cache/state.sqlite");
+    std::fs::create_dir_all(
+        db_path
+            .parent()
+            .expect("db parent should exist for sync test"),
+    )
+    .expect("db parent should be creatable");
+    let conn = db::open_connection(db_path.to_str().expect("utf8 path"))
+        .expect("sync test database should open");
+
+    let service = SyncService::new(&conn, root.clone());
+    let summary = service.sync().expect("sync should succeed");
+    assert_eq!(summary.index_files, 2);
+
+    let hot_warm = db::get_knot_hot(&conn, "K-warm").expect("hot lookup should succeed");
+    assert!(hot_warm.is_none());
+    let warm = db::get_knot_warm(&conn, "K-warm").expect("warm lookup should succeed");
+    assert_eq!(
+        warm.expect("warm entry should exist").title,
+        "Warm candidate"
+    );
+
+    let cold = db::get_cold_catalog(&conn, "K-cold").expect("cold lookup should succeed");
+    let cold = cold.expect("cold entry should exist");
+    assert_eq!(cold.state, "shipped");
+
+    let _ = std::fs::remove_dir_all(root);
+}

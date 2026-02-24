@@ -182,6 +182,38 @@ ON CONFLICT(key) DO NOTHING
 "#,
         [],
     )?;
+    tx.execute(
+        r#"
+INSERT INTO meta (key, value)
+VALUES ('sync_policy', 'auto')
+ON CONFLICT(key) DO NOTHING
+"#,
+        [],
+    )?;
+    tx.execute(
+        r#"
+INSERT INTO meta (key, value)
+VALUES ('sync_auto_budget_ms', '750')
+ON CONFLICT(key) DO NOTHING
+"#,
+        [],
+    )?;
+    tx.execute(
+        r#"
+INSERT INTO meta (key, value)
+VALUES ('sync_try_lock_ms', '0')
+ON CONFLICT(key) DO NOTHING
+"#,
+        [],
+    )?;
+    tx.execute(
+        r#"
+INSERT INTO meta (key, value)
+VALUES ('push_retry_budget_ms', '800')
+ON CONFLICT(key) DO NOTHING
+"#,
+        [],
+    )?;
 
     tx.commit()
 }
@@ -217,6 +249,20 @@ pub struct KnotCacheRecord {
     pub handoff_capsules: Vec<MetadataEntry>,
     pub workflow_etag: Option<String>,
     pub created_at: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WarmKnotRecord {
+    pub id: String,
+    pub title: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ColdCatalogRecord {
+    pub id: String,
+    pub title: String,
+    pub state: String,
+    pub updated_at: String,
 }
 
 pub struct UpsertKnotHot<'a> {
@@ -360,6 +406,108 @@ pub fn delete_knot_warm(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn upsert_knot_warm(conn: &Connection, id: &str, title: &str) -> Result<()> {
+    conn.execute(
+        r#"
+INSERT INTO knot_warm (id, title)
+VALUES (?1, ?2)
+ON CONFLICT(id) DO UPDATE SET title = excluded.title
+"#,
+        params![id, title],
+    )?;
+    Ok(())
+}
+
+pub fn get_knot_warm(conn: &Connection, id: &str) -> Result<Option<WarmKnotRecord>> {
+    conn.query_row(
+        "SELECT id, title FROM knot_warm WHERE id = ?1",
+        params![id],
+        |row| {
+            Ok(WarmKnotRecord {
+                id: row.get(0)?,
+                title: row.get(1)?,
+            })
+        },
+    )
+    .optional()
+}
+
+pub fn upsert_cold_catalog(
+    conn: &Connection,
+    id: &str,
+    title: &str,
+    state: &str,
+    updated_at: &str,
+) -> Result<()> {
+    conn.execute(
+        r#"
+INSERT INTO cold_catalog (id, title, state, updated_at)
+VALUES (?1, ?2, ?3, ?4)
+ON CONFLICT(id) DO UPDATE SET
+    title = excluded.title,
+    state = excluded.state,
+    updated_at = excluded.updated_at
+"#,
+        params![id, title, state, updated_at],
+    )?;
+    Ok(())
+}
+
+pub fn get_cold_catalog(conn: &Connection, id: &str) -> Result<Option<ColdCatalogRecord>> {
+    conn.query_row(
+        "SELECT id, title, state, updated_at FROM cold_catalog WHERE id = ?1",
+        params![id],
+        |row| {
+            Ok(ColdCatalogRecord {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                state: row.get(2)?,
+                updated_at: row.get(3)?,
+            })
+        },
+    )
+    .optional()
+}
+
+pub fn search_cold_catalog(conn: &Connection, term: &str) -> Result<Vec<ColdCatalogRecord>> {
+    let like = format!("%{}%", term.trim());
+    let mut stmt = conn.prepare(
+        r#"
+SELECT id, title, state, updated_at
+FROM cold_catalog
+WHERE id LIKE ?1 OR title LIKE ?1
+ORDER BY updated_at DESC, id ASC
+"#,
+    )?;
+    let mut rows = stmt.query(params![like])?;
+    let mut result = Vec::new();
+    while let Some(row) = rows.next()? {
+        result.push(ColdCatalogRecord {
+            id: row.get(0)?,
+            title: row.get(1)?,
+            state: row.get(2)?,
+            updated_at: row.get(3)?,
+        });
+    }
+    Ok(result)
+}
+
+pub fn delete_cold_catalog(conn: &Connection, id: &str) -> Result<()> {
+    conn.execute("DELETE FROM cold_catalog WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+pub fn get_hot_window_days(conn: &Connection) -> Result<i64> {
+    let value = get_meta(conn, "hot_window_days")?;
+    let parsed = value
+        .as_deref()
+        .unwrap_or("7")
+        .trim()
+        .parse::<i64>()
+        .unwrap_or(7);
+    Ok(parsed.max(0))
+}
+
 pub fn get_meta(conn: &Connection, key: &str) -> Result<Option<String>> {
     conn.query_row(
         "SELECT value FROM meta WHERE key = ?1",
@@ -429,6 +577,21 @@ pub fn list_edges(
     };
     let mut stmt = conn.prepare(sql)?;
     let mut rows = stmt.query(params![knot_id])?;
+    let mut result = Vec::new();
+    while let Some(row) = rows.next()? {
+        result.push(EdgeRecord {
+            src: row.get(0)?,
+            kind: row.get(1)?,
+            dst: row.get(2)?,
+        });
+    }
+    Ok(result)
+}
+
+pub fn list_edges_by_kind(conn: &Connection, kind: &str) -> Result<Vec<EdgeRecord>> {
+    let mut stmt =
+        conn.prepare("SELECT src, kind, dst FROM edge WHERE kind = ?1 ORDER BY src ASC, dst ASC")?;
+    let mut rows = stmt.query(params![kind])?;
     let mut result = Vec::new();
     while let Some(row) = rows.next()? {
         result.push(EdgeRecord {

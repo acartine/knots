@@ -135,6 +135,61 @@ impl GitAdapter {
         Ok(parse_lines(&stdout))
     }
 
+    pub fn add_paths(&self, cwd: &Path, paths: &[&str]) -> Result<(), SyncError> {
+        let mut args = vec!["add".to_string(), "-f".to_string(), "--".to_string()];
+        for path in paths {
+            args.push((*path).to_string());
+        }
+        self.run_checked(cwd, args)?;
+        Ok(())
+    }
+
+    pub fn has_staged_changes(&self, cwd: &Path, paths: &[&str]) -> Result<bool, SyncError> {
+        let mut args = vec![
+            "diff".to_string(),
+            "--cached".to_string(),
+            "--quiet".to_string(),
+            "--".to_string(),
+        ];
+        for path in paths {
+            args.push((*path).to_string());
+        }
+        let output = self.run_allow_failure(cwd, args.clone())?;
+        match output.status.code() {
+            Some(0) => Ok(false),
+            Some(1) => Ok(true),
+            _ => {
+                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                Err(SyncError::GitCommandFailed {
+                    command: display_command(cwd, &args),
+                    code: output.status.code(),
+                    stderr,
+                })
+            }
+        }
+    }
+
+    pub fn commit(&self, cwd: &Path, message: &str) -> Result<String, SyncError> {
+        self.run_checked(
+            cwd,
+            vec![
+                "commit".to_string(),
+                "--no-gpg-sign".to_string(),
+                "-m".to_string(),
+                message.to_string(),
+            ],
+        )?;
+        self.rev_parse(cwd, "HEAD")
+    }
+
+    pub fn push_branch(&self, cwd: &Path, remote: &str, branch: &str) -> Result<(), SyncError> {
+        self.run_checked(
+            cwd,
+            vec!["push".to_string(), remote.to_string(), branch.to_string()],
+        )?;
+        Ok(())
+    }
+
     fn run_checked(&self, cwd: &Path, args: Vec<String>) -> Result<String, SyncError> {
         let output = self.run_allow_failure(cwd, args.clone())?;
         if !output.status.success() {

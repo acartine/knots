@@ -4,9 +4,14 @@ mod db;
 mod domain;
 mod events;
 mod imports;
+mod list_layout;
 mod listing;
+mod locks;
+mod remote_init;
+mod replication;
 mod self_manage;
 mod sync;
+mod tiering;
 mod ui;
 
 fn main() {
@@ -19,7 +24,7 @@ fn main() {
 fn run() -> Result<(), app::AppError> {
     use app::UpdateKnotPatch;
     use clap::Parser;
-    use cli::{Commands, EdgeSubcommands, ImportSubcommands};
+    use cli::{ColdSubcommands, Commands, EdgeSubcommands, ImportSubcommands};
     use domain::metadata::MetadataEntryInput;
 
     let cli = cli::Cli::parse();
@@ -36,7 +41,8 @@ fn run() -> Result<(), app::AppError> {
             println!("created {} [{}] {}", knot.id, knot.state, knot.title);
         }
         Commands::State(args) => {
-            let knot = app.set_state(&args.id, &args.state, args.force)?;
+            let knot =
+                app.set_state(&args.id, &args.state, args.force, args.if_match.as_deref())?;
             println!("updated {} -> {}", knot.id, knot.state);
         }
         Commands::Update(args) => {
@@ -66,6 +72,7 @@ fn run() -> Result<(), app::AppError> {
                 remove_tags: args.remove_tags,
                 add_note,
                 add_handoff_capsule,
+                expected_workflow_etag: args.if_match,
                 force: args.force,
             };
             let knot = app.update_knot(&args.id, patch)?;
@@ -86,7 +93,9 @@ fn run() -> Result<(), app::AppError> {
                     serde_json::to_string_pretty(&knots).expect("json serialization should work")
                 );
             } else {
-                ui::print_knot_list(&knots, &filter);
+                let layout_edges = app.list_layout_edges()?;
+                let rows = list_layout::layout_knots(knots, &layout_edges);
+                ui::print_knot_list(&rows, &filter);
             }
         }
         Commands::Show(args) => match app.show_knot(&args.id)? {
@@ -130,8 +139,8 @@ fn run() -> Result<(), app::AppError> {
             }
             None => return Err(app::AppError::NotFound(args.id)),
         },
-        Commands::Sync(args) => {
-            let summary = app.sync()?;
+        Commands::Pull(args) => {
+            let summary = app.pull()?;
             if args.json {
                 println!(
                     "{}",
@@ -140,7 +149,7 @@ fn run() -> Result<(), app::AppError> {
             } else {
                 println!(
                     concat!(
-                        "sync head={} index_files={} full_files={} ",
+                        "pull head={} index_files={} full_files={} ",
                         "knot_updates={} edge_adds={} edge_removes={}"
                     ),
                     summary.target_head,
@@ -152,6 +161,114 @@ fn run() -> Result<(), app::AppError> {
                 );
             }
         }
+        Commands::Push(args) => {
+            let summary = app.push()?;
+            if args.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&summary).expect("json serialization should work")
+                );
+            } else {
+                println!(
+                    "push local_event_files={} copied_files={} committed={} pushed={}{}",
+                    summary.local_event_files,
+                    summary.copied_files,
+                    summary.committed,
+                    summary.pushed,
+                    summary
+                        .commit
+                        .as_ref()
+                        .map(|commit| format!(" commit={commit}"))
+                        .unwrap_or_default()
+                );
+            }
+        }
+        Commands::Sync(args) => {
+            let summary = app.sync()?;
+            if args.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&summary).expect("json serialization should work")
+                );
+            } else {
+                println!(
+                    "sync push(local_event_files={} copied_files={} committed={} pushed={}) \
+                     pull(head={} index_files={} full_files={} knot_updates={} edge_adds={} edge_removes={})",
+                    summary.push.local_event_files,
+                    summary.push.copied_files,
+                    summary.push.committed,
+                    summary.push.pushed,
+                    summary.pull.target_head,
+                    summary.pull.index_files,
+                    summary.pull.full_files,
+                    summary.pull.knot_updates,
+                    summary.pull.edge_adds,
+                    summary.pull.edge_removes
+                );
+            }
+        }
+        Commands::InitRemote => {
+            app.init_remote()?;
+            println!("initialized remote branch origin/knots");
+        }
+        Commands::Cold(args) => match args.command {
+            ColdSubcommands::Sync(sync_args) => {
+                let summary = app.cold_sync()?;
+                if sync_args.json {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&summary)
+                            .expect("json serialization should work")
+                    );
+                } else {
+                    println!(
+                        concat!(
+                            "cold sync head={} index_files={} full_files={} ",
+                            "knot_updates={} edge_adds={} edge_removes={}"
+                        ),
+                        summary.target_head,
+                        summary.index_files,
+                        summary.full_files,
+                        summary.knot_updates,
+                        summary.edge_adds,
+                        summary.edge_removes
+                    );
+                }
+            }
+            ColdSubcommands::Search(search_args) => {
+                let matches = app.cold_search(&search_args.term)?;
+                if search_args.json {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&matches)
+                            .expect("json serialization should work")
+                    );
+                } else if matches.is_empty() {
+                    println!("no cold knots matched '{}'", search_args.term);
+                } else {
+                    for knot in matches {
+                        println!(
+                            "{} [{}] {} ({})",
+                            knot.id, knot.state, knot.title, knot.updated_at
+                        );
+                    }
+                }
+            }
+        },
+        Commands::Rehydrate(args) => match app.rehydrate(&args.id)? {
+            Some(knot) => {
+                if args.json {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&knot)
+                            .expect("json serialization should work")
+                    );
+                } else {
+                    println!("rehydrated {} [{}] {}", knot.id, knot.state, knot.title);
+                }
+            }
+            None => return Err(app::AppError::NotFound(args.id)),
+        },
         Commands::Edge(args) => match args.command {
             EdgeSubcommands::Add(edge_args) => {
                 let edge = app.add_edge(&edge_args.src, &edge_args.kind, &edge_args.dst)?;

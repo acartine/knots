@@ -1,11 +1,13 @@
 use std::error::Error;
 use std::fmt;
+use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::time::{Duration, Instant};
 
 use rusqlite::Connection;
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::db::{self, EdgeDirection, EdgeRecord, KnotCacheRecord, UpsertKnotHot};
@@ -16,7 +18,10 @@ use crate::events::{
     FullEventKind, IndexEvent, IndexEventKind,
 };
 use crate::imports::{ImportError, ImportService, ImportStatus, ImportSummary};
-use crate::sync::{SyncError, SyncService, SyncSummary};
+use crate::locks::{FileLock, LockError};
+use crate::remote_init::{init_remote_knots_branch, RemoteInitError};
+use crate::replication::{PushSummary, ReplicationService, ReplicationSummary};
+use crate::sync::{SyncError, SyncSummary};
 
 pub struct App {
     conn: Connection,
@@ -53,6 +58,7 @@ pub struct UpdateKnotPatch {
     pub remove_tags: Vec<String>,
     pub add_note: Option<MetadataEntryInput>,
     pub add_handoff_capsule: Option<MetadataEntryInput>,
+    pub expected_workflow_etag: Option<String>,
     pub force: bool,
 }
 
@@ -61,6 +67,21 @@ pub struct EdgeView {
     pub src: String,
     pub kind: String,
     pub dst: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ColdKnotView {
+    pub id: String,
+    pub title: String,
+    pub state: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SyncPolicy {
+    Auto,
+    Always,
+    Never,
 }
 
 impl UpdateKnotPatch {
@@ -89,12 +110,88 @@ impl App {
         })
     }
 
+    fn repo_lock_path(&self) -> PathBuf {
+        self.repo_root
+            .join(".knots")
+            .join("locks")
+            .join("repo.lock")
+    }
+
+    fn cache_lock_path(&self) -> PathBuf {
+        self.repo_root
+            .join(".knots")
+            .join("cache")
+            .join("cache.lock")
+    }
+
+    fn read_sync_policy(&self) -> Result<SyncPolicy, AppError> {
+        let raw = db::get_meta(&self.conn, "sync_policy")?.unwrap_or_else(|| "auto".to_string());
+        match raw.trim().to_ascii_lowercase().as_str() {
+            "always" => Ok(SyncPolicy::Always),
+            "never" => Ok(SyncPolicy::Never),
+            _ => Ok(SyncPolicy::Auto),
+        }
+    }
+
+    fn read_sync_budget_ms(&self) -> Result<u64, AppError> {
+        let raw =
+            db::get_meta(&self.conn, "sync_auto_budget_ms")?.unwrap_or_else(|| "750".to_string());
+        let budget = raw.trim().parse::<u64>().unwrap_or(750);
+        Ok(budget)
+    }
+
+    fn mark_sync_pending(&self) -> Result<(), AppError> {
+        db::set_meta(&self.conn, "sync_pending", "true")?;
+        Ok(())
+    }
+
+    fn maybe_auto_sync_for_read(&self) -> Result<(), AppError> {
+        match self.read_sync_policy()? {
+            SyncPolicy::Never => Ok(()),
+            SyncPolicy::Always => {
+                let _ = self.pull()?;
+                Ok(())
+            }
+            SyncPolicy::Auto => {
+                let repo_lock = FileLock::try_acquire(&self.repo_lock_path())?;
+                let Some(_repo_guard) = repo_lock else {
+                    return self.mark_sync_pending();
+                };
+                let _cache_guard =
+                    FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5000))?;
+                let start = Instant::now();
+                if let Err(err) = self.pull_unlocked() {
+                    return match err {
+                        AppError::Sync(SyncError::GitCommandFailed { .. })
+                        | AppError::Sync(SyncError::GitUnavailable) => {
+                            self.mark_sync_pending()?;
+                            Ok(())
+                        }
+                        other => Err(other),
+                    };
+                }
+                if start.elapsed().as_millis() > self.read_sync_budget_ms()? as u128 {
+                    self.mark_sync_pending()?;
+                }
+                Ok(())
+            }
+        }
+    }
+
+    fn pull_unlocked(&self) -> Result<SyncSummary, AppError> {
+        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        Ok(service.pull()?)
+    }
+
     pub fn create_knot(
         &self,
         title: &str,
         body: Option<&str>,
         initial_state: &str,
     ) -> Result<KnotView, AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
         let state = KnotState::from_str(initial_state)?;
         let knot_id = format!("K-{}", Uuid::now_v7());
         let occurred_at = now_utc_rfc3339();
@@ -146,21 +243,30 @@ impl App {
                 created_at: Some(&occurred_at),
             },
         )?;
-
         let record = db::get_knot_hot(&self.conn, &knot_id)?
             .ok_or_else(|| AppError::NotFound(knot_id.clone()))?;
         Ok(KnotView::from(record))
     }
 
-    pub fn set_state(&self, id: &str, next_state: &str, force: bool) -> Result<KnotView, AppError> {
+    pub fn set_state(
+        &self,
+        id: &str,
+        next_state: &str,
+        force: bool,
+        expected_workflow_etag: Option<&str>,
+    ) -> Result<KnotView, AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
         let current =
             db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        ensure_workflow_etag(&current, expected_workflow_etag)?;
         let current_state = KnotState::from_str(&current.state)?;
         let next = KnotState::from_str(next_state)?;
         current_state.validate_transition(next, force)?;
 
         let occurred_at = now_utc_rfc3339();
-        let full_event = FullEvent::with_identity(
+        let mut full_event = FullEvent::with_identity(
             new_event_id(),
             occurred_at.clone(),
             id.to_string(),
@@ -171,6 +277,9 @@ impl App {
                 "force": force,
             }),
         );
+        if let Some(expected) = expected_workflow_etag {
+            full_event = full_event.with_precondition(expected);
+        }
 
         let index_event_id = new_event_id();
         let idx_event = IndexEvent::with_identity(
@@ -207,13 +316,15 @@ impl App {
                 created_at: current.created_at.as_deref(),
             },
         )?;
-
         let updated =
             db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         Ok(KnotView::from(updated))
     }
 
     pub fn update_knot(&self, id: &str, patch: UpdateKnotPatch) -> Result<KnotView, AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
         if !patch.has_changes() {
             return Err(AppError::InvalidArgument(
                 "update requires at least one field change".to_string(),
@@ -222,6 +333,7 @@ impl App {
 
         let current =
             db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        ensure_workflow_etag(&current, patch.expected_workflow_etag.as_deref())?;
         let mut title = current.title.clone();
         let mut state = current.state.clone();
         let mut description = current.description.clone();
@@ -417,7 +529,10 @@ impl App {
             return Ok(KnotView::from(current));
         }
 
-        for event in full_events {
+        for mut event in full_events {
+            if let Some(expected) = patch.expected_workflow_etag.as_deref() {
+                event = event.with_precondition(expected);
+            }
             self.writer.write(&EventRecord::full(event))?;
         }
 
@@ -457,13 +572,13 @@ impl App {
                 created_at: current.created_at.as_deref(),
             },
         )?;
-
         let updated =
             db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         Ok(KnotView::from(updated))
     }
 
     pub fn list_knots(&self) -> Result<Vec<KnotView>, AppError> {
+        self.maybe_auto_sync_for_read()?;
         Ok(db::list_knot_hot(&self.conn)?
             .into_iter()
             .map(KnotView::from)
@@ -471,25 +586,64 @@ impl App {
     }
 
     pub fn show_knot(&self, id: &str) -> Result<Option<KnotView>, AppError> {
-        Ok(db::get_knot_hot(&self.conn, id)?.map(KnotView::from))
+        self.maybe_auto_sync_for_read()?;
+        if let Some(knot) = db::get_knot_hot(&self.conn, id)? {
+            return Ok(Some(KnotView::from(knot)));
+        }
+        self.rehydrate(id)
     }
 
-    pub fn sync(&self) -> Result<SyncSummary, AppError> {
-        let service = SyncService::new(&self.conn, self.repo_root.clone());
+    pub fn pull(&self) -> Result<SyncSummary, AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+        self.pull_unlocked()
+    }
+
+    pub fn push(&self) -> Result<PushSummary, AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        Ok(service.push()?)
+    }
+
+    pub fn sync(&self) -> Result<ReplicationSummary, AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
         Ok(service.sync()?)
     }
 
+    pub fn init_remote(&self) -> Result<(), AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        init_remote_knots_branch(&self.repo_root)?;
+        Ok(())
+    }
+
     pub fn add_edge(&self, src: &str, kind: &str, dst: &str) -> Result<EdgeView, AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
         self.apply_edge_change(src, kind, dst, true)
     }
 
     pub fn remove_edge(&self, src: &str, kind: &str, dst: &str) -> Result<EdgeView, AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
         self.apply_edge_change(src, kind, dst, false)
     }
 
     pub fn list_edges(&self, id: &str, direction: &str) -> Result<Vec<EdgeView>, AppError> {
         let direction = parse_edge_direction(direction)?;
         let rows = db::list_edges(&self.conn, id, direction)?;
+        Ok(rows.into_iter().map(EdgeView::from).collect())
+    }
+
+    pub fn list_layout_edges(&self) -> Result<Vec<EdgeView>, AppError> {
+        let mut rows = db::list_edges_by_kind(&self.conn, "parent_of")?;
+        rows.extend(db::list_edges_by_kind(&self.conn, "blocked_by")?);
+        rows.extend(db::list_edges_by_kind(&self.conn, "blocks")?);
         Ok(rows.into_iter().map(EdgeView::from).collect())
     }
 
@@ -516,6 +670,71 @@ impl App {
     pub fn import_statuses(&self) -> Result<Vec<ImportStatus>, AppError> {
         let service = ImportService::new(&self.conn, &self.writer);
         Ok(service.list_statuses()?)
+    }
+
+    pub fn cold_sync(&self) -> Result<SyncSummary, AppError> {
+        self.pull()
+    }
+
+    pub fn cold_search(&self, term: &str) -> Result<Vec<ColdKnotView>, AppError> {
+        self.maybe_auto_sync_for_read()?;
+        Ok(db::search_cold_catalog(&self.conn, term)?
+            .into_iter()
+            .map(|record| ColdKnotView {
+                id: record.id,
+                title: record.title,
+                state: record.state,
+                updated_at: record.updated_at,
+            })
+            .collect())
+    }
+
+    pub fn rehydrate(&self, id: &str) -> Result<Option<KnotView>, AppError> {
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+        if let Some(knot) = db::get_knot_hot(&self.conn, id)? {
+            return Ok(Some(KnotView::from(knot)));
+        }
+        let warm = db::get_knot_warm(&self.conn, id)?;
+        let cold = db::get_cold_catalog(&self.conn, id)?;
+        let title = warm
+            .as_ref()
+            .map(|record| record.title.clone())
+            .or_else(|| cold.as_ref().map(|record| record.title.clone()));
+        let Some(title) = title else {
+            return Ok(None);
+        };
+        let state = cold
+            .as_ref()
+            .map(|record| record.state.clone())
+            .unwrap_or_else(|| "work_item".to_string());
+        let updated_at = cold
+            .as_ref()
+            .map(|record| record.updated_at.clone())
+            .unwrap_or_else(now_utc_rfc3339);
+        let record = rehydrate_from_events(&self.repo_root, id, title, state, updated_at)?;
+        db::upsert_knot_hot(
+            &self.conn,
+            &UpsertKnotHot {
+                id,
+                title: &record.title,
+                state: &record.state,
+                updated_at: &record.updated_at,
+                body: record.body.as_deref(),
+                description: record.description.as_deref(),
+                priority: record.priority,
+                knot_type: record.knot_type.as_deref(),
+                tags: &record.tags,
+                notes: &record.notes,
+                handoff_capsules: &record.handoff_capsules,
+                workflow_etag: record.workflow_etag.as_deref(),
+                created_at: record.created_at.as_deref(),
+            },
+        )?;
+        let hot =
+            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        Ok(Some(KnotView::from(hot)))
     }
 
     fn apply_edge_change(
@@ -593,7 +812,6 @@ impl App {
                 created_at: current.created_at.as_deref(),
             },
         )?;
-
         Ok(EdgeView {
             src: src.to_string(),
             kind: kind.to_string(),
@@ -653,6 +871,259 @@ fn metadata_entry_from_input(
     Ok(MetadataEntry::from_input(input, fallback_datetime))
 }
 
+fn ensure_workflow_etag(
+    current: &KnotCacheRecord,
+    expected_workflow_etag: Option<&str>,
+) -> Result<(), AppError> {
+    let Some(expected) = expected_workflow_etag else {
+        return Ok(());
+    };
+    let current_etag = current.workflow_etag.as_deref().unwrap_or("");
+    if current_etag == expected {
+        return Ok(());
+    }
+    Err(AppError::StaleWorkflowHead {
+        expected: expected.to_string(),
+        current: current_etag.to_string(),
+    })
+}
+
+struct RehydrateProjection {
+    title: String,
+    state: String,
+    updated_at: String,
+    body: Option<String>,
+    description: Option<String>,
+    priority: Option<i64>,
+    knot_type: Option<String>,
+    tags: Vec<String>,
+    notes: Vec<MetadataEntry>,
+    handoff_capsules: Vec<MetadataEntry>,
+    workflow_etag: Option<String>,
+    created_at: Option<String>,
+}
+
+fn rehydrate_from_events(
+    repo_root: &std::path::Path,
+    knot_id: &str,
+    title: String,
+    state: String,
+    updated_at: String,
+) -> Result<RehydrateProjection, AppError> {
+    let mut projection = RehydrateProjection {
+        title,
+        state,
+        updated_at: updated_at.clone(),
+        body: None,
+        description: None,
+        priority: None,
+        knot_type: None,
+        tags: Vec::new(),
+        notes: Vec::new(),
+        handoff_capsules: Vec::new(),
+        workflow_etag: None,
+        created_at: Some(updated_at),
+    };
+
+    let mut stack = vec![repo_root.join(".knots").join("events")];
+    let mut full_paths = Vec::new();
+    while let Some(dir) = stack.pop() {
+        if !dir.exists() {
+            continue;
+        }
+        for entry in fs::read_dir(&dir)? {
+            let path = entry?.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|ext| ext == "json") {
+                full_paths.push(path);
+            }
+        }
+    }
+    full_paths.sort();
+
+    for path in full_paths {
+        let bytes = fs::read(&path)?;
+        let event: FullEvent = serde_json::from_slice(&bytes).map_err(|err| {
+            AppError::InvalidArgument(format!(
+                "invalid rehydrate event '{}': {}",
+                path.display(),
+                err
+            ))
+        })?;
+        if event.knot_id != knot_id {
+            continue;
+        }
+        apply_rehydrate_event(&mut projection, &event);
+    }
+
+    let mut idx_stack = vec![repo_root.join(".knots").join("index")];
+    let mut idx_paths = Vec::new();
+    while let Some(dir) = idx_stack.pop() {
+        if !dir.exists() {
+            continue;
+        }
+        for entry in fs::read_dir(&dir)? {
+            let path = entry?.path();
+            if path.is_dir() {
+                idx_stack.push(path);
+            } else if path.extension().is_some_and(|ext| ext == "json") {
+                idx_paths.push(path);
+            }
+        }
+    }
+    idx_paths.sort();
+    for path in idx_paths {
+        let bytes = fs::read(&path)?;
+        let event: IndexEvent = serde_json::from_slice(&bytes).map_err(|err| {
+            AppError::InvalidArgument(format!(
+                "invalid rehydrate index '{}': {}",
+                path.display(),
+                err
+            ))
+        })?;
+        if event.event_type != IndexEventKind::KnotHead.as_str() {
+            continue;
+        }
+        let Some(data) = event.data.as_object() else {
+            continue;
+        };
+        if data.get("knot_id").and_then(Value::as_str) != Some(knot_id) {
+            continue;
+        }
+        if let Some(title) = data.get("title").and_then(Value::as_str) {
+            projection.title = title.to_string();
+        }
+        if let Some(state) = data.get("state").and_then(Value::as_str) {
+            projection.state = state.to_string();
+        }
+        if let Some(updated_at) = data.get("updated_at").and_then(Value::as_str) {
+            projection.updated_at = updated_at.to_string();
+        }
+        projection.workflow_etag = Some(event.event_id.clone());
+    }
+
+    Ok(projection)
+}
+
+fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent) {
+    let Some(data) = event.data.as_object() else {
+        return;
+    };
+
+    match event.event_type.as_str() {
+        "knot.created" => {
+            if let Some(title) = data.get("title").and_then(Value::as_str) {
+                projection.title = title.to_string();
+            }
+            if let Some(state) = data.get("state").and_then(Value::as_str) {
+                projection.state = state.to_string();
+            }
+            projection.created_at = Some(event.occurred_at.clone());
+            projection.updated_at = event.occurred_at.clone();
+        }
+        "knot.title_set" => {
+            if let Some(value) = data.get("to").and_then(Value::as_str) {
+                projection.title = value.to_string();
+                projection.updated_at = event.occurred_at.clone();
+            }
+        }
+        "knot.state_set" => {
+            if let Some(value) = data.get("to").and_then(Value::as_str) {
+                projection.state = value.to_string();
+                projection.updated_at = event.occurred_at.clone();
+            }
+        }
+        "knot.description_set" => {
+            let next = data
+                .get("description")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToString::to_string);
+            projection.description = next.clone();
+            projection.body = next;
+            projection.updated_at = event.occurred_at.clone();
+        }
+        "knot.priority_set" => {
+            projection.priority = data.get("priority").and_then(Value::as_i64);
+            projection.updated_at = event.occurred_at.clone();
+        }
+        "knot.type_set" => {
+            projection.knot_type = data
+                .get("type")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToString::to_string);
+            projection.updated_at = event.occurred_at.clone();
+        }
+        "knot.tag_add" => {
+            if let Some(tag) = data.get("tag").and_then(Value::as_str) {
+                let normalized = tag.trim().to_ascii_lowercase();
+                if !normalized.is_empty()
+                    && !projection
+                        .tags
+                        .iter()
+                        .any(|existing| existing == &normalized)
+                {
+                    projection.tags.push(normalized);
+                }
+            }
+        }
+        "knot.tag_remove" => {
+            if let Some(tag) = data.get("tag").and_then(Value::as_str) {
+                let normalized = tag.trim().to_ascii_lowercase();
+                projection.tags.retain(|existing| existing != &normalized);
+            }
+        }
+        "knot.note_added" => {
+            if let Some(entry) = parse_metadata_entry_for_rehydrate(data) {
+                if !projection
+                    .notes
+                    .iter()
+                    .any(|existing| existing.entry_id == entry.entry_id)
+                {
+                    projection.notes.push(entry);
+                }
+            }
+        }
+        "knot.handoff_capsule_added" => {
+            if let Some(entry) = parse_metadata_entry_for_rehydrate(data) {
+                if !projection
+                    .handoff_capsules
+                    .iter()
+                    .any(|existing| existing.entry_id == entry.entry_id)
+                {
+                    projection.handoff_capsules.push(entry);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+fn parse_metadata_entry_for_rehydrate(
+    data: &serde_json::Map<String, Value>,
+) -> Option<MetadataEntry> {
+    let entry_id = data.get("entry_id")?.as_str()?.to_string();
+    let content = data.get("content")?.as_str()?.to_string();
+    let username = data.get("username")?.as_str()?.to_string();
+    let datetime = data.get("datetime")?.as_str()?.to_string();
+    let agentname = data.get("agentname")?.as_str()?.to_string();
+    let model = data.get("model")?.as_str()?.to_string();
+    let version = data.get("version")?.as_str()?.to_string();
+    Some(MetadataEntry {
+        entry_id,
+        content,
+        username,
+        datetime,
+        agentname,
+        model,
+        version,
+    })
+}
+
 impl From<KnotCacheRecord> for KnotView {
     fn from(value: KnotCacheRecord) -> Self {
         Self {
@@ -690,8 +1161,11 @@ pub enum AppError {
     Event(EventWriteError),
     Import(ImportError),
     Sync(SyncError),
+    Lock(LockError),
+    RemoteInit(RemoteInitError),
     ParseState(ParseKnotStateError),
     InvalidTransition(InvalidStateTransition),
+    StaleWorkflowHead { expected: String, current: String },
     InvalidArgument(String),
     NotFound(String),
 }
@@ -704,8 +1178,15 @@ impl fmt::Display for AppError {
             AppError::Event(err) => write!(f, "event write error: {}", err),
             AppError::Import(err) => write!(f, "import error: {}", err),
             AppError::Sync(err) => write!(f, "sync error: {}", err),
+            AppError::Lock(err) => write!(f, "lock error: {}", err),
+            AppError::RemoteInit(err) => write!(f, "remote init error: {}", err),
             AppError::ParseState(err) => write!(f, "state parse error: {}", err),
             AppError::InvalidTransition(err) => write!(f, "{}", err),
+            AppError::StaleWorkflowHead { expected, current } => write!(
+                f,
+                "stale workflow_etag: expected '{}', current '{}'",
+                expected, current
+            ),
             AppError::InvalidArgument(message) => write!(f, "{}", message),
             AppError::NotFound(id) => write!(f, "knot '{}' not found in local cache", id),
         }
@@ -720,8 +1201,11 @@ impl Error for AppError {
             AppError::Event(err) => Some(err),
             AppError::Import(err) => Some(err),
             AppError::Sync(err) => Some(err),
+            AppError::Lock(err) => Some(err),
+            AppError::RemoteInit(err) => Some(err),
             AppError::ParseState(err) => Some(err),
             AppError::InvalidTransition(err) => Some(err),
+            AppError::StaleWorkflowHead { .. } => None,
             AppError::InvalidArgument(_) => None,
             AppError::NotFound(_) => None,
         }
@@ -755,6 +1239,18 @@ impl From<ImportError> for AppError {
 impl From<SyncError> for AppError {
     fn from(value: SyncError) -> Self {
         AppError::Sync(value)
+    }
+}
+
+impl From<LockError> for AppError {
+    fn from(value: LockError) -> Self {
+        AppError::Lock(value)
+    }
+}
+
+impl From<RemoteInitError> for AppError {
+    fn from(value: RemoteInitError) -> Self {
+        AppError::RemoteInit(value)
     }
 }
 

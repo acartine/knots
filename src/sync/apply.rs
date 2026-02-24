@@ -3,10 +3,12 @@ use std::path::{Path, PathBuf};
 use rusqlite::Connection;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
+use time::OffsetDateTime;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::metadata::MetadataEntry;
 use crate::events::{FullEvent, IndexEvent, IndexEventKind};
+use crate::tiering::{classify_knot_tier, CacheTier};
 
 use super::{GitAdapter, SyncError, SyncSummary};
 
@@ -143,14 +145,22 @@ impl<'a> IncrementalApplier<'a> {
         let state = required_string(data, "state", &absolute_path)?;
         let updated_at = required_string(data, "updated_at", &absolute_path)?;
 
-        let is_terminal = data
+        let hot_window_days = db::get_hot_window_days(self.conn)?;
+        let terminal_flag = data
             .get("terminal")
             .and_then(Value::as_bool)
             .unwrap_or(false);
+        let now = OffsetDateTime::now_utc();
+        let tier = if terminal_flag {
+            CacheTier::Cold
+        } else {
+            classify_knot_tier(&state, &updated_at, hot_window_days, now)
+        };
 
-        if is_terminal {
+        if tier == CacheTier::Cold {
             db::delete_knot_hot(self.conn, &knot_id)?;
             db::delete_knot_warm(self.conn, &knot_id)?;
+            db::upsert_cold_catalog(self.conn, &knot_id, &title, &state, &updated_at)?;
             return Ok(true);
         }
 
@@ -180,24 +190,35 @@ impl<'a> IncrementalApplier<'a> {
             .and_then(|record| record.created_at.clone())
             .unwrap_or_else(|| updated_at.clone());
 
-        db::upsert_knot_hot(
-            self.conn,
-            &UpsertKnotHot {
-                id: &knot_id,
-                title: &title,
-                state: &state,
-                updated_at: &updated_at,
-                body: body.as_deref(),
-                description: description.as_deref(),
-                priority,
-                knot_type: knot_type.as_deref(),
-                tags: &tags,
-                notes: &notes,
-                handoff_capsules: &handoff_capsules,
-                workflow_etag: Some(&event.event_id),
-                created_at: Some(&created_at),
-            },
-        )?;
+        match tier {
+            CacheTier::Hot => {
+                db::upsert_knot_hot(
+                    self.conn,
+                    &UpsertKnotHot {
+                        id: &knot_id,
+                        title: &title,
+                        state: &state,
+                        updated_at: &updated_at,
+                        body: body.as_deref(),
+                        description: description.as_deref(),
+                        priority,
+                        knot_type: knot_type.as_deref(),
+                        tags: &tags,
+                        notes: &notes,
+                        handoff_capsules: &handoff_capsules,
+                        workflow_etag: Some(&event.event_id),
+                        created_at: Some(&created_at),
+                    },
+                )?;
+                db::delete_cold_catalog(self.conn, &knot_id)?;
+            }
+            CacheTier::Warm => {
+                db::delete_knot_hot(self.conn, &knot_id)?;
+                db::upsert_knot_warm(self.conn, &knot_id, &title)?;
+                db::delete_cold_catalog(self.conn, &knot_id)?;
+            }
+            CacheTier::Cold => {}
+        }
         Ok(true)
     }
 

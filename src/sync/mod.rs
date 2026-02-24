@@ -82,6 +82,12 @@ pub enum SyncError {
         path: PathBuf,
         message: String,
     },
+    FileConflict {
+        path: PathBuf,
+    },
+    MergeConflictEscalation {
+        message: String,
+    },
 }
 
 impl SyncError {
@@ -101,6 +107,18 @@ impl SyncError {
         match self {
             SyncError::GitCommandFailed { stderr, .. } => {
                 stderr.contains("unknown revision") || stderr.contains("bad object")
+            }
+            _ => false,
+        }
+    }
+
+    pub fn is_non_fast_forward(&self) -> bool {
+        match self {
+            SyncError::GitCommandFailed { stderr, .. } => {
+                let lower = stderr.to_ascii_lowercase();
+                lower.contains("non-fast-forward")
+                    || lower.contains("fetch first")
+                    || lower.contains("rejected")
             }
             _ => false,
         }
@@ -132,6 +150,16 @@ impl fmt::Display for SyncError {
             SyncError::InvalidEvent { path, message } => {
                 write!(f, "invalid event '{}': {}", path.display(), message)
             }
+            SyncError::FileConflict { path } => {
+                write!(
+                    f,
+                    "push conflict on '{}': local event file collides with remote content",
+                    path.display()
+                )
+            }
+            SyncError::MergeConflictEscalation { message } => {
+                write!(f, "merge conflict escalation: {}", message)
+            }
         }
     }
 }
@@ -145,6 +173,8 @@ impl Error for SyncError {
             SyncError::GitCommandFailed { .. } => None,
             SyncError::DirtyWorktree(_) => None,
             SyncError::InvalidEvent { .. } => None,
+            SyncError::FileConflict { .. } => None,
+            SyncError::MergeConflictEscalation { .. } => None,
         }
     }
 }

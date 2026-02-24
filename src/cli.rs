@@ -41,7 +41,12 @@ pub enum Commands {
     Uninstall(SelfUninstallArgs),
     Ls(ListArgs),
     Show(ShowArgs),
+    Pull(SyncArgs),
+    Push(SyncArgs),
     Sync(SyncArgs),
+    InitRemote,
+    Cold(ColdArgs),
+    Rehydrate(RehydrateArgs),
     Edge(EdgeArgs),
     Import(ImportArgs),
     #[command(name = "self")]
@@ -66,6 +71,9 @@ pub struct StateArgs {
 
     #[arg(long)]
     pub force: bool,
+
+    #[arg(long = "if-match")]
+    pub if_match: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -129,6 +137,9 @@ pub struct UpdateArgs {
     #[arg(long = "handoff-version")]
     pub handoff_version: Option<String>,
 
+    #[arg(long = "if-match")]
+    pub if_match: Option<String>,
+
     #[arg(long)]
     pub force: bool,
 }
@@ -164,6 +175,34 @@ pub struct ShowArgs {
 
 #[derive(Debug, Args)]
 pub struct SyncArgs {
+    #[arg(long)]
+    pub json: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ColdArgs {
+    #[command(subcommand)]
+    pub command: ColdSubcommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ColdSubcommands {
+    Sync(SyncArgs),
+    Search(ColdSearchArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct ColdSearchArgs {
+    pub term: String,
+
+    #[arg(long)]
+    pub json: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct RehydrateArgs {
+    pub id: String,
+
     #[arg(long)]
     pub json: bool,
 }

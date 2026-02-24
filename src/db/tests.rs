@@ -121,6 +121,24 @@ fn initializes_required_tables_and_schema_version() {
         .expect("hot_window_days default should exist");
     assert_eq!(hot_window_days, "7");
 
+    let sync_policy: String = conn
+        .query_row(
+            "SELECT value FROM meta WHERE key='sync_policy'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("sync_policy default should exist");
+    assert_eq!(sync_policy, "auto");
+
+    let push_retry_budget_ms: String = conn
+        .query_row(
+            "SELECT value FROM meta WHERE key='push_retry_budget_ms'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("push_retry_budget_ms default should exist");
+    assert_eq!(push_retry_budget_ms, "800");
+
     cleanup_db_files(&path);
 }
 
