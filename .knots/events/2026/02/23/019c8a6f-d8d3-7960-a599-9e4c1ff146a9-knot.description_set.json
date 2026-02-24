@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d8d3-7960-a599-9e4c1ff146a9",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.5",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Implement install.sh with latest/pinned version support, repo override, checksum verification, and atomic binary replacement retaining knots.previous."
+  }
+}

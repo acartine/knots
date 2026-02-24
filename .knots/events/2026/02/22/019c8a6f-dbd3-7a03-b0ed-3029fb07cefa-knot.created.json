@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dbd3-7a03-b0ed-3029fb07cefa",
+  "occurred_at": "2026-02-22T17:22:28Z",
+  "knot_id": "knots-q3e.3.4",
+  "type": "knot.created",
+  "data": {
+    "body": "Use deterministic import fingerprints and checkpoint persistence for safe resumable imports.",
+    "description": "Use deterministic import fingerprints and checkpoint persistence for safe resumable imports.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Idempotency/checkpoint/retry handling"
+  }
+}

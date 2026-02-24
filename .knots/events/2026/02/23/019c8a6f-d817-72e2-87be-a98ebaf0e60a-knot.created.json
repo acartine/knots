@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d817-72e2-87be-a98ebaf0e60a",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.2",
+  "type": "knot.created",
+  "data": {
+    "body": "Add script to sync Cargo.toml package.version from package.json and validate semantic version format.",
+    "description": "Add script to sync Cargo.toml package.version from package.json and validate semantic version format.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Add Cargo/package version sync automation"
+  }
+}

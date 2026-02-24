@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-d785-7f60-9e6e-914723ba1f18",
+  "occurred_at": "2026-02-23T07:18:51Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.12.5",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add repo hygiene CI checks for required public files",
+    "updated_at": "2026-02-23T07:18:51Z"
+  }
+}

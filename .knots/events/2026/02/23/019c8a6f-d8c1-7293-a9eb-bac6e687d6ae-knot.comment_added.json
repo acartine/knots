@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d8c1-7293-a9eb-bac6e687d6ae",
+  "occurred_at": "2026-02-23T07:32:52Z",
+  "knot_id": "knots-q3e.13.4",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Live release published with required artifact contract."
+  }
+}

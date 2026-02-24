@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d90a-7692-9619-1795739c0890",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.6",
+  "type": "knot.created",
+  "data": {
+    "body": "Add smoke scripts/docs validating installer latest/pinned flows and release artifact integrity checks.",
+    "description": "Add smoke scripts/docs validating installer latest/pinned flows and release artifact integrity checks.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Add install/release smoke tests and docs"
+  }
+}

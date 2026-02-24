@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d8ce-7913-8a05-8b31d9628ba5",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.5",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement install.sh with latest/pinned version support, repo override, checksum verification, and atomic binary replacement retaining knots.previous.",
+    "description": "Implement install.sh with latest/pinned version support, repo override, checksum verification, and atomic binary replacement retaining knots.previous.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Add curl installer with checksum verification and version pinning"
+  }
+}

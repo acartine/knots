@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-da52-7b20-8904-81cd3ee6aedf",
+  "occurred_at": "2026-02-22T17:22:27Z",
+  "knot_id": "knots-q3e.2.4",
+  "type": "knot.created",
+  "data": {
+    "body": "Support new/state/ls/show using local reducer and cache-first reads.",
+    "description": "Support new/state/ls/show using local reducer and cache-first reads.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Implement local CLI core commands"
+  }
+}

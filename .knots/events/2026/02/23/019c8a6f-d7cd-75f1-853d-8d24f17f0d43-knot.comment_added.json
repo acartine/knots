@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d7cd-75f1-853d-8d24f17f0d43",
+  "occurred_at": "2026-02-23T07:32:52Z",
+  "knot_id": "knots-q3e.13",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "M2.6 confirmed against live GitHub workflows, release, and installer assets."
+  }
+}

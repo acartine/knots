@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-dc3b-73a2-a9a3-3655812261aa",
+  "occurred_at": "2026-02-22T22:11:46Z",
+  "knot_id": "knots-q3e.3.5",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented knots import status command in the CLI and app path. Status reads import_state and reports source status processed imported skipped error counters checkpoint and last error. JSON output is supported.",
+    "datetime": "2026-02-22T22:11:46Z",
+    "entry_id": "8a4e23082bd2053d667470cee6d1c6bc87350d7b87466d2f6f43c4d5ee9ec7a8",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

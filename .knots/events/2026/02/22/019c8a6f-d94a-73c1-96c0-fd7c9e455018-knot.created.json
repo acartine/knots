@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d94a-73c1-96c0-fd7c9e455018",
+  "occurred_at": "2026-02-22T17:22:24Z",
+  "knot_id": "knots-q3e.2",
+  "type": "knot.created",
+  "data": {
+    "body": "Behavior unlock: offline create/state/list/show with append-only events + SQLite cache.",
+    "description": "Behavior unlock: offline create/state/list/show with append-only events + SQLite cache.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Milestone M1: Local Event+Cache Core"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-de7b-75d1-aa6e-47f4f8bd134a",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.6.1",
+  "type": "knot.created",
+  "data": {
+    "body": "Enforce repo_lock then cache_lock across all operations.",
+    "description": "Enforce repo_lock then cache_lock across all operations.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Implement repo/cache locks and ordering"
+  }
+}

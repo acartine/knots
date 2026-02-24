@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-de0b-7e93-b693-7f5a7ed103f4",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.5.3",
+  "type": "knot.created",
+  "data": {
+    "body": "Ship cold sync and cold search behavior from cold catalog table.",
+    "description": "Ship cold sync and cold search behavior from cold catalog table.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Implement cold catalog commands"
+  }
+}

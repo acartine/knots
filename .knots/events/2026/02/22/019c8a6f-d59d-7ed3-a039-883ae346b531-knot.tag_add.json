@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d59d-7ed3-a039-883ae346b531",
+  "occurred_at": "2026-02-22T17:22:26Z",
+  "knot_id": "knots-q3e.1.3",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "rust"
+  }
+}

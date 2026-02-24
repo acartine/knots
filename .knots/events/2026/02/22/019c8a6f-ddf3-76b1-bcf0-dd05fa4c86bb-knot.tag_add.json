@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-ddf3-76b1-bcf0-dd05fa4c86bb",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.5.2",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "tiering"
+  }
+}

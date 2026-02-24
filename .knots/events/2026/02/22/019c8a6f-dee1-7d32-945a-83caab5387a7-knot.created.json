@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dee1-7d32-945a-83caab5387a7",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "knot_id": "knots-q3e.6.3",
+  "type": "knot.created",
+  "data": {
+    "body": "Support auto/always/never policies and non-blocking auto-sync for reads.",
+    "description": "Support auto/always/never policies and non-blocking auto-sync for reads.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Implement auto-sync policy and try-lock behavior"
+  }
+}

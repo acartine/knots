@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-de38-7132-b44b-10e55b3d666f",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.5.3",
+    "state": "work_item",
+    "terminal": false,
+    "title": "Implement cold catalog commands",
+    "updated_at": "2026-02-22T17:22:29Z"
+  }
+}

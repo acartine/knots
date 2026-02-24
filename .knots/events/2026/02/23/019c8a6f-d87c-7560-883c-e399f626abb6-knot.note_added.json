@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-d87c-7560-883c-e399f626abb6",
+  "occurred_at": "2026-02-23T07:18:52Z",
+  "knot_id": "knots-q3e.13.3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added release workflow build jobs for x86_64-unknown-linux-gnu and aarch64-apple-darwin binary artifacts.",
+    "datetime": "2026-02-23T07:18:52Z",
+    "entry_id": "182e6b79fd1a63751de55442562870f0338b8ee063ff197d50638ec4161886db",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

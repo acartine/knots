@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-d8f7-7f21-811a-634c99f7adc5",
+  "occurred_at": "2026-02-23T07:18:52Z",
+  "knot_id": "knots-q3e.13.5",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented install.sh with latest or pinned version resolution, repo and path overrides, checksum verification, atomic install, and knots.previous retention.",
+    "datetime": "2026-02-23T07:18:52Z",
+    "entry_id": "ef8cc17c6ff688f1d7c6e4cdf7a51f7ad47ee73b5b351222a8878b91923eddcd",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-d9f8-78d3-943f-519126276487",
+  "occurred_at": "2026-02-22T18:41:59Z",
+  "knot_id": "knots-q3e.2.2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented /Users/cartine/knots/src/events/mod.rs with typed full/index event schema, append-only writer (create_new semantics), RFC3339 timestamp parsing, deterministic path generation to .knots/events|index/YYYY/MM/DD/<event_id>-<event_type>.json, and tests for path determinism + no-overwrite behavior.",
+    "datetime": "2026-02-22T18:41:59Z",
+    "entry_id": "69b08e96a4edf44caffd1b4536faeb861f153a548e47b73da70e142edf8928f6",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

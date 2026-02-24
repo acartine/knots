@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d556-7843-9b67-c11a1b3c5506",
+  "occurred_at": "2026-02-22T17:22:26Z",
+  "knot_id": "knots-q3e.1.2",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Run bd initialization for local tracking with no collaborator noise."
+  }
+}

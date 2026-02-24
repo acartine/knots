@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d517-7db3-a8b1-5b3f1e660515",
+  "occurred_at": "2026-02-22T17:22:26Z",
+  "knot_id": "knots-q3e.1.1",
+  "type": "knot.created",
+  "data": {
+    "body": "Set up repository root and .knots/.beads ignore behavior per architecture goals.",
+    "description": "Set up repository root and .knots/.beads ignore behavior per architecture goals.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Initialize git repository (main) and ignore strategy"
+  }
+}

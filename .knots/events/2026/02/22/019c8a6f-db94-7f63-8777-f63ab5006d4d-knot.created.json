@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-db94-7f63-8777-f63ab5006d4d",
+  "occurred_at": "2026-02-22T17:22:27Z",
+  "knot_id": "knots-q3e.3.3",
+  "type": "knot.created",
+  "data": {
+    "body": "Convert import DTOs into knot.* events and required idx.knot_head events.",
+    "description": "Convert import DTOs into knot.* events and required idx.knot_head events.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Canonical event emitter + index-head emission"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-d9c0-7be0-8d34-a615a9d0595b",
+  "occurred_at": "2026-02-22T17:34:15Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.2.1",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Define domain state machine",
+    "updated_at": "2026-02-22T17:34:15Z"
+  }
+}

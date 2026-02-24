@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d6df-76e3-9399-978245070106",
+  "occurred_at": "2026-02-23T07:12:21Z",
+  "knot_id": "knots-q3e.12.3",
+  "type": "knot.created",
+  "data": {
+    "body": "Define supported versions, private disclosure channel, response SLAs, and routing for non-security issues.",
+    "description": "Define supported versions, private disclosure channel, response SLAs, and routing for non-security issues.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Add SECURITY.md and vulnerability reporting policy"
+  }
+}

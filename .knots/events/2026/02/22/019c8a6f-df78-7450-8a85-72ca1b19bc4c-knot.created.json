@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-df78-7450-8a85-72ca1b19bc4c",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "knot_id": "knots-q3e.7.1",
+  "type": "knot.created",
+  "data": {
+    "body": "Validate event schema, references, and duplicate/collision conditions.",
+    "description": "Validate event schema, references, and duplicate/collision conditions.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Implement fsck command"
+  }
+}

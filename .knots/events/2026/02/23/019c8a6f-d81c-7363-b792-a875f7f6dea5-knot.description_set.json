@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d81c-7363-b792-a875f7f6dea5",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.2",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Add script to sync Cargo.toml package.version from package.json and validate semantic version format."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d50c-7800-b032-754990013da3",
+  "occurred_at": "2026-02-22T17:28:42Z",
+  "knot_id": "knots-q3e.1",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: workspace initialized with git/beads and Rust scaffold"
+  }
+}

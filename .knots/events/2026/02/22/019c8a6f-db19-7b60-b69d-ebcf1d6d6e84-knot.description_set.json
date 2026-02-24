@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-db19-7b60-b69d-ebcf1d6d6e84",
+  "occurred_at": "2026-02-22T17:22:27Z",
+  "knot_id": "knots-q3e.3.1",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Parse line-delimited JSON, validate required fields, and map to canonical import DTOs."
+  }
+}

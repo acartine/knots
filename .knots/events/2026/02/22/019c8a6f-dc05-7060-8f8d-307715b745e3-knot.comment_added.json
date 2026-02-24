@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dc05-7060-8f8d-307715b745e3",
+  "occurred_at": "2026-02-22T22:11:45Z",
+  "knot_id": "knots-q3e.3.4",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: idempotency, checkpoint, and retry/resume handling implemented"
+  }
+}

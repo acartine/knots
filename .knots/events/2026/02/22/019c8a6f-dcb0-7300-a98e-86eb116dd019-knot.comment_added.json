@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dcb0-7300-a98e-86eb116dd019",
+  "occurred_at": "2026-02-22T22:24:10Z",
+  "knot_id": "knots-q3e.4.1",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Implemented dedicated knots worktree manager with branch checks and clean-state guard."
+  }
+}

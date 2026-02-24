@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dfff-7df3-b380-1a2b9a604b91",
+  "occurred_at": "2026-02-22T17:22:31Z",
+  "knot_id": "knots-q3e.8",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement optional snapshot write/read optimization for bootstrap and cold sync.",
+    "description": "Implement optional snapshot write/read optimization for bootstrap and cold sync.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Optional: snapshot compaction/read path"
+  }
+}

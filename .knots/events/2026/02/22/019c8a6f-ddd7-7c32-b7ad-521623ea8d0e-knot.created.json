@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-ddd7-7c32-b7ad-521623ea8d0e",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.5.2",
+  "type": "knot.created",
+  "data": {
+    "body": "Hydrate warm/cold knot metadata into hot cache on demand.",
+    "description": "Hydrate warm/cold knot metadata into hot cache on demand.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Implement rehydrate flow"
+  }
+}

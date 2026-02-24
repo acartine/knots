@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d639-7673-9923-eca4cafa9557",
+  "occurred_at": "2026-02-23T07:12:20Z",
+  "knot_id": "knots-q3e.12",
+  "type": "knot.created",
+  "data": {
+    "body": "Behavior unlock: public GitHub-ready repository with robust README, MIT license, security policy, publish bootstrap, and hygiene checks.",
+    "description": "Behavior unlock: public GitHub-ready repository with robust README, MIT license, security policy, publish bootstrap, and hygiene checks.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Milestone M2.5: Public Repo Readiness"
+  }
+}

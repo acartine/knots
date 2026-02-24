@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d768-7a12-9438-4e63903c675b",
+  "occurred_at": "2026-02-23T07:12:21Z",
+  "knot_id": "knots-q3e.12.5",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "hygiene"
+  }
+}

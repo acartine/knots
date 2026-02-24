@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-dfcf-7ab0-92ba-dbe61b7981f9",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.7.2",
+    "state": "work_item",
+    "terminal": false,
+    "title": "Implement doctor command",
+    "updated_at": "2026-02-22T17:22:30Z"
+  }
+}

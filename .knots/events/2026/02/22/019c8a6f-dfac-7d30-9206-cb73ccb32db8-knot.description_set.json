@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dfac-7d30-9206-cb73ccb32db8",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "knot_id": "knots-q3e.7.2",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Validate lock health, worktree cleanliness, and remote reachability."
+  }
+}

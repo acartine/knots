@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-db88-78a0-9903-02d84e58b6c9",
+  "occurred_at": "2026-02-22T22:11:45Z",
+  "knot_id": "knots-q3e.3.2",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: Dolt extraction adapter implemented (import-only)"
+  }
+}

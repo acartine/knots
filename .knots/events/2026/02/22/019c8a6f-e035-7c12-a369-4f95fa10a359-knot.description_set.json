@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-e035-7c12-a369-4f95fa10a359",
+  "occurred_at": "2026-02-22T17:22:31Z",
+  "knot_id": "knots-q3e.9",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Implement optional embedded precondition handling and stale-event rejection in reducers."
+  }
+}

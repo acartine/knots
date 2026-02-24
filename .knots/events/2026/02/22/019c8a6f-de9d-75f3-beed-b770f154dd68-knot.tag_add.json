@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-de9d-75f3-beed-b770f154dd68",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.6.1",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "source:/Users/cartine/knots/.beads/issues.jsonl"
+  }
+}

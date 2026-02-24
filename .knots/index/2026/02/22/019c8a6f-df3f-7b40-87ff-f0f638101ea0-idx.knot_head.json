@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-df3f-7b40-87ff-f0f638101ea0",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.6.4",
+    "state": "work_item",
+    "terminal": false,
+    "title": "Implement workflow ETag OCC and --if-match",
+    "updated_at": "2026-02-22T17:22:30Z"
+  }
+}

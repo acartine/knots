@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-d6d9-75b3-b435-416cc2106655",
+  "occurred_at": "2026-02-23T07:18:51Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.12.2",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add MIT LICENSE and repository metadata",
+    "updated_at": "2026-02-23T07:18:51Z"
+  }
+}

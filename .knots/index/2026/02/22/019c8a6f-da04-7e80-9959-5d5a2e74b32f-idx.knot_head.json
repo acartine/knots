@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-da04-7e80-9959-5d5a2e74b32f",
+  "occurred_at": "2026-02-22T18:41:59Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.2.2",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Implement event schema + append-only writers",
+    "updated_at": "2026-02-22T18:41:59Z"
+  }
+}

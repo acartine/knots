@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dc83-7842-a665-5d3d952377a0",
+  "occurred_at": "2026-02-22T17:22:28Z",
+  "knot_id": "knots-q3e.4.1",
+  "type": "knot.created",
+  "data": {
+    "body": "Create hidden worktree lifecycle and branch isolation behavior.",
+    "description": "Create hidden worktree lifecycle and branch isolation behavior.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Implement knots worktree manager"
+  }
+}

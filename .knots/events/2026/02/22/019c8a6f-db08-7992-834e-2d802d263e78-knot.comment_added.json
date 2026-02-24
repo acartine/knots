@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-db08-7992-834e-2d802d263e78",
+  "occurred_at": "2026-02-22T22:11:24Z",
+  "knot_id": "knots-q3e.3",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: M1.5 Import Ingestion milestone reached"
+  }
+}

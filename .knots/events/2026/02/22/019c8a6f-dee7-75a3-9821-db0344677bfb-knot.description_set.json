@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dee7-75a3-9821-db0344677bfb",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "knot_id": "knots-q3e.6.3",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Support auto/always/never policies and non-blocking auto-sync for reads."
+  }
+}

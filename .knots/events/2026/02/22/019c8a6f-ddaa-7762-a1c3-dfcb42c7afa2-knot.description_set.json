@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-ddaa-7762-a1c3-dfcb42c7afa2",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.5.1",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Apply terminal-state override, hot window logic, and warm storage constraints."
+  }
+}

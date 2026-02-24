@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dd49-7322-967c-602d77f29459",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.4.4",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "commands"
+  }
+}

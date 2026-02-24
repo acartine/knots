@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-dd2e-7800-bb93-0d1bbb7f6b40",
+  "occurred_at": "2026-02-22T22:24:10Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.4.3",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Implement incremental apply pipeline",
+    "updated_at": "2026-02-22T22:24:10Z"
+  }
+}

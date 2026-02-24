@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dc50-7872-9ee5-0bfaaa0b6d53",
+  "occurred_at": "2026-02-22T17:22:25Z",
+  "knot_id": "knots-q3e.4",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Behavior unlock: dedicated knots branch/worktree and incremental git-diff sync."
+  }
+}

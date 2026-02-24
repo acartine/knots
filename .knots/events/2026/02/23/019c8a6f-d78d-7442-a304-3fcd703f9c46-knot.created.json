@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d78d-7442-a304-3fcd703f9c46",
+  "occurred_at": "2026-02-23T07:12:21Z",
+  "knot_id": "knots-q3e.13",
+  "type": "knot.created",
+  "data": {
+    "body": "Behavior unlock: changesets-based release flow with binary artifacts and curl installer.",
+    "description": "Behavior unlock: changesets-based release flow with binary artifacts and curl installer.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Milestone M2.6: Release + Curl Install"
+  }
+}

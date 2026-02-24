@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d7d8-70b1-9397-fc46c66ec28d",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.1",
+  "type": "knot.created",
+  "data": {
+    "body": "Initialize Changesets config and workflow that opens/updates Version Packages PR from main.",
+    "description": "Initialize Changesets config and workflow that opens/updates Version Packages PR from main.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Add Changesets baseline config and release PR workflow"
+  }
+}

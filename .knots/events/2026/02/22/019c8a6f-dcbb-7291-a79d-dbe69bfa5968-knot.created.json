@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dcbb-7291-a79d-dbe69bfa5968",
+  "occurred_at": "2026-02-22T17:22:28Z",
+  "knot_id": "knots-q3e.4.2",
+  "type": "knot.created",
+  "data": {
+    "body": "Wrap fetch/reset/diff/add/commit/push/rev-parse commands with typed errors.",
+    "description": "Wrap fetch/reset/diff/add/commit/push/rev-parse commands with typed errors.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Implement git command adapter"
+  }
+}

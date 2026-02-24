@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d4ab-7c91-8611-364040bb539d",
+  "occurred_at": "2026-02-22T17:22:24Z",
+  "knot_id": "knots-q3e",
+  "type": "knot.created",
+  "data": {
+    "body": "Track end-to-end implementation of /Users/cartine/knots/knots-architecture-v4.md.",
+    "description": "Track end-to-end implementation of /Users/cartine/knots/knots-architecture-v4.md.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Implement Knots v4 architecture from markdown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-d6cf-7e53-829d-36e891a99b94",
+  "occurred_at": "2026-02-23T07:18:51Z",
+  "knot_id": "knots-q3e.12.2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added MIT LICENSE and repository metadata defaults support via publish bootstrap env vars.",
+    "datetime": "2026-02-23T07:18:51Z",
+    "entry_id": "abdadb93745413815ad7a955c17ae1163e15302265ecebb47e6aafceac06103d",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

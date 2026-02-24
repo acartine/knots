@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d72b-73e1-8e8e-48c283885c12",
+  "occurred_at": "2026-02-23T07:12:21Z",
+  "knot_id": "knots-q3e.12.4",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "github"
+  }
+}

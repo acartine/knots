@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-dd5e-7ee3-8c20-b793ffd85412",
+  "occurred_at": "2026-02-22T22:24:10Z",
+  "knot_id": "knots-q3e.4.4",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped knots sync plus edge add/remove/list commands in CLI and App; sync applies dedicated worktree deltas, edge commands emit events and update cache/edge tables.",
+    "datetime": "2026-02-22T22:24:10Z",
+    "entry_id": "b6efd4382327f833f7facfd50ce279cf9fb1ef872aa9ee5f5318fef6b1396852",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

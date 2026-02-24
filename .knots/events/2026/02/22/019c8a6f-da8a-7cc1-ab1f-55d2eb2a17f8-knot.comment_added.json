@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-da8a-7cc1-ab1f-55d2eb2a17f8",
+  "occurred_at": "2026-02-22T21:57:35Z",
+  "knot_id": "knots-q3e.2.4",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: local CLI core commands (new/state/ls/show) implemented with event+cache reducer path"
+  }
+}

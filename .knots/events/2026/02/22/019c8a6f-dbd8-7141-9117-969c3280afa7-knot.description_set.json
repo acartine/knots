@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dbd8-7141-9117-969c3280afa7",
+  "occurred_at": "2026-02-22T17:22:28Z",
+  "knot_id": "knots-q3e.3.4",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Use deterministic import fingerprints and checkpoint persistence for safe resumable imports."
+  }
+}

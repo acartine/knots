@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dd8c-77d1-921a-507e23c2d00f",
+  "occurred_at": "2026-02-22T17:22:25Z",
+  "knot_id": "knots-q3e.5",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "milestone:m3"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dd79-7b21-9200-8d28f2564407",
+  "occurred_at": "2026-02-22T17:22:25Z",
+  "knot_id": "knots-q3e.5",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Behavior unlock: tiered storage, cold sync/search, and rehydrate."
+  }
+}

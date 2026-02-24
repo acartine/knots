@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d94f-7ea3-b0b9-27ec2a020d42",
+  "occurred_at": "2026-02-22T17:22:24Z",
+  "knot_id": "knots-q3e.2",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Behavior unlock: offline create/state/list/show with append-only events + SQLite cache."
+  }
+}

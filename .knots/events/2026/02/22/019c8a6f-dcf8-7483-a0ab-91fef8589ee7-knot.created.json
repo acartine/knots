@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dcf8-7483-a0ab-91fef8589ee7",
+  "occurred_at": "2026-02-22T17:22:28Z",
+  "knot_id": "knots-q3e.4.3",
+  "type": "knot.created",
+  "data": {
+    "body": "Track last head commits and apply only changed index/full files.",
+    "description": "Track last head commits and apply only changed index/full files.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Implement incremental apply pipeline"
+  }
+}

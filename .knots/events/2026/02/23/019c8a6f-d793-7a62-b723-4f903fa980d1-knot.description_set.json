@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d793-7a62-b723-4f903fa980d1",
+  "occurred_at": "2026-02-23T07:12:21Z",
+  "knot_id": "knots-q3e.13",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Behavior unlock: changesets-based release flow with binary artifacts and curl installer."
+  }
+}

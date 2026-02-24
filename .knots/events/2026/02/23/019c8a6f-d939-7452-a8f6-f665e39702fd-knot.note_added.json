@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-d939-7452-a8f6-f665e39702fd",
+  "occurred_at": "2026-02-23T07:18:52Z",
+  "knot_id": "knots-q3e.13.6",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added scripts/release/smoke-install.sh and README smoke test documentation for latest and pinned install validation.",
+    "datetime": "2026-02-23T07:18:52Z",
+    "entry_id": "46a5506131a16299c3b0dd9dd1f69e26cf890d3b35969b2a36d34cd0a6ba3556",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

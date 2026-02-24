@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d985-7182-857b-0a765169b9e5",
+  "occurred_at": "2026-02-22T17:22:26Z",
+  "knot_id": "knots-q3e.2.1",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement workflow states and transition validation with --force bypass support.",
+    "description": "Implement workflow states and transition validation with --force bypass support.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Define domain state machine"
+  }
+}

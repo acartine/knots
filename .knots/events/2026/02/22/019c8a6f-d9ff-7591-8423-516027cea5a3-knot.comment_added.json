@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d9ff-7591-8423-516027cea5a3",
+  "occurred_at": "2026-02-22T18:41:59Z",
+  "knot_id": "knots-q3e.2.2",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: event schema and append-only writers implemented with deterministic date/id paths"
+  }
+}

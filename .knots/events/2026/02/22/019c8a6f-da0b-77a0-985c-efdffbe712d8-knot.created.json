@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-da0b-77a0-985c-efdffbe712d8",
+  "occurred_at": "2026-02-22T17:22:27Z",
+  "knot_id": "knots-q3e.2.3",
+  "type": "knot.created",
+  "data": {
+    "body": "Create cache tables, WAL mode, busy timeout, and schema versioning.",
+    "description": "Create cache tables, WAL mode, busy timeout, and schema versioning.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Implement SQLite schema + migrations"
+  }
+}

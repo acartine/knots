@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d67e-73b1-82bc-9081eb219cc6",
+  "occurred_at": "2026-02-23T07:12:20Z",
+  "knot_id": "knots-q3e.12.1",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Create comprehensive README with quickstart, install via curl, source build, import from Beads, sync/edge commands, release process, and support/security links."
+  }
+}

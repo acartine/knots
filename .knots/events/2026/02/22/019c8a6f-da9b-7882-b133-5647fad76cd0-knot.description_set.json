@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-da9b-7882-b133-5647fad76cd0",
+  "occurred_at": "2026-02-22T17:28:22Z",
+  "knot_id": "knots-q3e.2.5",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Set rusqlite with bundled SQLite in Cargo.toml and configure connection PRAGMAs: journal_mode=WAL, synchronous=NORMAL, foreign_keys=ON, temp_store=MEMORY, busy_timeout=5000."
+  }
+}

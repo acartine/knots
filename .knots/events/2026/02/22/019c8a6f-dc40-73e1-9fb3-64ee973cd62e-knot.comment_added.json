@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dc40-73e1-9fb3-64ee973cd62e",
+  "occurred_at": "2026-02-22T22:11:46Z",
+  "knot_id": "knots-q3e.3.5",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: import progress/status command implemented"
+  }
+}

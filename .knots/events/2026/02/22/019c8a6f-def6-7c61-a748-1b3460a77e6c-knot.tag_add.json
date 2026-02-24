@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-def6-7c61-a748-1b3460a77e6c",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "knot_id": "knots-q3e.6.3",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "autosync"
+  }
+}

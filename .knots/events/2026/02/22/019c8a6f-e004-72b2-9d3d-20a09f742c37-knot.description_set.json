@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-e004-72b2-9d3d-20a09f742c37",
+  "occurred_at": "2026-02-22T17:22:31Z",
+  "knot_id": "knots-q3e.8",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Implement optional snapshot write/read optimization for bootstrap and cold sync."
+  }
+}

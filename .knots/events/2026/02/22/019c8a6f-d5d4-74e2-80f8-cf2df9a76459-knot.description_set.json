@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d5d4-74e2-80f8-cf2df9a76459",
+  "occurred_at": "2026-02-22T17:22:31Z",
+  "knot_id": "knots-q3e.10",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Implement optional network-size optimization for large branches."
+  }
+}

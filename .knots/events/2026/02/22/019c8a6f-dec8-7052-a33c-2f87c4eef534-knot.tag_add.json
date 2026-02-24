@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dec8-7052-a33c-2f87c4eef534",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "knot_id": "knots-q3e.6.2",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "writeflow"
+  }
+}

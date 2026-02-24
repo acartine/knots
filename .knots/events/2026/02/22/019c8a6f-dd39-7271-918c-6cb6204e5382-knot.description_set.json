@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dd39-7271-918c-6cb6204e5382",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.4.4",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Ship knots sync plus edge add/remove/list behavior."
+  }
+}

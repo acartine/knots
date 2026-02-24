@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dc0f-7552-ad17-0e2c8b3f67d6",
+  "occurred_at": "2026-02-22T17:22:28Z",
+  "knot_id": "knots-q3e.3.5",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement knots import status with last run, counts, errors, and resume checkpoint.",
+    "description": "Implement knots import status with last run, counts, errors, and resume checkpoint.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Import progress/status command"
+  }
+}

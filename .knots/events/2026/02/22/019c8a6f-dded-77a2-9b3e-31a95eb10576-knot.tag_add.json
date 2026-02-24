@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dded-77a2-9b3e-31a95eb10576",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.5.2",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "rehydrate"
+  }
+}

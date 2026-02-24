@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d679-77b2-920d-d38c1d369cda",
+  "occurred_at": "2026-02-23T07:12:20Z",
+  "knot_id": "knots-q3e.12.1",
+  "type": "knot.created",
+  "data": {
+    "body": "Create comprehensive README with quickstart, install via curl, source build, import from Beads, sync/edge commands, release process, and support/security links.",
+    "description": "Create comprehensive README with quickstart, install via curl, source build, import from Beads, sync/edge commands, release process, and support/security links.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Add robust public README with install/usage/release docs"
+  }
+}

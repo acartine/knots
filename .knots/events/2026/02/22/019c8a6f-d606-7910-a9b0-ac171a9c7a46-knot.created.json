@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d606-7910-a9b0-ac171a9c7a46",
+  "occurred_at": "2026-02-22T18:57:45Z",
+  "knot_id": "knots-q3e.11",
+  "type": "knot.created",
+  "data": {
+    "body": "Document project style limits: max 500 lines per file, max 100 chars per line, and minimum 90% test coverage.",
+    "description": "Document project style limits: max 500 lines per file, max 100 chars per line, and minimum 90% test coverage.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Add AGENTS.md and CLAUDE.md style guide"
+  }
+}

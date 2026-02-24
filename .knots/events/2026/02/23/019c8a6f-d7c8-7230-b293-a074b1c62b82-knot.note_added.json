@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-d7c8-7230-b293-a074b1c62b82",
+  "occurred_at": "2026-02-23T07:32:52Z",
+  "knot_id": "knots-q3e.13",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Real release and release-PR automation verified on GitHub after publish. Workflow chain is operational.",
+    "datetime": "2026-02-23T07:32:52Z",
+    "entry_id": "2300b28b244098afb037d86177567c4014806c019ccec4284835735ab730d503",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

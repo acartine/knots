@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d4ca-7b11-a5a7-6e3ece023441",
+  "occurred_at": "2026-02-22T17:22:24Z",
+  "knot_id": "knots-q3e",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "arch-v4"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-d6a4-7422-9f9e-c7ecfa8cffb9",
+  "occurred_at": "2026-02-23T07:18:51Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.12.1",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add robust public README with install/usage/release docs",
+    "updated_at": "2026-02-23T07:18:51Z"
+  }
+}

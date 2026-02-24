@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dd75-7671-a476-fe819c328440",
+  "occurred_at": "2026-02-22T17:22:25Z",
+  "knot_id": "knots-q3e.5",
+  "type": "knot.created",
+  "data": {
+    "body": "Behavior unlock: tiered storage, cold sync/search, and rehydrate.",
+    "description": "Behavior unlock: tiered storage, cold sync/search, and rehydrate.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Milestone M3: Hot/Warm/Cold Tiering"
+  }
+}

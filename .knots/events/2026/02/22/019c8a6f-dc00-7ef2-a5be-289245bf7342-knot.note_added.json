@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-dc00-7ef2-a5be-289245bf7342",
+  "occurred_at": "2026-02-22T22:11:45Z",
+  "knot_id": "knots-q3e.3.4",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented idempotency and resume in import tracking schema using deterministic fingerprints for dedupe and import_state checkpoint persistence for resumable line and row processing. Added tests for checkpoint resume and replay dedupe behavior.",
+    "datetime": "2026-02-22T22:11:45Z",
+    "entry_id": "228383b3b18caad21ab21ed26d13a5d0883a11509642614035120862ebebea64",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-df4a-7d31-a020-31845de94a66",
+  "occurred_at": "2026-02-22T17:22:25Z",
+  "knot_id": "knots-q3e.7",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Behavior unlock: fsck/doctor/status checks and validated performance budgets."
+  }
+}

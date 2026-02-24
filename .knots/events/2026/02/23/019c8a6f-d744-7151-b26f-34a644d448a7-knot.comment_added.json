@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d744-7151-b26f-34a644d448a7",
+  "occurred_at": "2026-02-23T07:32:52Z",
+  "knot_id": "knots-q3e.12.4",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Real publish completed against GitHub with origin remote and main tracking configured."
+  }
+}

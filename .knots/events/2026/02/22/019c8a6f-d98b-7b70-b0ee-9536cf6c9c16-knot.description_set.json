@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d98b-7b70-b0ee-9536cf6c9c16",
+  "occurred_at": "2026-02-22T17:22:26Z",
+  "knot_id": "knots-q3e.2.1",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Implement workflow states and transition validation with --force bypass support."
+  }
+}

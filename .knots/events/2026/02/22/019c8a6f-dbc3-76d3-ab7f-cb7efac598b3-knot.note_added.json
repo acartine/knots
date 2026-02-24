@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-dbc3-76d3-ab7f-cb7efac598b3",
+  "occurred_at": "2026-02-22T22:11:45Z",
+  "knot_id": "knots-q3e.3.3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented canonical import emission: imported issues write full events for create tags edges comments as applicable, plus mandatory idx.knot_head, then update knot_hot cache with workflow_etag from the index event id.",
+    "datetime": "2026-02-22T22:11:45Z",
+    "entry_id": "c4cb8479a42bd8c0f16feff6312127225a414ac958372338546c182235600fb9",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

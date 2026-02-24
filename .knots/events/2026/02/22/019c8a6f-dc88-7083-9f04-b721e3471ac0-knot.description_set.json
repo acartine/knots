@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dc88-7083-9f04-b721e3471ac0",
+  "occurred_at": "2026-02-22T17:22:28Z",
+  "knot_id": "knots-q3e.4.1",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Create hidden worktree lifecycle and branch isolation behavior."
+  }
+}

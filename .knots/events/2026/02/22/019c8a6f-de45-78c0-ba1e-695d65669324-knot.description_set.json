@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-de45-78c0-ba1e-695d65669324",
+  "occurred_at": "2026-02-22T17:22:25Z",
+  "knot_id": "knots-q3e.6",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Behavior unlock: safe multi-client operations with lock ordering, If-Match checks, and budgeted sync/push."
+  }
+}

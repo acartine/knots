@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dddc-7001-8fb4-2b1d65df5921",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.5.2",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Hydrate warm/cold knot metadata into hot cache on demand."
+  }
+}

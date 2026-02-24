@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dbc8-7103-9e1a-054bd3058ac6",
+  "occurred_at": "2026-02-22T22:11:45Z",
+  "knot_id": "knots-q3e.3.3",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: canonical full/index event emission for imports"
+  }
+}

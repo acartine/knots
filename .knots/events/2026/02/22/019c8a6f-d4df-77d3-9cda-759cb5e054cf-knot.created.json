@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d4df-77d3-9cda-759cb5e054cf",
+  "occurred_at": "2026-02-22T17:22:24Z",
+  "knot_id": "knots-q3e.1",
+  "type": "knot.created",
+  "data": {
+    "body": "Behavior unlock: git repo, beads tracking, and Rust scaffold are ready.",
+    "description": "Behavior unlock: git repo, beads tracking, and Rust scaffold are ready.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Milestone M0: Workspace/Tracking Initialized"
+  }
+}

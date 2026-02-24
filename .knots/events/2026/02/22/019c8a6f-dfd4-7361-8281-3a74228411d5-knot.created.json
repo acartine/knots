@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dfd4-7361-8281-3a74228411d5",
+  "occurred_at": "2026-02-22T17:22:31Z",
+  "knot_id": "knots-q3e.7.3",
+  "type": "knot.created",
+  "data": {
+    "body": "Benchmark hot reads/write path/sync against architecture budgets.",
+    "description": "Benchmark hot reads/write path/sync against architecture budgets.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Add perf regression harness"
+  }
+}

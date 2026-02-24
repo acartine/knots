@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-dcab-72d1-8c6e-9c53657016f0",
+  "occurred_at": "2026-02-22T22:24:10Z",
+  "knot_id": "knots-q3e.4.1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added sync/worktree module with KnotsWorktree manager that provisions .knots/_worktree on branch knots and enforces clean-state checks.",
+    "datetime": "2026-02-22T22:24:10Z",
+    "entry_id": "7239b1194503ef85839fc5185104fd2472edf39a0b6b61a3c283b0474ef44f1f",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

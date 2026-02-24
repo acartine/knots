@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a70-771b-7cb3-a4c2-131775ea8bc7",
+  "occurred_at": "2026-02-23T12:19:12.283667Z",
+  "knot_id": "knots-q3e",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "quick validation note",
+    "datetime": "2026-02-23T12:20:00Z",
+    "entry_id": "019c8a70-771b-7cb3-a4c2-130ae32ce24b",
+    "model": "gpt-5",
+    "username": "acartine",
+    "version": "0.1"
+  }
+}

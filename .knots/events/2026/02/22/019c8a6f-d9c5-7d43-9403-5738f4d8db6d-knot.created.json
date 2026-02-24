@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d9c5-7d43-9403-5738f4d8db6d",
+  "occurred_at": "2026-02-22T17:22:26Z",
+  "knot_id": "knots-q3e.2.2",
+  "type": "knot.created",
+  "data": {
+    "body": "Add full/index event types and deterministic date+id file path generation.",
+    "description": "Add full/index event types and deterministic date+id file path generation.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Implement event schema + append-only writers"
+  }
+}

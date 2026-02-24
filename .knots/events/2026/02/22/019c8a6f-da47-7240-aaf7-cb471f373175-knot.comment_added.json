@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-da47-7240-aaf7-cb471f373175",
+  "occurred_at": "2026-02-22T18:57:46Z",
+  "knot_id": "knots-q3e.2.3",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: SQLite schema and migration bootstrap implemented with tests"
+  }
+}

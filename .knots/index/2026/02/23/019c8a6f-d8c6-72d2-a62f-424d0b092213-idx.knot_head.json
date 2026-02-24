@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-d8c6-72d2-a62f-424d0b092213",
+  "occurred_at": "2026-02-23T07:32:52Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.13.4",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Publish GitHub Release assets + checksums",
+    "updated_at": "2026-02-23T07:32:52Z"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-dd22-7350-952e-618f9873a39b",
+  "occurred_at": "2026-02-22T22:24:10Z",
+  "knot_id": "knots-q3e.4.3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented IncrementalApplier that tracks last_index_head_commit and last_full_head_commit in meta and applies only changed index/full files into sqlite hot cache and edges.",
+    "datetime": "2026-02-22T22:24:10Z",
+    "entry_id": "cfbfdd07a6a25edd88e85dc943d24da806f5f9e5f661b96e3be5b9b329de383d",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

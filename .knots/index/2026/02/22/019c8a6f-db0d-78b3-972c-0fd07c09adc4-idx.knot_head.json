@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-db0d-78b3-972c-0fd07c09adc4",
+  "occurred_at": "2026-02-22T22:11:24Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.3",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Milestone M1.5: Import Ingestion Available",
+    "updated_at": "2026-02-22T22:11:24Z"
+  }
+}

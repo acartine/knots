@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-df18-7190-ae81-1baf4ab5b66e",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "knot_id": "knots-q3e.6.4",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Reject stale writes based on per-knot workflow_etag mismatch."
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-d7d2-7763-936b-6b148658f6f4",
+  "occurred_at": "2026-02-23T07:32:52Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.13",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Milestone M2.6: Release + Curl Install",
+    "updated_at": "2026-02-23T07:32:52Z"
+  }
+}

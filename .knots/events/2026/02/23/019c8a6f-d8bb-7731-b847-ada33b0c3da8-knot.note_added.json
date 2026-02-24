@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-d8bb-7731-b847-ada33b0c3da8",
+  "occurred_at": "2026-02-23T07:32:52Z",
+  "knot_id": "knots-q3e.13.4",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added release publish job to generate checksums, create version tag release, and upload required tarballs and checksum assets.\nRelease workflow run 22296769110 succeeded and published v0.1.0 assets: darwin arm64 tarball, linux x86_64 tarball, and checksums file.",
+    "datetime": "2026-02-23T07:32:52Z",
+    "entry_id": "993090cfd29f18293a7759e69f301ddd941707655203b10fd05c417ad99250d2",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

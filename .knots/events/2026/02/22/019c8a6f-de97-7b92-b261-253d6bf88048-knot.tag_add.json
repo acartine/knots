@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-de97-7b92-b261-253d6bf88048",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.6.1",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "locks"
+  }
+}

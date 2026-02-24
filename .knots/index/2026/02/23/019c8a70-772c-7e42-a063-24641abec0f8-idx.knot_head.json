@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a70-772c-7e42-a063-24641abec0f8",
+  "occurred_at": "2026-02-23T12:19:12.283667Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e",
+    "state": "work_item",
+    "terminal": false,
+    "title": "Implement Knots v4 architecture from markdown",
+    "updated_at": "2026-02-23T12:19:12.283667Z"
+  }
+}

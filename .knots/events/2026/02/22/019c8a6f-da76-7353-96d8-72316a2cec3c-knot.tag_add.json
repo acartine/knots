@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-da76-7353-96d8-72316a2cec3c",
+  "occurred_at": "2026-02-22T17:22:27Z",
+  "knot_id": "knots-q3e.2.4",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "reducer"
+  }
+}

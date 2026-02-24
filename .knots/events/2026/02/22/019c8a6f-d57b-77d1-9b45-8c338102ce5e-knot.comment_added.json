@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d57b-77d1-9b45-8c338102ce5e",
+  "occurred_at": "2026-02-22T17:23:01Z",
+  "knot_id": "knots-q3e.1.2",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Completed: initialized beads with stealth mode and knots prefix"
+  }
+}

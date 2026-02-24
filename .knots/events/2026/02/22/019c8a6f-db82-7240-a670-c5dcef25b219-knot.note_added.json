@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-db82-7240-a670-c5dcef25b219",
+  "occurred_at": "2026-02-22T22:11:45Z",
+  "knot_id": "knots-q3e.3.2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented Dolt extractor adapter in src/imports/source.rs using dolt sql JSON output parsing, with explicit missing-CLI failure handling that directs users to JSONL import when dolt is unavailable.",
+    "datetime": "2026-02-22T22:11:45Z",
+    "entry_id": "6cb05686afd459e73e788d922de19d234d20d38782e0edcb36b195d78da005fb",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

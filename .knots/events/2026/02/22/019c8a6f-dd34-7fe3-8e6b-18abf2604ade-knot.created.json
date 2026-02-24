@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dd34-7fe3-8e6b-18abf2604ade",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.4.4",
+  "type": "knot.created",
+  "data": {
+    "body": "Ship knots sync plus edge add/remove/list behavior.",
+    "description": "Ship knots sync plus edge add/remove/list behavior.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Implement sync and dependency-edge commands"
+  }
+}

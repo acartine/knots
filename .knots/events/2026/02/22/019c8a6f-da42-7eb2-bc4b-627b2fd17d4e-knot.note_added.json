@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-da42-7eb2-bc4b-627b2fd17d4e",
+  "occurred_at": "2026-02-22T18:57:46Z",
+  "knot_id": "knots-q3e.2.3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "SQLite bootstrap requirement explicitly tracked in knots-q3e.2.5. Current implementation sets rusqlite bundled + connection PRAGMAs in src/db.rs; remaining work is schema+migrations breadth.\nImplemented migration bootstrap in src/db.rs: schema_migrations table, baseline schema tables (meta, knot_hot, knot_warm, edge, review_stats, cold_catalog), schema_version tracking in meta, default hot_window_days=7, and idempotent re-open behavior. Added tests for required tables and migration idempotency.",
+    "datetime": "2026-02-22T18:57:46Z",
+    "entry_id": "8c5fa77510d77ada3d44bd21bb9e0f67ff6e573cc422dd45a8a3da74bea71da2",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

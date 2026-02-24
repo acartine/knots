@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-da4c-7c00-a7ac-cecb02f6ddd5",
+  "occurred_at": "2026-02-22T18:57:46Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.2.3",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Implement SQLite schema + migrations",
+    "updated_at": "2026-02-22T18:57:46Z"
+  }
+}

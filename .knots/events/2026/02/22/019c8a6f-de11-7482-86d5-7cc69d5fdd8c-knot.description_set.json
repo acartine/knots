@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-de11-7482-86d5-7cc69d5fdd8c",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.5.3",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Ship cold sync and cold search behavior from cold catalog table."
+  }
+}

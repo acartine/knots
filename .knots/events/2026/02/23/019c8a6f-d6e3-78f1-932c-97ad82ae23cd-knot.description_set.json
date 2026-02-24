@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d6e3-78f1-932c-97ad82ae23cd",
+  "occurred_at": "2026-02-23T07:12:21Z",
+  "knot_id": "knots-q3e.12.3",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Define supported versions, private disclosure channel, response SLAs, and routing for non-security issues."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dc4b-7ed2-8217-a0858f940e0f",
+  "occurred_at": "2026-02-22T17:22:25Z",
+  "knot_id": "knots-q3e.4",
+  "type": "knot.created",
+  "data": {
+    "body": "Behavior unlock: dedicated knots branch/worktree and incremental git-diff sync.",
+    "description": "Behavior unlock: dedicated knots branch/worktree and incremental git-diff sync.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Milestone M2: Dedicated Branch Sync"
+  }
+}

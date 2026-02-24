@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d856-71e2-881a-df06eadba90c",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.3",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Create CI build jobs for aarch64-apple-darwin and x86_64-unknown-linux-gnu binaries."
+  }
+}

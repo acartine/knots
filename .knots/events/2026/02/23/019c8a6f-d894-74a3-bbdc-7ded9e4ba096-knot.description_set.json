@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d894-74a3-bbdc-7ded9e4ba096",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.4",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Create release job that packages platform tarballs, generates checksums, creates tag/release, and uploads assets."
+  }
+}

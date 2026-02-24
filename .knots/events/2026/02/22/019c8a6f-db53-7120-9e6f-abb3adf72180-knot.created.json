@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-db53-7120-9e6f-abb3adf72180",
+  "occurred_at": "2026-02-22T17:22:27Z",
+  "knot_id": "knots-q3e.3.2",
+  "type": "knot.created",
+  "data": {
+    "body": "Shell out to dolt sql, parse rows, and map to canonical import DTOs (import-only; no runtime backend).",
+    "description": "Shell out to dolt sql, parse rows, and map to canonical import DTOs (import-only; no runtime backend).",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Dolt extractor adapter"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-d810-7831-aae0-d0f6c10fb474",
+  "occurred_at": "2026-02-23T07:32:52Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.13.1",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add Changesets baseline config and release PR workflow",
+    "updated_at": "2026-02-23T07:32:52Z"
+  }
+}

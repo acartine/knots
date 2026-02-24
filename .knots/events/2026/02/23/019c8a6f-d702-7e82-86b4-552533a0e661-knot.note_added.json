@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-d702-7e82-86b4-552533a0e661",
+  "occurred_at": "2026-02-23T07:33:23Z",
+  "knot_id": "knots-q3e.12.3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added SECURITY.md with supported versions, private reporting guidance, response targets, and scope boundaries.\nEnabled GitHub private vulnerability reporting on acartine/knots via API and verified endpoint returns enabled=true.",
+    "datetime": "2026-02-23T07:33:23Z",
+    "entry_id": "f7a8d0db0f5c911f7cd41adca7eb5ee85defa8761d2ab7590a9e3abb9564839e",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

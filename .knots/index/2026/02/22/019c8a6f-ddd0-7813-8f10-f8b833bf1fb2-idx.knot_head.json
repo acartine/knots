@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-ddd0-7813-8f10-f8b833bf1fb2",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.5.1",
+    "state": "work_item",
+    "terminal": false,
+    "title": "Implement hot/warm/cold classification engine",
+    "updated_at": "2026-02-22T17:22:29Z"
+  }
+}

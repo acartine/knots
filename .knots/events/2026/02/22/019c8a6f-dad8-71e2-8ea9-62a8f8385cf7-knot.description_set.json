@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dad8-71e2-8ea9-62a8f8385cf7",
+  "occurred_at": "2026-02-22T17:22:25Z",
+  "knot_id": "knots-q3e.3",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Behavior unlock: full-fidelity JSONL and Dolt import into canonical event streams before dedicated branch sync work."
+  }
+}

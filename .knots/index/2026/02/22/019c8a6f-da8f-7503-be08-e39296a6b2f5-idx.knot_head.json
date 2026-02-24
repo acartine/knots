@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-da8f-7503-be08-e39296a6b2f5",
+  "occurred_at": "2026-02-22T21:57:35Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.2.4",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Implement local CLI core commands",
+    "updated_at": "2026-02-22T21:57:35Z"
+  }
+}

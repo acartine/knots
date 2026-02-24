@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-da10-7942-b067-0234dce355b6",
+  "occurred_at": "2026-02-22T17:22:27Z",
+  "knot_id": "knots-q3e.2.3",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Create cache tables, WAL mode, busy timeout, and schema versioning."
+  }
+}

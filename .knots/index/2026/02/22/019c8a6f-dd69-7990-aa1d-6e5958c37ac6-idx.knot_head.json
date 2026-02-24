@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-dd69-7990-aa1d-6e5958c37ac6",
+  "occurred_at": "2026-02-22T22:24:10Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.4.4",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Implement sync and dependency-edge commands",
+    "updated_at": "2026-02-22T22:24:10Z"
+  }
+}

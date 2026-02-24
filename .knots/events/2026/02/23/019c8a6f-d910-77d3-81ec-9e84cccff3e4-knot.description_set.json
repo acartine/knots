@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d910-77d3-81ec-9e84cccff3e4",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.6",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Add smoke scripts/docs validating installer latest/pinned flows and release artifact integrity checks."
+  }
+}

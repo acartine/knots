@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d77f-7e81-810c-05ddf93fe49e",
+  "occurred_at": "2026-02-23T07:18:51Z",
+  "knot_id": "knots-q3e.12.5",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Repo hygiene workflow added for required public files."
+  }
+}

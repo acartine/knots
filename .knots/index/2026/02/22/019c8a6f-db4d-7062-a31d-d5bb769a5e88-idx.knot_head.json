@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-db4d-7062-a31d-d5bb769a5e88",
+  "occurred_at": "2026-02-22T22:11:45Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.3.1",
+    "state": "shipped",
+    "terminal": true,
+    "title": "JSONL parser + validator + mapper",
+    "updated_at": "2026-02-22T22:11:45Z"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d925-7162-af9d-a4050685e3a8",
+  "occurred_at": "2026-02-23T07:12:22Z",
+  "knot_id": "knots-q3e.13.6",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "release"
+  }
+}

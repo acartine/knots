@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-df45-7460-8235-e639326c0b01",
+  "occurred_at": "2026-02-22T17:22:25Z",
+  "knot_id": "knots-q3e.7",
+  "type": "knot.created",
+  "data": {
+    "body": "Behavior unlock: fsck/doctor/status checks and validated performance budgets.",
+    "description": "Behavior unlock: fsck/doctor/status checks and validated performance budgets.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Milestone M5: Integrity + Operability"
+  }
+}

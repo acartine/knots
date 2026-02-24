@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d6d4-73a3-96ff-c4e0e7c1a126",
+  "occurred_at": "2026-02-23T07:18:51Z",
+  "knot_id": "knots-q3e.12.2",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "MIT license and metadata defaults support added."
+  }
+}

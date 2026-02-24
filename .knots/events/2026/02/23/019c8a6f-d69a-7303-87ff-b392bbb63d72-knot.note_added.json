@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-d69a-7303-87ff-b392bbb63d72",
+  "occurred_at": "2026-02-23T07:18:51Z",
+  "knot_id": "knots-q3e.12.1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added robust public README with quickstart, curl install, source build, import, sync and edge usage, release flow, smoke test, and security guidance.",
+    "datetime": "2026-02-23T07:18:51Z",
+    "entry_id": "adcc300f507235e39dc8a6ee28f268c1e20144fbdd4bbad86187ecb4c685baa4",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d8fd-7621-a94c-d95ec7c71824",
+  "occurred_at": "2026-02-23T07:18:52Z",
+  "knot_id": "knots-q3e.13.5",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Curl installer implemented with checksum verification and version pinning."
+  }
+}

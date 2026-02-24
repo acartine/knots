@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-dfa7-7d12-95cc-46b7f508fc4f",
+  "occurred_at": "2026-02-22T17:22:30Z",
+  "knot_id": "knots-q3e.7.2",
+  "type": "knot.created",
+  "data": {
+    "body": "Validate lock health, worktree cleanliness, and remote reachability.",
+    "description": "Validate lock health, worktree cleanliness, and remote reachability.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "work_item",
+    "title": "Implement doctor command"
+  }
+}

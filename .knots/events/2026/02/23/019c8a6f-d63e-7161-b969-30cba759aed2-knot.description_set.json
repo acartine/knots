@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d63e-7161-b969-30cba759aed2",
+  "occurred_at": "2026-02-23T07:12:20Z",
+  "knot_id": "knots-q3e.12",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Behavior unlock: public GitHub-ready repository with robust README, MIT license, security policy, publish bootstrap, and hygiene checks."
+  }
+}

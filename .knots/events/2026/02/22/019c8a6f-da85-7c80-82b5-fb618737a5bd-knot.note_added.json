@@ -1,0 +1,15 @@
+{
+  "event_id": "019c8a6f-da85-7c80-82b5-fb618737a5bd",
+  "occurred_at": "2026-02-22T21:57:35Z",
+  "knot_id": "knots-q3e.2.4",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented local CLI core commands in src/main.rs + src/cli.rs + src/app.rs: new/state/ls/show with cache-first reads from SQLite. Writes emit full + idx.knot_head events via append-only writer and update knot_hot as local reducer. Added app-layer tests for create/list/show and state transition behavior with force override.",
+    "datetime": "2026-02-22T21:57:35Z",
+    "entry_id": "acfeeffd96678c8fc33f3515ed4a41a03da99f8d33fa20ca49ac1bb078c7a312",
+    "model": "unknown",
+    "username": "cartine@gmail.com",
+    "version": "unknown"
+  }
+}

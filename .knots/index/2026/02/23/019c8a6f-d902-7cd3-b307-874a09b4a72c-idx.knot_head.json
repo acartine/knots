@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-d902-7cd3-b307-874a09b4a72c",
+  "occurred_at": "2026-02-23T07:18:52Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.13.5",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add curl installer with checksum verification and version pinning",
+    "updated_at": "2026-02-23T07:18:52Z"
+  }
+}

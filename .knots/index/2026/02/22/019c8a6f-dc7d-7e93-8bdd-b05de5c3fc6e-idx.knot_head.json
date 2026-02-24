@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-dc7d-7e93-8bdd-b05de5c3fc6e",
+  "occurred_at": "2026-02-22T22:24:10Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.4",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Milestone M2: Dedicated Branch Sync",
+    "updated_at": "2026-02-22T22:24:10Z"
+  }
+}

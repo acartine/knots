@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-de81-7981-ab6f-3709b02cb5e1",
+  "occurred_at": "2026-02-22T17:22:29Z",
+  "knot_id": "knots-q3e.6.1",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Enforce repo_lock then cache_lock across all operations."
+  }
+}

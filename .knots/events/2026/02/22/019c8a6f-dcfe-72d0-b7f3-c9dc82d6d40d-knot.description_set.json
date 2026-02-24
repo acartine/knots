@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-dcfe-72d0-b7f3-c9dc82d6d40d",
+  "occurred_at": "2026-02-22T17:22:28Z",
+  "knot_id": "knots-q3e.4.3",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Track last head commits and apply only changed index/full files."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "event_id": "019c8a6f-d712-7e43-99af-fb3f6ffd4768",
+  "occurred_at": "2026-02-23T07:12:21Z",
+  "knot_id": "knots-q3e.12.4",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement script to verify clean git state, create public GitHub repo, set origin, push main, apply metadata defaults, and print manual security-tab checklist.",
+    "description": "Implement script to verify clean git state, create public GitHub repo, set origin, push main, apply metadata defaults, and print manual security-tab checklist.",
+    "source": "source:/Users/cartine/knots/.beads/issues.jsonl",
+    "state": "shipped",
+    "title": "Add public GitHub publish bootstrap script (gh CLI)"
+  }
+}

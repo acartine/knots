@@ -1,0 +1,9 @@
+{
+  "event_id": "019c8a6f-d93e-78f3-9333-09e120a94d93",
+  "occurred_at": "2026-02-23T07:18:52Z",
+  "knot_id": "knots-q3e.13.6",
+  "type": "knot.comment_added",
+  "data": {
+    "comment": "Installer release smoke test script and docs added."
+  }
+}

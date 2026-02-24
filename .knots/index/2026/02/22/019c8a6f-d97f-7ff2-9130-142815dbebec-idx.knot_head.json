@@ -1,0 +1,12 @@
+{
+  "event_id": "019c8a6f-d97f-7ff2-9130-142815dbebec",
+  "occurred_at": "2026-02-22T21:57:36Z",
+  "type": "idx.knot_head",
+  "data": {
+    "knot_id": "knots-q3e.2",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Milestone M1: Local Event+Cache Core",
+    "updated_at": "2026-02-22T21:57:36Z"
+  }
+}
