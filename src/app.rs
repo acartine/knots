@@ -111,6 +111,7 @@ impl App {
     pub fn open(db_path: &str, repo_root: PathBuf) -> Result<Self, AppError> {
         ensure_parent_dir(db_path)?;
         let conn = db::open_connection(db_path)?;
+        crate::init::ensure_workflows_file(&repo_root)?;
         let workflow_registry = WorkflowRegistry::load(&repo_root)?;
         let writer = EventWriter::new(repo_root.clone());
         Ok(Self {
@@ -278,14 +279,6 @@ impl App {
         Ok(generate_knot_id(&self.repo_root, |candidate| {
             existing.contains(candidate)
         }))
-    }
-
-    pub fn list_workflows(&self) -> Vec<WorkflowDefinition> {
-        self.workflow_registry.list()
-    }
-
-    pub fn show_workflow(&self, id: &str) -> Result<WorkflowDefinition, AppError> {
-        Ok(self.workflow_registry.require(id)?.clone())
     }
 
     fn resolve_workflow_for_record<'a>(
@@ -761,8 +754,8 @@ impl App {
         Ok(run_fsck(&self.repo_root)?)
     }
 
-    pub fn doctor(&self) -> Result<DoctorReport, AppError> {
-        Ok(run_doctor(&self.repo_root)?)
+    pub fn doctor(&self, fix: bool) -> Result<DoctorReport, AppError> {
+        Ok(run_doctor(&self.repo_root, fix)?)
     }
 
     pub fn compact_write_snapshots(&self) -> Result<SnapshotWriteSummary, AppError> {
@@ -1495,3 +1488,6 @@ impl From<InvalidStateTransition> for AppError {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+#[path = "app/tests_error_paths.rs"]
+mod tests_error_paths;

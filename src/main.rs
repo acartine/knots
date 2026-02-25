@@ -2,16 +2,18 @@ mod app;
 mod cli;
 mod db;
 mod doctor;
-mod init;
 mod domain;
 mod events;
 mod fsck;
 mod hierarchy_alias;
 mod imports;
+mod init;
 mod knot_id;
 mod list_layout;
 mod listing;
 mod locks;
+#[cfg(test)]
+mod main_tests;
 mod perf;
 mod remote_init;
 mod replication;
@@ -32,12 +34,13 @@ fn main() {
 fn run() -> Result<(), app::AppError> {
     use app::UpdateKnotPatch;
     use clap::Parser;
-    use cli::{ColdSubcommands, Commands, EdgeSubcommands, ImportSubcommands, WorkflowSubcommands};
+    use cli::{ColdSubcommands, Commands, EdgeSubcommands, ImportSubcommands};
     use domain::metadata::MetadataEntryInput;
 
     let cli = cli::Cli::parse();
     if let Some(outcome) = maybe_run_self_command(&cli.command)? {
         println!("{outcome}");
+        let _ = init::ensure_workflows_file(&cli.repo_root);
         return Ok(());
     }
 
@@ -50,6 +53,9 @@ fn run() -> Result<(), app::AppError> {
         init::uninit_all(&cli.repo_root, &cli.db)?;
         println!("kno uninit completed");
         return Ok(());
+    }
+    if let Commands::Workflow(args) = &cli.command {
+        return run_workflow_command(args, &cli.repo_root);
     }
 
     let app = app::App::open(&cli.db, cli.repo_root)?;
@@ -147,51 +153,9 @@ fn run() -> Result<(), app::AppError> {
             }
             None => return Err(app::AppError::NotFound(args.id)),
         },
-        Commands::Workflow(args) => match args.command {
-            WorkflowSubcommands::List(list_args) => {
-                let workflows = app.list_workflows();
-                if list_args.json {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&workflows)
-                            .expect("json serialization should work")
-                    );
-                } else if workflows.is_empty() {
-                    println!("no workflows found");
-                } else {
-                    for workflow in workflows {
-                        println!(
-                            "{} initial={} terminal={}",
-                            workflow.id,
-                            workflow.initial_state,
-                            workflow.terminal_states.join(",")
-                        );
-                    }
-                }
-            }
-            WorkflowSubcommands::Show(show_args) => {
-                let workflow = app.show_workflow(&show_args.id)?;
-                if show_args.json {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&workflow)
-                            .expect("json serialization should work")
-                    );
-                } else {
-                    println!("id: {}", workflow.id);
-                    if let Some(description) = workflow.description.as_deref() {
-                        println!("description: {}", description);
-                    }
-                    println!("initial_state: {}", workflow.initial_state);
-                    println!("states: {}", workflow.states.join(", "));
-                    println!("terminal_states: {}", workflow.terminal_states.join(", "));
-                    println!("transitions:");
-                    for transition in workflow.transitions {
-                        println!("  {} -> {}", transition.from, transition.to);
-                    }
-                }
-            }
-        },
+        Commands::Workflow(_) => {
+            unreachable!("workflow commands are handled before app initialization")
+        }
         Commands::Pull(args) => {
             let summary = app.pull()?;
             if args.json {
@@ -291,7 +255,7 @@ fn run() -> Result<(), app::AppError> {
             }
         }
         Commands::Doctor(args) => {
-            let report = app.doctor()?;
+            let report = app.doctor(args.fix)?;
             if args.json {
                 println!(
                     "{}",
@@ -538,6 +502,62 @@ fn run() -> Result<(), app::AppError> {
         Commands::SelfManage(_) => unreachable!("self management commands return before app init"),
     }
 
+    Ok(())
+}
+
+fn run_workflow_command(
+    args: &cli::WorkflowArgs,
+    repo_root: &std::path::Path,
+) -> Result<(), app::AppError> {
+    use cli::WorkflowSubcommands;
+
+    init::ensure_workflows_file(repo_root)?;
+    let registry = workflow::WorkflowRegistry::load(repo_root)?;
+    match &args.command {
+        WorkflowSubcommands::List(list_args) => {
+            let workflows = registry.list();
+            if list_args.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&workflows)
+                        .expect("json serialization should work")
+                );
+            } else if workflows.is_empty() {
+                println!("no workflows found");
+            } else {
+                for workflow in workflows {
+                    println!(
+                        "{} initial={} terminal={}",
+                        workflow.id,
+                        workflow.initial_state,
+                        workflow.terminal_states.join(",")
+                    );
+                }
+            }
+        }
+        WorkflowSubcommands::Show(show_args) => {
+            let workflow = registry.require(&show_args.id)?.clone();
+            if show_args.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&workflow)
+                        .expect("json serialization should work")
+                );
+            } else {
+                println!("id: {}", workflow.id);
+                if let Some(description) = workflow.description.as_deref() {
+                    println!("description: {}", description);
+                }
+                println!("initial_state: {}", workflow.initial_state);
+                println!("states: {}", workflow.states.join(", "));
+                println!("terminal_states: {}", workflow.terminal_states.join(", "));
+                println!("transitions:");
+                for transition in workflow.transitions {
+                    println!("  {} -> {}", transition.from, transition.to);
+                }
+            }
+        }
+    }
     Ok(())
 }
 

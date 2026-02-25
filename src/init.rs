@@ -167,7 +167,10 @@ fn progress_note(message: &str) -> Result<(), AppError> {
 fn print_banner(title: &str) -> Result<(), AppError> {
     println!("{ANSI_BOLD_MAGENTA}{title}{ANSI_RESET}");
     println!("{ANSI_BOLD_CYAN}Welcome to Knots!{ANSI_RESET}");
-    println!("{ANSI_DIM}version {}{ANSI_RESET}", env!("CARGO_PKG_VERSION"));
+    println!(
+        "{ANSI_DIM}version {}{ANSI_RESET}",
+        env!("CARGO_PKG_VERSION")
+    );
     println!();
     io::stdout().flush()?;
     Ok(())
@@ -201,7 +204,7 @@ fn warn_if_beads_hooks_present(repo_root: &Path) -> Result<(), AppError> {
     Ok(())
 }
 
-fn ensure_workflows_file(repo_root: &Path) -> Result<(), AppError> {
+pub(crate) fn ensure_workflows_file(repo_root: &Path) -> Result<(), AppError> {
     let path = repo_root.join(KNOTS_WORKFLOW_PATH);
     if path.exists() {
         return Ok(());
@@ -257,7 +260,7 @@ fn remove_gitignore_entries(repo_root: &Path) -> Result<(), AppError> {
         .map(str::trim)
         .filter(|line| {
             let line = *line;
-            !(line == KNOTS_IGNORE_RULE || line == KNOTS_WORKFLOW_EXCEPTION) && !line.is_empty()
+            !(line == KNOTS_IGNORE_RULE || line == KNOTS_WORKFLOW_EXCEPTION || line.is_empty())
         })
         .collect();
 
@@ -286,12 +289,7 @@ fn contains_knots_ignore(contents: &str) -> bool {
         .any(|line| {
             matches!(
                 line,
-                "/.knots"
-                    | "/.knots/"
-                    | "/.knots/*"
-                    | ".knots"
-                    | ".knots/"
-                    | ".knots/*"
+                "/.knots" | "/.knots/" | "/.knots/*" | ".knots" | ".knots/" | ".knots/*"
             )
         })
 }
@@ -352,13 +350,9 @@ mod tests {
             &["init", "--bare", remote.to_str().expect("utf8 path")],
         );
         run_git(&local, &["init"]);
-        run_git(
-            &local,
-            &["config", "user.email", "knots@example.com"],
-        );
+        run_git(&local, &["config", "user.email", "knots@example.com"]);
         run_git(&local, &["config", "user.name", "Knots Test"]);
-        std::fs::write(local.join("README.md"), "# knots\n")
-            .expect("readme should be writable");
+        std::fs::write(local.join("README.md"), "# knots\n").expect("readme should be writable");
         run_git(&local, &["add", "README.md"]);
         run_git(&local, &["commit", "-m", "init"]);
         run_git(
@@ -385,12 +379,12 @@ mod tests {
         assert!(db_path.exists());
         let workflows = root.join(".knots/workflows.toml");
         assert!(workflows.exists());
-        let workflow = std::fs::read_to_string(&workflows)
-            .expect("workflow file should be readable");
+        let workflow =
+            std::fs::read_to_string(&workflows).expect("workflow file should be readable");
         assert!(workflow.contains("id = \"default\""));
 
-        let gitignore = std::fs::read_to_string(root.join(".gitignore"))
-            .expect("gitignore should be readable");
+        let gitignore =
+            std::fs::read_to_string(root.join(".gitignore")).expect("gitignore should be readable");
         assert!(gitignore.lines().any(|line| line == KNOTS_IGNORE_RULE));
         assert!(gitignore
             .lines()
@@ -415,8 +409,8 @@ mod tests {
         init_local_store(&root, db_path.to_str().expect("utf8 path"))
             .expect("local init should succeed");
 
-        let workflow = std::fs::read_to_string(&workflow_path)
-            .expect("workflow file should be readable");
+        let workflow =
+            std::fs::read_to_string(&workflow_path).expect("workflow file should be readable");
         assert!(workflow.contains("id = \"custom\""));
         assert!(!workflow.contains("id = \"default\""));
         remove_dir_if_exists(&root);
@@ -432,8 +426,8 @@ mod tests {
         init_local_store(&root, db_path.to_str().expect("utf8 path"))
             .expect("second init should remain idempotent");
 
-        let gitignore = std::fs::read_to_string(root.join(".gitignore"))
-            .expect("gitignore should be readable");
+        let gitignore =
+            std::fs::read_to_string(root.join(".gitignore")).expect("gitignore should be readable");
         let ignore_count = gitignore
             .lines()
             .filter(|line| *line == KNOTS_IGNORE_RULE)
@@ -492,18 +486,12 @@ mod tests {
         assert!(!root.join(".knots").exists());
         assert!(!db_path.exists());
         if gitignore_path.exists() {
-            let gitignore = std::fs::read_to_string(&gitignore_path)
-                .expect("gitignore should be readable");
-            assert!(
-                !gitignore
-                    .lines()
-                    .any(|line| line == KNOTS_IGNORE_RULE)
-            );
-            assert!(
-                !gitignore
-                    .lines()
-                    .any(|line| line == KNOTS_WORKFLOW_EXCEPTION)
-            );
+            let gitignore =
+                std::fs::read_to_string(&gitignore_path).expect("gitignore should be readable");
+            assert!(!gitignore.lines().any(|line| line == KNOTS_IGNORE_RULE));
+            assert!(!gitignore
+                .lines()
+                .any(|line| line == KNOTS_WORKFLOW_EXCEPTION));
         }
         remove_dir_if_exists(&root);
     }
@@ -514,8 +502,7 @@ mod tests {
         let db_path = local.join(".knots/cache/state.sqlite");
 
         init_all(&local, db_path.to_str().expect("utf8 path")).expect("init should succeed");
-        uninit_all(&local, db_path.to_str().expect("utf8 path"))
-            .expect("uninit should succeed");
+        uninit_all(&local, db_path.to_str().expect("utf8 path")).expect("uninit should succeed");
 
         assert!(!local.join(".knots").exists());
         let output = Command::new("git")

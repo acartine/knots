@@ -73,12 +73,46 @@ impl From<LockError> for DoctorError {
     }
 }
 
-pub fn run_doctor(repo_root: &Path) -> Result<DoctorReport, DoctorError> {
-    let mut checks = Vec::new();
-    checks.push(check_locks(repo_root)?);
-    checks.push(check_worktree(repo_root));
-    checks.push(check_remote(repo_root)?);
+pub fn run_doctor(repo_root: &Path, fix: bool) -> Result<DoctorReport, DoctorError> {
+    let checks = vec![
+        check_workflows(repo_root, fix)?,
+        check_locks(repo_root)?,
+        check_worktree(repo_root),
+        check_remote(repo_root)?,
+    ];
     Ok(DoctorReport { checks })
+}
+
+fn check_workflows(repo_root: &Path, fix: bool) -> Result<DoctorCheck, DoctorError> {
+    let path = repo_root.join(".knots/workflows.toml");
+    if path.exists() {
+        return Ok(DoctorCheck {
+            name: "workflows".to_string(),
+            status: DoctorStatus::Pass,
+            detail: "workflows.toml exists".to_string(),
+        });
+    }
+
+    if fix {
+        if let Err(err) = crate::init::ensure_workflows_file(repo_root) {
+            return Ok(DoctorCheck {
+                name: "workflows".to_string(),
+                status: DoctorStatus::Fail,
+                detail: format!("failed to create workflows.toml: {}", err),
+            });
+        }
+        return Ok(DoctorCheck {
+            name: "workflows".to_string(),
+            status: DoctorStatus::Pass,
+            detail: "workflows.toml created with defaults".to_string(),
+        });
+    }
+
+    Ok(DoctorCheck {
+        name: "workflows".to_string(),
+        status: DoctorStatus::Fail,
+        detail: "workflows.toml missing (run `kno doctor --fix`)".to_string(),
+    })
 }
 
 fn check_locks(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
@@ -258,7 +292,7 @@ mod tests {
     #[test]
     fn reports_failure_for_non_git_directory() {
         let root = unique_workspace();
-        let report = run_doctor(&root).expect("doctor should run");
+        let report = run_doctor(&root, false).expect("doctor should run");
         assert!(report.failure_count() >= 1);
         let _ = std::fs::remove_dir_all(root);
     }
@@ -277,7 +311,7 @@ mod tests {
         let _guard = FileLock::acquire(&lock_path, Duration::from_millis(100))
             .expect("lock acquisition should succeed");
 
-        let report = run_doctor(&root).expect("doctor should run");
+        let report = run_doctor(&root, false).expect("doctor should run");
         let lock_check = report
             .checks
             .iter()
@@ -289,6 +323,32 @@ mod tests {
             !wait_for_lock_release(&lock_path, Duration::from_millis(10))
                 .expect("lock wait should succeed")
         );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn fix_creates_missing_workflows_file() {
+        let root = unique_workspace();
+        let workflow_path = root.join(".knots/workflows.toml");
+
+        let report = run_doctor(&root, false).expect("doctor should run");
+        let wf_check = report
+            .checks
+            .iter()
+            .find(|c| c.name == "workflows")
+            .expect("workflows check should exist");
+        assert_eq!(wf_check.status, DoctorStatus::Fail);
+        assert!(!workflow_path.exists());
+
+        let fixed = run_doctor(&root, true).expect("doctor --fix should run");
+        let wf_fixed = fixed
+            .checks
+            .iter()
+            .find(|c| c.name == "workflows")
+            .expect("workflows check should exist");
+        assert_eq!(wf_fixed.status, DoctorStatus::Pass);
+        assert!(workflow_path.exists());
 
         let _ = std::fs::remove_dir_all(root);
     }

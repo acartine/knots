@@ -41,6 +41,7 @@ pub struct Cli {
 }
 
 #[derive(Debug, Subcommand)]
+#[allow(clippy::large_enum_variant)]
 pub enum Commands {
     #[command(about = "Create a new knot.")]
     New(NewArgs),
@@ -56,7 +57,7 @@ pub enum Commands {
     Ls(ListArgs),
     #[command(about = "Show one knot by id or alias.")]
     Show(ShowArgs),
-    #[command(about = "Inspect workflow definitions.")]
+    #[command(about = "Inspect workflow definitions.", alias = "wf")]
     Workflow(WorkflowArgs),
     #[command(about = "Pull knot updates from the remote knots branch.")]
     Pull(SyncArgs),
@@ -308,6 +309,9 @@ pub struct FsckArgs {
 pub struct DoctorArgs {
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
+
+    #[arg(short = 'f', long, help = "Auto-fix issues where possible.")]
+    pub fix: bool,
 }
 
 #[derive(Debug, Args)]
@@ -553,4 +557,49 @@ pub struct SelfUninstallArgs {
         help = "Also remove kno.previous and knots.previous backups."
     )]
     pub remove_previous: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::Parser;
+
+    use super::{Cli, Commands, WorkflowSubcommands};
+
+    fn parse(args: &[&str]) -> Cli {
+        Cli::parse_from(args)
+    }
+
+    #[test]
+    fn wf_list_alias_parses_as_workflow_list() {
+        let cli = parse(&["kno", "wf", "list"]);
+        match cli.command {
+            Commands::Workflow(args) => {
+                assert!(matches!(args.command, WorkflowSubcommands::List(_)));
+            }
+            other => panic!("expected Workflow, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn wf_show_alias_parses_with_id() {
+        let cli = parse(&["kno", "wf", "show", "default"]);
+        match cli.command {
+            Commands::Workflow(args) => match args.command {
+                WorkflowSubcommands::Show(show_args) => {
+                    assert_eq!(show_args.id, "default");
+                }
+                other => panic!("expected Show, got {:?}", other),
+            },
+            other => panic!("expected Workflow, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn doctor_fix_flag_parses() {
+        let cli = parse(&["kno", "doctor", "--fix"]);
+        match cli.command {
+            Commands::Doctor(args) => assert!(args.fix),
+            other => panic!("expected Doctor, got {:?}", other),
+        }
+    }
 }

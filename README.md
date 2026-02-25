@@ -119,7 +119,7 @@ kno show <knot-id> --json
 
 Workflow inspection:
 ```bash
-kno workflow list
+kno workflow list     # or: kno wf list
 kno workflow show default
 kno workflow show default --json
 ```

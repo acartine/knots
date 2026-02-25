@@ -73,7 +73,11 @@ impl fmt::Display for WorkflowError {
             WorkflowError::Io(err) => write!(f, "I/O error: {}", err),
             WorkflowError::Toml(err) => write!(f, "invalid workflow TOML: {}", err),
             WorkflowError::MissingFile(path) => {
-                write!(f, "workflow file is required: {}", path.display())
+                write!(
+                    f,
+                    "workflow file is required: {} (run 'kno init' to create it)",
+                    path.display()
+                )
             }
             WorkflowError::InvalidDefinition(message) => {
                 write!(f, "invalid workflow definition: {}", message)
@@ -170,7 +174,7 @@ impl WorkflowRegistry {
             .ok_or(WorkflowError::MissingWorkflowReference)?;
         self.workflows
             .get(&id)
-            .ok_or_else(|| WorkflowError::UnknownWorkflow(id))
+            .ok_or(WorkflowError::UnknownWorkflow(id))
     }
 
     pub fn require(&self, workflow_id: &str) -> Result<&WorkflowDefinition, WorkflowError> {
@@ -178,7 +182,7 @@ impl WorkflowRegistry {
             .ok_or_else(|| WorkflowError::UnknownWorkflow(workflow_id.to_string()))?;
         self.workflows
             .get(&id)
-            .ok_or_else(|| WorkflowError::UnknownWorkflow(id))
+            .ok_or(WorkflowError::UnknownWorkflow(id))
     }
 }
 
@@ -448,8 +452,7 @@ mod tests {
         )
         .expect("simple workflow file should be writable");
 
-        let registry =
-            WorkflowRegistry::load(&root).expect("registry should load");
+        let registry = WorkflowRegistry::load(&root).expect("registry should load");
         let simple = registry
             .require("simple")
             .expect("simple workflow should exist");
@@ -522,4 +525,20 @@ mod tests {
         assert_eq!(triage.initial_state, "todo");
         let _ = std::fs::remove_dir_all(root);
     }
+
+    #[test]
+    fn missing_file_error_includes_path() {
+        let err =
+            super::WorkflowError::MissingFile(std::path::PathBuf::from("./.knots/workflows.toml"));
+        let msg = format!("{}", err);
+        assert!(
+            msg.contains(".knots/workflows.toml"),
+            "expected path in: {}",
+            msg
+        );
+    }
 }
+
+#[cfg(test)]
+#[path = "workflow_tests_ext.rs"]
+mod tests_ext;
