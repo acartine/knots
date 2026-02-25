@@ -8,26 +8,11 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo artifacts
-        uses: swatinem/rust-cache@v2
-
-      - name: Run tests
-        run: cargo test --all-targets --all-features
-
-  coverage:
-    name: Coverage
+  sanity:
+    name: Sanity
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,20 +27,66 @@ jobs:
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin --locked
 
-      - name: Run coverage (min 90%)
-        run: >
-          cargo tarpaulin --all-features --workspace --timeout 120
-          --out Xml --output-dir coverage --fail-under 90
+      - name: Fetch main for threshold regression check
+        if: github.event_name == 'pull_request'
+        run: git fetch origin main --depth=1
+
+      - name: Check coverage threshold regression
+        if: github.event_name == 'pull_request'
+        run: bash scripts/repo/check-coverage-threshold.sh origin/main
+
+      - name: Run sanity
+        id: sanity
+        continue-on-error: true
+        run: make sanity
+
+      - name: Publish coverage summary
+        if: always()
+        run: |
+          echo "### Coverage" >> "${GITHUB_STEP_SUMMARY}"
+          if [[ ! -f coverage/cobertura.xml ]]; then
+            echo "- Coverage report was not generated." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          python3 - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import pathlib
+          import xml.etree.ElementTree as ET
+
+          threshold = pathlib.Path(".ci/coverage-threshold.txt").read_text().strip()
+          root = ET.parse("coverage/cobertura.xml").getroot()
+          covered = int(root.attrib.get("lines-covered", "0"))
+          valid = int(root.attrib.get("lines-valid", "0"))
+          rate = float(root.attrib.get("line-rate", "0")) * 100
+          print(f"- Lines: **{covered}/{valid}**")
+          print(f"- Rate: **{rate:.2f}%**")
+          print(f"- Threshold: **{threshold}%**")
+          PY
 
       - name: Upload coverage artifact
+        if: always() && hashFiles('coverage/cobertura.xml') != ''
         uses: actions/upload-artifact@v4
         with:
           name: coverage-xml
           path: coverage/cobertura.xml
 
-      - name: Upload to Codecov
+      - name: Upload to Codecov (token)
+        if: always() && hashFiles('coverage/cobertura.xml') != '' && secrets.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v4
         with:
           files: coverage/cobertura.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload to Codecov (OIDC)
+        if: always() && hashFiles('coverage/cobertura.xml') != '' && secrets.CODECOV_TOKEN == ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/cobertura.xml
+          fail_ci_if_error: false
+          use_oidc: true
+
+      - name: Fail workflow if sanity failed
+        if: steps.sanity.outcome != 'success'
+        run: |
+          echo "Sanity failed. See logs and coverage summary above." >&2
+          exit 1
