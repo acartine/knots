@@ -69,16 +69,8 @@ jobs:
           name: coverage-xml
           path: coverage/cobertura.xml
 
-      - name: Upload to Codecov (token)
-        if: always() && hashFiles('coverage/cobertura.xml') != '' && secrets.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage/cobertura.xml
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Upload to Codecov (OIDC)
-        if: always() && hashFiles('coverage/cobertura.xml') != '' && secrets.CODECOV_TOKEN == ''
+      - name: Upload to Codecov
+        if: always() && hashFiles('coverage/cobertura.xml') != ''
         uses: codecov/codecov-action@v4
         with:
           files: coverage/cobertura.xml
