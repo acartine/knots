@@ -2,6 +2,7 @@ mod app;
 mod cli;
 mod db;
 mod doctor;
+mod init;
 mod domain;
 mod events;
 mod fsck;
@@ -37,6 +38,17 @@ fn run() -> Result<(), app::AppError> {
     let cli = cli::Cli::parse();
     if let Some(outcome) = maybe_run_self_command(&cli.command)? {
         println!("{outcome}");
+        return Ok(());
+    }
+
+    if let Commands::Init = &cli.command {
+        init::init_all(&cli.repo_root, &cli.db)?;
+        println!("kno init completed");
+        return Ok(());
+    }
+    if let Commands::Uninit = &cli.command {
+        init::uninit_all(&cli.repo_root, &cli.db)?;
+        println!("kno uninit completed");
         return Ok(());
     }
 
@@ -248,6 +260,8 @@ fn run() -> Result<(), app::AppError> {
                 );
             }
         }
+        Commands::Init => unreachable!("init is handled before app initialization"),
+        Commands::Uninit => unreachable!("uninit is handled before app initialization"),
         Commands::InitRemote => {
             app.init_remote()?;
             println!("initialized remote branch origin/knots");

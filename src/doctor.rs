@@ -195,7 +195,7 @@ fn check_remote(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
     } else {
         (
             DoctorStatus::Warn,
-            "origin reachable; knots branch missing (run `kno init-remote`)".to_string(),
+            "origin reachable; knots branch missing (run `kno init`)".to_string(),
         )
     };
 

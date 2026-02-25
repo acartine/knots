@@ -225,11 +225,32 @@ impl App {
             return Ok(token.to_string());
         }
         let maps = self.alias_maps()?;
-        Ok(maps
-            .alias_to_id
-            .get(token)
-            .cloned()
-            .unwrap_or_else(|| token.to_string()))
+        if let Some(id) = maps.alias_to_id.get(token) {
+            return Ok(id.clone());
+        }
+
+        let mut suffix_matches = maps
+            .id_to_alias
+            .keys()
+            .filter_map(|id| {
+                id.rsplit_once('-')
+                    .filter(|(_, suffix)| *suffix == token)
+                    .map(|_| id.clone())
+            })
+            .collect::<Vec<_>>();
+
+        match suffix_matches.len() {
+            0 => Ok(token.to_string()),
+            1 => Ok(suffix_matches.remove(0)),
+            _ => {
+                suffix_matches.sort();
+                Err(AppError::InvalidArgument(format!(
+                    "ambiguous knot id '{}'; matches: {}",
+                    token,
+                    suffix_matches.join(", ")
+                )))
+            }
+        }
     }
 
     fn with_alias_maps(knot: KnotView, maps: &AliasMaps) -> KnotView {

@@ -64,6 +64,10 @@ pub enum Commands {
     Push(SyncArgs),
     #[command(about = "Push then pull knot updates.")]
     Sync(SyncArgs),
+    #[command(about = "Initialize local store, add .knots gitignore entries, and init remote.")]
+    Init,
+    #[command(about = "Remove local knots store artifacts and delete remote knots branch.")]
+    Uninit,
     #[command(about = "Create and bootstrap the remote knots branch.")]
     InitRemote,
     #[command(about = "Validate on-disk knots event/index data.")]
@@ -110,7 +114,7 @@ pub struct NewArgs {
 #[derive(Debug, Args)]
 #[command(about = "Set knot state.")]
 pub struct StateArgs {
-    #[arg(help = "Knot id or hierarchical alias.")]
+    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
     pub id: String,
     #[arg(help = "Target state.")]
     pub state: String,
@@ -129,7 +133,7 @@ pub struct StateArgs {
 #[derive(Debug, Args)]
 #[command(about = "Update knot fields and metadata.")]
 pub struct UpdateArgs {
-    #[arg(help = "Knot id or hierarchical alias.")]
+    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
     pub id: String,
 
     #[arg(short = 't', long, help = "Set title.")]
@@ -243,7 +247,7 @@ pub struct ListArgs {
 #[derive(Debug, Args)]
 #[command(about = "Show one knot.")]
 pub struct ShowArgs {
-    #[arg(help = "Knot id or hierarchical alias.")]
+    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
     pub id: String,
 
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
@@ -366,7 +370,7 @@ pub struct ColdSearchArgs {
 #[derive(Debug, Args)]
 #[command(about = "Rehydrate one knot.")]
 pub struct RehydrateArgs {
-    #[arg(help = "Knot id or hierarchical alias.")]
+    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
     pub id: String,
 
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
@@ -395,28 +399,28 @@ pub enum EdgeSubcommands {
 
 #[derive(Debug, Args)]
 pub struct EdgeAddArgs {
-    #[arg(help = "Source knot id or alias.")]
+    #[arg(help = "Source knot full id, stripped id, or hierarchical alias.")]
     pub src: String,
     #[arg(help = "Edge kind, for example parent_of or blocked_by.")]
     pub kind: String,
-    #[arg(help = "Destination knot id or alias.")]
+    #[arg(help = "Destination knot full id, stripped id, or hierarchical alias.")]
     pub dst: String,
 }
 
 #[derive(Debug, Args)]
 pub struct EdgeRemoveArgs {
-    #[arg(help = "Source knot id or alias.")]
+    #[arg(help = "Source knot full id, stripped id, or hierarchical alias.")]
     pub src: String,
     #[arg(help = "Edge kind, for example parent_of or blocked_by.")]
     pub kind: String,
-    #[arg(help = "Destination knot id or alias.")]
+    #[arg(help = "Destination knot full id, stripped id, or hierarchical alias.")]
     pub dst: String,
 }
 
 #[derive(Debug, Args)]
 #[command(about = "List edges for a knot.")]
 pub struct EdgeListArgs {
-    #[arg(help = "Knot id or hierarchical alias.")]
+    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
     pub id: String,
 
     #[arg(

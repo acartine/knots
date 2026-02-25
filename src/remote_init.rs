@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[derive(Debug)]
@@ -15,6 +15,34 @@ pub enum RemoteInitError {
         stderr: String,
     },
     Io(std::io::Error),
+}
+
+const KNOWN_GIT_HOOKS: &[&str] = &[
+    "applypatch-msg",
+    "commit-msg",
+    "pre-applypatch",
+    "pre-commit",
+    "pre-merge-commit",
+    "prepare-commit-msg",
+    "pre-push",
+    "pre-rebase",
+    "pre-receive",
+    "update",
+];
+
+const BD_BEADS_SIGNATURES: &[&str] = &["bd ", "bd\n", "beads", "uncommitted changes detected"];
+
+#[derive(Debug, Clone)]
+pub struct BeadsHookReport {
+    pub hooks_dir: PathBuf,
+    pub hook_files: Vec<PathBuf>,
+    pub has_beads_config: bool,
+}
+
+impl BeadsHookReport {
+    pub fn is_empty(&self) -> bool {
+        self.hook_files.is_empty() && !self.has_beads_config
+    }
 }
 
 impl std::fmt::Display for RemoteInitError {
@@ -62,6 +90,86 @@ pub fn init_remote_knots_branch(repo_root: &Path) -> Result<(), RemoteInitError>
     init_remote_branch(repo_root, "origin", "knots")
 }
 
+pub fn detect_beads_hooks(repo_root: &Path) -> BeadsHookReport {
+    let mut hooks_dir = repo_root.join(".git").join("hooks");
+    if let Ok(output) = run(
+        repo_root,
+        &["config", "--local", "--get", "core.hooksPath"],
+    ) {
+        if output.status.success() {
+            let configured = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !configured.is_empty() {
+                let path = Path::new(&configured);
+                if path.is_absolute() {
+                    hooks_dir = path.to_path_buf();
+                } else {
+                    hooks_dir = repo_root.join(path);
+                }
+            }
+        }
+    }
+
+    let mut report = BeadsHookReport {
+        hooks_dir,
+        hook_files: Vec::new(),
+        has_beads_config: has_beads_config_entry(repo_root),
+    };
+
+    if !report.hooks_dir.exists() {
+        return report;
+    }
+
+    for hook in KNOWN_GIT_HOOKS {
+        let path = report.hooks_dir.join(hook);
+        if !path.exists() {
+            continue;
+        }
+        if path_is_beads_related(&path) {
+            report.hook_files.push(path);
+        }
+    }
+
+    report
+}
+
+pub fn remote_branch_exists(
+    repo_root: &Path,
+    remote: &str,
+    branch: &str,
+) -> Result<bool, RemoteInitError> {
+    let output = run(repo_root, &["ls-remote", "--exit-code", "--heads", remote, branch])?;
+    if output.status.success() {
+        return Ok(true);
+    }
+
+    if output.status.code() == Some(2) {
+        return Ok(false);
+    }
+
+    Err(command_failure(
+        repo_root,
+        &["ls-remote", "--exit-code", "--heads", remote, branch],
+        output,
+    ))
+}
+
+pub fn uninit_remote_knots_branch(
+    repo_root: &Path,
+    remote: &str,
+    branch: &str,
+) -> Result<bool, RemoteInitError> {
+    if !repo_root.join(".git").exists() {
+        return Err(RemoteInitError::NotGitRepository);
+    }
+
+    ensure_remote_exists(repo_root, remote)?;
+    if !remote_branch_exists(repo_root, remote, branch)? {
+        return Ok(false);
+    }
+    run_push_with_hook_fallback(repo_root, &["push", "--delete", remote, branch])?;
+    Ok(true)
+}
+
 fn init_remote_branch(repo_root: &Path, remote: &str, branch: &str) -> Result<(), RemoteInitError> {
     if !repo_root.join(".git").exists() {
         return Err(RemoteInitError::NotGitRepository);
@@ -74,10 +182,9 @@ fn init_remote_branch(repo_root: &Path, remote: &str, branch: &str) -> Result<()
         run_checked(repo_root, &["branch", branch])?;
     }
 
-    run_checked(
-        repo_root,
-        &["push", "-u", remote, &format!("{}:{}", branch, branch)],
-    )?;
+    let push_spec = format!("{}:{}", branch, branch);
+    let push_args = ["push", "-u", remote, push_spec.as_str()];
+    run_push_with_hook_fallback(repo_root, &push_args)?;
     Ok(())
 }
 
@@ -132,6 +239,64 @@ fn run_checked(repo_root: &Path, args: &[&str]) -> Result<String, RemoteInitErro
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
+fn run_push_with_hook_fallback(
+    repo_root: &Path,
+    args: &[&str],
+) -> Result<String, RemoteInitError> {
+    match run_checked(repo_root, args) {
+        Ok(out) => Ok(out),
+        Err(err) if should_retry_push_without_verify(&err) => {
+            let mut no_verify_args = Vec::with_capacity(args.len() + 1);
+            no_verify_args.push("push");
+            if !args.is_empty() && args[0] == "push" {
+                no_verify_args.push("--no-verify");
+                no_verify_args.extend(args.iter().skip(1).copied());
+                run_checked(repo_root, &no_verify_args)
+            } else {
+                Err(err)
+            }
+        }
+        Err(err) => Err(err),
+    }
+}
+
+fn should_retry_push_without_verify(error: &RemoteInitError) -> bool {
+    match error {
+        RemoteInitError::GitCommandFailed {
+            code: Some(1),
+            stderr,
+            ..
+        } => {
+            let stderr = stderr.to_lowercase();
+            has_bd_beads_signature(&stderr)
+        }
+        _ => false,
+    }
+}
+
+fn has_bd_beads_signature(line: &str) -> bool {
+    BD_BEADS_SIGNATURES.iter().any(|sig| line.contains(sig))
+}
+
+fn path_is_beads_related(path: &Path) -> bool {
+    if let Ok(contents) = std::fs::read_to_string(path) {
+        has_bd_beads_signature(&contents.to_lowercase())
+    } else {
+        false
+    }
+}
+
+fn has_beads_config_entry(repo_root: &Path) -> bool {
+    if let Ok(output) = run(
+        repo_root,
+        &["config", "--local", "--get-regexp", "^beads\\..*"],
+    ) {
+        output.status.success() && !String::from_utf8_lossy(&output.stdout).trim().is_empty()
+    } else {
+        false
+    }
+}
+
 fn run(repo_root: &Path, args: &[&str]) -> Result<std::process::Output, RemoteInitError> {
     Command::new("git")
         .arg("-C")
@@ -160,7 +325,7 @@ mod tests {
 
     use uuid::Uuid;
 
-    use super::{init_remote_branch, RemoteInitError};
+    use super::{detect_beads_hooks, init_remote_branch, RemoteInitError};
 
     fn unique_dir(prefix: &str) -> PathBuf {
         let path = std::env::temp_dir().join(format!("{}-{}", prefix, Uuid::now_v7()));
@@ -242,6 +407,33 @@ mod tests {
             second,
             Err(RemoteInitError::RemoteBranchExists { .. })
         ));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn detects_beads_hook_in_hook_file() {
+        let (root, local) = setup_repo_with_remote();
+        let hooks = local.join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks).expect("hooks dir should be creatable");
+
+        let pre_push = hooks.join("pre-push");
+        std::fs::write(&pre_push, "#!/bin/sh\nbd sync\n")
+            .expect("pre-push hook should be writable");
+        let report = detect_beads_hooks(&local);
+        assert!(!report.hook_files.is_empty());
+        assert!(report.hook_files.contains(&pre_push));
+        assert!(!report.has_beads_config);
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn detects_beads_config() {
+        let (root, local) = setup_repo_with_remote();
+        run_git(&local, &["config", "beads.role", "maintainer"]);
+        let report = detect_beads_hooks(&local);
+        assert!(report.has_beads_config);
 
         let _ = std::fs::remove_dir_all(root);
     }

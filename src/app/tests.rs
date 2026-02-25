@@ -140,6 +140,10 @@ fn count_json_files(root: &Path) -> usize {
     count
 }
 
+fn stripped_id(id: &str) -> &str {
+    id.rsplit_once('-').map(|(_, suffix)| suffix).unwrap_or(id)
+}
+
 #[test]
 fn create_knot_updates_cache_and_writes_events() {
     let root = unique_workspace();
@@ -217,6 +221,106 @@ fn hierarchical_aliases_are_assigned_and_resolve_to_ids() {
         .expect("set_state should accept alias id");
     assert_eq!(updated.id, child.id);
     assert_eq!(updated.state, "work_item");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn stripped_ids_resolve_for_show_state_update_and_edges() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let src = app
+        .create_knot("Source", None, Some("idea"), Some("default"))
+        .expect("source knot should be created");
+    let dst = app
+        .create_knot("Target", None, Some("idea"), Some("default"))
+        .expect("target knot should be created");
+
+    let src_short = stripped_id(&src.id).to_string();
+    let dst_short = stripped_id(&dst.id).to_string();
+
+    let shown = app
+        .show_knot(&src_short)
+        .expect("show should succeed")
+        .expect("source knot should resolve");
+    assert_eq!(shown.id, src.id);
+
+    let set = app
+        .set_state(&src_short, "work_item", false, None)
+        .expect("set_state should accept stripped id");
+    assert_eq!(set.id, src.id);
+    assert_eq!(set.state, "work_item");
+
+    let updated = app
+        .update_knot(
+            &src_short,
+            UpdateKnotPatch {
+                title: Some("Source updated".to_string()),
+                description: None,
+                priority: None,
+                status: None,
+                knot_type: None,
+                add_tags: vec![],
+                remove_tags: vec![],
+                add_note: None,
+                add_handoff_capsule: None,
+                expected_workflow_etag: None,
+                force: false,
+            },
+        )
+        .expect("update_knot should accept stripped id");
+    assert_eq!(updated.id, src.id);
+    assert_eq!(updated.title, "Source updated");
+
+    let added = app
+        .add_edge(&src_short, "blocked_by", &dst_short)
+        .expect("add_edge should accept stripped ids");
+    assert_eq!(added.src, src.id);
+    assert_eq!(added.dst, dst.id);
+
+    let edges = app
+        .list_edges(&src_short, "outgoing")
+        .expect("list_edges should accept stripped id");
+    assert_eq!(edges.len(), 1);
+    assert_eq!(edges[0].dst, dst.id);
+
+    let removed = app
+        .remove_edge(&src_short, "blocked_by", &dst_short)
+        .expect("remove_edge should accept stripped ids");
+    assert_eq!(removed.src, src.id);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn stripped_id_collisions_return_ambiguous_error() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let db_path_str = db_path.to_str().expect("utf8 path").to_string();
+    std::fs::create_dir_all(
+        db_path
+            .parent()
+            .expect("db parent directory should exist for collision test"),
+    )
+    .expect("db parent directory should be creatable");
+
+    let conn = db::open_connection(&db_path_str).expect("db should open");
+    db::upsert_knot_warm(&conn, "alpha-t74", "Alpha").expect("alpha warm record should insert");
+    db::upsert_knot_warm(&conn, "beta-t74", "Beta").expect("beta warm record should insert");
+    drop(conn);
+
+    let app = App::open(&db_path_str, root.clone()).expect("app should open");
+    let err = app.show_knot("t74").expect_err("show_knot should fail for ambiguous id");
+    match err {
+        AppError::InvalidArgument(message) => {
+            assert!(message.contains("ambiguous knot id 't74'"));
+            assert!(message.contains("matches: alpha-t74, beta-t74"));
+        }
+        other => panic!("unexpected error for ambiguous id: {other}"),
+    }
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -572,9 +676,10 @@ fn rehydrate_builds_hot_record_from_warm_and_full_events() {
 
     let app = App::open(&db_path_str, root.clone()).expect("app should open");
     let rehydrated = app
-        .rehydrate("K-9")
+        .rehydrate("9")
         .expect("rehydrate should succeed")
         .expect("knot should be rehydrated");
+    assert_eq!(rehydrated.id, "K-9");
     assert_eq!(
         rehydrated.description.as_deref(),
         Some("rehydrated details")
