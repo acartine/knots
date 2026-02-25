@@ -24,10 +24,14 @@ pub fn print_knot_list(knots: &[DisplayKnot], filter: &KnotListFilter) {
 fn format_knot_row(row: &DisplayKnot, palette: &Palette) -> String {
     let knot = &row.knot;
     let indent = indentation_prefix(row.depth, palette);
+    let display_id = match knot.alias.as_deref() {
+        Some(alias) => format!("{alias} ({})", knot.id),
+        None => knot.id.clone(),
+    };
     let mut line = format!(
         "{}{} {} {}",
         indent,
-        palette.id(&knot.id),
+        palette.id(&display_id),
         palette.state(&knot.state),
         knot.title
     );
@@ -63,6 +67,9 @@ fn filter_summary(filter: &KnotListFilter) -> Option<String> {
     }
     if let Some(kind) = filter.knot_type.as_deref().and_then(non_empty) {
         parts.push(format!("type={kind}"));
+    }
+    if let Some(workflow_id) = filter.workflow_id.as_deref().and_then(non_empty) {
+        parts.push(format!("workflow={workflow_id}"));
     }
     if !filter.tags.is_empty() {
         let tags = filter
@@ -161,6 +168,7 @@ mod tests {
             include_all: false,
             state: Some("implementing".to_string()),
             knot_type: Some("task".to_string()),
+            workflow_id: Some("default".to_string()),
             tags: vec!["release".to_string(), "".to_string()],
             query: Some("sync".to_string()),
         };
@@ -168,7 +176,7 @@ mod tests {
         let summary = filter_summary(&filter).expect("summary should exist");
         assert_eq!(
             summary,
-            "state=implementing type=task tags=release query=sync"
+            "state=implementing type=task workflow=default tags=release query=sync"
         );
     }
 
@@ -184,6 +192,7 @@ mod tests {
             include_all: true,
             state: None,
             knot_type: None,
+            workflow_id: None,
             tags: Vec::new(),
             query: None,
         };

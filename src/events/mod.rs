@@ -141,6 +141,8 @@ pub struct IndexEvent {
     #[serde(rename = "type")]
     pub event_type: String,
     pub data: Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub precondition: Option<WorkflowPrecondition>,
 }
 
 impl IndexEvent {
@@ -164,7 +166,15 @@ impl IndexEvent {
             occurred_at: occurred_at.into(),
             event_type: event_type.into(),
             data,
+            precondition: None,
         }
+    }
+
+    pub fn with_precondition(mut self, workflow_etag: impl Into<String>) -> Self {
+        self.precondition = Some(WorkflowPrecondition {
+            workflow_etag: workflow_etag.into(),
+        });
+        self
     }
 }
 

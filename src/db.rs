@@ -1,13 +1,13 @@
 use std::time::Duration;
 
 use rusqlite::{params, types::Type, Connection, DatabaseName, OptionalExtension, Result};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
 use crate::domain::metadata::MetadataEntry;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 3;
+pub const CURRENT_SCHEMA_VERSION: i64 = 4;
 
 struct Migration {
     version: i64,
@@ -15,7 +15,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 3] = [
+const MIGRATIONS: [Migration; 4] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -113,6 +113,13 @@ ALTER TABLE knot_hot ADD COLUMN handoff_capsules_json TEXT NOT NULL DEFAULT '[]'
 UPDATE knot_hot
 SET description = COALESCE(description, body)
 WHERE description IS NULL;
+"#,
+    },
+    Migration {
+        version: 4,
+        name: "knot_workflow_identity_v1",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN workflow_id TEXT NOT NULL DEFAULT 'default';
 "#,
     },
 ];
@@ -214,6 +221,14 @@ ON CONFLICT(key) DO NOTHING
 "#,
         [],
     )?;
+    tx.execute(
+        r#"
+INSERT INTO meta (key, value)
+VALUES ('sync_fetch_blob_limit_kb', '0')
+ON CONFLICT(key) DO NOTHING
+"#,
+        [],
+    )?;
 
     tx.commit()
 }
@@ -234,7 +249,7 @@ fn from_json_text<T: DeserializeOwned>(raw: String, column: usize) -> Result<T> 
         .map_err(|err| rusqlite::Error::FromSqlConversionFailure(column, Type::Text, Box::new(err)))
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct KnotCacheRecord {
     pub id: String,
     pub title: String,
@@ -247,17 +262,18 @@ pub struct KnotCacheRecord {
     pub tags: Vec<String>,
     pub notes: Vec<MetadataEntry>,
     pub handoff_capsules: Vec<MetadataEntry>,
+    pub workflow_id: String,
     pub workflow_etag: Option<String>,
     pub created_at: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WarmKnotRecord {
     pub id: String,
     pub title: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ColdCatalogRecord {
     pub id: String,
     pub title: String,
@@ -277,6 +293,7 @@ pub struct UpsertKnotHot<'a> {
     pub tags: &'a [String],
     pub notes: &'a [MetadataEntry],
     pub handoff_capsules: &'a [MetadataEntry],
+    pub workflow_id: &'a str,
     pub workflow_etag: Option<&'a str>,
     pub created_at: Option<&'a str>,
 }
@@ -289,9 +306,9 @@ pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()
         r#"
 INSERT INTO knot_hot (
     id, title, state, updated_at, body, description, priority, knot_type,
-    tags_json, notes_json, handoff_capsules_json, workflow_etag, created_at
+    tags_json, notes_json, handoff_capsules_json, workflow_id, workflow_etag, created_at
 )
-VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
     state = excluded.state,
@@ -303,6 +320,7 @@ ON CONFLICT(id) DO UPDATE SET
     tags_json = excluded.tags_json,
     notes_json = excluded.notes_json,
     handoff_capsules_json = excluded.handoff_capsules_json,
+    workflow_id = excluded.workflow_id,
     workflow_etag = excluded.workflow_etag,
     created_at = COALESCE(knot_hot.created_at, excluded.created_at)
 "#,
@@ -318,6 +336,7 @@ ON CONFLICT(id) DO UPDATE SET
             tags_json,
             notes_json,
             handoff_capsules_json,
+            args.workflow_id,
             args.workflow_etag,
             args.created_at
         ],
@@ -331,7 +350,7 @@ pub fn get_knot_hot(conn: &Connection, id: &str) -> Result<Option<KnotCacheRecor
     conn.query_row(
         r#"
 SELECT id, title, state, updated_at, body, description, priority, knot_type,
-       tags_json, notes_json, handoff_capsules_json, workflow_etag, created_at
+       tags_json, notes_json, handoff_capsules_json, workflow_id, workflow_etag, created_at
 FROM knot_hot
 WHERE id = ?1
 "#,
@@ -352,8 +371,9 @@ WHERE id = ?1
                 tags: from_json_text(tags_json, 8)?,
                 notes: from_json_text(notes_json, 9)?,
                 handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
-                workflow_etag: row.get(11)?,
-                created_at: row.get(12)?,
+                workflow_id: row.get(11)?,
+                workflow_etag: row.get(12)?,
+                created_at: row.get(13)?,
             })
         },
     )
@@ -364,7 +384,7 @@ pub fn list_knot_hot(conn: &Connection) -> Result<Vec<KnotCacheRecord>> {
     let mut stmt = conn.prepare(
         r#"
 SELECT id, title, state, updated_at, body, description, priority, knot_type,
-       tags_json, notes_json, handoff_capsules_json, workflow_etag, created_at
+       tags_json, notes_json, handoff_capsules_json, workflow_id, workflow_etag, created_at
 FROM knot_hot
 ORDER BY updated_at DESC, id ASC
 "#,
@@ -388,8 +408,9 @@ ORDER BY updated_at DESC, id ASC
             tags: from_json_text(tags_json, 8)?,
             notes: from_json_text(notes_json, 9)?,
             handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
-            workflow_etag: row.get(11)?,
-            created_at: row.get(12)?,
+            workflow_id: row.get(11)?,
+            workflow_etag: row.get(12)?,
+            created_at: row.get(13)?,
         });
     }
 
@@ -430,6 +451,19 @@ pub fn get_knot_warm(conn: &Connection, id: &str) -> Result<Option<WarmKnotRecor
         },
     )
     .optional()
+}
+
+pub fn list_knot_warm(conn: &Connection) -> Result<Vec<WarmKnotRecord>> {
+    let mut stmt = conn.prepare("SELECT id, title FROM knot_warm ORDER BY id ASC")?;
+    let mut rows = stmt.query([])?;
+    let mut result = Vec::new();
+    while let Some(row) = rows.next()? {
+        result.push(WarmKnotRecord {
+            id: row.get(0)?,
+            title: row.get(1)?,
+        });
+    }
+    Ok(result)
 }
 
 pub fn upsert_cold_catalog(
@@ -492,6 +526,27 @@ ORDER BY updated_at DESC, id ASC
     Ok(result)
 }
 
+pub fn list_cold_catalog(conn: &Connection) -> Result<Vec<ColdCatalogRecord>> {
+    let mut stmt = conn.prepare(
+        r#"
+SELECT id, title, state, updated_at
+FROM cold_catalog
+ORDER BY updated_at DESC, id ASC
+"#,
+    )?;
+    let mut rows = stmt.query([])?;
+    let mut result = Vec::new();
+    while let Some(row) = rows.next()? {
+        result.push(ColdCatalogRecord {
+            id: row.get(0)?,
+            title: row.get(1)?,
+            state: row.get(2)?,
+            updated_at: row.get(3)?,
+        });
+    }
+    Ok(result)
+}
+
 pub fn delete_cold_catalog(conn: &Connection, id: &str) -> Result<()> {
     conn.execute("DELETE FROM cold_catalog WHERE id = ?1", params![id])?;
     Ok(())
@@ -506,6 +561,28 @@ pub fn get_hot_window_days(conn: &Connection) -> Result<i64> {
         .parse::<i64>()
         .unwrap_or(7);
     Ok(parsed.max(0))
+}
+
+pub fn get_sync_fetch_blob_limit_kb(conn: &Connection) -> Result<Option<u64>> {
+    if let Ok(raw) = std::env::var("KNOTS_FETCH_BLOB_LIMIT_KB") {
+        let parsed = raw.trim().parse::<u64>().unwrap_or(0);
+        if parsed > 0 {
+            return Ok(Some(parsed));
+        }
+    }
+
+    let value = get_meta(conn, "sync_fetch_blob_limit_kb")?;
+    let parsed = value
+        .as_deref()
+        .unwrap_or("0")
+        .trim()
+        .parse::<u64>()
+        .unwrap_or(0);
+    if parsed > 0 {
+        Ok(Some(parsed))
+    } else {
+        Ok(None)
+    }
 }
 
 pub fn get_meta(conn: &Connection, key: &str) -> Result<Option<String>> {

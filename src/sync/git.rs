@@ -11,22 +11,24 @@ impl GitAdapter {
         Self
     }
 
-    pub fn fetch_branch(
+    pub fn fetch_branch_with_filter(
         &self,
         repo_root: &Path,
         remote: &str,
         branch: &str,
+        blob_limit_kb: Option<u64>,
     ) -> Result<(), SyncError> {
-        self.run_checked(
-            repo_root,
-            vec![
-                "fetch".to_string(),
-                "--no-tags".to_string(),
-                "--prune".to_string(),
-                remote.to_string(),
-                branch.to_string(),
-            ],
-        )?;
+        let mut args = vec![
+            "fetch".to_string(),
+            "--no-tags".to_string(),
+            "--prune".to_string(),
+        ];
+        if let Some(limit_kb) = blob_limit_kb {
+            args.push(format!("--filter=blob:limit={}k", limit_kb));
+        }
+        args.push(remote.to_string());
+        args.push(branch.to_string());
+        self.run_checked(repo_root, args)?;
         Ok(())
     }
 

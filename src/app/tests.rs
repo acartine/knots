@@ -7,7 +7,116 @@ use uuid::Uuid;
 fn unique_workspace() -> PathBuf {
     let root = std::env::temp_dir().join(format!("knots-app-test-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
+    write_default_workflow_file(&root);
     root
+}
+
+fn write_default_workflow_file(root: &Path) {
+    let workflows_path = root.join(".knots").join("workflows.toml");
+    std::fs::create_dir_all(
+        workflows_path
+            .parent()
+            .expect("workflow parent directory should exist"),
+    )
+    .expect("workflow parent should be creatable");
+    std::fs::write(
+        workflows_path,
+        concat!(
+            "[[workflows]]\n",
+            "id = \"default\"\n",
+            "description = \"default flow\"\n",
+            "initial_state = \"idea\"\n",
+            "states = [\n",
+            "  \"idea\",\n",
+            "  \"work_item\",\n",
+            "  \"implementing\",\n",
+            "  \"implemented\",\n",
+            "  \"reviewing\",\n",
+            "  \"rejected\",\n",
+            "  \"refining\",\n",
+            "  \"approved\",\n",
+            "  \"shipped\",\n",
+            "  \"deferred\",\n",
+            "  \"abandoned\"\n",
+            "]\n",
+            "terminal_states = [\"shipped\", \"deferred\", \"abandoned\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"idea\"\n",
+            "to = \"work_item\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"work_item\"\n",
+            "to = \"implementing\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"implementing\"\n",
+            "to = \"implemented\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"implemented\"\n",
+            "to = \"reviewing\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"reviewing\"\n",
+            "to = \"approved\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"reviewing\"\n",
+            "to = \"rejected\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"rejected\"\n",
+            "to = \"refining\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"refining\"\n",
+            "to = \"implemented\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"approved\"\n",
+            "to = \"shipped\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"*\"\n",
+            "to = \"deferred\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"*\"\n",
+            "to = \"abandoned\"\n"
+        ),
+    )
+    .expect("default workflow file should be writable");
+}
+
+fn write_workflow_file(root: &Path) {
+    let workflows_path = root.join(".knots").join("workflows.toml");
+    std::fs::create_dir_all(
+        workflows_path
+            .parent()
+            .expect("workflow parent directory should exist"),
+    )
+    .expect("workflow parent should be creatable");
+    std::fs::write(
+        workflows_path,
+        concat!(
+            "[[workflows]]\n",
+            "id = \"triage\"\n",
+            "description = \"triage flow\"\n",
+            "initial_state = \"todo\"\n",
+            "states = [\"todo\", \"doing\", \"done\"]\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"todo\"\n",
+            "to = \"doing\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"doing\"\n",
+            "to = \"done\"\n"
+        ),
+    )
+    .expect("workflow file should be writable");
 }
 
 fn count_json_files(root: &Path) -> usize {
@@ -42,12 +151,21 @@ fn create_knot_updates_cache_and_writes_events() {
         .create_knot(
             "Build cache layer",
             Some("Need hot/warm support"),
-            "work_item",
+            Some("work_item"),
+            Some("default"),
         )
         .expect("create should succeed");
-    assert!(created.id.starts_with("K-"));
+    let (prefix, suffix) = created.id.rsplit_once('-').expect("id should include '-'");
+    assert!(
+        prefix.starts_with("knots-app-test-"),
+        "id prefix should include repo slug, got '{}'",
+        created.id
+    );
+    assert_eq!(suffix.len(), 4);
+    assert!(suffix.chars().all(|ch| ch.is_ascii_hexdigit()));
     assert_eq!(created.title, "Build cache layer");
     assert_eq!(created.state, "work_item");
+    assert_eq!(created.workflow_id, "default");
 
     let listed = app.list_knots().expect("list should succeed");
     assert_eq!(listed.len(), 1);
@@ -66,6 +184,44 @@ fn create_knot_updates_cache_and_writes_events() {
 }
 
 #[test]
+fn hierarchical_aliases_are_assigned_and_resolve_to_ids() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let parent = app
+        .create_knot("Parent", None, Some("idea"), Some("default"))
+        .expect("parent knot should be created");
+    let child = app
+        .create_knot("Child", None, Some("idea"), Some("default"))
+        .expect("child knot should be created");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("parent edge should be added");
+
+    let shown_child = app
+        .show_knot(&child.id)
+        .expect("show by id should succeed")
+        .expect("child should exist");
+    let alias = shown_child.alias.expect("child should expose alias");
+    assert_eq!(alias, format!("{}.1", parent.id));
+
+    let via_alias = app
+        .show_knot(&alias)
+        .expect("show by alias should succeed")
+        .expect("child should resolve by alias");
+    assert_eq!(via_alias.id, child.id);
+
+    let updated = app
+        .set_state(&alias, "work_item", false, None)
+        .expect("set_state should accept alias id");
+    assert_eq!(updated.id, child.id);
+    assert_eq!(updated.state, "work_item");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn set_state_enforces_transition_rules_unless_forced() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
@@ -73,11 +229,11 @@ fn set_state_enforces_transition_rules_unless_forced() {
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
 
     let created = app
-        .create_knot("Transition test", None, "idea")
+        .create_knot("Transition test", None, Some("idea"), Some("default"))
         .expect("create should succeed");
 
     let invalid = app.set_state(&created.id, "reviewing", false, None);
-    assert!(matches!(invalid, Err(AppError::InvalidTransition(_))));
+    assert!(invalid.is_err());
 
     let forced = app
         .set_state(&created.id, "reviewing", true, None)
@@ -91,6 +247,47 @@ fn set_state_enforces_transition_rules_unless_forced() {
 }
 
 #[test]
+fn create_knot_supports_custom_workflow_and_initial_default() {
+    let root = unique_workspace();
+    write_workflow_file(&root);
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let created = app
+        .create_knot("Workflow test", None, None, Some("triage"))
+        .expect("knot should be created");
+
+    assert_eq!(created.workflow_id, "triage");
+    assert_eq!(created.state, "todo");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn custom_workflow_enforces_transitions_unless_forced() {
+    let root = unique_workspace();
+    write_workflow_file(&root);
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let created = app
+        .create_knot("Workflow transition", None, None, Some("triage"))
+        .expect("knot should be created");
+
+    let invalid = app.set_state(&created.id, "done", false, None);
+    assert!(invalid.is_err());
+
+    let forced = app
+        .set_state(&created.id, "done", true, None)
+        .expect("forced state transition should succeed");
+    assert_eq!(forced.state, "done");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn edge_commands_update_cache_and_round_trip() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
@@ -98,10 +295,10 @@ fn edge_commands_update_cache_and_round_trip() {
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
 
     let src = app
-        .create_knot("Source", None, "idea")
+        .create_knot("Source", None, Some("idea"), Some("default"))
         .expect("source knot should be created");
     let dst = app
-        .create_knot("Target", None, "idea")
+        .create_knot("Target", None, Some("idea"), Some("default"))
         .expect("target knot should be created");
 
     let added = app
@@ -144,7 +341,12 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
 
     let created = app
-        .create_knot("Parity", Some("legacy body"), "work_item")
+        .create_knot(
+            "Parity",
+            Some("legacy body"),
+            Some("work_item"),
+            Some("default"),
+        )
         .expect("knot should be created");
 
     let updated = app
@@ -214,7 +416,7 @@ fn update_knot_requires_at_least_one_change() {
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
     let created = app
-        .create_knot("Noop", None, "idea")
+        .create_knot("Noop", None, Some("idea"), Some("default"))
         .expect("knot should be created");
 
     let result = app.update_knot(
@@ -245,7 +447,7 @@ fn update_knot_rejects_stale_if_match() {
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
     let created = app
-        .create_knot("OCC", None, "work_item")
+        .create_knot("OCC", None, Some("work_item"), Some("default"))
         .expect("knot should be created");
     let expected = created
         .workflow_etag
@@ -359,6 +561,7 @@ fn rehydrate_builds_hot_record_from_warm_and_full_events() {
             "    \"knot_id\": \"K-9\",\n",
             "    \"title\": \"Warm title\",\n",
             "    \"state\": \"work_item\",\n",
+            "    \"workflow_id\": \"default\",\n",
             "    \"updated_at\": \"2026-02-24T10:00:01Z\",\n",
             "    \"terminal\": false\n",
             "  }\n",
@@ -376,6 +579,7 @@ fn rehydrate_builds_hot_record_from_warm_and_full_events() {
         rehydrated.description.as_deref(),
         Some("rehydrated details")
     );
+    assert_eq!(rehydrated.workflow_id, "default");
     assert_eq!(rehydrated.workflow_etag.as_deref(), Some("1002"));
 
     let _ = std::fs::remove_dir_all(root);

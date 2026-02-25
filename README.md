@@ -77,6 +77,7 @@ kno uninstall --remove-previous
 Create an issue:
 ```bash
 kno new "Document release pipeline" --state work_item
+kno new "Triage regression" --workflow triage
 ```
 
 Update state:
@@ -107,9 +108,17 @@ kno ls
 kno ls               # shipped knots hidden by default
 kno ls --all         # include shipped knots
 kno ls --state implementing --tag release
+kno ls --workflow default
 kno ls --type task --query importer
 kno show <knot-id>
 kno show <knot-id> --json
+```
+
+Workflow inspection:
+```bash
+kno workflow list
+kno workflow show default
+kno workflow show default --json
 ```
 
 Sync from dedicated `knots` branch/worktree:
@@ -123,6 +132,32 @@ kno edge add <src-id> blocked_by <dst-id>
 kno edge list <src-id> --direction outgoing
 kno edge remove <src-id> blocked_by <dst-id>
 ```
+
+## Workflow definitions
+Knots requires workflow definitions at `.knots/workflows.toml`.
+
+The file shape:
+```toml
+[[workflows]]
+id = "triage"
+description = "triage flow"
+initial_state = "todo"
+states = ["todo", "doing", "done"]
+terminal_states = ["done"]
+
+[[workflows.transitions]]
+from = "todo"
+to = "doing"
+
+[[workflows.transitions]]
+from = "doing"
+to = "done"
+```
+
+Notes:
+- Workflow ids and states are normalized to lowercase.
+- Use transition `from = "*"` for wildcard transitions.
+- There is no built-in fallback workflow; all workflow ids must be defined in the file.
 
 ## Import from Beads
 Export Beads to JSONL, then import.

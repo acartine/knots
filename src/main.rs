@@ -1,18 +1,25 @@
 mod app;
 mod cli;
 mod db;
+mod doctor;
 mod domain;
 mod events;
+mod fsck;
+mod hierarchy_alias;
 mod imports;
+mod knot_id;
 mod list_layout;
 mod listing;
 mod locks;
+mod perf;
 mod remote_init;
 mod replication;
 mod self_manage;
+mod snapshots;
 mod sync;
 mod tiering;
 mod ui;
+mod workflow;
 
 fn main() {
     if let Err(err) = run() {
@@ -24,7 +31,7 @@ fn main() {
 fn run() -> Result<(), app::AppError> {
     use app::UpdateKnotPatch;
     use clap::Parser;
-    use cli::{ColdSubcommands, Commands, EdgeSubcommands, ImportSubcommands};
+    use cli::{ColdSubcommands, Commands, EdgeSubcommands, ImportSubcommands, WorkflowSubcommands};
     use domain::metadata::MetadataEntryInput;
 
     let cli = cli::Cli::parse();
@@ -37,13 +44,23 @@ fn run() -> Result<(), app::AppError> {
 
     match cli.command {
         Commands::New(args) => {
-            let knot = app.create_knot(&args.title, args.body.as_deref(), &args.state)?;
-            println!("created {} [{}] {}", knot.id, knot.state, knot.title);
+            let knot = app.create_knot(
+                &args.title,
+                args.body.as_deref(),
+                args.state.as_deref(),
+                Some(args.workflow.as_str()),
+            )?;
+            println!(
+                "created {} [{}] {}",
+                knot_ref(&knot),
+                knot.state,
+                knot.title
+            );
         }
         Commands::State(args) => {
             let knot =
                 app.set_state(&args.id, &args.state, args.force, args.if_match.as_deref())?;
-            println!("updated {} -> {}", knot.id, knot.state);
+            println!("updated {} -> {}", knot_ref(&knot), knot.state);
         }
         Commands::Update(args) => {
             let add_note = args.add_note.map(|content| MetadataEntryInput {
@@ -76,13 +93,19 @@ fn run() -> Result<(), app::AppError> {
                 force: args.force,
             };
             let knot = app.update_knot(&args.id, patch)?;
-            println!("updated {} [{}] {}", knot.id, knot.state, knot.title);
+            println!(
+                "updated {} [{}] {}",
+                knot_ref(&knot),
+                knot.state,
+                knot.title
+            );
         }
         Commands::Ls(args) => {
             let filter = listing::KnotListFilter {
                 include_all: args.all,
                 state: args.state.clone(),
                 knot_type: args.knot_type.clone(),
+                workflow_id: args.workflow_id.clone(),
                 tags: args.tags.clone(),
                 query: args.query.clone(),
             };
@@ -108,6 +131,9 @@ fn run() -> Result<(), app::AppError> {
                     );
                 } else {
                     println!("id: {}", knot.id);
+                    if let Some(alias) = knot.alias.as_deref() {
+                        println!("alias: {}", alias);
+                    }
                     println!("title: {}", knot.title);
                     println!("state: {}", knot.state);
                     println!("updated_at: {}", knot.updated_at);
@@ -126,6 +152,7 @@ fn run() -> Result<(), app::AppError> {
                     if let Some(knot_type) = knot.knot_type {
                         println!("type: {}", knot_type);
                     }
+                    println!("workflow_id: {}", knot.workflow_id);
                     if !knot.tags.is_empty() {
                         println!("tags: {}", knot.tags.join(", "));
                     }
@@ -138,6 +165,51 @@ fn run() -> Result<(), app::AppError> {
                 }
             }
             None => return Err(app::AppError::NotFound(args.id)),
+        },
+        Commands::Workflow(args) => match args.command {
+            WorkflowSubcommands::List(list_args) => {
+                let workflows = app.list_workflows();
+                if list_args.json {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&workflows)
+                            .expect("json serialization should work")
+                    );
+                } else if workflows.is_empty() {
+                    println!("no workflows found");
+                } else {
+                    for workflow in workflows {
+                        println!(
+                            "{} initial={} terminal={}",
+                            workflow.id,
+                            workflow.initial_state,
+                            workflow.terminal_states.join(",")
+                        );
+                    }
+                }
+            }
+            WorkflowSubcommands::Show(show_args) => {
+                let workflow = app.show_workflow(&show_args.id)?;
+                if show_args.json {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&workflow)
+                            .expect("json serialization should work")
+                    );
+                } else {
+                    println!("id: {}", workflow.id);
+                    if let Some(description) = workflow.description.as_deref() {
+                        println!("description: {}", description);
+                    }
+                    println!("initial_state: {}", workflow.initial_state);
+                    println!("states: {}", workflow.states.join(", "));
+                    println!("terminal_states: {}", workflow.terminal_states.join(", "));
+                    println!("transitions:");
+                    for transition in workflow.transitions {
+                        println!("  {} -> {}", transition.from, transition.to);
+                    }
+                }
+            }
         },
         Commands::Pull(args) => {
             let summary = app.pull()?;
@@ -211,6 +283,105 @@ fn run() -> Result<(), app::AppError> {
             app.init_remote()?;
             println!("initialized remote branch origin/knots");
         }
+        Commands::Fsck(args) => {
+            let report = app.fsck()?;
+            if args.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&report).expect("json serialization should work")
+                );
+            } else {
+                println!(
+                    "fsck scanned_files={} issues={}",
+                    report.files_scanned,
+                    report.issues.len()
+                );
+                for issue in &report.issues {
+                    println!("  - {}: {}", issue.path, issue.message);
+                }
+            }
+            if !report.ok() {
+                return Err(app::AppError::InvalidArgument(format!(
+                    "fsck found {} issue(s)",
+                    report.issues.len()
+                )));
+            }
+        }
+        Commands::Doctor(args) => {
+            let report = app.doctor()?;
+            if args.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&report).expect("json serialization should work")
+                );
+            } else {
+                for check in &report.checks {
+                    println!(
+                        "{} [{}] {}",
+                        check.name,
+                        serde_json::to_string(&check.status)
+                            .expect("status serialization should work")
+                            .trim_matches('"'),
+                        check.detail
+                    );
+                }
+            }
+            if report.failure_count() > 0 {
+                return Err(app::AppError::InvalidArgument(format!(
+                    "doctor found {} failing check(s)",
+                    report.failure_count()
+                )));
+            }
+        }
+        Commands::Perf(args) => {
+            let report = app.perf_harness(args.iterations)?;
+            if args.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&report).expect("json serialization should work")
+                );
+            } else {
+                println!("perf iterations={}", report.iterations);
+                for measurement in &report.measurements {
+                    println!(
+                        "  {} elapsed_ms={:.2} budget_ms={:.2} within_budget={}",
+                        measurement.name,
+                        measurement.elapsed_ms,
+                        measurement.budget_ms,
+                        measurement.within_budget
+                    );
+                }
+            }
+            if args.strict && report.over_budget_count() > 0 {
+                return Err(app::AppError::InvalidArgument(format!(
+                    "perf regression: {} measurement(s) over budget",
+                    report.over_budget_count()
+                )));
+            }
+        }
+        Commands::Compact(args) => {
+            if !args.write_snapshots {
+                return Err(app::AppError::InvalidArgument(
+                    "compact currently requires --write-snapshots".to_string(),
+                ));
+            }
+            let summary = app.compact_write_snapshots()?;
+            if args.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&summary).expect("json serialization should work")
+                );
+            } else {
+                println!(
+                    "snapshots written hot={} warm={} cold={} active={} cold_path={}",
+                    summary.hot_count,
+                    summary.warm_count,
+                    summary.cold_count,
+                    summary.active_path.display(),
+                    summary.cold_path.display()
+                );
+            }
+        }
         Commands::Cold(args) => match args.command {
             ColdSubcommands::Sync(sync_args) => {
                 let summary = app.cold_sync()?;
@@ -264,7 +435,12 @@ fn run() -> Result<(), app::AppError> {
                             .expect("json serialization should work")
                     );
                 } else {
-                    println!("rehydrated {} [{}] {}", knot.id, knot.state, knot.title);
+                    println!(
+                        "rehydrated {} [{}] {}",
+                        knot_ref(&knot),
+                        knot.state,
+                        knot.title
+                    );
                 }
             }
             None => return Err(app::AppError::NotFound(args.id)),
@@ -380,6 +556,13 @@ fn run() -> Result<(), app::AppError> {
     }
 
     Ok(())
+}
+
+fn knot_ref(knot: &app::KnotView) -> String {
+    match knot.alias.as_deref() {
+        Some(alias) => format!("{alias} ({})", knot.id),
+        None => knot.id.clone(),
+    }
 }
 
 fn maybe_run_self_command(command: &cli::Commands) -> Result<Option<String>, app::AppError> {

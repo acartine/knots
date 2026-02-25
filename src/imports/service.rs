@@ -313,6 +313,9 @@ ORDER BY last_run_at DESC, source_type ASC
         }
 
         let state = map_source_state(&issue)?;
+        let workflow_id = normalize_non_empty(issue.workflow_id.as_deref())
+            .ok_or_else(|| ImportError::InvalidRecord("workflow_id is required".to_string()))?
+            .to_ascii_lowercase();
         let description = merged_body(&issue);
         let body = description.clone();
         let knot_type =
@@ -334,6 +337,7 @@ ORDER BY last_run_at DESC, source_type ASC
             json!({
                 "title": issue_title,
                 "state": state.as_str(),
+                "workflow_id": &workflow_id,
                 "body": body,
                 "description": description,
                 "source": source_tag,
@@ -461,6 +465,7 @@ ORDER BY last_run_at DESC, source_type ASC
                 "knot_id": &issue_id,
                 "title": &issue_title,
                 "state": state.as_str(),
+                "workflow_id": &workflow_id,
                 "updated_at": updated_at,
                 "terminal": state.is_terminal(),
             }),
@@ -481,6 +486,7 @@ ORDER BY last_run_at DESC, source_type ASC
                 tags: &tags,
                 notes: &notes,
                 handoff_capsules: &handoff_capsules,
+                workflow_id: &workflow_id,
                 workflow_etag: Some(&index_event_id),
                 created_at: Some(&created_at),
             },

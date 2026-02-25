@@ -42,22 +42,21 @@ impl<'a> SyncService<'a> {
         let worktree = KnotsWorktree::new(self.repo_root.clone());
         worktree.ensure_exists(&self.git)?;
 
-        let target_head =
-            match self
-                .git
-                .fetch_branch(&self.repo_root, worktree.remote(), worktree.branch())
-            {
-                Ok(()) => {
-                    let remote_ref = format!("{}/{}", worktree.remote(), worktree.branch());
-                    let head = self.git.rev_parse(&self.repo_root, &remote_ref)?;
-                    self.git.reset_hard(worktree.path(), &head)?;
-                    head
-                }
-                Err(err) if err.is_missing_remote() => {
-                    self.git.rev_parse(worktree.path(), "HEAD")?
-                }
-                Err(err) => return Err(err),
-            };
+        let target_head = match self.git.fetch_branch_with_filter(
+            &self.repo_root,
+            worktree.remote(),
+            worktree.branch(),
+            crate::db::get_sync_fetch_blob_limit_kb(self.conn)?,
+        ) {
+            Ok(()) => {
+                let remote_ref = format!("{}/{}", worktree.remote(), worktree.branch());
+                let head = self.git.rev_parse(&self.repo_root, &remote_ref)?;
+                self.git.reset_hard(worktree.path(), &head)?;
+                head
+            }
+            Err(err) if err.is_missing_remote() => self.git.rev_parse(worktree.path(), "HEAD")?,
+            Err(err) => return Err(err),
+        };
 
         worktree.ensure_clean(&self.git)?;
 
@@ -86,6 +85,9 @@ pub enum SyncError {
         path: PathBuf,
     },
     MergeConflictEscalation {
+        message: String,
+    },
+    SnapshotLoad {
         message: String,
     },
 }
@@ -160,6 +162,9 @@ impl fmt::Display for SyncError {
             SyncError::MergeConflictEscalation { message } => {
                 write!(f, "merge conflict escalation: {}", message)
             }
+            SyncError::SnapshotLoad { message } => {
+                write!(f, "snapshot load failed: {}", message)
+            }
         }
     }
 }
@@ -175,6 +180,7 @@ impl Error for SyncError {
             SyncError::InvalidEvent { .. } => None,
             SyncError::FileConflict { .. } => None,
             SyncError::MergeConflictEscalation { .. } => None,
+            SyncError::SnapshotLoad { .. } => None,
         }
     }
 }

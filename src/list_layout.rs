@@ -299,7 +299,11 @@ struct SequenceKey {
 }
 
 fn sequence_key(knot: &KnotView) -> Option<SequenceKey> {
-    extract_sequence_key(&knot.id).or_else(|| extract_sequence_key(&knot.title))
+    knot.alias
+        .as_deref()
+        .and_then(extract_sequence_key)
+        .or_else(|| extract_sequence_key(&knot.id))
+        .or_else(|| extract_sequence_key(&knot.title))
 }
 
 fn extract_sequence_key(input: &str) -> Option<SequenceKey> {
@@ -313,7 +317,11 @@ fn extract_sequence_key(input: &str) -> Option<SequenceKey> {
         }
 
         let prefix_start = index;
-        while index < bytes.len() && bytes[index].is_ascii_alphanumeric() {
+        while index < bytes.len()
+            && (bytes[index].is_ascii_alphanumeric()
+                || bytes[index] == b'-'
+                || bytes[index] == b'_')
+        {
             index += 1;
         }
         if index >= bytes.len() || bytes[index] != b'.' {
@@ -372,6 +380,7 @@ mod tests {
     fn knot(id: &str, state: &str) -> KnotView {
         KnotView {
             id: id.to_string(),
+            alias: None,
             title: id.to_string(),
             state: state.to_string(),
             updated_at: "2026-02-24T10:00:00Z".to_string(),
@@ -382,6 +391,7 @@ mod tests {
             tags: Vec::new(),
             notes: Vec::new(),
             handoff_capsules: Vec::new(),
+            workflow_id: "default".to_string(),
             workflow_etag: None,
             created_at: None,
         }

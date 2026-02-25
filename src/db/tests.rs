@@ -1,4 +1,4 @@
-use super::{open_connection, CURRENT_SCHEMA_VERSION};
+use super::{get_sync_fetch_blob_limit_kb, open_connection, set_meta, CURRENT_SCHEMA_VERSION};
 use rusqlite::params;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -139,6 +139,15 @@ fn initializes_required_tables_and_schema_version() {
         .expect("push_retry_budget_ms default should exist");
     assert_eq!(push_retry_budget_ms, "800");
 
+    let fetch_blob_limit: String = conn
+        .query_row(
+            "SELECT value FROM meta WHERE key='sync_fetch_blob_limit_kb'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("sync_fetch_blob_limit_kb default should exist");
+    assert_eq!(fetch_blob_limit, "0");
+
     cleanup_db_files(&path);
 }
 
@@ -169,7 +178,7 @@ fn reapplies_migrations_idempotently() {
 }
 
 #[test]
-fn migration_v3_adds_parity_columns_and_backfills_description() {
+fn migrations_add_parity_columns_and_backfill_workflow_defaults() {
     let path = unique_db_path();
     let conn = rusqlite::Connection::open(&path).expect("pre-migration connection should open");
     conn.execute_batch(
@@ -208,7 +217,7 @@ VALUES ('K-legacy', 'Legacy', 'work_item', '2026-02-23T00:00:02Z', 'legacy body'
     .expect("pre-migration schema should be writable");
     drop(conn);
 
-    let upgraded = open_connection(&path).expect("open_connection should apply v3 migration");
+    let upgraded = open_connection(&path).expect("open_connection should apply migrations");
     for column in [
         "description",
         "priority",
@@ -216,6 +225,7 @@ VALUES ('K-legacy', 'Legacy', 'work_item', '2026-02-23T00:00:02Z', 'legacy body'
         "tags_json",
         "notes_json",
         "handoff_capsules_json",
+        "workflow_id",
     ] {
         assert!(
             column_exists(&upgraded, "knot_hot", column),
@@ -232,6 +242,30 @@ VALUES ('K-legacy', 'Legacy', 'work_item', '2026-02-23T00:00:02Z', 'legacy body'
         )
         .expect("legacy row should be queryable");
     assert_eq!(description.as_deref(), Some("legacy body"));
+
+    let workflow_id: String = upgraded
+        .query_row(
+            "SELECT workflow_id FROM knot_hot WHERE id = 'K-legacy'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("legacy row should include workflow_id");
+    assert_eq!(workflow_id, "default");
+
+    cleanup_db_files(&path);
+}
+
+#[test]
+fn reads_optional_fetch_blob_limit_from_meta() {
+    let path = unique_db_path();
+    let conn = open_connection(&path).expect("connection should open");
+
+    let initial = get_sync_fetch_blob_limit_kb(&conn).expect("fetch blob limit should read");
+    assert_eq!(initial, None);
+
+    set_meta(&conn, "sync_fetch_blob_limit_kb", "4").expect("meta update should succeed");
+    let configured = get_sync_fetch_blob_limit_kb(&conn).expect("fetch blob limit should read");
+    assert_eq!(configured, Some(4));
 
     cleanup_db_files(&path);
 }

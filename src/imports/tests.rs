@@ -29,9 +29,11 @@ fn jsonl_import_writes_events_and_cache() {
         &input,
         concat!(
             "{\"id\":\"X-1\",\"title\":\"First\",\"description\":\"a\",\"status\":\"open\",",
+            "\"workflow_id\":\"default\",",
             "\"created_at\":\"2026-02-20T10:00:00Z\",",
             "\"updated_at\":\"2026-02-20T10:00:00Z\"}\n",
             "{\"id\":\"X-2\",\"title\":\"Second\",\"status\":\"closed\",\"labels\":[\"a\"],",
+            "\"workflow_id\":\"default\",",
             "\"created_at\":\"2026-02-20T11:00:00Z\",",
             "\"updated_at\":\"2026-02-20T12:00:00Z\"}\n"
         ),
@@ -71,6 +73,7 @@ fn jsonl_resume_uses_checkpoint_and_idempotency() {
         &input,
         concat!(
             "{\"id\":\"R-1\",\"title\":\"First\",\"status\":\"open\",",
+            "\"workflow_id\":\"default\",",
             "\"updated_at\":\"2026-02-21T10:00:00Z\"}\n"
         ),
     )
@@ -85,8 +88,10 @@ fn jsonl_resume_uses_checkpoint_and_idempotency() {
         &input,
         concat!(
             "{\"id\":\"R-1\",\"title\":\"First\",\"status\":\"open\",",
+            "\"workflow_id\":\"default\",",
             "\"updated_at\":\"2026-02-21T10:00:00Z\"}\n",
             "{\"id\":\"R-2\",\"title\":\"Second\",\"status\":\"open\",",
+            "\"workflow_id\":\"default\",",
             "\"updated_at\":\"2026-02-21T11:00:00Z\"}\n"
         ),
     )
@@ -132,6 +137,7 @@ fn jsonl_import_maps_parity_fields_and_legacy_notes() {
         concat!(
             "{\"id\":\"P-1\",\"title\":\"Parity\",\"description\":\"desc\",\"notes\":\"legacy note\",",
             "\"status\":\"open\",\"priority\":2,\"issue_type\":\"task\",",
+            "\"workflow_id\":\"default\",",
             "\"owner\":\"acartine\",\"created_by\":\"Andrew\",",
             "\"labels\":[\"alpha\"],\"tags\":[\"beta\"],",
             "\"created_at\":\"2026-02-23T10:00:00Z\",\"updated_at\":\"2026-02-23T10:05:00Z\"}\n"

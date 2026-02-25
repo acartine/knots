@@ -7,7 +7,8 @@ use time::OffsetDateTime;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::metadata::MetadataEntry;
-use crate::events::{FullEvent, IndexEvent, IndexEventKind};
+use crate::events::{FullEvent, IndexEvent, IndexEventKind, WorkflowPrecondition};
+use crate::snapshots::apply_latest_snapshots;
 use crate::tiering::{classify_knot_tier, CacheTier};
 
 use super::{GitAdapter, SyncError, SyncSummary};
@@ -28,6 +29,16 @@ impl<'a> IncrementalApplier<'a> {
     }
 
     pub fn apply_to_head(&mut self, target_head: &str) -> Result<SyncSummary, SyncError> {
+        let bootstrap = db::get_meta(self.conn, "last_index_head_commit")?.is_none()
+            && db::get_meta(self.conn, "last_full_head_commit")?.is_none();
+        if bootstrap {
+            let _ = apply_latest_snapshots(self.conn, &self.worktree).map_err(|err| {
+                SyncError::SnapshotLoad {
+                    message: err.to_string(),
+                }
+            })?;
+        }
+
         let index_files =
             self.changed_files("last_index_head_commit", ".knots/index", target_head)?;
         let full_files =
@@ -144,6 +155,12 @@ impl<'a> IncrementalApplier<'a> {
         let title = required_string(data, "title", &absolute_path)?;
         let state = required_string(data, "state", &absolute_path)?;
         let updated_at = required_string(data, "updated_at", &absolute_path)?;
+        let workflow_id =
+            required_string(data, "workflow_id", &absolute_path)?.to_ascii_lowercase();
+
+        if is_stale_precondition(self.conn, &knot_id, event.precondition.as_ref())? {
+            return Ok(false);
+        }
 
         let hot_window_days = db::get_hot_window_days(self.conn)?;
         let terminal_flag = data
@@ -206,6 +223,7 @@ impl<'a> IncrementalApplier<'a> {
                         tags: &tags,
                         notes: &notes,
                         handoff_capsules: &handoff_capsules,
+                        workflow_id: &workflow_id,
                         workflow_etag: Some(&event.event_id),
                         created_at: Some(&created_at),
                     },
@@ -233,6 +251,10 @@ impl<'a> IncrementalApplier<'a> {
             .data
             .as_object()
             .ok_or_else(|| invalid_event(&absolute_path, "full event data must be an object"))?;
+
+        if is_stale_precondition(self.conn, &event.knot_id, event.precondition.as_ref())? {
+            return Ok(FullApplyOutcome::Ignored);
+        }
 
         match event.event_type.as_str() {
             "knot.edge_add" => {
@@ -339,6 +361,7 @@ impl<'a> IncrementalApplier<'a> {
             tags: existing.tags,
             notes: existing.notes,
             handoff_capsules: existing.handoff_capsules,
+            workflow_id: existing.workflow_id,
             workflow_etag: existing.workflow_etag,
             created_at: existing.created_at,
         };
@@ -358,6 +381,7 @@ impl<'a> IncrementalApplier<'a> {
                 tags: &projection.tags,
                 notes: &projection.notes,
                 handoff_capsules: &projection.handoff_capsules,
+                workflow_id: &projection.workflow_id,
                 workflow_etag: projection.workflow_etag.as_deref(),
                 created_at: projection.created_at.as_deref(),
             },
@@ -383,6 +407,7 @@ struct MetadataProjection {
     tags: Vec<String>,
     notes: Vec<MetadataEntry>,
     handoff_capsules: Vec<MetadataEntry>,
+    workflow_id: String,
     workflow_etag: Option<String>,
     created_at: Option<String>,
 }
@@ -452,4 +477,18 @@ fn invalid_event(path: &Path, message: &str) -> SyncError {
         path: path.to_path_buf(),
         message: message.to_string(),
     }
+}
+
+fn is_stale_precondition(
+    conn: &Connection,
+    knot_id: &str,
+    precondition: Option<&WorkflowPrecondition>,
+) -> Result<bool, SyncError> {
+    let Some(precondition) = precondition else {
+        return Ok(false);
+    };
+    let current = db::get_knot_hot(conn, knot_id)?
+        .and_then(|record| record.workflow_etag)
+        .unwrap_or_default();
+    Ok(current != precondition.workflow_etag)
 }

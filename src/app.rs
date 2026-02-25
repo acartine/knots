@@ -1,37 +1,45 @@
+use std::collections::HashSet;
 use std::error::Error;
 use std::fmt;
 use std::fs;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use rusqlite::Connection;
 use serde::Serialize;
 use serde_json::{json, Value};
-use uuid::Uuid;
 
 use crate::db::{self, EdgeDirection, EdgeRecord, KnotCacheRecord, UpsertKnotHot};
+use crate::doctor::{run_doctor, DoctorError, DoctorReport};
 use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
-use crate::domain::state::{InvalidStateTransition, KnotState, ParseKnotStateError};
+use crate::domain::state::{InvalidStateTransition, ParseKnotStateError};
 use crate::events::{
     new_event_id, now_utc_rfc3339, EventRecord, EventWriteError, EventWriter, FullEvent,
     FullEventKind, IndexEvent, IndexEventKind,
 };
+use crate::fsck::{run_fsck, FsckError, FsckReport};
+use crate::hierarchy_alias::{build_alias_maps, AliasMaps};
 use crate::imports::{ImportError, ImportService, ImportStatus, ImportSummary};
+use crate::knot_id::generate_knot_id;
 use crate::locks::{FileLock, LockError};
+use crate::perf::{run_perf_harness, PerfError, PerfReport};
 use crate::remote_init::{init_remote_knots_branch, RemoteInitError};
 use crate::replication::{PushSummary, ReplicationService, ReplicationSummary};
+use crate::snapshots::{write_snapshots, SnapshotError, SnapshotWriteSummary};
 use crate::sync::{SyncError, SyncSummary};
+use crate::workflow::{WorkflowDefinition, WorkflowError, WorkflowRegistry};
 
 pub struct App {
     conn: Connection,
     writer: EventWriter,
     repo_root: PathBuf,
+    workflow_registry: WorkflowRegistry,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct KnotView {
     pub id: String,
+    pub alias: Option<String>,
     pub title: String,
     pub state: String,
     pub updated_at: String,
@@ -43,6 +51,7 @@ pub struct KnotView {
     pub tags: Vec<String>,
     pub notes: Vec<MetadataEntry>,
     pub handoff_capsules: Vec<MetadataEntry>,
+    pub workflow_id: String,
     pub workflow_etag: Option<String>,
     pub created_at: Option<String>,
 }
@@ -102,11 +111,13 @@ impl App {
     pub fn open(db_path: &str, repo_root: PathBuf) -> Result<Self, AppError> {
         ensure_parent_dir(db_path)?;
         let conn = db::open_connection(db_path)?;
+        let workflow_registry = WorkflowRegistry::load(&repo_root)?;
         let writer = EventWriter::new(repo_root.clone());
         Ok(Self {
             conn,
             writer,
             repo_root,
+            workflow_registry,
         })
     }
 
@@ -183,17 +194,105 @@ impl App {
         Ok(service.pull()?)
     }
 
+    fn known_knot_ids(&self) -> Result<HashSet<String>, AppError> {
+        let mut ids = HashSet::new();
+        for record in db::list_knot_hot(&self.conn)? {
+            ids.insert(record.id);
+        }
+        for record in db::list_knot_warm(&self.conn)? {
+            ids.insert(record.id);
+        }
+        for record in db::list_cold_catalog(&self.conn)? {
+            ids.insert(record.id);
+        }
+        Ok(ids)
+    }
+
+    fn alias_maps(&self) -> Result<AliasMaps, AppError> {
+        let mut ids = self.known_knot_ids()?;
+        let parent_edges = db::list_edges_by_kind(&self.conn, "parent_of")?;
+        let mut edges = Vec::new();
+        for edge in parent_edges {
+            ids.insert(edge.src.clone());
+            ids.insert(edge.dst.clone());
+            edges.push((edge.src, edge.dst));
+        }
+        Ok(build_alias_maps(ids.into_iter().collect(), &edges))
+    }
+
+    fn resolve_knot_token(&self, token: &str) -> Result<String, AppError> {
+        if token.trim().is_empty() {
+            return Ok(token.to_string());
+        }
+        let maps = self.alias_maps()?;
+        Ok(maps
+            .alias_to_id
+            .get(token)
+            .cloned()
+            .unwrap_or_else(|| token.to_string()))
+    }
+
+    fn with_alias_maps(knot: KnotView, maps: &AliasMaps) -> KnotView {
+        let mut knot = knot;
+        let alias = maps.id_to_alias.get(&knot.id).cloned();
+        knot.alias = alias.filter(|value| value != &knot.id);
+        knot
+    }
+
+    fn apply_aliases_to_knots(&self, knots: Vec<KnotView>) -> Result<Vec<KnotView>, AppError> {
+        let maps = self.alias_maps()?;
+        Ok(knots
+            .into_iter()
+            .map(|knot| Self::with_alias_maps(knot, &maps))
+            .collect())
+    }
+
+    fn apply_alias_to_knot(&self, knot: KnotView) -> Result<KnotView, AppError> {
+        let maps = self.alias_maps()?;
+        Ok(Self::with_alias_maps(knot, &maps))
+    }
+
+    fn next_knot_id(&self) -> Result<String, AppError> {
+        let existing = self.known_knot_ids()?;
+        Ok(generate_knot_id(&self.repo_root, |candidate| {
+            existing.contains(candidate)
+        }))
+    }
+
+    pub fn list_workflows(&self) -> Vec<WorkflowDefinition> {
+        self.workflow_registry.list()
+    }
+
+    pub fn show_workflow(&self, id: &str) -> Result<WorkflowDefinition, AppError> {
+        Ok(self.workflow_registry.require(id)?.clone())
+    }
+
+    fn resolve_workflow_for_record<'a>(
+        &'a self,
+        record: &KnotCacheRecord,
+    ) -> Result<&'a WorkflowDefinition, AppError> {
+        let workflow_id = non_empty(record.workflow_id.as_str()).ok_or_else(|| {
+            AppError::InvalidArgument(format!("knot '{}' is missing workflow_id", record.id))
+        })?;
+        Ok(self.workflow_registry.require(&workflow_id)?)
+    }
+
     pub fn create_knot(
         &self,
         title: &str,
         body: Option<&str>,
-        initial_state: &str,
+        initial_state: Option<&str>,
+        workflow_id: Option<&str>,
     ) -> Result<KnotView, AppError> {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
-        let state = KnotState::from_str(initial_state)?;
-        let knot_id = format!("K-{}", Uuid::now_v7());
+        let workflow = self.workflow_registry.resolve(workflow_id)?;
+        let state = non_empty(initial_state.unwrap_or(""))
+            .unwrap_or_else(|| workflow.initial_state.clone())
+            .to_ascii_lowercase();
+        workflow.require_state(&state)?;
+        let knot_id = self.next_knot_id()?;
         let occurred_at = now_utc_rfc3339();
 
         let full_event = FullEvent::with_identity(
@@ -204,6 +303,7 @@ impl App {
             json!({
                 "title": title,
                 "state": state.as_str(),
+                "workflow_id": workflow.id.as_str(),
                 "body": body,
             }),
         );
@@ -217,8 +317,9 @@ impl App {
                 "knot_id": knot_id,
                 "title": title,
                 "state": state.as_str(),
+                "workflow_id": workflow.id.as_str(),
                 "updated_at": occurred_at,
-                "terminal": state.is_terminal(),
+                "terminal": workflow.is_terminal_state(&state),
             }),
         );
 
@@ -239,13 +340,14 @@ impl App {
                 tags: &[],
                 notes: &[],
                 handoff_capsules: &[],
+                workflow_id: workflow.id.as_str(),
                 workflow_etag: Some(&index_event_id),
                 created_at: Some(&occurred_at),
             },
         )?;
         let record = db::get_knot_hot(&self.conn, &knot_id)?
             .ok_or_else(|| AppError::NotFound(knot_id.clone()))?;
-        Ok(KnotView::from(record))
+        self.apply_alias_to_knot(KnotView::from(record))
     }
 
     pub fn set_state(
@@ -255,25 +357,27 @@ impl App {
         force: bool,
         expected_workflow_etag: Option<&str>,
     ) -> Result<KnotView, AppError> {
+        let id = self.resolve_knot_token(id)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
         let current =
-            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         ensure_workflow_etag(&current, expected_workflow_etag)?;
-        let current_state = KnotState::from_str(&current.state)?;
-        let next = KnotState::from_str(next_state)?;
-        current_state.validate_transition(next, force)?;
+        let workflow = self.resolve_workflow_for_record(&current)?;
+        let next = next_state.trim().to_ascii_lowercase();
+        workflow.validate_transition(&current.state, &next, force)?;
 
         let occurred_at = now_utc_rfc3339();
         let mut full_event = FullEvent::with_identity(
             new_event_id(),
             occurred_at.clone(),
-            id.to_string(),
+            id.clone(),
             FullEventKind::KnotStateSet.as_str(),
             json!({
-                "from": current_state.as_str(),
-                "to": next.as_str(),
+                "from": &current.state,
+                "to": &next,
+                "workflow_id": &current.workflow_id,
                 "force": force,
             }),
         );
@@ -282,18 +386,22 @@ impl App {
         }
 
         let index_event_id = new_event_id();
-        let idx_event = IndexEvent::with_identity(
+        let mut idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
             occurred_at.clone(),
             IndexEventKind::KnotHead.as_str(),
             json!({
                 "knot_id": id,
                 "title": current.title,
-                "state": next.as_str(),
+                "state": &next,
+                "workflow_id": &current.workflow_id,
                 "updated_at": occurred_at,
-                "terminal": next.is_terminal(),
+                "terminal": workflow.is_terminal_state(&next),
             }),
         );
+        if let Some(expected) = expected_workflow_etag {
+            idx_event = idx_event.with_precondition(expected);
+        }
 
         self.writer.write(&EventRecord::full(full_event))?;
         self.writer.write(&EventRecord::index(idx_event))?;
@@ -301,9 +409,9 @@ impl App {
         db::upsert_knot_hot(
             &self.conn,
             &UpsertKnotHot {
-                id,
+                id: &id,
                 title: &current.title,
-                state: next.as_str(),
+                state: &next,
                 updated_at: &occurred_at,
                 body: current.body.as_deref(),
                 description: current.description.as_deref(),
@@ -312,16 +420,18 @@ impl App {
                 tags: &current.tags,
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
+                workflow_id: &current.workflow_id,
                 workflow_etag: Some(&index_event_id),
                 created_at: current.created_at.as_deref(),
             },
         )?;
         let updated =
-            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        Ok(KnotView::from(updated))
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        self.apply_alias_to_knot(KnotView::from(updated))
     }
 
     pub fn update_knot(&self, id: &str, patch: UpdateKnotPatch) -> Result<KnotView, AppError> {
+        let id = self.resolve_knot_token(id)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
@@ -332,7 +442,7 @@ impl App {
         }
 
         let current =
-            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         ensure_workflow_etag(&current, patch.expected_workflow_etag.as_deref())?;
         let mut title = current.title.clone();
         let mut state = current.state.clone();
@@ -340,6 +450,7 @@ impl App {
         let mut body = current.body.clone();
         let mut priority = current.priority;
         let mut knot_type = current.knot_type.clone();
+        let workflow = self.resolve_workflow_for_record(&current)?;
         let mut tags = current.tags.clone();
         let mut notes = current.notes.clone();
         let mut handoff_capsules = current.handoff_capsules.clone();
@@ -347,19 +458,19 @@ impl App {
         let mut full_events = Vec::new();
 
         if let Some(next_state_raw) = patch.status.as_deref() {
-            let current_state = KnotState::from_str(&state)?;
-            let next_state = KnotState::from_str(next_state_raw)?;
-            current_state.validate_transition(next_state, patch.force)?;
-            if current_state != next_state {
-                state = next_state.as_str().to_string();
+            let next_state = next_state_raw.trim().to_ascii_lowercase();
+            workflow.validate_transition(&state, &next_state, patch.force)?;
+            if state != next_state {
+                state = next_state;
                 full_events.push(FullEvent::with_identity(
                     new_event_id(),
                     occurred_at.clone(),
                     id.to_string(),
                     FullEventKind::KnotStateSet.as_str(),
                     json!({
-                        "from": current_state.as_str(),
-                        "to": next_state.as_str(),
+                        "from": &current.state,
+                        "to": &state,
+                        "workflow_id": &current.workflow_id,
                         "force": patch.force,
                     }),
                 ));
@@ -526,7 +637,7 @@ impl App {
         }
 
         if full_events.is_empty() {
-            return Ok(KnotView::from(current));
+            return self.apply_alias_to_knot(KnotView::from(current));
         }
 
         for mut event in full_events {
@@ -536,11 +647,9 @@ impl App {
             self.writer.write(&EventRecord::full(event))?;
         }
 
-        let terminal = KnotState::from_str(&state)
-            .map(|value| value.is_terminal())
-            .unwrap_or(false);
+        let terminal = workflow.is_terminal_state(&state);
         let index_event_id = new_event_id();
-        let idx_event = IndexEvent::with_identity(
+        let mut idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
             occurred_at.clone(),
             IndexEventKind::KnotHead.as_str(),
@@ -548,16 +657,20 @@ impl App {
                 "knot_id": id,
                 "title": &title,
                 "state": &state,
+                "workflow_id": &current.workflow_id,
                 "updated_at": occurred_at,
                 "terminal": terminal,
             }),
         );
+        if let Some(expected) = patch.expected_workflow_etag.as_deref() {
+            idx_event = idx_event.with_precondition(expected);
+        }
         self.writer.write(&EventRecord::index(idx_event))?;
 
         db::upsert_knot_hot(
             &self.conn,
             &UpsertKnotHot {
-                id,
+                id: &id,
                 title: &title,
                 state: &state,
                 updated_at: &occurred_at,
@@ -568,29 +681,32 @@ impl App {
                 tags: &tags,
                 notes: &notes,
                 handoff_capsules: &handoff_capsules,
+                workflow_id: &current.workflow_id,
                 workflow_etag: Some(&index_event_id),
                 created_at: current.created_at.as_deref(),
             },
         )?;
         let updated =
-            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        Ok(KnotView::from(updated))
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        self.apply_alias_to_knot(KnotView::from(updated))
     }
 
     pub fn list_knots(&self) -> Result<Vec<KnotView>, AppError> {
         self.maybe_auto_sync_for_read()?;
-        Ok(db::list_knot_hot(&self.conn)?
+        let knots = db::list_knot_hot(&self.conn)?
             .into_iter()
             .map(KnotView::from)
-            .collect())
+            .collect();
+        self.apply_aliases_to_knots(knots)
     }
 
     pub fn show_knot(&self, id: &str) -> Result<Option<KnotView>, AppError> {
+        let id = self.resolve_knot_token(id)?;
         self.maybe_auto_sync_for_read()?;
-        if let Some(knot) = db::get_knot_hot(&self.conn, id)? {
-            return Ok(Some(KnotView::from(knot)));
+        if let Some(knot) = db::get_knot_hot(&self.conn, &id)? {
+            return Ok(Some(self.apply_alias_to_knot(KnotView::from(knot))?));
         }
-        self.rehydrate(id)
+        self.rehydrate(&id)
     }
 
     pub fn pull(&self) -> Result<SyncSummary, AppError> {
@@ -620,23 +736,48 @@ impl App {
         Ok(())
     }
 
-    pub fn add_edge(&self, src: &str, kind: &str, dst: &str) -> Result<EdgeView, AppError> {
+    pub fn fsck(&self) -> Result<FsckReport, AppError> {
+        Ok(run_fsck(&self.repo_root)?)
+    }
+
+    pub fn doctor(&self) -> Result<DoctorReport, AppError> {
+        Ok(run_doctor(&self.repo_root)?)
+    }
+
+    pub fn compact_write_snapshots(&self) -> Result<SnapshotWriteSummary, AppError> {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
-        self.apply_edge_change(src, kind, dst, true)
+        Ok(write_snapshots(&self.conn, &self.repo_root)?)
+    }
+
+    pub fn perf_harness(&self, iterations: u32) -> Result<PerfReport, AppError> {
+        let _ = self;
+        Ok(run_perf_harness(iterations)?)
+    }
+
+    pub fn add_edge(&self, src: &str, kind: &str, dst: &str) -> Result<EdgeView, AppError> {
+        let src = self.resolve_knot_token(src)?;
+        let dst = self.resolve_knot_token(dst)?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+        self.apply_edge_change(&src, kind, &dst, true)
     }
 
     pub fn remove_edge(&self, src: &str, kind: &str, dst: &str) -> Result<EdgeView, AppError> {
+        let src = self.resolve_knot_token(src)?;
+        let dst = self.resolve_knot_token(dst)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
-        self.apply_edge_change(src, kind, dst, false)
+        self.apply_edge_change(&src, kind, &dst, false)
     }
 
     pub fn list_edges(&self, id: &str, direction: &str) -> Result<Vec<EdgeView>, AppError> {
+        let id = self.resolve_knot_token(id)?;
         let direction = parse_edge_direction(direction)?;
-        let rows = db::list_edges(&self.conn, id, direction)?;
+        let rows = db::list_edges(&self.conn, &id, direction)?;
         Ok(rows.into_iter().map(EdgeView::from).collect())
     }
 
@@ -690,14 +831,15 @@ impl App {
     }
 
     pub fn rehydrate(&self, id: &str) -> Result<Option<KnotView>, AppError> {
+        let id = self.resolve_knot_token(id)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
-        if let Some(knot) = db::get_knot_hot(&self.conn, id)? {
-            return Ok(Some(KnotView::from(knot)));
+        if let Some(knot) = db::get_knot_hot(&self.conn, &id)? {
+            return Ok(Some(self.apply_alias_to_knot(KnotView::from(knot))?));
         }
-        let warm = db::get_knot_warm(&self.conn, id)?;
-        let cold = db::get_cold_catalog(&self.conn, id)?;
+        let warm = db::get_knot_warm(&self.conn, &id)?;
+        let cold = db::get_cold_catalog(&self.conn, &id)?;
         let title = warm
             .as_ref()
             .map(|record| record.title.clone())
@@ -713,11 +855,11 @@ impl App {
             .as_ref()
             .map(|record| record.updated_at.clone())
             .unwrap_or_else(now_utc_rfc3339);
-        let record = rehydrate_from_events(&self.repo_root, id, title, state, updated_at)?;
+        let record = rehydrate_from_events(&self.repo_root, &id, title, state, updated_at)?;
         db::upsert_knot_hot(
             &self.conn,
             &UpsertKnotHot {
-                id,
+                id: &id,
                 title: &record.title,
                 state: &record.state,
                 updated_at: &record.updated_at,
@@ -728,13 +870,14 @@ impl App {
                 tags: &record.tags,
                 notes: &record.notes,
                 handoff_capsules: &record.handoff_capsules,
+                workflow_id: &record.workflow_id,
                 workflow_etag: record.workflow_etag.as_deref(),
                 created_at: record.created_at.as_deref(),
             },
         )?;
         let hot =
-            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        Ok(Some(KnotView::from(hot)))
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        Ok(Some(self.apply_alias_to_knot(KnotView::from(hot))?))
     }
 
     fn apply_edge_change(
@@ -770,9 +913,8 @@ impl App {
         );
         self.writer.write(&EventRecord::full(full_event))?;
 
-        let terminal = KnotState::from_str(&current.state)
-            .map(|state| state.is_terminal())
-            .unwrap_or(false);
+        let workflow = self.resolve_workflow_for_record(&current)?;
+        let terminal = workflow.is_terminal_state(&current.state);
         let index_event_id = new_event_id();
         let idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
@@ -782,6 +924,7 @@ impl App {
                 "knot_id": src,
                 "title": current.title,
                 "state": current.state,
+                "workflow_id": &current.workflow_id,
                 "updated_at": occurred_at,
                 "terminal": terminal,
             }),
@@ -808,6 +951,7 @@ impl App {
                 tags: &current.tags,
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
+                workflow_id: &current.workflow_id,
                 workflow_etag: Some(&index_event_id),
                 created_at: current.created_at.as_deref(),
             },
@@ -899,6 +1043,7 @@ struct RehydrateProjection {
     tags: Vec<String>,
     notes: Vec<MetadataEntry>,
     handoff_capsules: Vec<MetadataEntry>,
+    workflow_id: String,
     workflow_etag: Option<String>,
     created_at: Option<String>,
 }
@@ -921,6 +1066,7 @@ fn rehydrate_from_events(
         tags: Vec::new(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
+        workflow_id: String::new(),
         workflow_etag: None,
         created_at: Some(updated_at),
     };
@@ -1000,7 +1146,17 @@ fn rehydrate_from_events(
         if let Some(updated_at) = data.get("updated_at").and_then(Value::as_str) {
             projection.updated_at = updated_at.to_string();
         }
+        if let Some(workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
+            projection.workflow_id = workflow_id.trim().to_ascii_lowercase();
+        }
         projection.workflow_etag = Some(event.event_id.clone());
+    }
+
+    if projection.workflow_id.trim().is_empty() {
+        return Err(AppError::InvalidArgument(format!(
+            "rehydrate events for '{}' are missing workflow_id",
+            knot_id
+        )));
     }
 
     Ok(projection)
@@ -1018,6 +1174,9 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
             }
             if let Some(state) = data.get("state").and_then(Value::as_str) {
                 projection.state = state.to_string();
+            }
+            if let Some(workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
+                projection.workflow_id = workflow_id.trim().to_ascii_lowercase();
             }
             projection.created_at = Some(event.occurred_at.clone());
             projection.updated_at = event.occurred_at.clone();
@@ -1128,6 +1287,7 @@ impl From<KnotCacheRecord> for KnotView {
     fn from(value: KnotCacheRecord) -> Self {
         Self {
             id: value.id,
+            alias: None,
             title: value.title,
             state: value.state,
             updated_at: value.updated_at,
@@ -1138,6 +1298,7 @@ impl From<KnotCacheRecord> for KnotView {
             tags: value.tags,
             notes: value.notes,
             handoff_capsules: value.handoff_capsules,
+            workflow_id: value.workflow_id,
             workflow_etag: value.workflow_etag,
             created_at: value.created_at,
         }
@@ -1163,6 +1324,11 @@ pub enum AppError {
     Sync(SyncError),
     Lock(LockError),
     RemoteInit(RemoteInitError),
+    Fsck(FsckError),
+    Doctor(DoctorError),
+    Snapshot(SnapshotError),
+    Perf(PerfError),
+    Workflow(WorkflowError),
     ParseState(ParseKnotStateError),
     InvalidTransition(InvalidStateTransition),
     StaleWorkflowHead { expected: String, current: String },
@@ -1180,6 +1346,11 @@ impl fmt::Display for AppError {
             AppError::Sync(err) => write!(f, "sync error: {}", err),
             AppError::Lock(err) => write!(f, "lock error: {}", err),
             AppError::RemoteInit(err) => write!(f, "remote init error: {}", err),
+            AppError::Fsck(err) => write!(f, "fsck error: {}", err),
+            AppError::Doctor(err) => write!(f, "doctor error: {}", err),
+            AppError::Snapshot(err) => write!(f, "snapshot error: {}", err),
+            AppError::Perf(err) => write!(f, "perf error: {}", err),
+            AppError::Workflow(err) => write!(f, "workflow error: {}", err),
             AppError::ParseState(err) => write!(f, "state parse error: {}", err),
             AppError::InvalidTransition(err) => write!(f, "{}", err),
             AppError::StaleWorkflowHead { expected, current } => write!(
@@ -1203,6 +1374,11 @@ impl Error for AppError {
             AppError::Sync(err) => Some(err),
             AppError::Lock(err) => Some(err),
             AppError::RemoteInit(err) => Some(err),
+            AppError::Fsck(err) => Some(err),
+            AppError::Doctor(err) => Some(err),
+            AppError::Snapshot(err) => Some(err),
+            AppError::Perf(err) => Some(err),
+            AppError::Workflow(err) => Some(err),
             AppError::ParseState(err) => Some(err),
             AppError::InvalidTransition(err) => Some(err),
             AppError::StaleWorkflowHead { .. } => None,
@@ -1251,6 +1427,36 @@ impl From<LockError> for AppError {
 impl From<RemoteInitError> for AppError {
     fn from(value: RemoteInitError) -> Self {
         AppError::RemoteInit(value)
+    }
+}
+
+impl From<FsckError> for AppError {
+    fn from(value: FsckError) -> Self {
+        AppError::Fsck(value)
+    }
+}
+
+impl From<DoctorError> for AppError {
+    fn from(value: DoctorError) -> Self {
+        AppError::Doctor(value)
+    }
+}
+
+impl From<SnapshotError> for AppError {
+    fn from(value: SnapshotError) -> Self {
+        AppError::Snapshot(value)
+    }
+}
+
+impl From<PerfError> for AppError {
+    fn from(value: PerfError) -> Self {
+        AppError::Perf(value)
+    }
+}
+
+impl From<WorkflowError> for AppError {
+    fn from(value: WorkflowError) -> Self {
+        AppError::Workflow(value)
     }
 }
 

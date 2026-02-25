@@ -39,6 +39,8 @@ pub struct SourceIssue {
     pub id: String,
     pub title: String,
     #[serde(default)]
+    pub workflow_id: Option<String>,
+    #[serde(default)]
     pub description: Option<String>,
     #[serde(default)]
     pub body: Option<String>,

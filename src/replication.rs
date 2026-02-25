@@ -54,13 +54,20 @@ impl<'a> ReplicationService<'a> {
             worktree.ensure_clean(&self.git)?;
 
             let copied_files = self.copy_files_into_worktree(worktree.path(), &local_files)?;
-            self.git
-                .add_paths(worktree.path(), &[".knots/index", ".knots/events"])?;
+            let stage_paths = stage_paths(worktree.path());
+            if stage_paths.is_empty() {
+                return Ok(PushSummary {
+                    local_event_files,
+                    copied_files,
+                    committed: false,
+                    pushed: false,
+                    commit: None,
+                });
+            }
 
-            if !self
-                .git
-                .has_staged_changes(worktree.path(), &[".knots/index", ".knots/events"])?
-            {
+            self.git.add_paths(worktree.path(), &stage_paths)?;
+
+            if !self.git.has_staged_changes(worktree.path(), &stage_paths)? {
                 return Ok(PushSummary {
                     local_event_files,
                     copied_files,
@@ -109,10 +116,12 @@ impl<'a> ReplicationService<'a> {
     }
 
     fn reset_worktree_to_remote_or_local(&self, worktree: &KnotsWorktree) -> Result<(), SyncError> {
-        match self
-            .git
-            .fetch_branch(&self.repo_root, worktree.remote(), worktree.branch())
-        {
+        match self.git.fetch_branch_with_filter(
+            &self.repo_root,
+            worktree.remote(),
+            worktree.branch(),
+            crate::db::get_sync_fetch_blob_limit_kb(self.conn)?,
+        ) {
             Ok(()) => {
                 let remote_ref = format!("{}/{}", worktree.remote(), worktree.branch());
                 let head = self.git.rev_parse(&self.repo_root, &remote_ref)?;
@@ -130,7 +139,7 @@ impl<'a> ReplicationService<'a> {
 
     fn collect_local_event_files(&self) -> Result<Vec<PathBuf>, SyncError> {
         let mut files = Vec::new();
-        for rel_root in [".knots/index", ".knots/events"] {
+        for rel_root in [".knots/index", ".knots/events", ".knots/snapshots"] {
             let root = self.repo_root.join(rel_root);
             if !root.exists() {
                 continue;
@@ -195,6 +204,16 @@ impl<'a> ReplicationService<'a> {
 
         Ok(copied)
     }
+}
+
+fn stage_paths(worktree_root: &Path) -> Vec<&'static str> {
+    let mut out = Vec::new();
+    for path in [".knots/index", ".knots/events", ".knots/snapshots"] {
+        if worktree_root.join(path).exists() {
+            out.push(path);
+        }
+    }
+    out
 }
 
 #[cfg(test)]

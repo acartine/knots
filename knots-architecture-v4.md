@@ -134,7 +134,7 @@ Requirements:
 ### 4.4 Minimal Event Types
 
 #### Full stream (`.knots/events/...`)
-- `knot.created` — id, title, initial state, body (optional)
+- `knot.created` — id, title, initial state, workflow id, body (optional)
 - `knot.title_set`
 - `knot.body_set` (or `knot.note_added`)
 - `knot.state_set`
@@ -148,6 +148,7 @@ Requirements:
   - `knot_id`
   - `title`
   - `state`
+  - `workflow_id`
   - `updated_at`
   - (optional) `terminal` boolean (derived from state, but storing is convenient)
 
@@ -247,6 +248,11 @@ Knots maintains a local SQLite DB (not in git):
 - `workflow_etag` (opaque string): stored per knot in the cache to support OCC/If-Match.
   - Implementation: set to the latest applied `idx.knot_head.event_id` for that knot.
   - Note: warm UI can still show only `id+title`; the cache may keep internal tokens/state to support eviction and correctness.
+
+**Workflow identity**
+- `workflow_id` (string): stored per knot in the hot cache and carried in `knot.created` and
+  `idx.knot_head` events.
+- Missing `workflow_id` on legacy records/events resolves to `default`.
 
 **Meta**
 - `meta(key TEXT PRIMARY KEY, value TEXT)`  
@@ -950,4 +956,3 @@ Suggested “common path” transitions (validation/UX only):
 - `* -> abandoned` (terminal)
 
 Validation should be *helpful, not restrictive*: allow `--force` to bypass if needed.
-

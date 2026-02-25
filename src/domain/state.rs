@@ -55,6 +55,7 @@ impl KnotState {
         )
     }
 
+    #[allow(dead_code)]
     pub fn can_transition_to(self, next: KnotState) -> bool {
         if self == next {
             return true;
@@ -77,6 +78,7 @@ impl KnotState {
         }
     }
 
+    #[allow(dead_code)]
     pub fn validate_transition(
         self,
         next: KnotState,
