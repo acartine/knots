@@ -78,3 +78,42 @@ to = "doing"
 [[workflows.transitions]]
 from = "doing"
 to = "done"
+
+[[workflows]]
+id = "simple"
+description = "Traditional linear delivery workflow"
+initial_state = "work_item"
+states = [
+  "work_item",
+  "implementing",
+  "queued_for_review",
+  "reviewing",
+  "reviewed",
+  "shipping",
+  "shipped",
+]
+terminal_states = ["shipped"]
+
+[[workflows.transitions]]
+from = "work_item"
+to = "implementing"
+
+[[workflows.transitions]]
+from = "implementing"
+to = "queued_for_review"
+
+[[workflows.transitions]]
+from = "queued_for_review"
+to = "reviewing"
+
+[[workflows.transitions]]
+from = "reviewing"
+to = "reviewed"
+
+[[workflows.transitions]]
+from = "reviewed"
+to = "shipping"
+
+[[workflows.transitions]]
+from = "shipping"
+to = "shipped"
