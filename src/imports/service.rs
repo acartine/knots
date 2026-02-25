@@ -14,12 +14,12 @@ use crate::events::{
     new_event_id, now_utc_rfc3339, EventRecord, EventWriter, FullEvent, FullEventKind, IndexEvent,
     IndexEventKind,
 };
+use crate::workflow::normalize_workflow_id;
 
 use super::errors::ImportError;
 use super::source::{
-    ensure_dolt_available, fetch_dolt_rows, map_dependency_kind, map_source_state, merged_body,
-    normalize_path, parse_since, parse_timestamp, source_issue_from_dolt_row, source_key,
-    SourceIssue, SourceKind, SourceMetadataEntry, SourceNotesField,
+    map_dependency_kind, map_source_state, merged_body, normalize_path, parse_since,
+    parse_timestamp, source_key, SourceIssue, SourceKind, SourceMetadataEntry, SourceNotesField,
 };
 use super::store::{fingerprint_exists, insert_fingerprint, load_checkpoint};
 
@@ -166,79 +166,6 @@ impl<'a> ImportService<'a> {
         )
     }
 
-    pub fn import_dolt(
-        &self,
-        repo: &str,
-        since: Option<&str>,
-        dry_run: bool,
-    ) -> Result<ImportSummary, ImportError> {
-        let source_ref = normalize_path(repo)?;
-        ensure_dolt_available()?;
-        let source_key = source_key(SourceKind::Dolt, &source_ref);
-        let since_ts = parse_since(since)?;
-        let previous_checkpoint = load_checkpoint(self.conn, &source_key)?;
-        let mut run = ImportRun::new();
-
-        let rows = fetch_dolt_rows(&source_ref)?;
-        for (index, value) in rows.into_iter().enumerate() {
-            let row_number = index + 1;
-            run.checkpoint = Some(row_number.to_string());
-            if let Some(cp) = previous_checkpoint {
-                if row_number <= cp {
-                    continue;
-                }
-            }
-
-            run.processed_count += 1;
-            let issue = match source_issue_from_dolt_row(value) {
-                Ok(issue) => issue,
-                Err(err) => {
-                    run.error_count += 1;
-                    run.last_error = Some(format!("row {}: {}", row_number, err));
-                    continue;
-                }
-            };
-
-            match self.import_issue(&source_ref, &source_key, issue, since_ts, dry_run) {
-                Ok(Outcome::Imported) => run.imported_count += 1,
-                Ok(Outcome::Skipped) => run.skipped_count += 1,
-                Err(ImportError::InvalidRecord(message)) => {
-                    run.error_count += 1;
-                    run.last_error = Some(format!("row {}: {}", row_number, message));
-                }
-                Err(err) => {
-                    run.last_error = Some(format!("row {}: {}", row_number, err));
-                    return self.finish_run(
-                        SourceKind::Dolt,
-                        source_ref,
-                        source_key,
-                        run,
-                        "failed",
-                        dry_run,
-                        Err(err),
-                    );
-                }
-            }
-        }
-
-        let status = if dry_run {
-            "dry_run"
-        } else if run.error_count > 0 {
-            "partial"
-        } else {
-            "completed"
-        };
-        self.finish_run(
-            SourceKind::Dolt,
-            source_ref,
-            source_key,
-            run,
-            status,
-            dry_run,
-            Ok(()),
-        )
-    }
-
     pub fn list_statuses(&self) -> Result<Vec<ImportStatus>, ImportError> {
         let mut stmt = self.conn.prepare(
             r#"
@@ -313,9 +240,10 @@ ORDER BY last_run_at DESC, source_type ASC
         }
 
         let state = map_source_state(&issue)?;
-        let workflow_id = normalize_non_empty(issue.workflow_id.as_deref())
-            .ok_or_else(|| ImportError::InvalidRecord("workflow_id is required".to_string()))?
-            .to_ascii_lowercase();
+        let raw_workflow_id = normalize_non_empty(issue.workflow_id.as_deref())
+            .ok_or_else(|| ImportError::InvalidRecord("workflow_id is required".to_string()))?;
+        let workflow_id = normalize_workflow_id(&raw_workflow_id)
+            .ok_or_else(|| ImportError::InvalidRecord("workflow_id is required".to_string()))?;
         let description = merged_body(&issue);
         let body = description.clone();
         let knot_type =
@@ -503,6 +431,7 @@ ORDER BY last_run_at DESC, source_type ASC
         Ok(Outcome::Imported)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn finish_run(
         &self,
         source_kind: SourceKind,
@@ -708,6 +637,7 @@ fn metadata_from_legacy_text(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 fn metadata_from_source_entry(
     source_key: &str,
     issue: &SourceIssue,
@@ -764,6 +694,7 @@ fn metadata_from_source_entry(
     }))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn deterministic_entry_id(
     source_key: &str,
     issue_id: &str,
@@ -804,3 +735,7 @@ fn deterministic_entry_id(
     }
     out
 }
+
+#[cfg(test)]
+#[path = "service_tests_ext.rs"]
+mod tests_ext;

@@ -10,6 +10,8 @@ mod imports;
 mod init;
 mod knot_id;
 mod list_layout;
+#[cfg(test)]
+mod list_layout_tests_ext;
 mod listing;
 mod locks;
 #[cfg(test)]
@@ -23,6 +25,7 @@ mod sync;
 mod tiering;
 mod ui;
 mod workflow;
+mod workflow_diagram;
 
 fn main() {
     if let Err(err) = run() {
@@ -54,7 +57,7 @@ fn run() -> Result<(), app::AppError> {
         return Ok(());
     }
     if let Commands::Workflow(args) = &cli.command {
-        return run_workflow_command(args, &cli.repo_root);
+        return run_workflow_command(args, &cli.repo_root, &cli.db);
     }
 
     let app = app::App::open(&cli.db, cli.repo_root)?;
@@ -65,7 +68,7 @@ fn run() -> Result<(), app::AppError> {
                 &args.title,
                 args.body.as_deref(),
                 args.state.as_deref(),
-                Some(args.workflow.as_str()),
+                args.workflow.as_deref(),
             )?;
             println!(
                 "created {} [{}] {}",
@@ -209,7 +212,8 @@ fn run() -> Result<(), app::AppError> {
             } else {
                 println!(
                     "sync push(local_event_files={} copied_files={} committed={} pushed={}) \
-                     pull(head={} index_files={} full_files={} knot_updates={} edge_adds={} edge_removes={})",
+                     pull(head={} index_files={} full_files={} knot_updates={} \
+                     edge_adds={} edge_removes={})",
                     summary.push.local_event_files,
                     summary.push.copied_files,
                     summary.push.committed,
@@ -483,7 +487,8 @@ fn run() -> Result<(), app::AppError> {
 
 fn run_workflow_command(
     args: &cli::WorkflowArgs,
-    _repo_root: &std::path::Path,
+    repo_root: &std::path::Path,
+    db_path: &str,
 ) -> Result<(), app::AppError> {
     use cli::WorkflowSubcommands;
 
@@ -491,6 +496,7 @@ fn run_workflow_command(
     match &args.command {
         WorkflowSubcommands::List(list_args) => {
             let workflows = registry.list();
+            let repo_default = read_repo_default_workflow_id(db_path, &registry)?;
             if list_args.json {
                 println!(
                     "{}",
@@ -500,13 +506,21 @@ fn run_workflow_command(
             } else if workflows.is_empty() {
                 println!("no workflows found");
             } else {
-                for workflow in workflows {
-                    println!(
-                        "{} initial={} terminal={}",
-                        workflow.id,
-                        workflow.initial_state,
-                        workflow.terminal_states.join(",")
-                    );
+                for (index, workflow) in workflows.into_iter().enumerate() {
+                    if index > 0 {
+                        println!();
+                    }
+                    let workflow_name = workflow
+                        .description
+                        .as_deref()
+                        .unwrap_or(workflow.id.as_str());
+                    println!("name: {}", workflow_name);
+                    println!("key: {}", workflow.id);
+                    if repo_default.as_deref() == Some(workflow.id.as_str()) {
+                        println!("repo_default: true");
+                    }
+                    println!("initial_state: {}", workflow.initial_state);
+                    println!("terminal_states: {}", workflow.terminal_states.join(", "));
                 }
             }
         }
@@ -523,17 +537,36 @@ fn run_workflow_command(
                 if let Some(description) = workflow.description.as_deref() {
                     println!("description: {}", description);
                 }
-                println!("initial_state: {}", workflow.initial_state);
-                println!("states: {}", workflow.states.join(", "));
-                println!("terminal_states: {}", workflow.terminal_states.join(", "));
-                println!("transitions:");
-                for transition in workflow.transitions {
-                    println!("  {} -> {}", transition.from, transition.to);
+                for line in workflow_diagram::render(&workflow) {
+                    println!("{line}");
                 }
             }
         }
+        WorkflowSubcommands::SetDefault(set_default_args) => {
+            let app = app::App::open(db_path, repo_root.to_path_buf())?;
+            let workflow_id = app.set_default_workflow_id(&set_default_args.id)?;
+            println!("repo default workflow: {}", workflow_id);
+        }
     }
     Ok(())
+}
+
+fn read_repo_default_workflow_id(
+    db_path: &str,
+    registry: &workflow::WorkflowRegistry,
+) -> Result<Option<String>, app::AppError> {
+    if !std::path::Path::new(db_path).exists() {
+        return Ok(None);
+    }
+    let conn = db::open_connection(db_path)?;
+    let Some(raw) = db::get_meta(&conn, app::DEFAULT_WORKFLOW_META_KEY)? else {
+        return Ok(None);
+    };
+    let workflow = match registry.require(&raw) {
+        Ok(workflow) => workflow,
+        Err(_) => return Ok(None),
+    };
+    Ok(Some(workflow.id.clone()))
 }
 
 fn knot_ref(knot: &app::KnotView) -> String {

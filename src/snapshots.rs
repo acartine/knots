@@ -246,11 +246,12 @@ fn filename_timestamp() -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::error::Error;
     use std::path::PathBuf;
 
     use uuid::Uuid;
 
-    use super::{apply_latest_snapshots, write_snapshots};
+    use super::{apply_latest_snapshots, latest_snapshot_path, write_snapshots, SnapshotError};
     use crate::db::{self, UpsertKnotHot};
 
     fn unique_workspace() -> PathBuf {
@@ -346,5 +347,63 @@ mod tests {
 
         let _ = std::fs::remove_dir_all(root);
         let _ = std::fs::remove_dir_all(root2);
+    }
+
+    #[test]
+    fn snapshot_error_display_source_and_from_cover_variants() {
+        let io: SnapshotError = std::io::Error::other("disk").into();
+        assert!(io.to_string().contains("I/O error"));
+        assert!(io.source().is_some());
+
+        let db: SnapshotError = rusqlite::Error::InvalidQuery.into();
+        assert!(db.to_string().contains("database error"));
+        assert!(db.source().is_some());
+
+        let json_err = serde_json::from_slice::<serde_json::Value>(b"{")
+            .expect_err("invalid json should fail");
+        let json: SnapshotError = json_err.into();
+        assert!(json.to_string().contains("JSON error"));
+        assert!(json.source().is_some());
+    }
+
+    #[test]
+    fn latest_snapshot_path_skips_directories_and_invalid_filenames() {
+        let root = unique_workspace();
+        let snapshots = root.join(".knots/snapshots");
+        std::fs::create_dir_all(&snapshots).expect("snapshots directory should be creatable");
+
+        std::fs::create_dir_all(snapshots.join("20260225T100000Z-active_catalog.snapshot.json"))
+            .expect("directory fixture should be creatable");
+        std::fs::write(
+            snapshots.join("20260225T100001Z-active_catalog.snapshot.json"),
+            b"{}",
+        )
+        .expect("older snapshot should write");
+        std::fs::write(
+            snapshots.join("20260225T100002Z-active_catalog.snapshot.json"),
+            b"{}",
+        )
+        .expect("latest snapshot should write");
+
+        #[cfg(unix)]
+        {
+            use std::ffi::OsString;
+            use std::os::unix::ffi::OsStringExt;
+            let mut bytes = b"invalid-utf8-".to_vec();
+            bytes.push(0xFF);
+            bytes.extend_from_slice(b"-active_catalog.snapshot.json");
+            let non_utf8 = OsString::from_vec(bytes);
+            let _ = std::fs::write(snapshots.join(non_utf8), b"{}");
+        }
+
+        let latest = latest_snapshot_path(&snapshots, "-active_catalog.snapshot.json")
+            .expect("latest snapshot lookup should succeed")
+            .expect("latest snapshot should exist");
+        assert!(latest
+            .file_name()
+            .and_then(|value| value.to_str())
+            .is_some_and(|name| name.starts_with("20260225T100002Z")));
+
+        let _ = std::fs::remove_dir_all(root);
     }
 }

@@ -28,6 +28,7 @@ impl EventStream {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)]
 pub enum FullEventKind {
     KnotCreated,
     KnotTitleSet,
@@ -490,3 +491,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(root);
     }
 }
+
+#[cfg(test)]
+#[path = "tests_ext.rs"]
+mod tests_ext;

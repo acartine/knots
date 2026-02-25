@@ -108,8 +108,12 @@ pub struct NewArgs {
     )]
     pub state: Option<String>,
 
-    #[arg(short = 'w', long, help = "Workflow id.")]
-    pub workflow: String,
+    #[arg(
+        short = 'w',
+        long,
+        help = "Workflow id (defaults to the repo default workflow)."
+    )]
+    pub workflow: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -268,6 +272,8 @@ pub enum WorkflowSubcommands {
     List(WorkflowListArgs),
     #[command(about = "Show one workflow definition.")]
     Show(WorkflowShowArgs),
+    #[command(about = "Set the repo default workflow id.", alias = "set")]
+    SetDefault(WorkflowSetDefaultArgs),
 }
 
 #[derive(Debug, Args)]
@@ -285,6 +291,13 @@ pub struct WorkflowShowArgs {
 
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Set the repo default workflow.")]
+pub struct WorkflowSetDefaultArgs {
+    #[arg(help = "Workflow id.")]
+    pub id: String,
 }
 
 #[derive(Debug, Args)]

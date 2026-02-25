@@ -302,6 +302,20 @@ fn state_color_code(state: &str) -> &'static str {
     }
 }
 
+struct ShowField {
+    label: String,
+    value: String,
+}
+
+impl ShowField {
+    fn new(label: impl Into<String>, value: impl Into<String>) -> Self {
+        Self {
+            label: label.into(),
+            value: value.into(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{filter_summary, format_show_fields, knot_show_fields, Palette, ShowField};
@@ -425,16 +439,6 @@ mod tests {
     }
 }
 
-struct ShowField {
-    label: String,
-    value: String,
-}
-
-impl ShowField {
-    fn new(label: impl Into<String>, value: impl Into<String>) -> Self {
-        Self {
-            label: label.into(),
-            value: value.into(),
-        }
-    }
-}
+#[cfg(test)]
+#[path = "ui_tests_ext.rs"]
+mod tests_ext;

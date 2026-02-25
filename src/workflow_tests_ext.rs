@@ -93,6 +93,7 @@ fn registry_resolve_and_require_failures_are_reported() {
 fn workflow_definition_reports_unknown_state_and_invalid_transition() {
     let workflow = WorkflowDefinition {
         id: "default".to_string(),
+        aliases: Vec::new(),
         description: Some("desc".to_string()),
         initial_state: "idea".to_string(),
         states: vec![
@@ -204,6 +205,140 @@ fn load_rejects_empty_and_duplicate_and_invalid_definitions() {
             "terminal_states = [\"done\"]\n",
             "transitions = []\n",
         ),),
+        Err(WorkflowError::InvalidDefinition(_))
+    ));
+}
+
+#[test]
+fn load_rejects_alias_conflicts_and_missing_transition_fields() {
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
+            "[[workflows]]\n",
+            "id = \"flow_a\"\n",
+            "aliases = [\"shared\"]\n",
+            "initial_state = \"idea\"\n",
+            "states = [\"idea\", \"done\"]\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"idea\"\n",
+            "to = \"done\"\n",
+            "\n",
+            "[[workflows]]\n",
+            "id = \"flow_b\"\n",
+            "aliases = [\"shared\"]\n",
+            "initial_state = \"idea\"\n",
+            "states = [\"idea\", \"done\"]\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"idea\"\n",
+            "to = \"done\"\n",
+        )),
+        Err(WorkflowError::InvalidDefinition(_))
+    ));
+
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
+            "[[workflows]]\n",
+            "id = \"flow_a\"\n",
+            "aliases = [\"flow_b\"]\n",
+            "initial_state = \"idea\"\n",
+            "states = [\"idea\", \"done\"]\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"idea\"\n",
+            "to = \"done\"\n",
+            "\n",
+            "[[workflows]]\n",
+            "id = \"flow_b\"\n",
+            "initial_state = \"idea\"\n",
+            "states = [\"idea\", \"done\"]\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"idea\"\n",
+            "to = \"done\"\n",
+        )),
+        Err(WorkflowError::InvalidDefinition(_))
+    ));
+
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
+            "[[workflows]]\n",
+            "id = \"flow_a\"\n",
+            "initial_state = \"idea\"\n",
+            "states = [\"idea\", \"done\"]\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \" \"\n",
+            "to = \"done\"\n",
+        )),
+        Err(WorkflowError::InvalidDefinition(_))
+    ));
+
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
+            "[[workflows]]\n",
+            "id = \"flow_a\"\n",
+            "initial_state = \"idea\"\n",
+            "states = [\"idea\", \"done\"]\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"idea\"\n",
+            "to = \" \"\n",
+        )),
+        Err(WorkflowError::InvalidDefinition(_))
+    ));
+}
+
+#[test]
+fn load_rejects_empty_states_and_terminal_sets() {
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
+            "[[workflows]]\n",
+            "id = \"flow_a\"\n",
+            "initial_state = \"idea\"\n",
+            "states = []\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"idea\"\n",
+            "to = \"done\"\n",
+        )),
+        Err(WorkflowError::InvalidDefinition(_))
+    ));
+
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
+            "[[workflows]]\n",
+            "id = \"flow_a\"\n",
+            "initial_state = \" \"\n",
+            "states = [\"idea\", \"done\"]\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"idea\"\n",
+            "to = \"done\"\n",
+        )),
+        Err(WorkflowError::InvalidDefinition(_))
+    ));
+
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
+            "[[workflows]]\n",
+            "id = \"flow_a\"\n",
+            "initial_state = \"idea\"\n",
+            "states = [\"idea\", \"done\"]\n",
+            "terminal_states = []\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"idea\"\n",
+            "to = \"done\"\n",
+        )),
         Err(WorkflowError::InvalidDefinition(_))
     ));
 }

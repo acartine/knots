@@ -17,6 +17,8 @@ pub struct WorkflowTransition {
 pub struct WorkflowDefinition {
     pub id: String,
     #[serde(default)]
+    pub aliases: Vec<String>,
+    #[serde(default)]
     pub description: Option<String>,
     pub initial_state: String,
     pub states: Vec<String>,
@@ -33,6 +35,7 @@ struct WorkflowFile {
 #[derive(Debug, Clone)]
 pub struct WorkflowRegistry {
     workflows: HashMap<String, WorkflowDefinition>,
+    aliases: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -147,7 +150,32 @@ impl WorkflowRegistry {
             }
         }
 
-        Ok(Self { workflows })
+        let mut aliases = HashMap::new();
+        for workflow in workflows.values() {
+            for alias in &workflow.aliases {
+                if alias == &workflow.id {
+                    continue;
+                }
+                if let Some(existing_id) = aliases.get(alias) {
+                    if existing_id != &workflow.id {
+                        return Err(WorkflowError::InvalidDefinition(format!(
+                            "alias '{}' is assigned to multiple workflows",
+                            alias
+                        )));
+                    }
+                    continue;
+                }
+                if workflows.contains_key(alias) {
+                    return Err(WorkflowError::InvalidDefinition(format!(
+                        "alias '{}' conflicts with a workflow id",
+                        alias
+                    )));
+                }
+                aliases.insert(alias.clone(), workflow.id.clone());
+            }
+        }
+
+        Ok(Self { workflows, aliases })
     }
 
     pub fn list(&self) -> Vec<WorkflowDefinition> {
@@ -158,19 +186,23 @@ impl WorkflowRegistry {
 
     pub fn resolve(&self, workflow_id: Option<&str>) -> Result<&WorkflowDefinition, WorkflowError> {
         let id = workflow_id
-            .and_then(normalize_scalar)
+            .and_then(normalize_workflow_id)
             .ok_or(WorkflowError::MissingWorkflowReference)?;
-        self.workflows
-            .get(&id)
-            .ok_or(WorkflowError::UnknownWorkflow(id))
+        self.lookup(&id).ok_or(WorkflowError::UnknownWorkflow(id))
     }
 
     pub fn require(&self, workflow_id: &str) -> Result<&WorkflowDefinition, WorkflowError> {
-        let id = normalize_scalar(workflow_id)
+        let id = normalize_workflow_id(workflow_id)
             .ok_or_else(|| WorkflowError::UnknownWorkflow(workflow_id.to_string()))?;
-        self.workflows
-            .get(&id)
-            .ok_or(WorkflowError::UnknownWorkflow(id))
+        self.lookup(&id).ok_or(WorkflowError::UnknownWorkflow(id))
+    }
+
+    fn lookup(&self, normalized_id: &str) -> Option<&WorkflowDefinition> {
+        if let Some(workflow) = self.workflows.get(normalized_id) {
+            return Some(workflow);
+        }
+        let canonical = self.aliases.get(normalized_id)?;
+        self.workflows.get(canonical)
     }
 }
 
@@ -221,8 +253,10 @@ impl WorkflowDefinition {
 }
 
 fn normalize_definition(raw: WorkflowDefinition) -> Result<WorkflowDefinition, WorkflowError> {
-    let id = normalize_scalar(raw.id.as_str())
+    let id = normalize_workflow_id(raw.id.as_str())
         .ok_or_else(|| WorkflowError::InvalidDefinition("workflow id is required".to_string()))?;
+    let mut aliases = normalize_states(raw.aliases);
+    aliases.retain(|value| value != &id);
 
     let states = normalize_states(raw.states);
     if states.is_empty() {
@@ -302,6 +336,7 @@ fn normalize_definition(raw: WorkflowDefinition) -> Result<WorkflowDefinition, W
 
     Ok(WorkflowDefinition {
         id,
+        aliases,
         description: raw
             .description
             .and_then(|value| normalize_scalar(value.as_str())),
@@ -321,6 +356,10 @@ fn normalize_scalar(raw: &str) -> Option<String> {
     }
 }
 
+pub fn normalize_workflow_id(raw: &str) -> Option<String> {
+    normalize_scalar(raw)
+}
+
 fn normalize_states(values: Vec<String>) -> Vec<String> {
     let mut states = values
         .into_iter()
@@ -338,6 +377,8 @@ mod tests {
     #[test]
     fn loads_embedded_default_workflow() {
         let registry = WorkflowRegistry::load().expect("embedded workflow registry should load");
+        assert!(registry.require("automation_granular").is_ok());
+        assert!(registry.require("human_gate").is_ok());
         assert!(registry.require("default").is_ok());
     }
 
@@ -345,6 +386,7 @@ mod tests {
     fn validates_transitions_with_wildcard_and_force() {
         let workflow = WorkflowDefinition {
             id: "sample".to_string(),
+            aliases: Vec::new(),
             description: None,
             initial_state: "idea".to_string(),
             states: vec![

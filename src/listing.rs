@@ -1,4 +1,5 @@
 use crate::app::KnotView;
+use crate::workflow::normalize_workflow_id;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct KnotListFilter {
@@ -48,7 +49,7 @@ impl From<&KnotListFilter> for NormalizedFilter {
             include_all: value.include_all,
             state: normalize_scalar(value.state.as_deref()),
             knot_type: normalize_scalar(value.knot_type.as_deref()),
-            workflow_id: normalize_scalar(value.workflow_id.as_deref()),
+            workflow_id: value.workflow_id.as_deref().and_then(normalize_workflow_id),
             tags: value
                 .tags
                 .iter()

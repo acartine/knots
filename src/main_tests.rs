@@ -1,8 +1,16 @@
 use std::path::PathBuf;
 
-use crate::cli::{Commands, SelfArgs, SelfSubcommands, SelfUninstallArgs, SelfUpdateArgs};
+use crate::app::DEFAULT_WORKFLOW_META_KEY;
+use crate::cli::{
+    Commands, SelfArgs, SelfSubcommands, SelfUninstallArgs, SelfUpdateArgs, WorkflowArgs,
+    WorkflowListArgs, WorkflowSetDefaultArgs, WorkflowShowArgs, WorkflowSubcommands,
+};
+use crate::db;
+use crate::workflow::WorkflowRegistry;
 
-use super::{knot_ref, maybe_run_self_command};
+use super::{
+    knot_ref, maybe_run_self_command, read_repo_default_workflow_id, run_workflow_command,
+};
 
 fn unique_dir(prefix: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("{}-{}", prefix, uuid::Uuid::now_v7()));
@@ -106,4 +114,140 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     assert!(!legacy_previous.exists());
 
     let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn maybe_run_self_command_top_level_uninstall_reports_previous_backups_when_requested() {
+    let dir = unique_dir("knots-main-top-uninstall");
+    let binary = dir.join("knots");
+    let previous = dir.join("kno.previous");
+    let legacy_previous = dir.join("knots.previous");
+    std::fs::write(&binary, b"bin").expect("binary should be writable");
+    std::fs::write(&previous, b"bin").expect("previous backup should be writable");
+    std::fs::write(&legacy_previous, b"bin").expect("legacy backup should be writable");
+
+    let output = maybe_run_self_command(&Commands::Uninstall(SelfUninstallArgs {
+        bin_path: Some(binary.clone()),
+        remove_previous: true,
+    }))
+    .expect("top-level uninstall should succeed")
+    .expect("top-level uninstall should return output");
+    assert!(output.contains("removed previous backups"));
+    assert!(!binary.exists());
+    assert!(!previous.exists());
+    assert!(!legacy_previous.exists());
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn read_repo_default_workflow_id_covers_missing_unknown_and_valid_values() {
+    let root = unique_dir("knots-main-workflow-read");
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let db_path_str = db_path.to_str().expect("utf8 db path").to_string();
+    let registry = WorkflowRegistry::load().expect("workflow registry should load");
+
+    let missing = read_repo_default_workflow_id(&db_path_str, &registry)
+        .expect("missing db should return none");
+    assert!(missing.is_none());
+
+    std::fs::create_dir_all(db_path.parent().expect("db parent should exist"))
+        .expect("db parent should be creatable");
+    let conn = db::open_connection(&db_path_str).expect("db should open");
+
+    let no_meta = read_repo_default_workflow_id(&db_path_str, &registry)
+        .expect("db without meta should return none");
+    assert!(no_meta.is_none());
+
+    db::set_meta(&conn, DEFAULT_WORKFLOW_META_KEY, "missing-workflow").expect("meta should write");
+    let unknown = read_repo_default_workflow_id(&db_path_str, &registry)
+        .expect("unknown workflow should return none");
+    assert!(unknown.is_none());
+
+    db::set_meta(&conn, DEFAULT_WORKFLOW_META_KEY, "automation_granular")
+        .expect("meta should write");
+    let valid = read_repo_default_workflow_id(&db_path_str, &registry)
+        .expect("valid workflow should return value");
+    assert_eq!(valid.as_deref(), Some("automation_granular"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn run_workflow_command_handles_list_show_and_set_default_paths() {
+    let root = unique_dir("knots-main-workflow-cmd");
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let db_path_str = db_path.to_str().expect("utf8 db path").to_string();
+    std::fs::create_dir_all(db_path.parent().expect("db parent should exist"))
+        .expect("db parent should be creatable");
+    let _ = db::open_connection(&db_path_str).expect("db should open");
+
+    run_workflow_command(
+        &WorkflowArgs {
+            command: WorkflowSubcommands::List(WorkflowListArgs { json: false }),
+        },
+        &root,
+        &db_path_str,
+    )
+    .expect("workflow list text path should succeed");
+
+    run_workflow_command(
+        &WorkflowArgs {
+            command: WorkflowSubcommands::List(WorkflowListArgs { json: true }),
+        },
+        &root,
+        &db_path_str,
+    )
+    .expect("workflow list json path should succeed");
+
+    run_workflow_command(
+        &WorkflowArgs {
+            command: WorkflowSubcommands::Show(WorkflowShowArgs {
+                id: "automation_granular".to_string(),
+                json: false,
+            }),
+        },
+        &root,
+        &db_path_str,
+    )
+    .expect("workflow show text path should succeed");
+
+    run_workflow_command(
+        &WorkflowArgs {
+            command: WorkflowSubcommands::Show(WorkflowShowArgs {
+                id: "human_gate".to_string(),
+                json: true,
+            }),
+        },
+        &root,
+        &db_path_str,
+    )
+    .expect("workflow show json path should succeed");
+
+    run_workflow_command(
+        &WorkflowArgs {
+            command: WorkflowSubcommands::SetDefault(WorkflowSetDefaultArgs {
+                id: "human_gate".to_string(),
+            }),
+        },
+        &root,
+        &db_path_str,
+    )
+    .expect("workflow set-default path should succeed");
+
+    run_workflow_command(
+        &WorkflowArgs {
+            command: WorkflowSubcommands::List(WorkflowListArgs { json: false }),
+        },
+        &root,
+        &db_path_str,
+    )
+    .expect("workflow list should include repo_default marker");
+
+    let conn = db::open_connection(&db_path_str).expect("db should reopen");
+    let stored =
+        db::get_meta(&conn, DEFAULT_WORKFLOW_META_KEY).expect("default workflow meta should read");
+    assert_eq!(stored.as_deref(), Some("human_gate"));
+
+    let _ = std::fs::remove_dir_all(root);
 }

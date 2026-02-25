@@ -250,7 +250,7 @@ VALUES ('K-legacy', 'Legacy', 'work_item', '2026-02-23T00:00:02Z', 'legacy body'
             |row| row.get(0),
         )
         .expect("legacy row should include workflow_id");
-    assert_eq!(workflow_id, "default");
+    assert_eq!(workflow_id, "automation_granular");
 
     cleanup_db_files(&path);
 }

@@ -79,7 +79,8 @@ kno uninstall --remove-previous
 Create an issue:
 ```bash
 kno new "Document release pipeline" --state work_item
-kno new "Triage regression" --workflow default
+kno new "Triage regression"                  # uses repo default workflow
+kno new "Hotfix gate" --workflow human_gate
 ```
 
 Update state:
@@ -110,7 +111,7 @@ kno ls
 kno ls               # shipped knots hidden by default
 kno ls --all         # include shipped knots
 kno ls --state implementing --tag release
-kno ls --workflow default
+kno ls --workflow automation_granular
 kno ls --type task --query importer
 kno show <knot-id>
 kno show <knot-id> --json
@@ -119,8 +120,9 @@ kno show <knot-id> --json
 Workflow inspection:
 ```bash
 kno workflow list     # or: kno wf list
-kno workflow show default
-kno workflow show default --json
+kno workflow show automation_granular
+kno workflow show human_gate
+kno workflow set-default human_gate
 ```
 
 Sync from dedicated `knots` branch/worktree:
@@ -142,7 +144,10 @@ Workflow definitions are embedded in the `kno` CLI and are not read from repo-lo
 Notes:
 - Workflow ids and states are normalized to lowercase.
 - Use transition `from = "*"` for wildcard transitions.
-- The built-in `default` workflow is always available.
+- Built-ins:
+- `automation_granular`: full state graph optimized for automation.
+- `human_gate`: coarse graph with a human checkpoint after PR creation.
+- `kno init` prompts you to set the repo default workflow.
 
 ## Import from Beads
 Export Beads to JSONL, then import.

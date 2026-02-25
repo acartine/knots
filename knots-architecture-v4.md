@@ -49,7 +49,7 @@ This document describes a robust, git-backed issue tracker named **Knots**, desi
 - **Explicit `knots sync`:** < 1s under normal conditions (small deltas; healthy network).
 
 ### Constraints
-- **No Dolt**
+- **No external source-system CLI dependency**
 - **No giant mutable JSON** blobs in git.
 - **No manual `commit/push/pull` for users**: the CLI does all git operations.
 

@@ -27,7 +27,9 @@ use crate::remote_init::{init_remote_knots_branch, RemoteInitError};
 use crate::replication::{PushSummary, ReplicationService, ReplicationSummary};
 use crate::snapshots::{write_snapshots, SnapshotError, SnapshotWriteSummary};
 use crate::sync::{SyncError, SyncSummary};
-use crate::workflow::{WorkflowDefinition, WorkflowError, WorkflowRegistry};
+use crate::workflow::{normalize_workflow_id, WorkflowDefinition, WorkflowError, WorkflowRegistry};
+
+pub const DEFAULT_WORKFLOW_META_KEY: &str = "default_workflow_id";
 
 pub struct App {
     conn: Connection,
@@ -149,6 +151,39 @@ impl App {
             db::get_meta(&self.conn, "sync_auto_budget_ms")?.unwrap_or_else(|| "750".to_string());
         let budget = raw.trim().parse::<u64>().unwrap_or(750);
         Ok(budget)
+    }
+
+    fn fallback_workflow_id(&self) -> Result<String, AppError> {
+        self.workflow_registry
+            .list()
+            .into_iter()
+            .next()
+            .map(|workflow| workflow.id)
+            .ok_or_else(|| AppError::InvalidArgument("no workflows are defined".to_string()))
+    }
+
+    fn read_repo_default_workflow_id(&self) -> Result<Option<String>, AppError> {
+        let Some(raw) = db::get_meta(&self.conn, DEFAULT_WORKFLOW_META_KEY)? else {
+            return Ok(None);
+        };
+        let workflow = match self.workflow_registry.require(&raw) {
+            Ok(workflow) => workflow,
+            Err(_) => return Ok(None),
+        };
+        Ok(Some(workflow.id.clone()))
+    }
+
+    pub fn default_workflow_id(&self) -> Result<String, AppError> {
+        if let Some(workflow_id) = self.read_repo_default_workflow_id()? {
+            return Ok(workflow_id);
+        }
+        self.fallback_workflow_id()
+    }
+
+    pub fn set_default_workflow_id(&self, workflow_id: &str) -> Result<String, AppError> {
+        let workflow = self.workflow_registry.require(workflow_id)?;
+        db::set_meta(&self.conn, DEFAULT_WORKFLOW_META_KEY, &workflow.id)?;
+        Ok(workflow.id.clone())
     }
 
     fn mark_sync_pending(&self) -> Result<(), AppError> {
@@ -300,7 +335,14 @@ impl App {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
-        let workflow = self.workflow_registry.resolve(workflow_id)?;
+        let default_workflow = if workflow_id.is_none() {
+            Some(self.default_workflow_id()?)
+        } else {
+            None
+        };
+        let workflow = self
+            .workflow_registry
+            .resolve(workflow_id.or(default_workflow.as_deref()))?;
         let state = non_empty(initial_state.unwrap_or(""))
             .unwrap_or_else(|| workflow.initial_state.clone())
             .to_ascii_lowercase();
@@ -378,6 +420,7 @@ impl App {
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         ensure_workflow_etag(&current, expected_workflow_etag)?;
         let workflow = self.resolve_workflow_for_record(&current)?;
+        let workflow_id = workflow.id.clone();
         let next = next_state.trim().to_ascii_lowercase();
         workflow.validate_transition(&current.state, &next, force)?;
 
@@ -390,7 +433,7 @@ impl App {
             json!({
                 "from": &current.state,
                 "to": &next,
-                "workflow_id": &current.workflow_id,
+                "workflow_id": &workflow_id,
                 "force": force,
             }),
         );
@@ -407,7 +450,7 @@ impl App {
                 "knot_id": id,
                 "title": current.title,
                 "state": &next,
-                "workflow_id": &current.workflow_id,
+                "workflow_id": &workflow_id,
                 "updated_at": occurred_at,
                 "terminal": workflow.is_terminal_state(&next),
             }),
@@ -433,7 +476,7 @@ impl App {
                 tags: &current.tags,
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
-                workflow_id: &current.workflow_id,
+                workflow_id: &workflow_id,
                 workflow_etag: Some(&index_event_id),
                 created_at: current.created_at.as_deref(),
             },
@@ -464,6 +507,7 @@ impl App {
         let mut priority = current.priority;
         let mut knot_type = current.knot_type.clone();
         let workflow = self.resolve_workflow_for_record(&current)?;
+        let workflow_id = workflow.id.clone();
         let mut tags = current.tags.clone();
         let mut notes = current.notes.clone();
         let mut handoff_capsules = current.handoff_capsules.clone();
@@ -483,7 +527,7 @@ impl App {
                     json!({
                         "from": &current.state,
                         "to": &state,
-                        "workflow_id": &current.workflow_id,
+                        "workflow_id": &workflow_id,
                         "force": patch.force,
                     }),
                 ));
@@ -670,7 +714,7 @@ impl App {
                 "knot_id": id,
                 "title": &title,
                 "state": &state,
-                "workflow_id": &current.workflow_id,
+                "workflow_id": &workflow_id,
                 "updated_at": occurred_at,
                 "terminal": terminal,
             }),
@@ -694,7 +738,7 @@ impl App {
                 tags: &tags,
                 notes: &notes,
                 handoff_capsules: &handoff_capsules,
-                workflow_id: &current.workflow_id,
+                workflow_id: &workflow_id,
                 workflow_etag: Some(&index_event_id),
                 created_at: current.created_at.as_deref(),
             },
@@ -918,6 +962,7 @@ impl App {
         self.writer.write(&EventRecord::full(full_event))?;
 
         let workflow = self.resolve_workflow_for_record(&current)?;
+        let workflow_id = workflow.id.clone();
         let terminal = workflow.is_terminal_state(&current.state);
         let index_event_id = new_event_id();
         let idx_event = IndexEvent::with_identity(
@@ -928,7 +973,7 @@ impl App {
                 "knot_id": src,
                 "title": current.title,
                 "state": current.state,
-                "workflow_id": &current.workflow_id,
+                "workflow_id": &workflow_id,
                 "updated_at": occurred_at,
                 "terminal": terminal,
             }),
@@ -955,7 +1000,7 @@ impl App {
                 tags: &current.tags,
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
-                workflow_id: &current.workflow_id,
+                workflow_id: &workflow_id,
                 workflow_etag: Some(&index_event_id),
                 created_at: current.created_at.as_deref(),
             },
@@ -994,6 +1039,10 @@ fn non_empty(raw: &str) -> Option<String> {
     } else {
         Some(trimmed.to_string())
     }
+}
+
+fn canonical_workflow_id(raw: &str) -> String {
+    normalize_workflow_id(raw).unwrap_or_else(|| raw.trim().to_ascii_lowercase())
 }
 
 fn normalize_tag(raw: &str) -> String {
@@ -1150,8 +1199,10 @@ fn rehydrate_from_events(
         if let Some(updated_at) = data.get("updated_at").and_then(Value::as_str) {
             projection.updated_at = updated_at.to_string();
         }
-        if let Some(workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
-            projection.workflow_id = workflow_id.trim().to_ascii_lowercase();
+        if let Some(raw_workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
+            if let Some(workflow_id) = normalize_workflow_id(raw_workflow_id) {
+                projection.workflow_id = workflow_id;
+            }
         }
         projection.workflow_etag = Some(event.event_id.clone());
     }
@@ -1179,8 +1230,10 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
             if let Some(state) = data.get("state").and_then(Value::as_str) {
                 projection.state = state.to_string();
             }
-            if let Some(workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
-                projection.workflow_id = workflow_id.trim().to_ascii_lowercase();
+            if let Some(raw_workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
+                if let Some(workflow_id) = normalize_workflow_id(raw_workflow_id) {
+                    projection.workflow_id = workflow_id;
+                }
             }
             projection.created_at = Some(event.occurred_at.clone());
             projection.updated_at = event.occurred_at.clone();
@@ -1289,6 +1342,7 @@ fn parse_metadata_entry_for_rehydrate(
 
 impl From<KnotCacheRecord> for KnotView {
     fn from(value: KnotCacheRecord) -> Self {
+        let workflow_id = canonical_workflow_id(&value.workflow_id);
         Self {
             id: value.id,
             alias: None,
@@ -1302,7 +1356,7 @@ impl From<KnotCacheRecord> for KnotView {
             tags: value.tags,
             notes: value.notes,
             handoff_capsules: value.handoff_capsules,
-            workflow_id: value.workflow_id,
+            workflow_id,
             workflow_etag: value.workflow_etag,
             created_at: value.created_at,
         }
@@ -1478,6 +1532,9 @@ impl From<InvalidStateTransition> for AppError {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+#[path = "app/tests_coverage_ext.rs"]
+mod tests_coverage_ext;
 #[cfg(test)]
 #[path = "app/tests_error_paths.rs"]
 mod tests_error_paths;

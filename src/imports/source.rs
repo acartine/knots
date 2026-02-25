@@ -1,9 +1,7 @@
 use std::path::Path;
-use std::process::Command;
 use std::str::FromStr;
 
 use serde::Deserialize;
-use serde_json::Value;
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
@@ -14,14 +12,12 @@ use super::errors::ImportError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SourceKind {
     Jsonl,
-    Dolt,
 }
 
 impl SourceKind {
     pub fn as_str(self) -> &'static str {
         match self {
             SourceKind::Jsonl => "jsonl",
-            SourceKind::Dolt => "dolt",
         }
     }
 }
@@ -188,45 +184,175 @@ pub fn merged_body(issue: &SourceIssue) -> Option<String> {
     }
 }
 
-pub fn ensure_dolt_available() -> Result<(), ImportError> {
-    match Command::new("dolt").arg("--version").output() {
-        Ok(output) if output.status.success() => Ok(()),
-        _ => Err(ImportError::MissingDolt),
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::{
+        map_dependency_kind, map_source_state, merged_body, normalize_path, parse_since,
+        parse_timestamp, source_key, SourceDependency, SourceIssue, SourceKind,
+        SourceMetadataEntry, SourceNotesField,
+    };
+    use crate::domain::state::KnotState;
+    use crate::imports::errors::ImportError;
+    use serde_json::json;
 
-pub fn fetch_dolt_rows(repo_root: &str) -> Result<Vec<Value>, ImportError> {
-    let output = Command::new("dolt")
-        .current_dir(repo_root)
-        .args(["sql", "-r", "json", "-q", "SELECT * FROM issues"])
-        .output()
-        .map_err(ImportError::Io)?;
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        return Err(ImportError::CommandFailed(format!(
-            "dolt sql failed: {}",
-            stderr
-        )));
+    fn base_issue() -> SourceIssue {
+        SourceIssue {
+            id: "ISSUE-1".to_string(),
+            title: "Title".to_string(),
+            workflow_id: Some("default".to_string()),
+            description: None,
+            body: None,
+            notes: None,
+            handoff_capsules: Vec::new(),
+            state: None,
+            status: None,
+            priority: None,
+            owner: None,
+            created_by: None,
+            issue_type: None,
+            type_name: None,
+            labels: Vec::new(),
+            tags: Vec::new(),
+            dependencies: Vec::new(),
+            created_at: None,
+            updated_at: None,
+            closed_at: None,
+            close_reason: None,
+        }
     }
 
-    let value: Value = serde_json::from_slice(&output.stdout)?;
-    if let Some(rows) = value.as_array() {
-        return Ok(rows.clone());
+    #[test]
+    fn source_kind_and_key_are_stable() {
+        assert_eq!(SourceKind::Jsonl.as_str(), "jsonl");
+        assert_eq!(
+            source_key(SourceKind::Jsonl, "/tmp/issues.jsonl"),
+            "jsonl:/tmp/issues.jsonl"
+        );
     }
-    if let Some(rows) = value.get("rows").and_then(|rows| rows.as_array()) {
-        return Ok(rows.clone());
-    }
-    Err(ImportError::InvalidRecord(
-        "unexpected dolt JSON output shape".to_string(),
-    ))
-}
 
-pub fn source_issue_from_dolt_row(value: Value) -> Result<SourceIssue, ImportError> {
-    match value {
-        Value::Object(_) => serde_json::from_value(value)
-            .map_err(|err| ImportError::InvalidRecord(format!("invalid dolt row: {}", err))),
-        _ => Err(ImportError::InvalidRecord(
-            "dolt row must be a JSON object".to_string(),
-        )),
+    #[test]
+    fn normalize_path_handles_absolute_and_relative_paths() {
+        let root = std::env::temp_dir().join(format!("knots-source-path-{}", uuid::Uuid::now_v7()));
+        std::fs::create_dir_all(&root).expect("root should be creatable");
+        let existing = root.join("issues.jsonl");
+        std::fs::write(&existing, "{}\n").expect("fixture should be writable");
+        let canonical_existing = std::fs::canonicalize(&existing)
+            .expect("fixture canonical path should resolve")
+            .to_string_lossy()
+            .to_string();
+
+        let absolute = normalize_path(existing.to_str().expect("utf8 path"))
+            .expect("absolute path should normalize");
+        assert_eq!(absolute, canonical_existing);
+
+        let previous = std::env::current_dir().expect("cwd should be readable");
+        std::env::set_current_dir(&root).expect("cwd should update");
+        let relative = normalize_path("issues.jsonl").expect("relative path should normalize");
+        assert_eq!(relative, canonical_existing);
+        let missing =
+            normalize_path("missing.jsonl").expect("missing relative path should normalize");
+        let expected_missing = std::env::current_dir()
+            .expect("cwd should be readable")
+            .join("missing.jsonl")
+            .to_string_lossy()
+            .to_string();
+        assert_eq!(missing, expected_missing);
+        std::env::set_current_dir(previous).expect("cwd should restore");
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn parse_timestamp_and_since_validate_rfc3339() {
+        assert_eq!(
+            parse_timestamp(Some("2026-02-25T10:00:00Z")).as_deref(),
+            Some("2026-02-25T10:00:00Z")
+        );
+        assert_eq!(parse_timestamp(Some("not-rfc3339")), None);
+        assert!(parse_since(None).expect("none should parse").is_none());
+        assert!(parse_since(Some("2026-02-25T10:00:00Z"))
+            .expect("valid since should parse")
+            .is_some());
+        assert!(matches!(
+            parse_since(Some("invalid")),
+            Err(ImportError::InvalidTimestamp(_))
+        ));
+    }
+
+    #[test]
+    fn state_mapping_prefers_explicit_state_and_maps_statuses() {
+        let mut explicit = base_issue();
+        explicit.state = Some("implementing".to_string());
+        explicit.status = Some("closed".to_string());
+        assert_eq!(
+            map_source_state(&explicit).expect("explicit state should parse"),
+            KnotState::Implementing
+        );
+
+        let mut closed = base_issue();
+        closed.status = Some("closed".to_string());
+        assert_eq!(
+            map_source_state(&closed).expect("closed should map"),
+            KnotState::Shipped
+        );
+
+        let mut in_progress = base_issue();
+        in_progress.status = Some("in_progress".to_string());
+        assert_eq!(
+            map_source_state(&in_progress).expect("in_progress should map"),
+            KnotState::Implementing
+        );
+    }
+
+    #[test]
+    fn dependency_kind_and_body_merge_handle_known_shapes() {
+        assert_eq!(map_dependency_kind(Some("parent-child")), "parent_of");
+        assert_eq!(map_dependency_kind(Some("blocks")), "blocked_by");
+        assert_eq!(map_dependency_kind(Some("related")), "related");
+        assert_eq!(map_dependency_kind(Some("unknown")), "blocked_by");
+
+        let mut issue = base_issue();
+        issue.description = Some("A".to_string());
+        issue.body = Some("B".to_string());
+        assert_eq!(merged_body(&issue).as_deref(), Some("A\n\nB"));
+        issue.description = Some("   ".to_string());
+        issue.body = None;
+        assert!(merged_body(&issue).is_none());
+    }
+
+    #[test]
+    fn source_issue_defaults_deserialize_for_optional_fields() {
+        let row = json!({
+            "id": "D-2",
+            "title": "Defaults"
+        });
+        let parsed: SourceIssue =
+            serde_json::from_value(row).expect("minimal row should deserialize");
+        assert!(parsed.labels.is_empty());
+        assert!(parsed.tags.is_empty());
+        assert!(parsed.handoff_capsules.is_empty());
+        assert!(parsed.dependencies.is_empty());
+        assert!(parsed.notes.is_none());
+    }
+
+    #[test]
+    fn source_types_serialize_expected_shapes() {
+        let dep = SourceDependency {
+            depends_on_id: Some("A".to_string()),
+            dep_type: Some("blocks".to_string()),
+        };
+        assert_eq!(dep.depends_on_id.as_deref(), Some("A"));
+        let note = SourceNotesField::Text("legacy".to_string());
+        assert!(matches!(note, SourceNotesField::Text(_)));
+        let entry = SourceMetadataEntry {
+            entry_id: Some("e1".to_string()),
+            content: Some("note".to_string()),
+            username: Some("u".to_string()),
+            datetime: Some("2026-02-25T10:00:00Z".to_string()),
+            agentname: Some("a".to_string()),
+            model: Some("m".to_string()),
+            version: Some("v".to_string()),
+        };
+        assert_eq!(entry.entry_id.as_deref(), Some("e1"));
     }
 }

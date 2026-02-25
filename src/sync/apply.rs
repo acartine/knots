@@ -119,7 +119,7 @@ impl<'a> IncrementalApplier<'a> {
                     stack.push(path);
                     continue;
                 }
-                if !path.extension().is_some_and(|ext| ext == "json") {
+                if path.extension().is_none_or(|ext| ext != "json") {
                     continue;
                 }
                 let relative = path
@@ -492,3 +492,7 @@ fn is_stale_precondition(
         .unwrap_or_default();
     Ok(current != precondition.workflow_etag)
 }
+
+#[cfg(test)]
+#[path = "apply_tests_ext.rs"]
+mod tests_ext;

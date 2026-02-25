@@ -152,7 +152,7 @@ impl<'a> ReplicationService<'a> {
                         stack.push(path);
                         continue;
                     }
-                    if !path.extension().is_some_and(|ext| ext == "json") {
+                    if path.extension().is_none_or(|ext| ext != "json") {
                         continue;
                     }
                     let relative = path

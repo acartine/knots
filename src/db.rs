@@ -7,7 +7,7 @@ use time::OffsetDateTime;
 
 use crate::domain::metadata::MetadataEntry;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 4;
+pub const CURRENT_SCHEMA_VERSION: i64 = 5;
 
 struct Migration {
     version: i64,
@@ -15,7 +15,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 4] = [
+const MIGRATIONS: [Migration; 5] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -119,7 +119,16 @@ WHERE description IS NULL;
         version: 4,
         name: "knot_workflow_identity_v1",
         sql: r#"
-ALTER TABLE knot_hot ADD COLUMN workflow_id TEXT NOT NULL DEFAULT 'default';
+ALTER TABLE knot_hot ADD COLUMN workflow_id TEXT NOT NULL DEFAULT 'automation_granular';
+"#,
+    },
+    Migration {
+        version: 5,
+        name: "workflow_id_canonicalize_v1",
+        sql: r#"
+UPDATE knot_hot
+SET workflow_id = 'automation_granular'
+WHERE workflow_id IN ('default', 'delivery');
 "#,
     },
 ];

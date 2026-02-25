@@ -203,19 +203,23 @@ fn setup_workspace() -> Result<PathBuf, PerfError> {
         ],
     )?;
     run_git(&local, &["push", "-u", "origin", "main"])?;
-
-    let output = Command::new("git")
-        .arg("--git-dir")
-        .arg(&origin)
-        .args(["symbolic-ref", "HEAD", "refs/heads/main"])
-        .output()?;
-    if !output.status.success() {
-        return Err(PerfError::Io(std::io::Error::other(
-            String::from_utf8_lossy(&output.stderr).trim().to_string(),
-        )));
-    }
+    set_bare_head_to_main(&origin)?;
 
     Ok(local)
+}
+
+fn set_bare_head_to_main(origin: &Path) -> Result<(), PerfError> {
+    let output = Command::new("git")
+        .arg("--git-dir")
+        .arg(origin)
+        .args(["symbolic-ref", "HEAD", "refs/heads/main"])
+        .output()?;
+    if output.status.success() {
+        return Ok(());
+    }
+    Err(PerfError::Io(std::io::Error::other(
+        String::from_utf8_lossy(&output.stderr).trim().to_string(),
+    )))
 }
 
 fn run_git(cwd: &Path, args: &[&str]) -> Result<(), PerfError> {
@@ -241,7 +245,12 @@ fn measurement(name: &str, elapsed_ms: f64, budget_ms: f64) -> PerfMeasurement {
 
 #[cfg(test)]
 mod tests {
-    use super::run_perf_harness;
+    use std::error::Error;
+    use std::path::Path;
+
+    use super::{
+        run_git, run_perf_harness, set_bare_head_to_main, PerfError, PerfMeasurement, PerfReport,
+    };
 
     #[test]
     fn produces_measurements() {
@@ -251,5 +260,48 @@ mod tests {
             .measurements
             .iter()
             .all(|measurement| measurement.elapsed_ms >= 0.0));
+    }
+
+    #[test]
+    fn over_budget_and_error_helpers_cover_edge_paths() {
+        let report = PerfReport {
+            iterations: 1,
+            measurements: vec![
+                PerfMeasurement {
+                    name: "ok".to_string(),
+                    elapsed_ms: 1.0,
+                    budget_ms: 2.0,
+                    within_budget: true,
+                },
+                PerfMeasurement {
+                    name: "slow".to_string(),
+                    elapsed_ms: 3.0,
+                    budget_ms: 2.0,
+                    within_budget: false,
+                },
+            ],
+        };
+        assert_eq!(report.over_budget_count(), 1);
+
+        let io_err: PerfError = std::io::Error::other("disk").into();
+        assert!(io_err.to_string().contains("I/O error"));
+        assert!(io_err.source().is_some());
+
+        let db_err: PerfError = rusqlite::Error::InvalidQuery.into();
+        assert!(db_err.to_string().contains("database error"));
+        assert!(db_err.source().is_some());
+
+        let other = PerfError::Other("other".to_string());
+        assert_eq!(other.to_string(), "other");
+        assert!(other.source().is_none());
+    }
+
+    #[test]
+    fn git_helpers_report_failures() {
+        let bad_git = run_git(Path::new("."), &["definitely-not-a-valid-git-command"]);
+        assert!(bad_git.is_err());
+
+        let bad_head = set_bare_head_to_main(Path::new("/no/such/bare-repo.git"));
+        assert!(bad_head.is_err());
     }
 }

@@ -135,7 +135,10 @@ fn previous_paths(binary_path: &Path) -> Vec<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::{run_uninstall, SelfUninstallOptions};
+    use super::{
+        canonical_binary_path, remove_file_if_present, resolve_binary_path, run_uninstall,
+        run_update, SelfUninstallOptions, SelfUpdateOptions,
+    };
     use std::path::Path;
     use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -226,6 +229,87 @@ mod tests {
         assert!(!alias.exists());
         assert!(previous.exists());
         assert!(legacy_previous.exists());
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn update_and_path_helpers_cover_error_paths() {
+        let dir = unique_temp_dir();
+        let installer = dir.join("installer.sh");
+        std::fs::write(&installer, "#!/bin/sh\nexit 1\n")
+            .expect("installer script fixture should be written");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = std::fs::metadata(&installer)
+                .expect("installer metadata should be readable")
+                .permissions();
+            perms.set_mode(0o755);
+            std::fs::set_permissions(&installer, perms)
+                .expect("installer permissions should be writable");
+        }
+
+        let result = run_update(&SelfUpdateOptions {
+            version: Some("v0.0.0-test".to_string()),
+            repo: Some("acartine/knots".to_string()),
+            install_dir: Some(dir.clone()),
+            script_url: format!("file://{}", installer.display()),
+        });
+        assert!(result.is_err());
+
+        let current = resolve_binary_path(None).expect("current executable path should resolve");
+        assert!(current.exists());
+
+        let missing = dir.join("missing-knots-binary");
+        let uninstall = run_uninstall(&SelfUninstallOptions {
+            bin_path: Some(missing),
+            remove_previous: false,
+        });
+        assert!(uninstall.is_err());
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn canonicalize_and_remove_file_helpers_cover_directory_and_missing_paths() {
+        let dir = unique_temp_dir();
+        let fixture_dir = dir.join("directory-fixture");
+        std::fs::create_dir_all(&fixture_dir).expect("fixture directory should be creatable");
+
+        let removed_missing = remove_file_if_present(&dir.join("missing-file"))
+            .expect("missing files should be treated as absent");
+        assert!(!removed_missing);
+
+        let err = remove_file_if_present(&fixture_dir).expect_err("directory should be rejected");
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::{symlink, PermissionsExt};
+            let loop_path = dir.join("loop");
+            symlink(&loop_path, &loop_path).expect("symlink loop fixture should be creatable");
+            let loop_err = canonical_binary_path(&loop_path).expect_err("symlink loop should fail");
+            assert_ne!(loop_err.kind(), std::io::ErrorKind::NotFound);
+
+            let locked = dir.join("locked");
+            std::fs::create_dir_all(&locked).expect("locked dir should be creatable");
+            let mut perms = std::fs::metadata(&locked)
+                .expect("locked dir metadata should be readable")
+                .permissions();
+            perms.set_mode(0o000);
+            std::fs::set_permissions(&locked, perms).expect("locked dir permissions should update");
+            let denied_path = locked.join("missing");
+            let denied = remove_file_if_present(&denied_path)
+                .expect_err("permission denied path should fail");
+            assert_ne!(denied.kind(), std::io::ErrorKind::NotFound);
+
+            let mut reset = std::fs::metadata(&locked)
+                .expect("locked dir metadata should be readable")
+                .permissions();
+            reset.set_mode(0o755);
+            std::fs::set_permissions(&locked, reset).expect("locked dir permissions should reset");
+        }
 
         let _ = std::fs::remove_dir_all(dir);
     }

@@ -333,3 +333,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(root);
     }
 }
+
+#[cfg(test)]
+#[path = "doctor_tests_ext.rs"]
+mod tests_ext;

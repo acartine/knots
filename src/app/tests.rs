@@ -60,7 +60,7 @@ fn create_knot_updates_cache_and_writes_events() {
     assert!(suffix.chars().all(|ch| ch.is_ascii_hexdigit()));
     assert_eq!(created.title, "Build cache layer");
     assert_eq!(created.state, "work_item");
-    assert_eq!(created.workflow_id, "default");
+    assert_eq!(created.workflow_id, "automation_granular");
 
     let listed = app.list_knots().expect("list should succeed");
     assert_eq!(listed.len(), 1);
@@ -254,7 +254,7 @@ fn create_knot_uses_default_workflow_initial_state_when_state_is_omitted() {
         .create_knot("Workflow test", None, None, Some("default"))
         .expect("knot should be created");
 
-    assert_eq!(created.workflow_id, "default");
+    assert_eq!(created.workflow_id, "automation_granular");
     assert_eq!(created.state, "idea");
 
     let _ = std::fs::remove_dir_all(root);

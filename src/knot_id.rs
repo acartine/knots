@@ -95,7 +95,10 @@ mod tests {
         let id = generate_knot_id(&root, |candidate| seen.contains(candidate));
         assert!(id.starts_with("knots-id-shape-test-"));
         assert_eq!(
-            id.split('-').last().expect("short hash should exist").len(),
+            id.split('-')
+                .next_back()
+                .expect("short hash should exist")
+                .len(),
             4
         );
         let _ = std::fs::remove_dir_all(root);

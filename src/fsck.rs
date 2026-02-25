@@ -421,3 +421,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(root);
     }
 }
+
+#[cfg(test)]
+#[path = "fsck_tests_ext.rs"]
+mod tests_ext;

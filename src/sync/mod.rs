@@ -108,7 +108,9 @@ impl SyncError {
     pub fn is_unknown_revision(&self) -> bool {
         match self {
             SyncError::GitCommandFailed { stderr, .. } => {
-                stderr.contains("unknown revision") || stderr.contains("bad object")
+                stderr.contains("unknown revision")
+                    || stderr.contains("bad object")
+                    || stderr.contains("bad revision")
             }
             _ => false,
         }
@@ -197,5 +199,8 @@ impl From<rusqlite::Error> for SyncError {
     }
 }
 
+#[cfg(test)]
+#[path = "error_tests.rs"]
+mod error_tests;
 #[cfg(test)]
 mod tests;

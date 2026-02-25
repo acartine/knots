@@ -92,10 +92,7 @@ pub fn init_remote_knots_branch(repo_root: &Path) -> Result<(), RemoteInitError>
 
 pub fn detect_beads_hooks(repo_root: &Path) -> BeadsHookReport {
     let mut hooks_dir = repo_root.join(".git").join("hooks");
-    if let Ok(output) = run(
-        repo_root,
-        &["config", "--local", "--get", "core.hooksPath"],
-    ) {
+    if let Ok(output) = run(repo_root, &["config", "--local", "--get", "core.hooksPath"]) {
         if output.status.success() {
             let configured = String::from_utf8_lossy(&output.stdout).trim().to_string();
             if !configured.is_empty() {
@@ -137,7 +134,10 @@ pub fn remote_branch_exists(
     remote: &str,
     branch: &str,
 ) -> Result<bool, RemoteInitError> {
-    let output = run(repo_root, &["ls-remote", "--exit-code", "--heads", remote, branch])?;
+    let output = run(
+        repo_root,
+        &["ls-remote", "--exit-code", "--heads", remote, branch],
+    )?;
     if output.status.success() {
         return Ok(true);
     }
@@ -239,10 +239,7 @@ fn run_checked(repo_root: &Path, args: &[&str]) -> Result<String, RemoteInitErro
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
-fn run_push_with_hook_fallback(
-    repo_root: &Path,
-    args: &[&str],
-) -> Result<String, RemoteInitError> {
+fn run_push_with_hook_fallback(repo_root: &Path, args: &[&str]) -> Result<String, RemoteInitError> {
     match run_checked(repo_root, args) {
         Ok(out) => Ok(out),
         Err(err) if should_retry_push_without_verify(&err) => {
@@ -438,3 +435,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(root);
     }
 }
+
+#[cfg(test)]
+#[path = "remote_init_tests_ext.rs"]
+mod tests_ext;

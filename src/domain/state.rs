@@ -65,17 +65,20 @@ impl KnotState {
             return true;
         }
 
-        match (self, next) {
-            (KnotState::Idea, KnotState::WorkItem) => true,
-            (KnotState::WorkItem, KnotState::Implementing) => true,
-            (KnotState::Implementing, KnotState::Implemented) => true,
-            (KnotState::Implemented, KnotState::Reviewing) => true,
-            (KnotState::Reviewing, KnotState::Approved | KnotState::Rejected) => true,
-            (KnotState::Rejected, KnotState::Refining) => true,
-            (KnotState::Refining, KnotState::Implemented) => true,
-            (KnotState::Approved, KnotState::Shipped) => true,
-            _ => false,
-        }
+        matches!(
+            (self, next),
+            (KnotState::Idea, KnotState::WorkItem)
+                | (KnotState::WorkItem, KnotState::Implementing)
+                | (KnotState::Implementing, KnotState::Implemented)
+                | (KnotState::Implemented, KnotState::Reviewing)
+                | (
+                    KnotState::Reviewing,
+                    KnotState::Approved | KnotState::Rejected
+                )
+                | (KnotState::Rejected, KnotState::Refining)
+                | (KnotState::Refining, KnotState::Implemented)
+                | (KnotState::Approved, KnotState::Shipped)
+        )
     }
 
     #[allow(dead_code)]
