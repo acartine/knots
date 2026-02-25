@@ -130,38 +130,7 @@ fn run() -> Result<(), app::AppError> {
                             .expect("json serialization should work")
                     );
                 } else {
-                    println!("id: {}", knot.id);
-                    if let Some(alias) = knot.alias.as_deref() {
-                        println!("alias: {}", alias);
-                    }
-                    println!("title: {}", knot.title);
-                    println!("state: {}", knot.state);
-                    println!("updated_at: {}", knot.updated_at);
-                    if let Some(created_at) = knot.created_at {
-                        println!("created_at: {}", created_at);
-                    }
-                    if let Some(body) = knot.body {
-                        println!("body: {}", body);
-                    }
-                    if let Some(description) = knot.description {
-                        println!("description: {}", description);
-                    }
-                    if let Some(priority) = knot.priority {
-                        println!("priority: {}", priority);
-                    }
-                    if let Some(knot_type) = knot.knot_type {
-                        println!("type: {}", knot_type);
-                    }
-                    println!("workflow_id: {}", knot.workflow_id);
-                    if !knot.tags.is_empty() {
-                        println!("tags: {}", knot.tags.join(", "));
-                    }
-                    if !knot.notes.is_empty() {
-                        println!("notes: {}", knot.notes.len());
-                    }
-                    if !knot.handoff_capsules.is_empty() {
-                        println!("handoff_capsules: {}", knot.handoff_capsules.len());
-                    }
+                    ui::print_knot_show(&knot);
                 }
             }
             None => return Err(app::AppError::NotFound(args.id)),
