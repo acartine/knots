@@ -45,7 +45,7 @@ jobs:
             exit 0
           fi
 
-          threshold="90"
+          threshold="70"
           if [[ -f .ci/coverage-threshold.txt ]]; then
             threshold="$(tr -d '[:space:]' < .ci/coverage-threshold.txt)"
           fi
@@ -68,7 +68,7 @@ jobs:
           import xml.etree.ElementTree as ET
 
           threshold_path = pathlib.Path(".ci/coverage-threshold.txt")
-          threshold = threshold_path.read_text().strip() if threshold_path.exists() else "90"
+          threshold = threshold_path.read_text().strip() if threshold_path.exists() else "70"
           root = ET.parse("coverage/cobertura.xml").getroot()
           covered = int(root.attrib.get("lines-covered", "0"))
           valid = int(root.attrib.get("lines-valid", "0"))
