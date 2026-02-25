@@ -1,0 +1,62 @@
+[[workflows]]
+id = "default"
+description = "default flow"
+initial_state = "idea"
+states = [
+  "idea",
+  "work_item",
+  "implementing",
+  "implemented",
+  "reviewing",
+  "rejected",
+  "refining",
+  "approved",
+  "shipped",
+  "deferred",
+  "abandoned"
+]
+terminal_states = ["shipped", "deferred", "abandoned"]
+
+[[workflows.transitions]]
+from = "idea"
+to = "work_item"
+
+[[workflows.transitions]]
+from = "work_item"
+to = "implementing"
+
+[[workflows.transitions]]
+from = "implementing"
+to = "implemented"
+
+[[workflows.transitions]]
+from = "implemented"
+to = "reviewing"
+
+[[workflows.transitions]]
+from = "reviewing"
+to = "approved"
+
+[[workflows.transitions]]
+from = "reviewing"
+to = "rejected"
+
+[[workflows.transitions]]
+from = "rejected"
+to = "refining"
+
+[[workflows.transitions]]
+from = "refining"
+to = "implemented"
+
+[[workflows.transitions]]
+from = "approved"
+to = "shipped"
+
+[[workflows.transitions]]
+from = "*"
+to = "deferred"
+
+[[workflows.transitions]]
+from = "*"
+to = "abandoned"

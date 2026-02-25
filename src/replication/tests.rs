@@ -29,38 +29,6 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn write_test_workflow_file(root: &Path) {
-    let path = root.join(".knots").join("workflows.toml");
-    std::fs::create_dir_all(
-        path.parent()
-            .expect("workflow file parent directory should exist"),
-    )
-    .expect("workflow directory should be creatable");
-    std::fs::write(
-        path,
-        concat!(
-            "[[workflows]]\n",
-            "id = \"default\"\n",
-            "initial_state = \"work_item\"\n",
-            "states = [\"work_item\", \"implementing\", \"shipped\", \"abandoned\"]\n",
-            "terminal_states = [\"shipped\", \"abandoned\"]\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"work_item\"\n",
-            "to = \"implementing\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"implementing\"\n",
-            "to = \"shipped\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"*\"\n",
-            "to = \"abandoned\"\n"
-        ),
-    )
-    .expect("workflow file should be writable");
-}
-
 fn setup_origin_and_dev1(root: &Path) -> (PathBuf, PathBuf) {
     let origin = root.join("origin.git");
     let dev1 = root.join("dev1");
@@ -73,7 +41,6 @@ fn setup_origin_and_dev1(root: &Path) -> (PathBuf, PathBuf) {
     run_git(&dev1, &["init"]);
     run_git(&dev1, &["config", "user.email", "knots@example.com"]);
     run_git(&dev1, &["config", "user.name", "Knots Test"]);
-    write_test_workflow_file(&dev1);
 
     std::fs::write(dev1.join("README.md"), "# knots\n").expect("readme should be writable");
     std::fs::write(dev1.join(".gitignore"), "/.knots/\n").expect(".gitignore should be writable");
@@ -195,7 +162,6 @@ fn push_then_pull_shares_knots_between_clones() {
     );
     run_git(&dev2, &["config", "user.email", "knots@example.com"]);
     run_git(&dev2, &["config", "user.name", "Knots Test"]);
-    write_test_workflow_file(&dev2);
 
     let db2_path = dev2.join(".knots/cache/state.sqlite");
     std::fs::create_dir_all(db2_path.parent().expect("dev2 db parent should exist"))

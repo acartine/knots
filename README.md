@@ -10,7 +10,7 @@ append-only events and a SQLite cache.
 - Keep issue data out of normal code PR diffs.
 - Work offline first and sync through git when needed.
 - Keep `new`, `state`, `ls`, and `show` fast by reading local cache data.
-- Import existing history from JSONL or Dolt (source-only import).
+- Import existing history from JSONL (source-only import).
 
 ## Quickstart
 ### Prerequisites
@@ -80,7 +80,7 @@ kno uninstall --remove-previous
 Create an issue:
 ```bash
 kno new "Document release pipeline" --state work_item
-kno new "Triage regression" --workflow triage
+kno new "Triage regression" --workflow default
 ```
 
 Update state:
@@ -137,30 +137,13 @@ kno edge remove <src-id> blocked_by <dst-id>
 ```
 
 ## Workflow definitions
-Knots requires workflow definitions at `.knots/workflows.toml`.
-
-The file shape:
-```toml
-[[workflows]]
-id = "triage"
-description = "triage flow"
-initial_state = "todo"
-states = ["todo", "doing", "done"]
-terminal_states = ["done"]
-
-[[workflows.transitions]]
-from = "todo"
-to = "doing"
-
-[[workflows.transitions]]
-from = "doing"
-to = "done"
-```
+Workflow definitions are embedded in the `kno` CLI and are not read from repo-local
+`.knots/workflows.toml`.
 
 Notes:
 - Workflow ids and states are normalized to lowercase.
 - Use transition `from = "*"` for wildcard transitions.
-- There is no built-in fallback workflow; all workflow ids must be defined in the file.
+- The built-in `default` workflow is always available.
 
 ## Import from Beads
 Export Beads to JSONL, then import.
@@ -176,11 +159,6 @@ Import supports parity fields when present:
 - `labels`/`tags`
 - `notes` as legacy string or structured array entries
 - `handoff_capsules` structured array entries
-
-Optional Dolt source import:
-```bash
-kno import dolt --repo /path/to/dolt/repo
-```
 
 ## Release process
 Knots uses Changesets to manage release metadata.

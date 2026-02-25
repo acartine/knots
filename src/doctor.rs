@@ -84,35 +84,19 @@ pub fn run_doctor(repo_root: &Path, fix: bool) -> Result<DoctorReport, DoctorErr
 }
 
 fn check_workflows(repo_root: &Path, fix: bool) -> Result<DoctorCheck, DoctorError> {
-    let path = repo_root.join(".knots/workflows.toml");
-    if path.exists() {
-        return Ok(DoctorCheck {
+    let _ = (repo_root, fix);
+    match crate::workflow::WorkflowRegistry::load() {
+        Ok(_) => Ok(DoctorCheck {
             name: "workflows".to_string(),
             status: DoctorStatus::Pass,
-            detail: "workflows.toml exists".to_string(),
-        });
-    }
-
-    if fix {
-        if let Err(err) = crate::init::ensure_workflows_file(repo_root) {
-            return Ok(DoctorCheck {
-                name: "workflows".to_string(),
-                status: DoctorStatus::Fail,
-                detail: format!("failed to create workflows.toml: {}", err),
-            });
-        }
-        return Ok(DoctorCheck {
+            detail: "embedded workflows available".to_string(),
+        }),
+        Err(err) => Ok(DoctorCheck {
             name: "workflows".to_string(),
-            status: DoctorStatus::Pass,
-            detail: "workflows.toml created with defaults".to_string(),
-        });
+            status: DoctorStatus::Fail,
+            detail: format!("failed to load embedded workflows: {}", err),
+        }),
     }
-
-    Ok(DoctorCheck {
-        name: "workflows".to_string(),
-        status: DoctorStatus::Fail,
-        detail: "workflows.toml missing (run `kno doctor --fix`)".to_string(),
-    })
 }
 
 fn check_locks(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
@@ -328,18 +312,15 @@ mod tests {
     }
 
     #[test]
-    fn fix_creates_missing_workflows_file() {
+    fn embedded_workflows_are_reported_as_healthy() {
         let root = unique_workspace();
-        let workflow_path = root.join(".knots/workflows.toml");
-
         let report = run_doctor(&root, false).expect("doctor should run");
         let wf_check = report
             .checks
             .iter()
             .find(|c| c.name == "workflows")
             .expect("workflows check should exist");
-        assert_eq!(wf_check.status, DoctorStatus::Fail);
-        assert!(!workflow_path.exists());
+        assert_eq!(wf_check.status, DoctorStatus::Pass);
 
         let fixed = run_doctor(&root, true).expect("doctor --fix should run");
         let wf_fixed = fixed
@@ -348,7 +329,6 @@ mod tests {
             .find(|c| c.name == "workflows")
             .expect("workflows check should exist");
         assert_eq!(wf_fixed.status, DoctorStatus::Pass);
-        assert!(workflow_path.exists());
 
         let _ = std::fs::remove_dir_all(root);
     }

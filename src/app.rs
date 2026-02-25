@@ -111,8 +111,7 @@ impl App {
     pub fn open(db_path: &str, repo_root: PathBuf) -> Result<Self, AppError> {
         ensure_parent_dir(db_path)?;
         let conn = db::open_connection(db_path)?;
-        crate::init::ensure_workflows_file(&repo_root)?;
-        let workflow_registry = WorkflowRegistry::load(&repo_root)?;
+        let workflow_registry = WorkflowRegistry::load()?;
         let writer = EventWriter::new(repo_root.clone());
         Ok(Self {
             conn,
@@ -746,6 +745,7 @@ impl App {
 
     pub fn init_remote(&self) -> Result<(), AppError> {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        crate::init::ensure_knots_gitignore(&self.repo_root)?;
         init_remote_knots_branch(&self.repo_root)?;
         Ok(())
     }
@@ -810,16 +810,6 @@ impl App {
     ) -> Result<ImportSummary, AppError> {
         let service = ImportService::new(&self.conn, &self.writer);
         Ok(service.import_jsonl(file, since, dry_run)?)
-    }
-
-    pub fn import_dolt(
-        &self,
-        repo: &str,
-        since: Option<&str>,
-        dry_run: bool,
-    ) -> Result<ImportSummary, AppError> {
-        let service = ImportService::new(&self.conn, &self.writer);
-        Ok(service.import_dolt(repo, since, dry_run)?)
     }
 
     pub fn import_statuses(&self) -> Result<Vec<ImportStatus>, AppError> {

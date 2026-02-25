@@ -14,72 +14,7 @@ const ANSI_BOLD_MAGENTA: &str = "\x1b[1;35m";
 const ANSI_BOLD_YELLOW: &str = "\x1b[1;33m";
 const ANSI_DIM: &str = "\x1b[2m";
 
-const KNOTS_WORKFLOW_PATH: &str = ".knots/workflows.toml";
-const KNOTS_IGNORE_RULE: &str = "/.knots/*";
-const KNOTS_WORKFLOW_EXCEPTION: &str = "!/.knots/workflows.toml";
-const KNOTS_DEFAULT_WORKFLOWS: &str = r#"[[workflows]]
-id = "default"
-description = "default flow"
-initial_state = "idea"
-states = [
-  "idea",
-  "work_item",
-  "implementing",
-  "implemented",
-  "reviewing",
-  "rejected",
-  "refining",
-  "approved",
-  "shipped",
-  "deferred",
-  "abandoned"
-]
-terminal_states = ["shipped", "deferred", "abandoned"]
-
-[[workflows.transitions]]
-from = "idea"
-to = "work_item"
-
-[[workflows.transitions]]
-from = "work_item"
-to = "implementing"
-
-[[workflows.transitions]]
-from = "implementing"
-to = "implemented"
-
-[[workflows.transitions]]
-from = "implemented"
-to = "reviewing"
-
-[[workflows.transitions]]
-from = "reviewing"
-to = "approved"
-
-[[workflows.transitions]]
-from = "reviewing"
-to = "rejected"
-
-[[workflows.transitions]]
-from = "rejected"
-to = "refining"
-
-[[workflows.transitions]]
-from = "refining"
-to = "implemented"
-
-[[workflows.transitions]]
-from = "approved"
-to = "shipped"
-
-[[workflows.transitions]]
-from = "*"
-to = "deferred"
-
-[[workflows.transitions]]
-from = "*"
-to = "abandoned"
-"#;
+const KNOTS_IGNORE_RULE: &str = "/.knots/";
 
 pub(crate) fn init_all(repo_root: &Path, db_path: &str) -> Result<(), AppError> {
     print_banner("FIT TO BE TIED 🎉")?;
@@ -121,10 +56,8 @@ pub(crate) fn init_local_store(repo_root: &Path, db_path: &str) -> Result<(), Ap
     }
     progress(&format!("opening cache database at {db_path}"))?;
     let _ = db::open_connection(db_path)?;
-    progress("ensuring workflow definition")?;
-    ensure_workflows_file(repo_root)?;
     progress("ensuring gitignore includes .knots rule")?;
-    ensure_gitignore_entry(repo_root)?;
+    ensure_knots_gitignore(repo_root)?;
     progress_ok("local store ready")?;
     Ok(())
 }
@@ -204,20 +137,7 @@ fn warn_if_beads_hooks_present(repo_root: &Path) -> Result<(), AppError> {
     Ok(())
 }
 
-pub(crate) fn ensure_workflows_file(repo_root: &Path) -> Result<(), AppError> {
-    let path = repo_root.join(KNOTS_WORKFLOW_PATH);
-    if path.exists() {
-        return Ok(());
-    }
-
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(path, KNOTS_DEFAULT_WORKFLOWS)?;
-    Ok(())
-}
-
-fn ensure_gitignore_entry(repo_root: &Path) -> Result<(), AppError> {
+pub(crate) fn ensure_knots_gitignore(repo_root: &Path) -> Result<(), AppError> {
     let path = repo_root.join(".gitignore");
     let contents = if path.exists() {
         std::fs::read_to_string(&path)?
@@ -226,8 +146,7 @@ fn ensure_gitignore_entry(repo_root: &Path) -> Result<(), AppError> {
     };
 
     let has_ignore = contains_knots_ignore(&contents);
-    let has_workflow_exception = contains_workflow_exception(&contents);
-    if has_ignore && has_workflow_exception {
+    if has_ignore {
         return Ok(());
     }
 
@@ -241,9 +160,6 @@ fn ensure_gitignore_entry(repo_root: &Path) -> Result<(), AppError> {
     }
     if !has_ignore {
         writeln!(file, "{}", KNOTS_IGNORE_RULE)?;
-    }
-    if !has_workflow_exception {
-        writeln!(file, "{}", KNOTS_WORKFLOW_EXCEPTION)?;
     }
     Ok(())
 }
@@ -260,7 +176,7 @@ fn remove_gitignore_entries(repo_root: &Path) -> Result<(), AppError> {
         .map(str::trim)
         .filter(|line| {
             let line = *line;
-            !(line == KNOTS_IGNORE_RULE || line == KNOTS_WORKFLOW_EXCEPTION || line.is_empty())
+            !(line == KNOTS_IGNORE_RULE || line.is_empty())
         })
         .collect();
 
@@ -294,23 +210,13 @@ fn contains_knots_ignore(contents: &str) -> bool {
         })
 }
 
-fn contains_workflow_exception(contents: &str) -> bool {
-    contents
-        .lines()
-        .map(str::trim)
-        .any(|line| line == KNOTS_WORKFLOW_EXCEPTION)
-}
-
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
     use std::process::Command;
     use uuid::Uuid;
 
-    use super::{
-        init_all, init_local_store, uninit_all, uninit_local_store, KNOTS_IGNORE_RULE,
-        KNOTS_WORKFLOW_EXCEPTION, KNOTS_WORKFLOW_PATH,
-    };
+    use super::{init_all, init_local_store, uninit_all, uninit_local_store, KNOTS_IGNORE_RULE};
 
     fn unique_dir() -> PathBuf {
         let dir = std::env::temp_dir().join(format!("knots-init-test-{}", Uuid::now_v7()));
@@ -369,7 +275,7 @@ mod tests {
     }
 
     #[test]
-    fn init_local_store_writes_default_artifacts() {
+    fn init_local_store_writes_expected_artifacts() {
         let root = unique_dir();
         let db_path = root.join(".knots/cache/state.sqlite");
 
@@ -377,42 +283,22 @@ mod tests {
             .expect("local init should work");
 
         assert!(db_path.exists());
-        let workflows = root.join(".knots/workflows.toml");
-        assert!(workflows.exists());
-        let workflow =
-            std::fs::read_to_string(&workflows).expect("workflow file should be readable");
-        assert!(workflow.contains("id = \"default\""));
 
         let gitignore =
             std::fs::read_to_string(root.join(".gitignore")).expect("gitignore should be readable");
         assert!(gitignore.lines().any(|line| line == KNOTS_IGNORE_RULE));
-        assert!(gitignore
-            .lines()
-            .any(|line| line == KNOTS_WORKFLOW_EXCEPTION));
         remove_dir_if_exists(&root);
     }
 
     #[test]
-    fn init_local_store_preserves_custom_workflow() {
+    fn init_local_store_does_not_create_repo_workflow_file() {
         let root = unique_dir();
         let db_path = root.join(".knots/cache/state.sqlite");
-        let workflow_path = root.join(KNOTS_WORKFLOW_PATH);
-        std::fs::create_dir_all(
-            workflow_path
-                .parent()
-                .expect("workflow parent should be available"),
-        )
-        .expect("workflow parent should be creatable");
-        std::fs::write(&workflow_path, "id = \"custom\"")
-            .expect("custom workflow should be writable");
 
         init_local_store(&root, db_path.to_str().expect("utf8 path"))
             .expect("local init should succeed");
 
-        let workflow =
-            std::fs::read_to_string(&workflow_path).expect("workflow file should be readable");
-        assert!(workflow.contains("id = \"custom\""));
-        assert!(!workflow.contains("id = \"default\""));
+        assert!(!root.join(".knots/workflows.toml").exists());
         remove_dir_if_exists(&root);
     }
 
@@ -432,12 +318,7 @@ mod tests {
             .lines()
             .filter(|line| *line == KNOTS_IGNORE_RULE)
             .count();
-        let exception_count = gitignore
-            .lines()
-            .filter(|line| *line == KNOTS_WORKFLOW_EXCEPTION)
-            .count();
         assert_eq!(ignore_count, 1);
-        assert_eq!(exception_count, 1);
         remove_dir_if_exists(&root);
     }
 
@@ -458,14 +339,9 @@ mod tests {
         let stdout = String::from_utf8_lossy(&output.stdout);
         assert!(stdout.contains("refs/heads/knots"));
 
-        let workflow_path = local.join(KNOTS_WORKFLOW_PATH);
-        assert!(workflow_path.exists());
         let gitignore = std::fs::read_to_string(local.join(".gitignore"))
             .expect("gitignore should be readable");
         assert!(gitignore.lines().any(|line| line == KNOTS_IGNORE_RULE));
-        assert!(gitignore
-            .lines()
-            .any(|line| line == KNOTS_WORKFLOW_EXCEPTION));
         remove_dir_if_exists(&root);
     }
 
@@ -489,9 +365,6 @@ mod tests {
             let gitignore =
                 std::fs::read_to_string(&gitignore_path).expect("gitignore should be readable");
             assert!(!gitignore.lines().any(|line| line == KNOTS_IGNORE_RULE));
-            assert!(!gitignore
-                .lines()
-                .any(|line| line == KNOTS_WORKFLOW_EXCEPTION));
         }
         remove_dir_if_exists(&root);
     }

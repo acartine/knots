@@ -1,11 +1,10 @@
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt;
-use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-const WORKFLOW_FILE_PATH: &str = ".knots/workflows.toml";
+const DEFAULT_WORKFLOWS_TOML: &str = include_str!("default_workflows.toml");
 const WILDCARD_STATE: &str = "*";
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -59,7 +58,6 @@ impl Error for InvalidWorkflowTransition {}
 pub enum WorkflowError {
     Io(std::io::Error),
     Toml(toml::de::Error),
-    MissingFile(PathBuf),
     InvalidDefinition(String),
     MissingWorkflowReference,
     UnknownWorkflow(String),
@@ -72,13 +70,6 @@ impl fmt::Display for WorkflowError {
         match self {
             WorkflowError::Io(err) => write!(f, "I/O error: {}", err),
             WorkflowError::Toml(err) => write!(f, "invalid workflow TOML: {}", err),
-            WorkflowError::MissingFile(path) => {
-                write!(
-                    f,
-                    "workflow file is required: {} (run 'kno init' to create it)",
-                    path.display()
-                )
-            }
             WorkflowError::InvalidDefinition(message) => {
                 write!(f, "invalid workflow definition: {}", message)
             }
@@ -104,7 +95,6 @@ impl Error for WorkflowError {
             WorkflowError::Io(err) => Some(err),
             WorkflowError::Toml(err) => Some(err),
             WorkflowError::InvalidDefinition(_) => None,
-            WorkflowError::MissingFile(_) => None,
             WorkflowError::MissingWorkflowReference => None,
             WorkflowError::UnknownWorkflow(_) => None,
             WorkflowError::UnknownState { .. } => None,
@@ -132,14 +122,12 @@ impl From<InvalidWorkflowTransition> for WorkflowError {
 }
 
 impl WorkflowRegistry {
-    pub fn load(repo_root: &Path) -> Result<Self, WorkflowError> {
-        let config_path = repo_root.join(WORKFLOW_FILE_PATH);
-        if !config_path.exists() {
-            return Err(WorkflowError::MissingFile(config_path));
-        }
+    pub fn load() -> Result<Self, WorkflowError> {
+        Self::from_toml(DEFAULT_WORKFLOWS_TOML)
+    }
 
-        let raw = std::fs::read_to_string(&config_path)?;
-        let file: WorkflowFile = toml::from_str(&raw)?;
+    pub(crate) fn from_toml(raw: &str) -> Result<Self, WorkflowError> {
+        let file: WorkflowFile = toml::from_str(raw)?;
         if file.workflows.is_empty() {
             return Err(WorkflowError::InvalidDefinition(
                 "at least one workflow must be defined".to_string(),
@@ -345,24 +333,12 @@ fn normalize_states(values: Vec<String>) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use super::{WorkflowDefinition, WorkflowRegistry, WorkflowTransition};
 
-    fn repo_root() -> PathBuf {
-        let root =
-            std::env::temp_dir().join(format!("knots-workflow-test-{}", uuid::Uuid::now_v7()));
-        std::fs::create_dir_all(root.join(".knots"))
-            .expect("workflow test workspace should be creatable");
-        root
-    }
-
     #[test]
-    fn fails_when_workflow_file_missing() {
-        let root = repo_root();
-        let result = WorkflowRegistry::load(&root);
-        assert!(result.is_err());
-        let _ = std::fs::remove_dir_all(root);
+    fn loads_embedded_default_workflow() {
+        let registry = WorkflowRegistry::load().expect("embedded workflow registry should load");
+        assert!(registry.require("default").is_ok());
     }
 
     #[test]
@@ -404,55 +380,48 @@ mod tests {
     }
 
     #[test]
-    fn loads_simple_workflow_from_repo_root() {
-        let root = repo_root();
-        let path = root.join(".knots/workflows.toml");
-        std::fs::write(
-            &path,
-            concat!(
-                "[[workflows]]\n",
-                "id = \"simple\"\n",
-                "description = \"Traditional linear delivery workflow\"\n",
-                "initial_state = \"work_item\"\n",
-                "states = [\n",
-                "  \"work_item\",\n",
-                "  \"implementing\",\n",
-                "  \"queued_for_review\",\n",
-                "  \"reviewing\",\n",
-                "  \"reviewed\",\n",
-                "  \"shipping\",\n",
-                "  \"shipped\",\n",
-                "]\n",
-                "terminal_states = [\"shipped\"]\n",
-                "\n",
-                "[[workflows.transitions]]\n",
-                "from = \"work_item\"\n",
-                "to = \"implementing\"\n",
-                "\n",
-                "[[workflows.transitions]]\n",
-                "from = \"implementing\"\n",
-                "to = \"queued_for_review\"\n",
-                "\n",
-                "[[workflows.transitions]]\n",
-                "from = \"queued_for_review\"\n",
-                "to = \"reviewing\"\n",
-                "\n",
-                "[[workflows.transitions]]\n",
-                "from = \"reviewing\"\n",
-                "to = \"reviewed\"\n",
-                "\n",
-                "[[workflows.transitions]]\n",
-                "from = \"reviewed\"\n",
-                "to = \"shipping\"\n",
-                "\n",
-                "[[workflows.transitions]]\n",
-                "from = \"shipping\"\n",
-                "to = \"shipped\"\n",
-            ),
-        )
-        .expect("simple workflow file should be writable");
-
-        let registry = WorkflowRegistry::load(&root).expect("registry should load");
+    fn parses_simple_workflow_from_toml() {
+        let registry = WorkflowRegistry::from_toml(concat!(
+            "[[workflows]]\n",
+            "id = \"simple\"\n",
+            "description = \"Traditional linear delivery workflow\"\n",
+            "initial_state = \"work_item\"\n",
+            "states = [\n",
+            "  \"work_item\",\n",
+            "  \"implementing\",\n",
+            "  \"queued_for_review\",\n",
+            "  \"reviewing\",\n",
+            "  \"reviewed\",\n",
+            "  \"shipping\",\n",
+            "  \"shipped\",\n",
+            "]\n",
+            "terminal_states = [\"shipped\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"work_item\"\n",
+            "to = \"implementing\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"implementing\"\n",
+            "to = \"queued_for_review\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"queued_for_review\"\n",
+            "to = \"reviewing\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"reviewing\"\n",
+            "to = \"reviewed\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"reviewed\"\n",
+            "to = \"shipping\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"shipping\"\n",
+            "to = \"shipped\"\n",
+        ))
+        .expect("simple workflow should parse");
         let simple = registry
             .require("simple")
             .expect("simple workflow should exist");
@@ -489,53 +458,40 @@ mod tests {
         assert!(simple
             .validate_transition("shipped", "work_item", true)
             .is_ok());
-
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn loads_custom_workflow_file_from_toml() {
-        let root = repo_root();
-        let path = root.join(".knots/workflows.toml");
-        std::fs::write(
-            &path,
-            concat!(
-                "[[workflows]]\n",
-                "id = \"triage\"\n",
-                "description = \"triage flow\"\n",
-                "initial_state = \"todo\"\n",
-                "states = [\"todo\", \"doing\", \"done\"]\n",
-                "terminal_states = [\"done\"]\n",
-                "\n",
-                "[[workflows.transitions]]\n",
-                "from = \"todo\"\n",
-                "to = \"doing\"\n",
-                "\n",
-                "[[workflows.transitions]]\n",
-                "from = \"doing\"\n",
-                "to = \"done\"\n"
-            ),
-        )
-        .expect("custom workflow file should be writable");
-
-        let registry = WorkflowRegistry::load(&root).expect("workflow registry should load");
+        let registry = WorkflowRegistry::from_toml(concat!(
+            "[[workflows]]\n",
+            "id = \"triage\"\n",
+            "description = \"triage flow\"\n",
+            "initial_state = \"todo\"\n",
+            "states = [\"todo\", \"doing\", \"done\"]\n",
+            "terminal_states = [\"done\"]\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"todo\"\n",
+            "to = \"doing\"\n",
+            "\n",
+            "[[workflows.transitions]]\n",
+            "from = \"doing\"\n",
+            "to = \"done\"\n"
+        ))
+        .expect("custom workflow should parse");
         let triage = registry
             .require("triage")
             .expect("triage workflow should exist");
         assert_eq!(triage.initial_state, "todo");
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
-    fn missing_file_error_includes_path() {
-        let err =
-            super::WorkflowError::MissingFile(std::path::PathBuf::from("./.knots/workflows.toml"));
-        let msg = format!("{}", err);
-        assert!(
-            msg.contains(".knots/workflows.toml"),
-            "expected path in: {}",
-            msg
-        );
+    fn unknown_workflow_error_is_descriptive() {
+        let err = WorkflowRegistry::load()
+            .expect("registry should load")
+            .require("missing")
+            .expect_err("unknown workflow should fail");
+        assert!(format!("{err}").contains("unknown workflow"));
     }
 }
 

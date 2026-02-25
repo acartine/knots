@@ -12,52 +12,6 @@ fn unique_workspace() -> PathBuf {
     root
 }
 
-fn write_test_workflow_file(root: &Path) {
-    let path = root.join(".knots").join("workflows.toml");
-    std::fs::create_dir_all(
-        path.parent()
-            .expect("workflow file parent directory should exist"),
-    )
-    .expect("workflow directory should be creatable");
-    std::fs::write(
-        path,
-        concat!(
-            "[[workflows]]\n",
-            "id = \"default\"\n",
-            "initial_state = \"work_item\"\n",
-            "states = [\"work_item\", \"implementing\", \"shipped\", \"abandoned\"]\n",
-            "terminal_states = [\"shipped\", \"abandoned\"]\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"work_item\"\n",
-            "to = \"implementing\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"implementing\"\n",
-            "to = \"shipped\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"*\"\n",
-            "to = \"abandoned\"\n",
-            "\n",
-            "[[workflows]]\n",
-            "id = \"triage\"\n",
-            "initial_state = \"todo\"\n",
-            "states = [\"todo\", \"doing\", \"done\"]\n",
-            "terminal_states = [\"done\"]\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"todo\"\n",
-            "to = \"doing\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"doing\"\n",
-            "to = \"done\"\n"
-        ),
-    )
-    .expect("workflow file should be writable");
-}
-
 fn run_git(root: &Path, args: &[&str]) {
     let output = Command::new("git")
         .arg("-C")
@@ -77,10 +31,9 @@ fn init_repo(root: &Path) {
     run_git(root, &["init"]);
     run_git(root, &["config", "user.email", "knots@example.com"]);
     run_git(root, &["config", "user.name", "Knots Test"]);
-    write_test_workflow_file(root);
 
     std::fs::write(root.join("README.md"), "# test\n").expect("readme should be writable");
-    run_git(root, &["add", "README.md", ".knots/workflows.toml"]);
+    run_git(root, &["add", "README.md"]);
     run_git(root, &["commit", "-m", "init"]);
     run_git(root, &["branch", "-M", "main"]);
 }

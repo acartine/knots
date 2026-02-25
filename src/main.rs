@@ -40,7 +40,6 @@ fn run() -> Result<(), app::AppError> {
     let cli = cli::Cli::parse();
     if let Some(outcome) = maybe_run_self_command(&cli.command)? {
         println!("{outcome}");
-        let _ = init::ensure_workflows_file(&cli.repo_root);
         return Ok(());
     }
 
@@ -442,29 +441,6 @@ fn run() -> Result<(), app::AppError> {
                     println!("last_error: {}", error);
                 }
             }
-            ImportSubcommands::Dolt(import_args) => {
-                let summary = app.import_dolt(
-                    &import_args.repo,
-                    import_args.since.as_deref(),
-                    import_args.dry_run,
-                )?;
-                println!(
-                    "import {} {}: status={}, processed={}, imported={}, skipped={}, errors={}",
-                    summary.source_type,
-                    summary.source_ref,
-                    summary.status,
-                    summary.processed_count,
-                    summary.imported_count,
-                    summary.skipped_count,
-                    summary.error_count
-                );
-                if let Some(checkpoint) = summary.checkpoint {
-                    println!("checkpoint: {}", checkpoint);
-                }
-                if let Some(error) = summary.last_error {
-                    println!("last_error: {}", error);
-                }
-            }
             ImportSubcommands::Status(import_args) => {
                 let statuses = app.import_statuses()?;
                 if import_args.json {
@@ -507,12 +483,11 @@ fn run() -> Result<(), app::AppError> {
 
 fn run_workflow_command(
     args: &cli::WorkflowArgs,
-    repo_root: &std::path::Path,
+    _repo_root: &std::path::Path,
 ) -> Result<(), app::AppError> {
     use cli::WorkflowSubcommands;
 
-    init::ensure_workflows_file(repo_root)?;
-    let registry = workflow::WorkflowRegistry::load(repo_root)?;
+    let registry = workflow::WorkflowRegistry::load()?;
     match &args.command {
         WorkflowSubcommands::List(list_args) => {
             let workflows = registry.list();

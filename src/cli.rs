@@ -69,7 +69,7 @@ pub enum Commands {
     Init,
     #[command(about = "Remove local knots store artifacts and delete remote knots branch.")]
     Uninit,
-    #[command(about = "Create and bootstrap the remote knots branch.")]
+    #[command(about = "Create remote knots branch and ensure .knots is gitignored.")]
     InitRemote,
     #[command(about = "Validate on-disk knots event/index data.")]
     Fsck(FsckArgs),
@@ -450,8 +450,6 @@ pub struct ImportArgs {
 pub enum ImportSubcommands {
     #[command(about = "Import from JSONL event records.")]
     Jsonl(ImportJsonlArgs),
-    #[command(about = "Import from a Dolt repository.")]
-    Dolt(ImportDoltArgs),
     #[command(about = "Show import run status history.")]
     Status(ImportStatusArgs),
 }
@@ -461,27 +459,6 @@ pub enum ImportSubcommands {
 pub struct ImportJsonlArgs {
     #[arg(short = 'f', long, help = "Path to JSONL input file.")]
     pub file: String,
-
-    #[arg(
-        short = 'n',
-        long,
-        help = "Run import validation without writing events."
-    )]
-    pub dry_run: bool,
-
-    #[arg(
-        short = 's',
-        long,
-        help = "Only import records on/after this checkpoint."
-    )]
-    pub since: Option<String>,
-}
-
-#[derive(Debug, Args)]
-#[command(about = "Import from Dolt.")]
-pub struct ImportDoltArgs {
-    #[arg(short = 'r', long, help = "Dolt repository URL or path.")]
-    pub repo: String,
 
     #[arg(
         short = 'n',

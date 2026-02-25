@@ -1,22 +1,9 @@
 use std::error::Error;
-use std::path::{Path, PathBuf};
 
 use super::{
     InvalidWorkflowTransition, WorkflowDefinition, WorkflowError, WorkflowRegistry,
     WorkflowTransition,
 };
-
-fn unique_repo() -> PathBuf {
-    let root =
-        std::env::temp_dir().join(format!("knots-workflow-ext-test-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(root.join(".knots")).expect("workflow test repo should be creatable");
-    root
-}
-
-fn write_workflow(root: &Path, contents: &str) {
-    std::fs::write(root.join(".knots").join("workflows.toml"), contents)
-        .expect("workflow file should be writable");
-}
 
 fn valid_workflow_toml(id: &str) -> String {
     format!(
@@ -58,10 +45,6 @@ fn error_display_and_source_paths_cover_variants() {
     assert!(toml_error.to_string().contains("invalid workflow TOML"));
     assert!(toml_error.source().is_some());
 
-    let missing = WorkflowError::MissingFile(PathBuf::from("/tmp/workflows.toml"));
-    assert!(missing.to_string().contains("workflow file is required"));
-    assert!(missing.source().is_none());
-
     let invalid = WorkflowError::InvalidDefinition("bad definition".to_string());
     assert!(invalid.to_string().contains("invalid workflow definition"));
     assert!(invalid.source().is_none());
@@ -90,10 +73,8 @@ fn error_display_and_source_paths_cover_variants() {
 
 #[test]
 fn registry_resolve_and_require_failures_are_reported() {
-    let root = unique_repo();
-    write_workflow(&root, &valid_workflow_toml("default"));
-
-    let registry = WorkflowRegistry::load(&root).expect("registry should load");
+    let registry =
+        WorkflowRegistry::from_toml(&valid_workflow_toml("default")).expect("registry should load");
     assert!(matches!(
         registry.resolve(None),
         Err(WorkflowError::MissingWorkflowReference)
@@ -106,8 +87,6 @@ fn registry_resolve_and_require_failures_are_reported() {
         registry.require("   "),
         Err(WorkflowError::UnknownWorkflow(_))
     ));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -142,30 +121,22 @@ fn workflow_definition_reports_unknown_state_and_invalid_transition() {
 
 #[test]
 fn load_rejects_empty_and_duplicate_and_invalid_definitions() {
-    let root = unique_repo();
-
-    write_workflow(&root, "");
     assert!(matches!(
-        WorkflowRegistry::load(&root),
+        WorkflowRegistry::from_toml(""),
         Err(WorkflowError::InvalidDefinition(_))
     ));
 
-    write_workflow(
-        &root,
-        &format!(
+    assert!(matches!(
+        WorkflowRegistry::from_toml(&format!(
             "{}\n{}",
             valid_workflow_toml("default"),
             valid_workflow_toml("default")
-        ),
-    );
-    assert!(matches!(
-        WorkflowRegistry::load(&root),
+        )),
         Err(WorkflowError::InvalidDefinition(_))
     ));
 
-    write_workflow(
-        &root,
-        concat!(
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
             "[[workflows]]\n",
             "id = \"w\"\n",
             "initial_state = \"missing\"\n",
@@ -175,16 +146,12 @@ fn load_rejects_empty_and_duplicate_and_invalid_definitions() {
             "[[workflows.transitions]]\n",
             "from = \"idea\"\n",
             "to = \"idea\"\n",
-        ),
-    );
-    assert!(matches!(
-        WorkflowRegistry::load(&root),
+        ),),
         Err(WorkflowError::InvalidDefinition(_))
     ));
 
-    write_workflow(
-        &root,
-        concat!(
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
             "[[workflows]]\n",
             "id = \"w\"\n",
             "initial_state = \"idea\"\n",
@@ -194,16 +161,12 @@ fn load_rejects_empty_and_duplicate_and_invalid_definitions() {
             "[[workflows.transitions]]\n",
             "from = \"idea\"\n",
             "to = \"done\"\n",
-        ),
-    );
-    assert!(matches!(
-        WorkflowRegistry::load(&root),
+        ),),
         Err(WorkflowError::InvalidDefinition(_))
     ));
 
-    write_workflow(
-        &root,
-        concat!(
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
             "[[workflows]]\n",
             "id = \"w\"\n",
             "initial_state = \"idea\"\n",
@@ -213,16 +176,12 @@ fn load_rejects_empty_and_duplicate_and_invalid_definitions() {
             "[[workflows.transitions]]\n",
             "from = \"unknown\"\n",
             "to = \"done\"\n",
-        ),
-    );
-    assert!(matches!(
-        WorkflowRegistry::load(&root),
+        ),),
         Err(WorkflowError::InvalidDefinition(_))
     ));
 
-    write_workflow(
-        &root,
-        concat!(
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
             "[[workflows]]\n",
             "id = \"w\"\n",
             "initial_state = \"idea\"\n",
@@ -232,28 +191,19 @@ fn load_rejects_empty_and_duplicate_and_invalid_definitions() {
             "[[workflows.transitions]]\n",
             "from = \"idea\"\n",
             "to = \"unknown\"\n",
-        ),
-    );
-    assert!(matches!(
-        WorkflowRegistry::load(&root),
+        ),),
         Err(WorkflowError::InvalidDefinition(_))
     ));
 
-    write_workflow(
-        &root,
-        concat!(
+    assert!(matches!(
+        WorkflowRegistry::from_toml(concat!(
             "[[workflows]]\n",
             "id = \"w\"\n",
             "initial_state = \"idea\"\n",
             "states = [\"idea\", \"done\"]\n",
             "terminal_states = [\"done\"]\n",
             "transitions = []\n",
-        ),
-    );
-    assert!(matches!(
-        WorkflowRegistry::load(&root),
+        ),),
         Err(WorkflowError::InvalidDefinition(_))
     ));
-
-    let _ = std::fs::remove_dir_all(root);
 }

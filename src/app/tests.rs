@@ -7,116 +7,7 @@ use uuid::Uuid;
 fn unique_workspace() -> PathBuf {
     let root = std::env::temp_dir().join(format!("knots-app-test-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    write_default_workflow_file(&root);
     root
-}
-
-fn write_default_workflow_file(root: &Path) {
-    let workflows_path = root.join(".knots").join("workflows.toml");
-    std::fs::create_dir_all(
-        workflows_path
-            .parent()
-            .expect("workflow parent directory should exist"),
-    )
-    .expect("workflow parent should be creatable");
-    std::fs::write(
-        workflows_path,
-        concat!(
-            "[[workflows]]\n",
-            "id = \"default\"\n",
-            "description = \"default flow\"\n",
-            "initial_state = \"idea\"\n",
-            "states = [\n",
-            "  \"idea\",\n",
-            "  \"work_item\",\n",
-            "  \"implementing\",\n",
-            "  \"implemented\",\n",
-            "  \"reviewing\",\n",
-            "  \"rejected\",\n",
-            "  \"refining\",\n",
-            "  \"approved\",\n",
-            "  \"shipped\",\n",
-            "  \"deferred\",\n",
-            "  \"abandoned\"\n",
-            "]\n",
-            "terminal_states = [\"shipped\", \"deferred\", \"abandoned\"]\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"idea\"\n",
-            "to = \"work_item\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"work_item\"\n",
-            "to = \"implementing\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"implementing\"\n",
-            "to = \"implemented\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"implemented\"\n",
-            "to = \"reviewing\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"reviewing\"\n",
-            "to = \"approved\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"reviewing\"\n",
-            "to = \"rejected\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"rejected\"\n",
-            "to = \"refining\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"refining\"\n",
-            "to = \"implemented\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"approved\"\n",
-            "to = \"shipped\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"*\"\n",
-            "to = \"deferred\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"*\"\n",
-            "to = \"abandoned\"\n"
-        ),
-    )
-    .expect("default workflow file should be writable");
-}
-
-fn write_workflow_file(root: &Path) {
-    let workflows_path = root.join(".knots").join("workflows.toml");
-    std::fs::create_dir_all(
-        workflows_path
-            .parent()
-            .expect("workflow parent directory should exist"),
-    )
-    .expect("workflow parent should be creatable");
-    std::fs::write(
-        workflows_path,
-        concat!(
-            "[[workflows]]\n",
-            "id = \"triage\"\n",
-            "description = \"triage flow\"\n",
-            "initial_state = \"todo\"\n",
-            "states = [\"todo\", \"doing\", \"done\"]\n",
-            "terminal_states = [\"done\"]\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"todo\"\n",
-            "to = \"doing\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"doing\"\n",
-            "to = \"done\"\n"
-        ),
-    )
-    .expect("workflow file should be writable");
 }
 
 fn count_json_files(root: &Path) -> usize {
@@ -313,7 +204,9 @@ fn stripped_id_collisions_return_ambiguous_error() {
     drop(conn);
 
     let app = App::open(&db_path_str, root.clone()).expect("app should open");
-    let err = app.show_knot("t74").expect_err("show_knot should fail for ambiguous id");
+    let err = app
+        .show_knot("t74")
+        .expect_err("show_knot should fail for ambiguous id");
     match err {
         AppError::InvalidArgument(message) => {
             assert!(message.contains("ambiguous knot id 't74'"));
@@ -351,42 +244,33 @@ fn set_state_enforces_transition_rules_unless_forced() {
 }
 
 #[test]
-fn create_knot_supports_custom_workflow_and_initial_default() {
+fn create_knot_uses_default_workflow_initial_state_when_state_is_omitted() {
     let root = unique_workspace();
-    write_workflow_file(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
 
     let created = app
-        .create_knot("Workflow test", None, None, Some("triage"))
+        .create_knot("Workflow test", None, None, Some("default"))
         .expect("knot should be created");
 
-    assert_eq!(created.workflow_id, "triage");
-    assert_eq!(created.state, "todo");
+    assert_eq!(created.workflow_id, "default");
+    assert_eq!(created.state, "idea");
 
     let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
-fn custom_workflow_enforces_transitions_unless_forced() {
+fn unknown_workflow_is_rejected() {
     let root = unique_workspace();
-    write_workflow_file(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
 
-    let created = app
+    let err = app
         .create_knot("Workflow transition", None, None, Some("triage"))
-        .expect("knot should be created");
-
-    let invalid = app.set_state(&created.id, "done", false, None);
-    assert!(invalid.is_err());
-
-    let forced = app
-        .set_state(&created.id, "done", true, None)
-        .expect("forced state transition should succeed");
-    assert_eq!(forced.state, "done");
+        .expect_err("unknown workflow should fail");
+    assert!(matches!(err, AppError::Workflow(_)));
 
     let _ = std::fs::remove_dir_all(root);
 }

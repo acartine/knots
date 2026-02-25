@@ -187,7 +187,6 @@ fn setup_workspace() -> Result<PathBuf, PerfError> {
     run_git(&local, &["init"])?;
     run_git(&local, &["config", "user.email", "knots@example.com"])?;
     run_git(&local, &["config", "user.name", "Knots Test"])?;
-    write_test_workflow_file(&local)?;
 
     std::fs::write(local.join("README.md"), "# perf\n")?;
     std::fs::write(local.join(".gitignore"), "/.knots/\n")?;
@@ -217,37 +216,6 @@ fn setup_workspace() -> Result<PathBuf, PerfError> {
     }
 
     Ok(local)
-}
-
-fn write_test_workflow_file(root: &Path) -> Result<(), PerfError> {
-    let path = root.join(".knots").join("workflows.toml");
-    std::fs::create_dir_all(
-        path.parent()
-            .expect("workflow file parent directory should exist"),
-    )?;
-    std::fs::write(
-        path,
-        concat!(
-            "[[workflows]]\n",
-            "id = \"default\"\n",
-            "initial_state = \"work_item\"\n",
-            "states = [\"work_item\", \"implementing\", \"shipped\", \"abandoned\"]\n",
-            "terminal_states = [\"shipped\", \"abandoned\"]\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"work_item\"\n",
-            "to = \"implementing\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"implementing\"\n",
-            "to = \"shipped\"\n",
-            "\n",
-            "[[workflows.transitions]]\n",
-            "from = \"*\"\n",
-            "to = \"abandoned\"\n"
-        ),
-    )?;
-    Ok(())
 }
 
 fn run_git(cwd: &Path, args: &[&str]) -> Result<(), PerfError> {
