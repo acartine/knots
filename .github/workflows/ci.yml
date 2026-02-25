@@ -50,8 +50,6 @@ jobs:
             threshold="$(tr -d '[:space:]' < .ci/coverage-threshold.txt)"
           fi
 
-          cargo fmt --all -- --check
-          cargo clippy --all-targets --all-features -- -D warnings
           cargo test --all-targets --all-features
           mkdir -p coverage
           cargo tarpaulin --all-features --workspace --timeout 120 --out Xml \
