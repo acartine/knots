@@ -28,17 +28,34 @@ jobs:
         run: cargo install cargo-tarpaulin --locked
 
       - name: Fetch main for threshold regression check
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && hashFiles('scripts/repo/check-coverage-threshold.sh') != '' && hashFiles('.ci/coverage-threshold.txt') != ''
         run: git fetch origin main --depth=1
 
       - name: Check coverage threshold regression
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && hashFiles('scripts/repo/check-coverage-threshold.sh') != '' && hashFiles('.ci/coverage-threshold.txt') != ''
         run: bash scripts/repo/check-coverage-threshold.sh origin/main
 
       - name: Run sanity
         id: sanity
         continue-on-error: true
-        run: make sanity
+        run: |
+          set -euo pipefail
+          if [[ -f Makefile ]] && grep -qE '^sanity:' Makefile; then
+            make sanity
+            exit 0
+          fi
+
+          threshold="90"
+          if [[ -f .ci/coverage-threshold.txt ]]; then
+            threshold="$(tr -d '[:space:]' < .ci/coverage-threshold.txt)"
+          fi
+
+          cargo fmt --all -- --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --all-targets --all-features
+          mkdir -p coverage
+          cargo tarpaulin --all-features --workspace --timeout 120 --out Xml \
+            --output-dir coverage --fail-under "${threshold}"
 
       - name: Publish coverage summary
         if: always()
@@ -52,7 +69,8 @@ jobs:
           import pathlib
           import xml.etree.ElementTree as ET
 
-          threshold = pathlib.Path(".ci/coverage-threshold.txt").read_text().strip()
+          threshold_path = pathlib.Path(".ci/coverage-threshold.txt")
+          threshold = threshold_path.read_text().strip() if threshold_path.exists() else "90"
           root = ET.parse("coverage/cobertura.xml").getroot()
           covered = int(root.attrib.get("lines-covered", "0"))
           valid = int(root.attrib.get("lines-valid", "0"))
