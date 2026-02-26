@@ -242,7 +242,11 @@ pub struct UpdateArgs {
 #[derive(Debug, Args)]
 #[command(about = "List knots.")]
 pub struct ListArgs {
-    #[arg(short = 'a', long = "all", help = "Include shipped knots.")]
+    #[arg(
+        short = 'a',
+        long = "all",
+        help = "Include shipped, abandoned, and deferred knots."
+    )]
     pub all: bool,
 
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]

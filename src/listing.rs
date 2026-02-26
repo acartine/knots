@@ -61,7 +61,7 @@ impl From<&KnotListFilter> for NormalizedFilter {
 }
 
 fn matches_filter(knot: &KnotView, filter: &NormalizedFilter) -> bool {
-    if should_hide_shipped(knot, filter) {
+    if should_hide_terminal(knot, filter) {
         return false;
     }
 
@@ -96,14 +96,20 @@ fn matches_filter(knot: &KnotView, filter: &NormalizedFilter) -> bool {
     true
 }
 
-fn should_hide_shipped(knot: &KnotView, filter: &NormalizedFilter) -> bool {
+fn should_hide_terminal(knot: &KnotView, filter: &NormalizedFilter) -> bool {
     if filter.include_all {
         return false;
     }
-    if filter.state.as_deref() == Some("shipped") {
+    let state_lower = knot.state.trim().to_ascii_lowercase();
+    let is_terminal = matches!(state_lower.as_str(), "shipped" | "abandoned" | "deferred");
+    if !is_terminal {
         return false;
     }
-    knot.state.trim().eq_ignore_ascii_case("shipped")
+    // Allow explicit --state filter to override hiding
+    if let Some(ref explicit_state) = filter.state {
+        return explicit_state != &state_lower;
+    }
+    true
 }
 
 fn has_all_tags(knot: &KnotView, required_tags: &[String]) -> bool {
@@ -356,6 +362,77 @@ mod tests {
             query: None,
         };
 
+        let filtered = apply_filters(knots, &filter);
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].id, "K-2");
+    }
+
+    #[test]
+    fn excludes_abandoned_by_default() {
+        let knots = vec![
+            knot("K-1", "Active", "implementing", Some("task"), &[], None),
+            knot("K-2", "Gone", "abandoned", Some("task"), &[], None),
+        ];
+        let filter = KnotListFilter::default();
+        let filtered = apply_filters(knots, &filter);
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].id, "K-1");
+    }
+
+    #[test]
+    fn excludes_deferred_by_default() {
+        let knots = vec![
+            knot("K-1", "Active", "implementing", Some("task"), &[], None),
+            knot("K-2", "Later", "deferred", Some("task"), &[], None),
+        ];
+        let filter = KnotListFilter::default();
+        let filtered = apply_filters(knots, &filter);
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].id, "K-1");
+    }
+
+    #[test]
+    fn includes_abandoned_and_deferred_with_all_flag() {
+        let knots = vec![
+            knot("K-1", "Active", "implementing", Some("task"), &[], None),
+            knot("K-2", "Gone", "abandoned", Some("task"), &[], None),
+            knot("K-3", "Later", "deferred", Some("task"), &[], None),
+        ];
+        let filter = KnotListFilter {
+            include_all: true,
+            ..KnotListFilter::default()
+        };
+        let filtered = apply_filters(knots, &filter);
+        assert_eq!(filtered.len(), 3);
+    }
+
+    #[test]
+    fn allows_state_abandoned_explicit() {
+        let knots = vec![
+            knot("K-1", "Active", "implementing", Some("task"), &[], None),
+            knot("K-2", "Gone", "abandoned", Some("task"), &[], None),
+        ];
+        let filter = KnotListFilter {
+            include_all: false,
+            state: Some("abandoned".to_string()),
+            ..KnotListFilter::default()
+        };
+        let filtered = apply_filters(knots, &filter);
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].id, "K-2");
+    }
+
+    #[test]
+    fn allows_state_deferred_explicit() {
+        let knots = vec![
+            knot("K-1", "Active", "implementing", Some("task"), &[], None),
+            knot("K-2", "Later", "deferred", Some("task"), &[], None),
+        ];
+        let filter = KnotListFilter {
+            include_all: false,
+            state: Some("deferred".to_string()),
+            ..KnotListFilter::default()
+        };
         let filtered = apply_filters(knots, &filter);
         assert_eq!(filtered.len(), 1);
         assert_eq!(filtered[0].id, "K-2");
