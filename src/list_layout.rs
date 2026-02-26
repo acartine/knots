@@ -387,7 +387,7 @@ mod tests {
             body: None,
             description: None,
             priority: None,
-            knot_type: None,
+            knot_type: crate::domain::knot_type::KnotType::default(),
             tags: Vec::new(),
             notes: Vec::new(),
             handoff_capsules: Vec::new(),

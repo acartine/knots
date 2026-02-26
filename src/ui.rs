@@ -47,10 +47,8 @@ fn format_knot_row(row: &DisplayKnot, palette: &Palette) -> String {
         knot.title
     );
 
-    if let Some(kind) = knot.knot_type.as_deref() {
-        line.push(' ');
-        line.push_str(&palette.type_label(kind));
-    }
+    line.push(' ');
+    line.push_str(&palette.type_label(knot.knot_type.as_str()));
 
     if !knot.tags.is_empty() {
         line.push(' ');
@@ -128,9 +126,7 @@ fn knot_show_fields(knot: &KnotView) -> Vec<ShowField> {
     if let Some(priority) = knot.priority {
         fields.push(ShowField::new("priority", priority.to_string()));
     }
-    if let Some(knot_type) = knot.knot_type.as_deref() {
-        fields.push(ShowField::new("type", knot_type));
-    }
+    fields.push(ShowField::new("type", knot.knot_type.as_str()));
     fields.push(ShowField::new("profile_id", knot.profile_id.clone()));
     if !knot.tags.is_empty() {
         fields.push(ShowField::new("tags", knot.tags.join(", ")));
@@ -414,7 +410,7 @@ mod tests {
             body: Some("Body text".to_string()),
             description: Some("Description text".to_string()),
             priority: Some(2),
-            knot_type: Some("task".to_string()),
+            knot_type: crate::domain::knot_type::KnotType::Work,
             tags: vec!["cli".to_string()],
             notes: vec![MetadataEntry {
                 entry_id: "n1".to_string(),

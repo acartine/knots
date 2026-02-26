@@ -346,7 +346,7 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
                 description: Some("full description".to_string()),
                 priority: Some(1),
                 status: Some("implementing".to_string()),
-                knot_type: Some("task".to_string()),
+                knot_type: Some(crate::domain::knot_type::KnotType::Work),
                 add_tags: vec!["migration".to_string(), "beads".to_string()],
                 remove_tags: vec![],
                 add_note: Some(MetadataEntryInput {
@@ -376,7 +376,7 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
     assert_eq!(updated.state, "implementation");
     assert_eq!(updated.description.as_deref(), Some("full description"));
     assert_eq!(updated.priority, Some(1));
-    assert_eq!(updated.knot_type.as_deref(), Some("task"));
+    assert_eq!(updated.knot_type, crate::domain::knot_type::KnotType::Work);
     assert_eq!(
         updated.tags,
         vec!["migration".to_string(), "beads".to_string()]

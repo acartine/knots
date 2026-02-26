@@ -1,4 +1,5 @@
 use crate::app::KnotView;
+use crate::domain::knot_type::KnotType;
 use crate::workflow::normalize_profile_id;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -48,7 +49,7 @@ impl From<&KnotListFilter> for NormalizedFilter {
         Self {
             include_all: value.include_all,
             state: normalize_scalar(value.state.as_deref()),
-            knot_type: normalize_scalar(value.knot_type.as_deref()),
+            knot_type: normalize_knot_type_filter(value.knot_type.as_deref()),
             profile_id: value.profile_id.as_deref().and_then(normalize_profile_id),
             tags: value
                 .tags
@@ -73,8 +74,7 @@ fn matches_filter(knot: &KnotView, filter: &NormalizedFilter) -> bool {
     }
 
     if let Some(expected_type) = filter.knot_type.as_deref() {
-        let actual_type = knot.knot_type.as_deref().unwrap_or("").to_ascii_lowercase();
-        if actual_type != expected_type {
+        if knot.knot_type.as_str() != expected_type {
             return false;
         }
     }
@@ -153,6 +153,15 @@ fn normalize_scalar(raw: Option<&str>) -> Option<String> {
     }
 }
 
+fn normalize_knot_type_filter(raw: Option<&str>) -> Option<String> {
+    let trimmed = raw?.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let parsed: KnotType = trimmed.parse().ok()?;
+    Some(parsed.as_str().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{apply_filters, KnotListFilter};
@@ -175,7 +184,7 @@ mod tests {
             body: None,
             description: description.map(|value| value.to_string()),
             priority: None,
-            knot_type: knot_type.map(|value| value.to_string()),
+            knot_type: crate::domain::knot_type::parse_knot_type(knot_type),
             tags: tags.iter().map(|value| (*value).to_string()).collect(),
             notes: Vec::new(),
             handoff_capsules: Vec::new(),
@@ -288,7 +297,7 @@ mod tests {
                 "K-1",
                 "Release flow",
                 "implementing",
-                Some("task"),
+                Some("work"),
                 &["release", "cli"],
                 None,
             ),
@@ -296,7 +305,7 @@ mod tests {
                 "K-2",
                 "Release docs",
                 "implementing",
-                Some("doc"),
+                Some("work"),
                 &["release", "docs"],
                 None,
             ),
@@ -304,7 +313,7 @@ mod tests {
         let filter = KnotListFilter {
             include_all: false,
             state: Some("implementing".to_string()),
-            knot_type: Some("task".to_string()),
+            knot_type: Some("work".to_string()),
             profile_id: None,
             tags: vec!["release".to_string()],
             query: Some("flow".to_string()),
@@ -483,3 +492,7 @@ mod tests {
         assert_eq!(filtered[0].id, "K-1");
     }
 }
+
+#[cfg(test)]
+#[path = "listing_tests_ext.rs"]
+mod tests_ext;

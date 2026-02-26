@@ -278,4 +278,12 @@ mod tests {
         assert!(KnotState::Abandoned.is_terminal());
         assert!(!KnotState::Deferred.is_terminal());
     }
+
+    #[test]
+    fn parses_implemented_alias() {
+        assert_eq!(
+            KnotState::from_str("implemented").unwrap(),
+            KnotState::ReadyForImplementationReview
+        );
+    }
 }

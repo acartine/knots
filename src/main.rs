@@ -48,6 +48,7 @@ fn run() -> Result<(), app::AppError> {
     use app::UpdateKnotPatch;
     use clap::Parser;
     use cli::{ColdSubcommands, Commands, EdgeSubcommands};
+    use domain::knot_type::KnotType;
     use domain::metadata::MetadataEntryInput;
 
     let cli = cli::Cli::parse();
@@ -125,7 +126,9 @@ fn run() -> Result<(), app::AppError> {
                 description: args.description,
                 priority: args.priority,
                 status: args.status,
-                knot_type: args.knot_type,
+                knot_type: args
+                    .knot_type
+                    .map(|raw| raw.parse::<KnotType>().unwrap_or_default()),
                 add_tags: args.add_tags,
                 remove_tags: args.remove_tags,
                 add_note,

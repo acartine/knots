@@ -135,7 +135,7 @@ fn benchmark_write_path(app: &App, iterations: u32) -> Result<f64, PerfError> {
                     description: Some("updated".to_string()),
                     priority: Some(1),
                     status: Some("implementing".to_string()),
-                    knot_type: Some("task".to_string()),
+                    knot_type: Some(crate::domain::knot_type::KnotType::Work),
                     add_tags: vec![],
                     remove_tags: vec![],
                     add_note: None,

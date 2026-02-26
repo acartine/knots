@@ -10,6 +10,7 @@ use super::{
 };
 use crate::db::{EdgeDirection, KnotCacheRecord};
 use crate::doctor::DoctorError;
+use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::MetadataEntryInput;
 use crate::domain::state::{InvalidStateTransition, KnotState};
 use crate::events::{EventWriteError, FullEvent, FullEventKind, IndexEvent, IndexEventKind};
@@ -119,7 +120,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
         body: None,
         description: None,
         priority: None,
-        knot_type: None,
+        knot_type: KnotType::default(),
         tags: Vec::new(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
@@ -249,7 +250,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
     assert_eq!(projection.state, "implementing");
     assert_eq!(projection.profile_id, "default");
     assert_eq!(projection.priority, Some(2));
-    assert_eq!(projection.knot_type.as_deref(), Some("task"));
+    assert_eq!(projection.knot_type, KnotType::Work);
     assert_eq!(projection.notes.len(), 1);
     assert_eq!(projection.handoff_capsules.len(), 1);
     assert!(projection.tags.is_empty());

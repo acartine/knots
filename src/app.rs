@@ -13,6 +13,7 @@ use serde_json::{json, Value};
 
 use crate::db::{self, EdgeDirection, EdgeRecord, KnotCacheRecord, UpsertKnotHot};
 use crate::doctor::{run_doctor, DoctorError, DoctorReport};
+use crate::domain::knot_type::{parse_knot_type, KnotType};
 use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
 use crate::domain::state::{InvalidStateTransition, ParseKnotStateError};
 use crate::events::{
@@ -50,7 +51,7 @@ pub struct KnotView {
     pub description: Option<String>,
     pub priority: Option<i64>,
     #[serde(rename = "type")]
-    pub knot_type: Option<String>,
+    pub knot_type: KnotType,
     pub tags: Vec<String>,
     pub notes: Vec<MetadataEntry>,
     pub handoff_capsules: Vec<MetadataEntry>,
@@ -74,7 +75,7 @@ pub struct UpdateKnotPatch {
     pub description: Option<String>,
     pub priority: Option<i64>,
     pub status: Option<String>,
-    pub knot_type: Option<String>,
+    pub knot_type: Option<KnotType>,
     pub add_tags: Vec<String>,
     pub remove_tags: Vec<String>,
     pub add_note: Option<MetadataEntryInput>,
@@ -440,7 +441,7 @@ impl App {
                 body,
                 description: body,
                 priority: None,
-                knot_type: None,
+                knot_type: Some(KnotType::default().as_str()),
                 tags: &[],
                 notes: &[],
                 handoff_capsules: &[],
@@ -696,7 +697,7 @@ impl App {
         let mut description = current.description.clone();
         let mut body = current.body.clone();
         let mut priority = current.priority;
-        let mut knot_type = current.knot_type.clone();
+        let mut knot_type = parse_knot_type(current.knot_type.as_deref());
         let profile = self.resolve_profile_for_record(&current)?;
         let profile_id = profile.id.clone();
         let mut deferred_from_state = current.deferred_from_state.clone();
@@ -807,8 +808,7 @@ impl App {
             }
         }
 
-        if let Some(next_type_raw) = patch.knot_type.as_deref() {
-            let next_type = non_empty(next_type_raw);
+        if let Some(next_type) = patch.knot_type {
             if next_type != knot_type {
                 full_events.push(FullEvent::with_identity(
                     new_event_id(),
@@ -816,7 +816,7 @@ impl App {
                     id.to_string(),
                     FullEventKind::KnotTypeSet.as_str(),
                     json!({
-                        "type": next_type,
+                        "type": next_type.as_str(),
                     }),
                 ));
                 knot_type = next_type;
@@ -949,7 +949,7 @@ impl App {
                 body: body.as_deref(),
                 description: description.as_deref(),
                 priority,
-                knot_type: knot_type.as_deref(),
+                knot_type: Some(knot_type.as_str()),
                 tags: &tags,
                 notes: &notes,
                 handoff_capsules: &handoff_capsules,
@@ -1115,7 +1115,7 @@ impl App {
                 body: record.body.as_deref(),
                 description: record.description.as_deref(),
                 priority: record.priority,
-                knot_type: record.knot_type.as_deref(),
+                knot_type: Some(record.knot_type.as_str()),
                 tags: &record.tags,
                 notes: &record.notes,
                 handoff_capsules: &record.handoff_capsules,
@@ -1354,7 +1354,7 @@ struct RehydrateProjection {
     body: Option<String>,
     description: Option<String>,
     priority: Option<i64>,
-    knot_type: Option<String>,
+    knot_type: KnotType,
     tags: Vec<String>,
     notes: Vec<MetadataEntry>,
     handoff_capsules: Vec<MetadataEntry>,
@@ -1378,7 +1378,7 @@ fn rehydrate_from_events(
         body: None,
         description: None,
         priority: None,
-        knot_type: None,
+        knot_type: KnotType::default(),
         tags: Vec::new(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
@@ -1570,12 +1570,8 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
             projection.updated_at = event.occurred_at.clone();
         }
         "knot.type_set" => {
-            projection.knot_type = data
-                .get("type")
-                .and_then(Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(ToString::to_string);
+            let raw = data.get("type").and_then(Value::as_str);
+            projection.knot_type = parse_knot_type(raw);
             projection.updated_at = event.occurred_at.clone();
         }
         "knot.tag_add" => {
@@ -1656,7 +1652,7 @@ impl From<KnotCacheRecord> for KnotView {
             body: value.body,
             description: value.description,
             priority: value.priority,
-            knot_type: value.knot_type,
+            knot_type: parse_knot_type(value.knot_type.as_deref()),
             tags: value.tags,
             notes: value.notes,
             handoff_capsules: value.handoff_capsules,

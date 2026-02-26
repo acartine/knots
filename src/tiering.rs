@@ -64,4 +64,12 @@ mod tests {
         let tier = classify_knot_tier("work_item", "2025-12-01T00:00:00Z", 7, now);
         assert_eq!(tier, CacheTier::Warm);
     }
+
+    #[test]
+    fn unparseable_date_falls_back_to_warm() {
+        let now =
+            OffsetDateTime::parse("2026-02-24T12:00:00Z", &Rfc3339).expect("now should parse");
+        let tier = classify_knot_tier("implementing", "not-a-date", 7, now);
+        assert_eq!(tier, CacheTier::Warm);
+    }
 }

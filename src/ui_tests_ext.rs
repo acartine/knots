@@ -17,7 +17,7 @@ fn sample_knot() -> KnotView {
         body: Some("Long body for wrapping".to_string()),
         description: Some("Description".to_string()),
         priority: Some(2),
-        knot_type: Some("task".to_string()),
+        knot_type: crate::domain::knot_type::KnotType::Work,
         tags: vec!["alpha".to_string(), "beta".to_string()],
         notes: vec![MetadataEntry {
             entry_id: "n1".to_string(),
@@ -56,12 +56,12 @@ fn row_and_indent_formatting_cover_alias_tag_and_type_paths() {
     };
     let formatted = format_knot_row(&row, &palette);
     assert!(formatted.contains("A.1 (1)"));
-    assert!(formatted.contains("(task)"));
+    assert!(formatted.contains("(work)"));
     assert!(formatted.contains("#alpha #beta"));
 
     let mut knot = sample_knot();
     knot.alias = None;
-    knot.knot_type = None;
+    knot.knot_type = crate::domain::knot_type::KnotType::default();
     knot.tags.clear();
     let plain = format_knot_row(&DisplayKnot { knot, depth: 0 }, &palette);
     assert!(plain.starts_with("1 "));
@@ -75,6 +75,12 @@ fn wrap_helpers_cover_empty_multiline_and_no_whitespace_paths() {
     assert_eq!(
         wrap_value("alpha beta\ngamma", 5),
         vec!["alpha".to_string(), "beta".to_string(), "gamma".to_string()]
+    );
+
+    // Blank line between content triggers wrap_single_line with empty input
+    assert_eq!(
+        wrap_value("a\n\nb", 10),
+        vec!["a".to_string(), String::new(), "b".to_string()]
     );
 
     let split = wrap_split_index("abcdefgh", 3);

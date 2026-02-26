@@ -56,3 +56,55 @@ pub fn normalize_datetime(value: Option<&str>) -> Option<String> {
         .ok()
         .and_then(|ts| ts.format(&Rfc3339).ok())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{normalize_datetime, normalize_text};
+
+    #[test]
+    fn normalize_text_returns_fallback_for_none() {
+        assert_eq!(normalize_text(None, "fallback"), "fallback");
+    }
+
+    #[test]
+    fn normalize_text_returns_fallback_for_empty() {
+        assert_eq!(normalize_text(Some(""), "fallback"), "fallback");
+    }
+
+    #[test]
+    fn normalize_text_returns_fallback_for_whitespace() {
+        assert_eq!(normalize_text(Some("   "), "fallback"), "fallback");
+    }
+
+    #[test]
+    fn normalize_text_returns_trimmed_value() {
+        assert_eq!(normalize_text(Some("  hello  "), "fallback"), "hello");
+    }
+
+    #[test]
+    fn normalize_datetime_returns_none_for_none() {
+        assert_eq!(normalize_datetime(None), None);
+    }
+
+    #[test]
+    fn normalize_datetime_returns_none_for_empty() {
+        assert_eq!(normalize_datetime(Some("")), None);
+    }
+
+    #[test]
+    fn normalize_datetime_returns_none_for_whitespace() {
+        assert_eq!(normalize_datetime(Some("   ")), None);
+    }
+
+    #[test]
+    fn normalize_datetime_returns_none_for_invalid() {
+        assert_eq!(normalize_datetime(Some("not-a-date")), None);
+    }
+
+    #[test]
+    fn normalize_datetime_parses_valid_rfc3339() {
+        let result = normalize_datetime(Some("2026-02-23T10:00:00Z"));
+        assert!(result.is_some());
+        assert!(result.unwrap().contains("2026-02-23"));
+    }
+}
