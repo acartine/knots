@@ -292,12 +292,27 @@ impl Palette {
 
 fn state_color_code(state: &str) -> &'static str {
     match state.trim().to_ascii_lowercase().as_str() {
-        "idea" => "34",
-        "work_item" => "36",
-        "implementing" => "33",
-        "reviewing" => "35",
-        "done" | "closed" => "32",
-        "blocked" => "31",
+        // Action states: green
+        "planning"
+        | "plan_review"
+        | "implementation"
+        | "implementation_review"
+        | "shipment"
+        | "shipment_review" => "32",
+        // Queue states: yellow
+        "ready_for_planning"
+        | "ready_for_plan_review"
+        | "ready_for_implementation"
+        | "ready_for_implementation_review"
+        | "ready_for_shipment"
+        | "ready_for_shipment_review" => "33",
+        // Terminal: abandoned = red
+        "abandoned" => "31",
+        // Terminal: shipped = blue
+        "shipped" => "34",
+        // Deferred: magenta
+        "deferred" => "35",
+        // Unknown: default
         _ => "37",
     }
 }
