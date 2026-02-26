@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   sanity:
@@ -83,6 +84,16 @@ jobs:
         with:
           name: coverage-xml
           path: coverage/cobertura.xml
+
+      - name: Upload coverage to Codecov
+        if: always() && hashFiles('coverage/cobertura.xml') != ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/cobertura.xml
+          fail_ci_if_error: false
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Fail workflow if sanity failed
         if: steps.sanity.outcome != 'success'
