@@ -1,12 +1,11 @@
-use std::io::{self, IsTerminal, Write};
+use std::io::{self, Write};
 use std::path::Path;
 
-use crate::app::{AppError, DEFAULT_WORKFLOW_META_KEY};
+use crate::app::AppError;
 use crate::db;
 use crate::remote_init::{
     detect_beads_hooks, init_remote_knots_branch, uninit_remote_knots_branch, RemoteInitError,
 };
-use crate::workflow::{WorkflowDefinition, WorkflowRegistry};
 
 const ANSI_RESET: &str = "\x1b[0m";
 const ANSI_BOLD_CYAN: &str = "\x1b[1;36m";
@@ -22,117 +21,12 @@ pub(crate) fn init_all(repo_root: &Path, db_path: &str) -> Result<(), AppError> 
     progress("initializing local store")?;
     init_local_store(repo_root, db_path)?;
     progress_ok("local store initialized")?;
-    progress("selecting repo default workflow")?;
-    let default_workflow = configure_default_workflow(db_path)?;
-    progress_ok(&format!(
-        "repo default workflow set to {}",
-        default_workflow
-    ))?;
     warn_if_beads_hooks_present(repo_root)?;
     progress("initializing remote branch origin/knots")?;
     progress_note("this can take a bit...")?;
     init_remote_knots_branch(repo_root)?;
     progress_ok("remote branch origin/knots initialized")?;
     Ok(())
-}
-
-fn configure_default_workflow(db_path: &str) -> Result<String, AppError> {
-    let registry = WorkflowRegistry::load()?;
-    let workflows = registry.list();
-    let conn = db::open_connection(db_path)?;
-    let current_default = db::get_meta(&conn, DEFAULT_WORKFLOW_META_KEY)?;
-    let selected = choose_default_workflow(&workflows, current_default.as_deref())?;
-    db::set_meta(&conn, DEFAULT_WORKFLOW_META_KEY, &selected)?;
-    Ok(selected)
-}
-
-fn choose_default_workflow(
-    workflows: &[WorkflowDefinition],
-    current_default: Option<&str>,
-) -> Result<String, AppError> {
-    if workflows.is_empty() {
-        return Err(AppError::InvalidArgument(
-            "no workflows are available".to_string(),
-        ));
-    }
-
-    let interactive = io::stdin().is_terminal();
-    let mut input = io::stdin().lock();
-    let mut output = io::stdout();
-    choose_default_workflow_with_io(
-        workflows,
-        current_default,
-        interactive,
-        &mut input,
-        &mut output,
-    )
-}
-
-fn choose_default_workflow_with_io<R, W>(
-    workflows: &[WorkflowDefinition],
-    current_default: Option<&str>,
-    interactive: bool,
-    input: &mut R,
-    output: &mut W,
-) -> Result<String, AppError>
-where
-    R: io::BufRead,
-    W: Write,
-{
-    let fallback_index = current_default
-        .and_then(|candidate| {
-            workflows
-                .iter()
-                .position(|workflow| workflow.id == candidate)
-        })
-        .unwrap_or(0);
-
-    if !interactive {
-        return Ok(workflows[fallback_index].id.clone());
-    }
-
-    writeln!(
-        output,
-        "{ANSI_BOLD_CYAN}Select default workflow for this repo:{ANSI_RESET}"
-    )?;
-    for (index, workflow) in workflows.iter().enumerate() {
-        let name = workflow
-            .description
-            .as_deref()
-            .unwrap_or(workflow.id.as_str());
-        writeln!(output, "  {}. {} ({})", index + 1, name, workflow.id)?;
-    }
-    if let Some(current) = current_default {
-        writeln!(output, "{ANSI_DIM}current default: {current}{ANSI_RESET}")?;
-    }
-    writeln!(
-        output,
-        "{ANSI_DIM}Press Enter to keep option {}.{ANSI_RESET}",
-        fallback_index + 1
-    )?;
-
-    loop {
-        write!(output, "default workflow [1-{}]: ", workflows.len())?;
-        output.flush()?;
-
-        let mut line = String::new();
-        input.read_line(&mut line)?;
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            return Ok(workflows[fallback_index].id.clone());
-        }
-
-        if let Ok(index) = trimmed.parse::<usize>() {
-            if (1..=workflows.len()).contains(&index) {
-                return Ok(workflows[index - 1].id.clone());
-            }
-        }
-        writeln!(
-            output,
-            "{ANSI_BOLD_YELLOW}!{ANSI_RESET} enter a number between 1 and {}",
-            workflows.len()
-        )?;
-    }
 }
 
 pub(crate) fn uninit_all(repo_root: &Path, db_path: &str) -> Result<(), AppError> {

@@ -20,6 +20,7 @@ fn base_issue() -> SourceIssue {
     SourceIssue {
         id: "ISS-1".to_string(),
         title: "Imported issue".to_string(),
+        profile_id: None,
         workflow_id: Some("default".to_string()),
         description: None,
         body: None,

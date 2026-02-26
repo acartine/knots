@@ -135,3 +135,64 @@ fn format_state(workflow: &WorkflowDefinition, state: &str) -> String {
     }
     state.to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::render;
+    use crate::workflow::{WorkflowRegistry, WorkflowTransition};
+
+    fn fixture() -> crate::workflow::WorkflowDefinition {
+        WorkflowRegistry::load()
+            .expect("embedded profiles should load")
+            .require("autopilot")
+            .expect("autopilot profile should exist")
+            .clone()
+    }
+
+    #[test]
+    fn render_lists_unreachable_states() {
+        let mut workflow = fixture();
+        workflow.states.push("orphan".to_string());
+
+        let lines = render(&workflow);
+        assert!(lines
+            .iter()
+            .any(|line| line == "unreachable states: orphan"));
+    }
+
+    #[test]
+    fn render_marks_expanded_cross_links_and_ignores_missing_children() {
+        let mut workflow = fixture();
+        workflow.initial_state = "a".to_string();
+        workflow.states = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        workflow.terminal_states.clear();
+        workflow.transitions = vec![
+            WorkflowTransition {
+                from: "a".to_string(),
+                to: "b".to_string(),
+            },
+            WorkflowTransition {
+                from: "a".to_string(),
+                to: "c".to_string(),
+            },
+            WorkflowTransition {
+                from: "c".to_string(),
+                to: "b".to_string(),
+            },
+            WorkflowTransition {
+                from: "a".to_string(),
+                to: "missing".to_string(),
+            },
+        ];
+
+        let lines = render(&workflow);
+        assert!(
+            lines.iter().any(|line| line.contains("↪ b")),
+            "expected expanded-state marker"
+        );
+        assert!(
+            lines.iter().any(|line| line.ends_with("missing")),
+            "expected missing child to render once"
+        );
+    }
+}

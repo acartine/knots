@@ -1,0 +1,149 @@
+[[profiles]]
+id = "autopilot"
+description = "Agent-owned full flow with remote main output"
+planning_mode = "required"
+implementation_review_mode = "required"
+output = "remote_main"
+
+[profiles.owners.planning]
+kind = "agent"
+
+[profiles.owners.plan_review]
+kind = "agent"
+
+[profiles.owners.implementation]
+kind = "agent"
+
+[profiles.owners.implementation_review]
+kind = "agent"
+
+[profiles.owners.shipment]
+kind = "agent"
+
+[profiles.owners.shipment_review]
+kind = "agent"
+
+[[profiles]]
+id = "autopilot_with_pr"
+description = "Agent-owned full flow with PR output"
+planning_mode = "required"
+implementation_review_mode = "required"
+output = "pr"
+
+[profiles.owners.planning]
+kind = "agent"
+
+[profiles.owners.plan_review]
+kind = "agent"
+
+[profiles.owners.implementation]
+kind = "agent"
+
+[profiles.owners.implementation_review]
+kind = "agent"
+
+[profiles.owners.shipment]
+kind = "agent"
+
+[profiles.owners.shipment_review]
+kind = "agent"
+
+[[profiles]]
+id = "semiauto"
+description = "Human-gated plan and implementation reviews"
+planning_mode = "required"
+implementation_review_mode = "required"
+output = "remote_main"
+
+[profiles.owners.planning]
+kind = "agent"
+
+[profiles.owners.plan_review]
+kind = "human"
+
+[profiles.owners.implementation]
+kind = "agent"
+
+[profiles.owners.implementation_review]
+kind = "human"
+
+[profiles.owners.shipment]
+kind = "agent"
+
+[profiles.owners.shipment_review]
+kind = "agent"
+
+[[profiles]]
+id = "autopilot_no_planning"
+description = "Agent-owned flow starting at implementation"
+planning_mode = "skipped"
+implementation_review_mode = "required"
+output = "remote_main"
+
+[profiles.owners.planning]
+kind = "agent"
+
+[profiles.owners.plan_review]
+kind = "agent"
+
+[profiles.owners.implementation]
+kind = "agent"
+
+[profiles.owners.implementation_review]
+kind = "agent"
+
+[profiles.owners.shipment]
+kind = "agent"
+
+[profiles.owners.shipment_review]
+kind = "agent"
+
+[[profiles]]
+id = "autopilot_with_pr_no_planning"
+description = "Agent-owned flow with PR output and no planning"
+planning_mode = "skipped"
+implementation_review_mode = "required"
+output = "pr"
+
+[profiles.owners.planning]
+kind = "agent"
+
+[profiles.owners.plan_review]
+kind = "agent"
+
+[profiles.owners.implementation]
+kind = "agent"
+
+[profiles.owners.implementation_review]
+kind = "agent"
+
+[profiles.owners.shipment]
+kind = "agent"
+
+[profiles.owners.shipment_review]
+kind = "agent"
+
+[[profiles]]
+id = "semiauto_no_planning"
+description = "Human-gated implementation review with skipped planning"
+planning_mode = "skipped"
+implementation_review_mode = "required"
+output = "remote_main"
+
+[profiles.owners.planning]
+kind = "agent"
+
+[profiles.owners.plan_review]
+kind = "human"
+
+[profiles.owners.implementation]
+kind = "agent"
+
+[profiles.owners.implementation_review]
+kind = "human"
+
+[profiles.owners.shipment]
+kind = "agent"
+
+[profiles.owners.shipment_review]
+kind = "agent"

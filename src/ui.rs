@@ -78,8 +78,8 @@ fn filter_summary(filter: &KnotListFilter) -> Option<String> {
     if let Some(kind) = filter.knot_type.as_deref().and_then(non_empty) {
         parts.push(format!("type={kind}"));
     }
-    if let Some(workflow_id) = filter.workflow_id.as_deref().and_then(non_empty) {
-        parts.push(format!("workflow={workflow_id}"));
+    if let Some(profile_id) = filter.profile_id.as_deref().and_then(non_empty) {
+        parts.push(format!("profile={profile_id}"));
     }
     if !filter.tags.is_empty() {
         let tags = filter
@@ -130,7 +130,7 @@ fn knot_show_fields(knot: &KnotView) -> Vec<ShowField> {
     if let Some(knot_type) = knot.knot_type.as_deref() {
         fields.push(ShowField::new("type", knot_type));
     }
-    fields.push(ShowField::new("workflow_id", knot.workflow_id.clone()));
+    fields.push(ShowField::new("profile_id", knot.profile_id.clone()));
     if !knot.tags.is_empty() {
         fields.push(ShowField::new("tags", knot.tags.join(", ")));
     }
@@ -329,7 +329,7 @@ mod tests {
             include_all: false,
             state: Some("implementing".to_string()),
             knot_type: Some("task".to_string()),
-            workflow_id: Some("default".to_string()),
+            profile_id: Some("default".to_string()),
             tags: vec!["release".to_string(), "".to_string()],
             query: Some("sync".to_string()),
         };
@@ -337,7 +337,7 @@ mod tests {
         let summary = filter_summary(&filter).expect("summary should exist");
         assert_eq!(
             summary,
-            "state=implementing type=task workflow=default tags=release query=sync"
+            "state=implementing type=task profile=default tags=release query=sync"
         );
     }
 
@@ -353,7 +353,7 @@ mod tests {
             include_all: true,
             state: None,
             knot_type: None,
-            workflow_id: None,
+            profile_id: None,
             tags: Vec::new(),
             query: None,
         };
@@ -365,12 +365,12 @@ mod tests {
     fn show_fields_right_align_labels() {
         let fields = vec![
             ShowField::new("id", "knot-123"),
-            ShowField::new("workflow_id", "default"),
+            ShowField::new("profile_id", "default"),
         ];
         let palette = Palette { enabled: false };
         let lines = format_show_fields(&fields, &palette, 80);
-        assert_eq!(lines[0], "         id:  knot-123");
-        assert_eq!(lines[1], "workflow_id:  default");
+        assert_eq!(lines[0], "        id:  knot-123");
+        assert_eq!(lines[1], "profile_id:  default");
     }
 
     #[test]
@@ -418,8 +418,9 @@ mod tests {
                 model: "gpt-5".to_string(),
                 version: "1".to_string(),
             }],
-            workflow_id: "default".to_string(),
-            workflow_etag: Some("etag-1".to_string()),
+            profile_id: "default".to_string(),
+            profile_etag: Some("etag-1".to_string()),
+            deferred_from_state: None,
             created_at: Some("2026-02-25T14:00:00Z".to_string()),
         };
 

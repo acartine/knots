@@ -57,8 +57,8 @@ pub enum Commands {
     Ls(ListArgs),
     #[command(about = "Show one knot by id or alias.")]
     Show(ShowArgs),
-    #[command(about = "Inspect workflow definitions.", alias = "wf")]
-    Workflow(WorkflowArgs),
+    #[command(about = "Inspect and manage workflow profiles.")]
+    Profile(ProfileArgs),
     #[command(about = "Pull knot updates from the remote knots branch.")]
     Pull(SyncArgs),
     #[command(about = "Push local knot updates to the remote knots branch.")]
@@ -85,11 +85,6 @@ pub enum Commands {
     Rehydrate(RehydrateArgs),
     #[command(about = "Manage knot edges.")]
     Edge(EdgeArgs),
-    #[command(about = "Import knots from external sources.")]
-    Import(ImportArgs),
-    #[command(name = "self")]
-    #[command(about = "Self-management commands.")]
-    SelfManage(SelfArgs),
 }
 
 #[derive(Debug, Args)]
@@ -104,16 +99,16 @@ pub struct NewArgs {
     #[arg(
         short = 's',
         long,
-        help = "Initial knot state (defaults to workflow initial_state)."
+        help = "Initial knot state (defaults to profile initial_state)."
     )]
     pub state: Option<String>,
 
     #[arg(
-        short = 'w',
-        long,
-        help = "Workflow id (defaults to the repo default workflow)."
+        short = 'p',
+        long = "profile",
+        help = "Profile id (defaults to the user default profile)."
     )]
-    pub workflow: Option<String>,
+    pub profile: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -130,9 +125,21 @@ pub struct StateArgs {
     #[arg(
         short = 'm',
         long = "if-match",
-        help = "Require this workflow etag to match before writing."
+        help = "Require this profile etag to match before writing."
     )]
     pub if_match: Option<String>,
+
+    #[arg(long = "actor-kind", help = "Actor kind for the step: human or agent.")]
+    pub actor_kind: Option<String>,
+
+    #[arg(long = "agent-name", help = "Agent name for step metadata.")]
+    pub agent_name: Option<String>,
+
+    #[arg(long = "agent-model", help = "Agent model for step metadata.")]
+    pub agent_model: Option<String>,
+
+    #[arg(long = "agent-version", help = "Agent version for step metadata.")]
+    pub agent_version: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -208,9 +215,21 @@ pub struct UpdateArgs {
     #[arg(
         short = 'm',
         long = "if-match",
-        help = "Require this workflow etag to match before writing."
+        help = "Require this profile etag to match before writing."
     )]
     pub if_match: Option<String>,
+
+    #[arg(long = "actor-kind", help = "Actor kind for the step: human or agent.")]
+    pub actor_kind: Option<String>,
+
+    #[arg(long = "agent-name", help = "Agent name for step metadata.")]
+    pub agent_name: Option<String>,
+
+    #[arg(long = "agent-model", help = "Agent model for step metadata.")]
+    pub agent_model: Option<String>,
+
+    #[arg(long = "agent-version", help = "Agent version for step metadata.")]
+    pub agent_version: Option<String>,
 
     #[arg(
         short = 'f',
@@ -235,8 +254,8 @@ pub struct ListArgs {
     #[arg(short = 't', long = "type", help = "Filter by knot type.")]
     pub knot_type: Option<String>,
 
-    #[arg(short = 'w', long = "workflow", help = "Filter by workflow id.")]
-    pub workflow_id: Option<String>,
+    #[arg(short = 'p', long = "profile", help = "Filter by profile id.")]
+    pub profile_id: Option<String>,
 
     #[arg(short = 'g', long = "tag", help = "Require tag (repeatable).")]
     pub tags: Vec<String>,
@@ -260,33 +279,35 @@ pub struct ShowArgs {
 }
 
 #[derive(Debug, Args)]
-#[command(about = "Workflow commands.")]
-pub struct WorkflowArgs {
+#[command(about = "Profile commands.")]
+pub struct ProfileArgs {
     #[command(subcommand)]
-    pub command: WorkflowSubcommands,
+    pub command: ProfileSubcommands,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum WorkflowSubcommands {
-    #[command(about = "List available workflows.", alias = "ls")]
-    List(WorkflowListArgs),
-    #[command(about = "Show one workflow definition.")]
-    Show(WorkflowShowArgs),
-    #[command(about = "Set the repo default workflow id.", alias = "set")]
-    SetDefault(WorkflowSetDefaultArgs),
+pub enum ProfileSubcommands {
+    #[command(about = "List available profiles.", alias = "ls")]
+    List(ProfileListArgs),
+    #[command(about = "Show one profile definition.")]
+    Show(ProfileShowArgs),
+    #[command(about = "Set the user default profile id.")]
+    SetDefault(ProfileSetDefaultArgs),
+    #[command(about = "Set one knot profile and optionally remap state.")]
+    Set(ProfileSetArgs),
 }
 
 #[derive(Debug, Args)]
-#[command(about = "List workflows.")]
-pub struct WorkflowListArgs {
+#[command(about = "List profiles.")]
+pub struct ProfileListArgs {
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
 }
 
 #[derive(Debug, Args)]
-#[command(about = "Show one workflow definition.")]
-pub struct WorkflowShowArgs {
-    #[arg(help = "Workflow id.")]
+#[command(about = "Show one profile definition.")]
+pub struct ProfileShowArgs {
+    #[arg(help = "Profile id.")]
     pub id: String,
 
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
@@ -294,10 +315,30 @@ pub struct WorkflowShowArgs {
 }
 
 #[derive(Debug, Args)]
-#[command(about = "Set the repo default workflow.")]
-pub struct WorkflowSetDefaultArgs {
-    #[arg(help = "Workflow id.")]
+#[command(about = "Set the user default profile.")]
+pub struct ProfileSetDefaultArgs {
+    #[arg(help = "Profile id.")]
     pub id: String,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Set one knot profile.")]
+pub struct ProfileSetArgs {
+    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
+    pub id: String,
+
+    #[arg(help = "Target profile id.")]
+    pub profile: String,
+
+    #[arg(short = 's', long, help = "Target state in the new profile.")]
+    pub state: Option<String>,
+
+    #[arg(
+        short = 'm',
+        long = "if-match",
+        help = "Require this profile etag to match before writing."
+    )]
+    pub if_match: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -453,64 +494,6 @@ pub struct EdgeListArgs {
 }
 
 #[derive(Debug, Args)]
-#[command(about = "Import commands.")]
-pub struct ImportArgs {
-    #[command(subcommand)]
-    pub command: ImportSubcommands,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum ImportSubcommands {
-    #[command(about = "Import from JSONL event records.")]
-    Jsonl(ImportJsonlArgs),
-    #[command(about = "Show import run status history.")]
-    Status(ImportStatusArgs),
-}
-
-#[derive(Debug, Args)]
-#[command(about = "Import from JSONL.")]
-pub struct ImportJsonlArgs {
-    #[arg(short = 'f', long, help = "Path to JSONL input file.")]
-    pub file: String,
-
-    #[arg(
-        short = 'n',
-        long,
-        help = "Run import validation without writing events."
-    )]
-    pub dry_run: bool,
-
-    #[arg(
-        short = 's',
-        long,
-        help = "Only import records on/after this checkpoint."
-    )]
-    pub since: Option<String>,
-}
-
-#[derive(Debug, Args)]
-#[command(about = "Show import statuses.")]
-pub struct ImportStatusArgs {
-    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
-    pub json: bool,
-}
-
-#[derive(Debug, Args)]
-#[command(about = "Self-management commands.")]
-pub struct SelfArgs {
-    #[command(subcommand)]
-    pub command: SelfSubcommands,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum SelfSubcommands {
-    #[command(about = "Update kno binary.")]
-    Update(SelfUpdateArgs),
-    #[command(about = "Uninstall kno binary and aliases.")]
-    Uninstall(SelfUninstallArgs),
-}
-
-#[derive(Debug, Args)]
 #[command(about = "Update kno binary.")]
 pub struct SelfUpdateArgs {
     #[arg(short = 'v', long, help = "Version to install (defaults to latest).")]
@@ -553,34 +536,34 @@ pub struct SelfUninstallArgs {
 mod tests {
     use clap::Parser;
 
-    use super::{Cli, Commands, WorkflowSubcommands};
+    use super::{Cli, Commands, ProfileSubcommands};
 
     fn parse(args: &[&str]) -> Cli {
         Cli::parse_from(args)
     }
 
     #[test]
-    fn wf_list_alias_parses_as_workflow_list() {
-        let cli = parse(&["kno", "wf", "list"]);
+    fn profile_list_parses() {
+        let cli = parse(&["kno", "profile", "list"]);
         match cli.command {
-            Commands::Workflow(args) => {
-                assert!(matches!(args.command, WorkflowSubcommands::List(_)));
+            Commands::Profile(args) => {
+                assert!(matches!(args.command, ProfileSubcommands::List(_)));
             }
-            other => panic!("expected Workflow, got {:?}", other),
+            other => panic!("expected Profile, got {:?}", other),
         }
     }
 
     #[test]
-    fn wf_show_alias_parses_with_id() {
-        let cli = parse(&["kno", "wf", "show", "default"]);
+    fn profile_show_parses_with_id() {
+        let cli = parse(&["kno", "profile", "show", "autopilot"]);
         match cli.command {
-            Commands::Workflow(args) => match args.command {
-                WorkflowSubcommands::Show(show_args) => {
-                    assert_eq!(show_args.id, "default");
+            Commands::Profile(args) => match args.command {
+                ProfileSubcommands::Show(show_args) => {
+                    assert_eq!(show_args.id, "autopilot");
                 }
                 other => panic!("expected Show, got {:?}", other),
             },
-            other => panic!("expected Workflow, got {:?}", other),
+            other => panic!("expected Profile, got {:?}", other),
         }
     }
 

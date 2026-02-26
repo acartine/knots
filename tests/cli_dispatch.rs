@@ -104,8 +104,8 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
         &[
             "new",
             "First knot",
-            "--workflow",
-            "default",
+            "--profile",
+            "autopilot",
             "--state",
             "idea",
         ],
@@ -119,8 +119,8 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
         &[
             "new",
             "Second knot",
-            "--workflow",
-            "default",
+            "--profile",
+            "autopilot",
             "--state",
             "idea",
         ],
@@ -141,7 +141,7 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
         Some(first_id.as_str())
     );
 
-    let state = run_knots(&root, &db, &["state", &first_id, "work_item"]);
+    let state = run_knots(&root, &db, &["state", &first_id, "planning"]);
     assert_success(&state);
 
     let update = run_knots(
@@ -155,7 +155,7 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
             "--add-tag",
             "cli",
             "--status",
-            "implementing",
+            "ready_for_plan_review",
         ],
     );
     assert_success(&update);
@@ -177,11 +177,11 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     );
     assert_success(&edge_remove);
 
-    assert_success(&run_knots(&root, &db, &["workflow", "list", "--json"]));
+    assert_success(&run_knots(&root, &db, &["profile", "list", "--json"]));
     assert_success(&run_knots(
         &root,
         &db,
-        &["workflow", "show", "default", "--json"],
+        &["profile", "show", "autopilot", "--json"],
     ));
     assert_success(&run_knots(&root, &db, &["fsck", "--json"]));
 
@@ -196,32 +196,19 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
         &["compact", "--write-snapshots", "--json"],
     ));
     assert_success(&run_knots(&root, &db, &["rehydrate", &first_id, "--json"]));
-    assert_success(&run_knots(&root, &db, &["import", "status", "--json"]));
-
-    let import_file = root.join("import.jsonl");
-    std::fs::write(
-        &import_file,
-        concat!(
-            "{\"id\":\"IMP-1\",\"title\":\"Imported\",\"status\":\"open\",",
-            "\"workflow_id\":\"default\",\"updated_at\":\"2026-02-25T10:00:00Z\"}\n"
-        ),
-    )
-    .expect("import file should be writable");
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "import",
-            "jsonl",
-            "--file",
-            import_file.to_str().expect("utf8 path"),
-        ],
-    ));
-    assert_success(&run_knots(&root, &db, &["import", "status", "--json"]));
 
     let missing = run_knots(&root, &db, &["show", "missing-id"]);
     assert_failure(&missing);
     assert!(String::from_utf8_lossy(&missing.stderr).contains("not found"));
+
+    let import_unknown = run_knots(&root, &db, &["import", "status", "--json"]);
+    assert_failure(&import_unknown);
+    assert!(String::from_utf8_lossy(&import_unknown.stderr)
+        .contains("unrecognized subcommand 'import'"));
+
+    let self_unknown = run_knots(&root, &db, &["self", "update"]);
+    assert_failure(&self_unknown);
+    assert!(String::from_utf8_lossy(&self_unknown.stderr).contains("unrecognized subcommand"));
 
     let doctor = run_knots(&root, &db, &["doctor", "--json"]);
     assert_failure(&doctor);
@@ -275,8 +262,8 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
         &[
             "new",
             "Non-json knot",
-            "--workflow",
-            "default",
+            "--profile",
+            "autopilot",
             "--state",
             "idea",
         ],
@@ -286,8 +273,8 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
 
     assert_success(&run_knots(&root, &db, &["ls"]));
     assert_success(&run_knots(&root, &db, &["show", &knot_id]));
-    assert_success(&run_knots(&root, &db, &["workflow", "list"]));
-    assert_success(&run_knots(&root, &db, &["workflow", "show", "default"]));
+    assert_success(&run_knots(&root, &db, &["profile", "list"]));
+    assert_success(&run_knots(&root, &db, &["profile", "show", "autopilot"]));
     assert_success(&run_knots(&root, &db, &["fsck"]));
     assert_success(&run_knots(&root, &db, &["rehydrate", &knot_id]));
 
@@ -299,8 +286,8 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
         &[
             "new",
             "Second non-json knot",
-            "--workflow",
-            "default",
+            "--profile",
+            "autopilot",
             "--state",
             "idea",
         ],
@@ -320,28 +307,14 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
         &["edge", "remove", &knot_id, "blocked_by", &second_id],
     ));
 
-    assert_success(&run_knots(&root, &db, &["import", "status"]));
-    let import_file = root.join("import-non-json.jsonl");
-    std::fs::write(
-        &import_file,
-        concat!(
-            "{\"id\":\"IMP-NJ-1\",\"title\":\"Imported\",\"workflow_id\":\"default\",",
-            "\"status\":\"open\",\"updated_at\":\"2026-02-25T10:00:00Z\"}\n",
-            "{invalid-json}\n"
-        ),
-    )
-    .expect("import file should be writable");
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "import",
-            "jsonl",
-            "--file",
-            import_file.to_str().expect("utf8 path"),
-        ],
-    ));
-    assert_success(&run_knots(&root, &db, &["import", "status"]));
+    let import_unknown = run_knots(&root, &db, &["import", "status"]);
+    assert_failure(&import_unknown);
+    assert!(String::from_utf8_lossy(&import_unknown.stderr)
+        .contains("unrecognized subcommand 'import'"));
+
+    let self_unknown = run_knots(&root, &db, &["self", "update"]);
+    assert_failure(&self_unknown);
+    assert!(String::from_utf8_lossy(&self_unknown.stderr).contains("unrecognized subcommand"));
 
     assert_success(&run_knots(&root, &db, &["push"]));
     assert_success(&run_knots(&root, &db, &["pull"]));
@@ -372,8 +345,8 @@ fn cli_dispatch_covers_json_branches_and_cold_search_results() {
         &[
             "new",
             "Cold candidate",
-            "--workflow",
-            "default",
+            "--profile",
+            "autopilot",
             "--state",
             "shipped",
         ],

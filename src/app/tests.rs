@@ -1,4 +1,4 @@
-use super::{App, AppError, UpdateKnotPatch};
+use super::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::db;
 use crate::domain::metadata::MetadataEntryInput;
 use std::path::{Path, PathBuf};
@@ -59,8 +59,8 @@ fn create_knot_updates_cache_and_writes_events() {
     assert_eq!(suffix.len(), 4);
     assert!(suffix.chars().all(|ch| ch.is_ascii_hexdigit()));
     assert_eq!(created.title, "Build cache layer");
-    assert_eq!(created.state, "work_item");
-    assert_eq!(created.workflow_id, "automation_granular");
+    assert_eq!(created.state, "ready_for_implementation");
+    assert_eq!(created.profile_id, "autopilot");
 
     let listed = app.list_knots().expect("list should succeed");
     assert_eq!(listed.len(), 1);
@@ -108,10 +108,10 @@ fn hierarchical_aliases_are_assigned_and_resolve_to_ids() {
     assert_eq!(via_alias.id, child.id);
 
     let updated = app
-        .set_state(&alias, "work_item", false, None)
+        .set_state(&alias, "planning", false, None)
         .expect("set_state should accept alias id");
     assert_eq!(updated.id, child.id);
-    assert_eq!(updated.state, "work_item");
+    assert_eq!(updated.state, "planning");
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -140,10 +140,10 @@ fn stripped_ids_resolve_for_show_state_update_and_edges() {
     assert_eq!(shown.id, src.id);
 
     let set = app
-        .set_state(&src_short, "work_item", false, None)
+        .set_state(&src_short, "planning", false, None)
         .expect("set_state should accept stripped id");
     assert_eq!(set.id, src.id);
-    assert_eq!(set.state, "work_item");
+    assert_eq!(set.state, "planning");
 
     let updated = app
         .update_knot(
@@ -158,8 +158,9 @@ fn stripped_ids_resolve_for_show_state_update_and_edges() {
                 remove_tags: vec![],
                 add_note: None,
                 add_handoff_capsule: None,
-                expected_workflow_etag: None,
+                expected_profile_etag: None,
                 force: false,
+                state_actor: StateActorMetadata::default(),
             },
         )
         .expect("update_knot should accept stripped id");
@@ -235,7 +236,7 @@ fn set_state_enforces_transition_rules_unless_forced() {
     let forced = app
         .set_state(&created.id, "reviewing", true, None)
         .expect("forced transition should succeed");
-    assert_eq!(forced.state, "reviewing");
+    assert_eq!(forced.state, "implementation_review");
 
     assert_eq!(count_json_files(&root.join(".knots/events")), 2);
     assert_eq!(count_json_files(&root.join(".knots/index")), 2);
@@ -244,7 +245,7 @@ fn set_state_enforces_transition_rules_unless_forced() {
 }
 
 #[test]
-fn create_knot_uses_default_workflow_initial_state_when_state_is_omitted() {
+fn create_knot_uses_default_profile_initial_state_when_state_is_omitted() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
@@ -254,8 +255,8 @@ fn create_knot_uses_default_workflow_initial_state_when_state_is_omitted() {
         .create_knot("Workflow test", None, None, Some("default"))
         .expect("knot should be created");
 
-    assert_eq!(created.workflow_id, "automation_granular");
-    assert_eq!(created.state, "idea");
+    assert_eq!(created.profile_id, "autopilot");
+    assert_eq!(created.state, "ready_for_planning");
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -364,14 +365,15 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
                     model: Some("gpt-5".to_string()),
                     version: Some("0.1".to_string()),
                 }),
-                expected_workflow_etag: None,
+                expected_profile_etag: None,
                 force: false,
+                state_actor: StateActorMetadata::default(),
             },
         )
         .expect("update should succeed");
 
     assert_eq!(updated.title, "Parity updated");
-    assert_eq!(updated.state, "implementing");
+    assert_eq!(updated.state, "implementation");
     assert_eq!(updated.description.as_deref(), Some("full description"));
     assert_eq!(updated.priority, Some(1));
     assert_eq!(updated.knot_type.as_deref(), Some("task"));
@@ -419,8 +421,9 @@ fn update_knot_requires_at_least_one_change() {
             remove_tags: vec![],
             add_note: None,
             add_handoff_capsule: None,
-            expected_workflow_etag: None,
+            expected_profile_etag: None,
             force: false,
+            state_actor: StateActorMetadata::default(),
         },
     );
     assert!(matches!(result, Err(AppError::InvalidArgument(_))));
@@ -438,9 +441,9 @@ fn update_knot_rejects_stale_if_match() {
         .create_knot("OCC", None, Some("work_item"), Some("default"))
         .expect("knot should be created");
     let expected = created
-        .workflow_etag
+        .profile_etag
         .clone()
-        .expect("created knot should expose workflow_etag");
+        .expect("created knot should expose profile_etag");
 
     let updated = app
         .update_knot(
@@ -455,12 +458,13 @@ fn update_knot_rejects_stale_if_match() {
                 remove_tags: vec![],
                 add_note: None,
                 add_handoff_capsule: None,
-                expected_workflow_etag: Some(expected.clone()),
+                expected_profile_etag: Some(expected.clone()),
                 force: false,
+                state_actor: StateActorMetadata::default(),
             },
         )
         .expect("update with matching etag should succeed");
-    assert_ne!(updated.workflow_etag, Some(expected.clone()));
+    assert_ne!(updated.profile_etag, Some(expected.clone()));
 
     let stale = app.update_knot(
         &created.id,
@@ -474,8 +478,9 @@ fn update_knot_rejects_stale_if_match() {
             remove_tags: vec![],
             add_note: None,
             add_handoff_capsule: None,
-            expected_workflow_etag: Some(expected),
+            expected_profile_etag: Some(expected),
             force: false,
+            state_actor: StateActorMetadata::default(),
         },
     );
     assert!(matches!(stale, Err(AppError::StaleWorkflowHead { .. })));
@@ -549,7 +554,7 @@ fn rehydrate_builds_hot_record_from_warm_and_full_events() {
             "    \"knot_id\": \"K-9\",\n",
             "    \"title\": \"Warm title\",\n",
             "    \"state\": \"work_item\",\n",
-            "    \"workflow_id\": \"default\",\n",
+            "    \"profile_id\": \"default\",\n",
             "    \"updated_at\": \"2026-02-24T10:00:01Z\",\n",
             "    \"terminal\": false\n",
             "  }\n",
@@ -568,8 +573,8 @@ fn rehydrate_builds_hot_record_from_warm_and_full_events() {
         rehydrated.description.as_deref(),
         Some("rehydrated details")
     );
-    assert_eq!(rehydrated.workflow_id, "default");
-    assert_eq!(rehydrated.workflow_etag.as_deref(), Some("1002"));
+    assert_eq!(rehydrated.profile_id, "default");
+    assert_eq!(rehydrated.profile_etag.as_deref(), Some("1002"));
 
     let _ = std::fs::remove_dir_all(root);
 }

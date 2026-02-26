@@ -7,7 +7,7 @@ use time::OffsetDateTime;
 
 use crate::domain::metadata::MetadataEntry;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 5;
+pub const CURRENT_SCHEMA_VERSION: i64 = 6;
 
 struct Migration {
     version: i64,
@@ -15,7 +15,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 5] = [
+const MIGRATIONS: [Migration; 6] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -129,6 +129,50 @@ ALTER TABLE knot_hot ADD COLUMN workflow_id TEXT NOT NULL DEFAULT 'automation_gr
 UPDATE knot_hot
 SET workflow_id = 'automation_granular'
 WHERE workflow_id IN ('default', 'delivery');
+"#,
+    },
+    Migration {
+        version: 6,
+        name: "workflow_to_profile_v1",
+        sql: r#"
+ALTER TABLE knot_hot RENAME COLUMN workflow_id TO profile_id;
+ALTER TABLE knot_hot RENAME COLUMN workflow_etag TO profile_etag;
+ALTER TABLE knot_hot ADD COLUMN deferred_from_state TEXT;
+
+UPDATE knot_hot
+SET profile_id = CASE
+    WHEN profile_id IN ('automation_granular', 'default', 'delivery', 'automation', 'granular')
+        THEN 'autopilot'
+    WHEN profile_id IN ('human_gate', 'human', 'coarse', 'pr_human_gate')
+        THEN 'semiauto'
+    ELSE profile_id
+END;
+
+UPDATE knot_hot
+SET state = CASE
+    WHEN state = 'idea' THEN 'ready_for_planning'
+    WHEN state = 'work_item' THEN 'ready_for_implementation'
+    WHEN state = 'implementing' THEN 'implementation'
+    WHEN state = 'implemented' THEN 'ready_for_implementation_review'
+    WHEN state = 'reviewing' THEN 'implementation_review'
+    WHEN state = 'rejected' THEN 'ready_for_implementation'
+    WHEN state = 'refining' THEN 'ready_for_implementation'
+    WHEN state = 'approved' THEN 'ready_for_shipment'
+    ELSE state
+END;
+
+UPDATE cold_catalog
+SET state = CASE
+    WHEN state = 'idea' THEN 'ready_for_planning'
+    WHEN state = 'work_item' THEN 'ready_for_implementation'
+    WHEN state = 'implementing' THEN 'implementation'
+    WHEN state = 'implemented' THEN 'ready_for_implementation_review'
+    WHEN state = 'reviewing' THEN 'implementation_review'
+    WHEN state = 'rejected' THEN 'ready_for_implementation'
+    WHEN state = 'refining' THEN 'ready_for_implementation'
+    WHEN state = 'approved' THEN 'ready_for_shipment'
+    ELSE state
+END;
 "#,
     },
 ];
@@ -271,8 +315,9 @@ pub struct KnotCacheRecord {
     pub tags: Vec<String>,
     pub notes: Vec<MetadataEntry>,
     pub handoff_capsules: Vec<MetadataEntry>,
-    pub workflow_id: String,
-    pub workflow_etag: Option<String>,
+    pub profile_id: String,
+    pub profile_etag: Option<String>,
+    pub deferred_from_state: Option<String>,
     pub created_at: Option<String>,
 }
 
@@ -302,8 +347,9 @@ pub struct UpsertKnotHot<'a> {
     pub tags: &'a [String],
     pub notes: &'a [MetadataEntry],
     pub handoff_capsules: &'a [MetadataEntry],
-    pub workflow_id: &'a str,
-    pub workflow_etag: Option<&'a str>,
+    pub profile_id: &'a str,
+    pub profile_etag: Option<&'a str>,
+    pub deferred_from_state: Option<&'a str>,
     pub created_at: Option<&'a str>,
 }
 
@@ -315,9 +361,10 @@ pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()
         r#"
 INSERT INTO knot_hot (
     id, title, state, updated_at, body, description, priority, knot_type,
-    tags_json, notes_json, handoff_capsules_json, workflow_id, workflow_etag, created_at
+    tags_json, notes_json, handoff_capsules_json, profile_id, profile_etag, deferred_from_state,
+    created_at
 )
-VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
     state = excluded.state,
@@ -329,8 +376,9 @@ ON CONFLICT(id) DO UPDATE SET
     tags_json = excluded.tags_json,
     notes_json = excluded.notes_json,
     handoff_capsules_json = excluded.handoff_capsules_json,
-    workflow_id = excluded.workflow_id,
-    workflow_etag = excluded.workflow_etag,
+    profile_id = excluded.profile_id,
+    profile_etag = excluded.profile_etag,
+    deferred_from_state = excluded.deferred_from_state,
     created_at = COALESCE(knot_hot.created_at, excluded.created_at)
 "#,
         params![
@@ -345,8 +393,9 @@ ON CONFLICT(id) DO UPDATE SET
             tags_json,
             notes_json,
             handoff_capsules_json,
-            args.workflow_id,
-            args.workflow_etag,
+            args.profile_id,
+            args.profile_etag,
+            args.deferred_from_state,
             args.created_at
         ],
     )?;
@@ -359,7 +408,8 @@ pub fn get_knot_hot(conn: &Connection, id: &str) -> Result<Option<KnotCacheRecor
     conn.query_row(
         r#"
 SELECT id, title, state, updated_at, body, description, priority, knot_type,
-       tags_json, notes_json, handoff_capsules_json, workflow_id, workflow_etag, created_at
+       tags_json, notes_json, handoff_capsules_json, profile_id, profile_etag,
+       deferred_from_state, created_at
 FROM knot_hot
 WHERE id = ?1
 "#,
@@ -380,9 +430,10 @@ WHERE id = ?1
                 tags: from_json_text(tags_json, 8)?,
                 notes: from_json_text(notes_json, 9)?,
                 handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
-                workflow_id: row.get(11)?,
-                workflow_etag: row.get(12)?,
-                created_at: row.get(13)?,
+                profile_id: row.get(11)?,
+                profile_etag: row.get(12)?,
+                deferred_from_state: row.get(13)?,
+                created_at: row.get(14)?,
             })
         },
     )
@@ -393,7 +444,8 @@ pub fn list_knot_hot(conn: &Connection) -> Result<Vec<KnotCacheRecord>> {
     let mut stmt = conn.prepare(
         r#"
 SELECT id, title, state, updated_at, body, description, priority, knot_type,
-       tags_json, notes_json, handoff_capsules_json, workflow_id, workflow_etag, created_at
+       tags_json, notes_json, handoff_capsules_json, profile_id, profile_etag,
+       deferred_from_state, created_at
 FROM knot_hot
 ORDER BY updated_at DESC, id ASC
 "#,
@@ -417,9 +469,10 @@ ORDER BY updated_at DESC, id ASC
             tags: from_json_text(tags_json, 8)?,
             notes: from_json_text(notes_json, 9)?,
             handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
-            workflow_id: row.get(11)?,
-            workflow_etag: row.get(12)?,
-            created_at: row.get(13)?,
+            profile_id: row.get(11)?,
+            profile_etag: row.get(12)?,
+            deferred_from_state: row.get(13)?,
+            created_at: row.get(14)?,
         });
     }
 

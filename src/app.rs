@@ -2,7 +2,9 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::fmt;
 use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use rusqlite::Connection;
@@ -27,15 +29,15 @@ use crate::remote_init::{init_remote_knots_branch, RemoteInitError};
 use crate::replication::{PushSummary, ReplicationService, ReplicationSummary};
 use crate::snapshots::{write_snapshots, SnapshotError, SnapshotWriteSummary};
 use crate::sync::{SyncError, SyncSummary};
-use crate::workflow::{normalize_workflow_id, WorkflowDefinition, WorkflowError, WorkflowRegistry};
+use crate::workflow::{normalize_profile_id, ProfileDefinition, ProfileError, ProfileRegistry};
 
-pub const DEFAULT_WORKFLOW_META_KEY: &str = "default_workflow_id";
+const DEFAULT_PROFILE_ID: &str = "autopilot";
 
 pub struct App {
     conn: Connection,
     writer: EventWriter,
     repo_root: PathBuf,
-    workflow_registry: WorkflowRegistry,
+    profile_registry: ProfileRegistry,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -53,9 +55,18 @@ pub struct KnotView {
     pub tags: Vec<String>,
     pub notes: Vec<MetadataEntry>,
     pub handoff_capsules: Vec<MetadataEntry>,
-    pub workflow_id: String,
-    pub workflow_etag: Option<String>,
+    pub profile_id: String,
+    pub profile_etag: Option<String>,
+    pub deferred_from_state: Option<String>,
     pub created_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct StateActorMetadata {
+    pub actor_kind: Option<String>,
+    pub agent_name: Option<String>,
+    pub agent_model: Option<String>,
+    pub agent_version: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -69,8 +80,9 @@ pub struct UpdateKnotPatch {
     pub remove_tags: Vec<String>,
     pub add_note: Option<MetadataEntryInput>,
     pub add_handoff_capsule: Option<MetadataEntryInput>,
-    pub expected_workflow_etag: Option<String>,
+    pub expected_profile_etag: Option<String>,
     pub force: bool,
+    pub state_actor: StateActorMetadata,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -113,13 +125,13 @@ impl App {
     pub fn open(db_path: &str, repo_root: PathBuf) -> Result<Self, AppError> {
         ensure_parent_dir(db_path)?;
         let conn = db::open_connection(db_path)?;
-        let workflow_registry = WorkflowRegistry::load()?;
+        let profile_registry = ProfileRegistry::load()?;
         let writer = EventWriter::new(repo_root.clone());
         Ok(Self {
             conn,
             writer,
             repo_root,
-            workflow_registry,
+            profile_registry,
         })
     }
 
@@ -153,37 +165,72 @@ impl App {
         Ok(budget)
     }
 
-    fn fallback_workflow_id(&self) -> Result<String, AppError> {
-        self.workflow_registry
+    fn fallback_profile_id(&self) -> Result<String, AppError> {
+        if self.profile_registry.require(DEFAULT_PROFILE_ID).is_ok() {
+            return Ok(DEFAULT_PROFILE_ID.to_string());
+        }
+        self.profile_registry
             .list()
             .into_iter()
             .next()
-            .map(|workflow| workflow.id)
-            .ok_or_else(|| AppError::InvalidArgument("no workflows are defined".to_string()))
+            .map(|profile| profile.id)
+            .ok_or_else(|| AppError::InvalidArgument("no profiles are defined".to_string()))
     }
 
-    fn read_repo_default_workflow_id(&self) -> Result<Option<String>, AppError> {
-        let Some(raw) = db::get_meta(&self.conn, DEFAULT_WORKFLOW_META_KEY)? else {
+    fn config_path() -> Option<PathBuf> {
+        let home = std::env::var_os("HOME")?;
+        Some(
+            Path::new(&home)
+                .join(".config")
+                .join("knots")
+                .join("config.toml"),
+        )
+    }
+
+    fn read_user_default_profile_id(&self) -> Result<Option<String>, AppError> {
+        let Some(path) = Self::config_path() else {
             return Ok(None);
         };
-        let workflow = match self.workflow_registry.require(&raw) {
-            Ok(workflow) => workflow,
+        if !path.exists() {
+            return Ok(None);
+        }
+
+        #[derive(serde::Deserialize)]
+        struct ProfileConfig {
+            default_profile: Option<String>,
+        }
+
+        let raw = fs::read_to_string(path)?;
+        let parsed: ProfileConfig = toml::from_str(&raw)
+            .map_err(|err| AppError::InvalidArgument(format!("invalid profile config: {err}")))?;
+        let Some(raw_id) = parsed.default_profile else {
+            return Ok(None);
+        };
+        let profile = match self.profile_registry.require(&raw_id) {
+            Ok(profile) => profile,
             Err(_) => return Ok(None),
         };
-        Ok(Some(workflow.id.clone()))
+        Ok(Some(profile.id.clone()))
     }
 
-    pub fn default_workflow_id(&self) -> Result<String, AppError> {
-        if let Some(workflow_id) = self.read_repo_default_workflow_id()? {
-            return Ok(workflow_id);
+    pub fn default_profile_id(&self) -> Result<String, AppError> {
+        if let Some(profile_id) = self.read_user_default_profile_id()? {
+            return Ok(profile_id);
         }
-        self.fallback_workflow_id()
+        self.fallback_profile_id()
     }
 
-    pub fn set_default_workflow_id(&self, workflow_id: &str) -> Result<String, AppError> {
-        let workflow = self.workflow_registry.require(workflow_id)?;
-        db::set_meta(&self.conn, DEFAULT_WORKFLOW_META_KEY, &workflow.id)?;
-        Ok(workflow.id.clone())
+    pub fn set_default_profile_id(&self, profile_id: &str) -> Result<String, AppError> {
+        let profile = self.profile_registry.require(profile_id)?;
+        let path = Self::config_path().ok_or_else(|| {
+            AppError::InvalidArgument("unable to resolve $HOME for profile config".to_string())
+        })?;
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let rendered = format!("default_profile = \"{}\"\n", profile.id);
+        fs::write(path, rendered)?;
+        Ok(profile.id.clone())
     }
 
     fn mark_sync_pending(&self) -> Result<(), AppError> {
@@ -315,14 +362,14 @@ impl App {
         }))
     }
 
-    fn resolve_workflow_for_record<'a>(
+    fn resolve_profile_for_record<'a>(
         &'a self,
         record: &KnotCacheRecord,
-    ) -> Result<&'a WorkflowDefinition, AppError> {
-        let workflow_id = non_empty(record.workflow_id.as_str()).ok_or_else(|| {
-            AppError::InvalidArgument(format!("knot '{}' is missing workflow_id", record.id))
+    ) -> Result<&'a ProfileDefinition, AppError> {
+        let profile_id = non_empty(record.profile_id.as_str()).ok_or_else(|| {
+            AppError::InvalidArgument(format!("knot '{}' is missing profile_id", record.id))
         })?;
-        Ok(self.workflow_registry.require(&workflow_id)?)
+        Ok(self.profile_registry.require(&profile_id)?)
     }
 
     pub fn create_knot(
@@ -330,23 +377,25 @@ impl App {
         title: &str,
         body: Option<&str>,
         initial_state: Option<&str>,
-        workflow_id: Option<&str>,
+        profile_id: Option<&str>,
     ) -> Result<KnotView, AppError> {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
-        let default_workflow = if workflow_id.is_none() {
-            Some(self.default_workflow_id()?)
+        let default_profile = if profile_id.is_none() {
+            Some(self.default_profile_id()?)
         } else {
             None
         };
-        let workflow = self
-            .workflow_registry
-            .resolve(workflow_id.or(default_workflow.as_deref()))?;
-        let state = non_empty(initial_state.unwrap_or(""))
-            .unwrap_or_else(|| workflow.initial_state.clone())
-            .to_ascii_lowercase();
-        workflow.require_state(&state)?;
+        let profile = self
+            .profile_registry
+            .resolve(profile_id.or(default_profile.as_deref()))?;
+        let state = if let Some(requested) = non_empty(initial_state.unwrap_or("")) {
+            normalize_state_input(&requested)?
+        } else {
+            profile.initial_state.clone()
+        };
+        profile.require_state(&state)?;
         let knot_id = self.next_knot_id()?;
         let occurred_at = now_utc_rfc3339();
 
@@ -358,7 +407,7 @@ impl App {
             json!({
                 "title": title,
                 "state": state.as_str(),
-                "workflow_id": workflow.id.as_str(),
+                "profile_id": profile.id.as_str(),
                 "body": body,
             }),
         );
@@ -372,9 +421,10 @@ impl App {
                 "knot_id": knot_id,
                 "title": title,
                 "state": state.as_str(),
-                "workflow_id": workflow.id.as_str(),
+                "profile_id": profile.id.as_str(),
                 "updated_at": occurred_at,
-                "terminal": workflow.is_terminal_state(&state),
+                "terminal": profile.is_terminal_state(&state),
+                "deferred_from_state": Value::Null,
             }),
         );
 
@@ -395,8 +445,9 @@ impl App {
                 tags: &[],
                 notes: &[],
                 handoff_capsules: &[],
-                workflow_id: workflow.id.as_str(),
-                workflow_etag: Some(&index_event_id),
+                profile_id: profile.id.as_str(),
+                profile_etag: Some(&index_event_id),
+                deferred_from_state: None,
                 created_at: Some(&occurred_at),
             },
         )?;
@@ -405,12 +456,127 @@ impl App {
         self.apply_alias_to_knot(KnotView::from(record))
     }
 
+    pub fn set_profile(
+        &self,
+        id: &str,
+        profile_id: &str,
+        state: &str,
+        expected_profile_etag: Option<&str>,
+    ) -> Result<KnotView, AppError> {
+        let id = self.resolve_knot_token(id)?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+        let current =
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.clone()))?;
+        ensure_profile_etag(&current, expected_profile_etag)?;
+
+        let profile = self.profile_registry.require(profile_id)?;
+        let next_state = normalize_state_input(state)?;
+        profile.require_state(&next_state)?;
+
+        let current_profile_id = canonical_profile_id(&current.profile_id);
+        if current_profile_id == profile.id && current.state == next_state {
+            return self.apply_alias_to_knot(KnotView::from(current));
+        }
+
+        let deferred_from_state = if next_state == "deferred" && current.state != "deferred" {
+            Some(current.state.clone())
+        } else if current.state == "deferred" && next_state != "deferred" {
+            None
+        } else {
+            current.deferred_from_state.clone()
+        };
+
+        let occurred_at = now_utc_rfc3339();
+        let mut full_event = FullEvent::with_identity(
+            new_event_id(),
+            occurred_at.clone(),
+            id.clone(),
+            FullEventKind::KnotProfileSet.as_str(),
+            json!({
+                "from_profile_id": current_profile_id,
+                "to_profile_id": profile.id,
+                "from_state": current.state,
+                "to_state": next_state,
+                "deferred_from_state": deferred_from_state,
+            }),
+        );
+        if let Some(expected) = expected_profile_etag {
+            full_event = full_event.with_precondition(expected);
+        }
+
+        let index_event_id = new_event_id();
+        let mut idx_event = IndexEvent::with_identity(
+            index_event_id.clone(),
+            occurred_at.clone(),
+            IndexEventKind::KnotHead.as_str(),
+            json!({
+                "knot_id": id,
+                "title": current.title,
+                "state": next_state,
+                "profile_id": profile.id,
+                "updated_at": occurred_at,
+                "terminal": profile.is_terminal_state(&next_state),
+                "deferred_from_state": deferred_from_state,
+            }),
+        );
+        if let Some(expected) = expected_profile_etag {
+            idx_event = idx_event.with_precondition(expected);
+        }
+
+        self.writer.write(&EventRecord::full(full_event))?;
+        self.writer.write(&EventRecord::index(idx_event))?;
+
+        db::upsert_knot_hot(
+            &self.conn,
+            &UpsertKnotHot {
+                id: &id,
+                title: &current.title,
+                state: &next_state,
+                updated_at: &occurred_at,
+                body: current.body.as_deref(),
+                description: current.description.as_deref(),
+                priority: current.priority,
+                knot_type: current.knot_type.as_deref(),
+                tags: &current.tags,
+                notes: &current.notes,
+                handoff_capsules: &current.handoff_capsules,
+                profile_id: &profile.id,
+                profile_etag: Some(&index_event_id),
+                deferred_from_state: deferred_from_state.as_deref(),
+                created_at: current.created_at.as_deref(),
+            },
+        )?;
+        let updated =
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.clone()))?;
+        self.apply_alias_to_knot(KnotView::from(updated))
+    }
+
+    #[allow(dead_code)]
     pub fn set_state(
         &self,
         id: &str,
         next_state: &str,
         force: bool,
-        expected_workflow_etag: Option<&str>,
+        expected_profile_etag: Option<&str>,
+    ) -> Result<KnotView, AppError> {
+        self.set_state_with_actor(
+            id,
+            next_state,
+            force,
+            expected_profile_etag,
+            StateActorMetadata::default(),
+        )
+    }
+
+    pub fn set_state_with_actor(
+        &self,
+        id: &str,
+        next_state: &str,
+        force: bool,
+        expected_profile_etag: Option<&str>,
+        state_actor: StateActorMetadata,
     ) -> Result<KnotView, AppError> {
         let id = self.resolve_knot_token(id)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
@@ -418,26 +584,50 @@ impl App {
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
         let current =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        ensure_workflow_etag(&current, expected_workflow_etag)?;
-        let workflow = self.resolve_workflow_for_record(&current)?;
-        let workflow_id = workflow.id.clone();
-        let next = next_state.trim().to_ascii_lowercase();
-        workflow.validate_transition(&current.state, &next, force)?;
+        ensure_profile_etag(&current, expected_profile_etag)?;
+        let profile = self.resolve_profile_for_record(&current)?;
+        let profile_id = profile.id.clone();
+        let next = normalize_state_input(next_state)?;
+        if current.state == "deferred" && next != "deferred" && !force {
+            let expected = current.deferred_from_state.as_deref().ok_or_else(|| {
+                AppError::InvalidArgument(
+                    "deferred knot is missing deferred_from_state provenance".to_string(),
+                )
+            })?;
+            if expected != next {
+                return Err(AppError::InvalidArgument(format!(
+                    "deferred knots may only resume to '{}'",
+                    expected
+                )));
+            }
+        } else {
+            profile.validate_transition(&current.state, &next, force)?;
+        }
+        let deferred_from_state = if next == "deferred" && current.state != "deferred" {
+            Some(current.state.clone())
+        } else if current.state == "deferred" && next != "deferred" {
+            None
+        } else {
+            current.deferred_from_state.clone()
+        };
 
         let occurred_at = now_utc_rfc3339();
+        let state_event_data = build_state_event_data(
+            &current.state,
+            &next,
+            &profile_id,
+            force,
+            deferred_from_state.as_deref(),
+            &state_actor,
+        )?;
         let mut full_event = FullEvent::with_identity(
             new_event_id(),
             occurred_at.clone(),
             id.clone(),
             FullEventKind::KnotStateSet.as_str(),
-            json!({
-                "from": &current.state,
-                "to": &next,
-                "workflow_id": &workflow_id,
-                "force": force,
-            }),
+            state_event_data,
         );
-        if let Some(expected) = expected_workflow_etag {
+        if let Some(expected) = expected_profile_etag {
             full_event = full_event.with_precondition(expected);
         }
 
@@ -450,12 +640,13 @@ impl App {
                 "knot_id": id,
                 "title": current.title,
                 "state": &next,
-                "workflow_id": &workflow_id,
+                "profile_id": &profile_id,
                 "updated_at": occurred_at,
-                "terminal": workflow.is_terminal_state(&next),
+                "terminal": profile.is_terminal_state(&next),
+                "deferred_from_state": deferred_from_state,
             }),
         );
-        if let Some(expected) = expected_workflow_etag {
+        if let Some(expected) = expected_profile_etag {
             idx_event = idx_event.with_precondition(expected);
         }
 
@@ -476,8 +667,9 @@ impl App {
                 tags: &current.tags,
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
-                workflow_id: &workflow_id,
-                workflow_etag: Some(&index_event_id),
+                profile_id: &profile_id,
+                profile_etag: Some(&index_event_id),
+                deferred_from_state: deferred_from_state.as_deref(),
                 created_at: current.created_at.as_deref(),
             },
         )?;
@@ -499,15 +691,16 @@ impl App {
 
         let current =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        ensure_workflow_etag(&current, patch.expected_workflow_etag.as_deref())?;
+        ensure_profile_etag(&current, patch.expected_profile_etag.as_deref())?;
         let mut title = current.title.clone();
         let mut state = current.state.clone();
         let mut description = current.description.clone();
         let mut body = current.body.clone();
         let mut priority = current.priority;
         let mut knot_type = current.knot_type.clone();
-        let workflow = self.resolve_workflow_for_record(&current)?;
-        let workflow_id = workflow.id.clone();
+        let profile = self.resolve_profile_for_record(&current)?;
+        let profile_id = profile.id.clone();
+        let mut deferred_from_state = current.deferred_from_state.clone();
         let mut tags = current.tags.clone();
         let mut notes = current.notes.clone();
         let mut handoff_capsules = current.handoff_capsules.clone();
@@ -515,21 +708,43 @@ impl App {
         let mut full_events = Vec::new();
 
         if let Some(next_state_raw) = patch.status.as_deref() {
-            let next_state = next_state_raw.trim().to_ascii_lowercase();
-            workflow.validate_transition(&state, &next_state, patch.force)?;
+            let next_state = normalize_state_input(next_state_raw)?;
+            if state == "deferred" && next_state != "deferred" && !patch.force {
+                let expected = deferred_from_state.as_deref().ok_or_else(|| {
+                    AppError::InvalidArgument(
+                        "deferred knot is missing deferred_from_state provenance".to_string(),
+                    )
+                })?;
+                if expected != next_state {
+                    return Err(AppError::InvalidArgument(format!(
+                        "deferred knots may only resume to '{}'",
+                        expected
+                    )));
+                }
+            } else {
+                profile.validate_transition(&state, &next_state, patch.force)?;
+            }
             if state != next_state {
+                if next_state == "deferred" && state != "deferred" {
+                    deferred_from_state = Some(state.clone());
+                } else if state == "deferred" && next_state != "deferred" {
+                    deferred_from_state = None;
+                }
                 state = next_state;
+                let state_event_data = build_state_event_data(
+                    &current.state,
+                    &state,
+                    &profile_id,
+                    patch.force,
+                    deferred_from_state.as_deref(),
+                    &patch.state_actor,
+                )?;
                 full_events.push(FullEvent::with_identity(
                     new_event_id(),
                     occurred_at.clone(),
                     id.to_string(),
                     FullEventKind::KnotStateSet.as_str(),
-                    json!({
-                        "from": &current.state,
-                        "to": &state,
-                        "workflow_id": &workflow_id,
-                        "force": patch.force,
-                    }),
+                    state_event_data,
                 ));
             }
         }
@@ -698,13 +913,13 @@ impl App {
         }
 
         for mut event in full_events {
-            if let Some(expected) = patch.expected_workflow_etag.as_deref() {
+            if let Some(expected) = patch.expected_profile_etag.as_deref() {
                 event = event.with_precondition(expected);
             }
             self.writer.write(&EventRecord::full(event))?;
         }
 
-        let terminal = workflow.is_terminal_state(&state);
+        let terminal = profile.is_terminal_state(&state);
         let index_event_id = new_event_id();
         let mut idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
@@ -714,12 +929,13 @@ impl App {
                 "knot_id": id,
                 "title": &title,
                 "state": &state,
-                "workflow_id": &workflow_id,
+                "profile_id": &profile_id,
                 "updated_at": occurred_at,
                 "terminal": terminal,
+                "deferred_from_state": deferred_from_state,
             }),
         );
-        if let Some(expected) = patch.expected_workflow_etag.as_deref() {
+        if let Some(expected) = patch.expected_profile_etag.as_deref() {
             idx_event = idx_event.with_precondition(expected);
         }
         self.writer.write(&EventRecord::index(idx_event))?;
@@ -738,8 +954,9 @@ impl App {
                 tags: &tags,
                 notes: &notes,
                 handoff_capsules: &handoff_capsules,
-                workflow_id: &workflow_id,
-                workflow_etag: Some(&index_event_id),
+                profile_id: &profile_id,
+                profile_etag: Some(&index_event_id),
+                deferred_from_state: deferred_from_state.as_deref(),
                 created_at: current.created_at.as_deref(),
             },
         )?;
@@ -846,6 +1063,7 @@ impl App {
         Ok(rows.into_iter().map(EdgeView::from).collect())
     }
 
+    #[allow(dead_code)]
     pub fn import_jsonl(
         &self,
         file: &str,
@@ -856,6 +1074,7 @@ impl App {
         Ok(service.import_jsonl(file, since, dry_run)?)
     }
 
+    #[allow(dead_code)]
     pub fn import_statuses(&self) -> Result<Vec<ImportStatus>, AppError> {
         let service = ImportService::new(&self.conn, &self.writer);
         Ok(service.list_statuses()?)
@@ -898,7 +1117,7 @@ impl App {
         let state = cold
             .as_ref()
             .map(|record| record.state.clone())
-            .unwrap_or_else(|| "work_item".to_string());
+            .unwrap_or_else(|| "ready_for_implementation".to_string());
         let updated_at = cold
             .as_ref()
             .map(|record| record.updated_at.clone())
@@ -918,8 +1137,9 @@ impl App {
                 tags: &record.tags,
                 notes: &record.notes,
                 handoff_capsules: &record.handoff_capsules,
-                workflow_id: &record.workflow_id,
-                workflow_etag: record.workflow_etag.as_deref(),
+                profile_id: &record.profile_id,
+                profile_etag: record.profile_etag.as_deref(),
+                deferred_from_state: record.deferred_from_state.as_deref(),
                 created_at: record.created_at.as_deref(),
             },
         )?;
@@ -961,9 +1181,9 @@ impl App {
         );
         self.writer.write(&EventRecord::full(full_event))?;
 
-        let workflow = self.resolve_workflow_for_record(&current)?;
-        let workflow_id = workflow.id.clone();
-        let terminal = workflow.is_terminal_state(&current.state);
+        let profile = self.resolve_profile_for_record(&current)?;
+        let profile_id = profile.id.clone();
+        let terminal = profile.is_terminal_state(&current.state);
         let index_event_id = new_event_id();
         let idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
@@ -973,9 +1193,10 @@ impl App {
                 "knot_id": src,
                 "title": current.title,
                 "state": current.state,
-                "workflow_id": &workflow_id,
+                "profile_id": &profile_id,
                 "updated_at": occurred_at,
                 "terminal": terminal,
+                "deferred_from_state": current.deferred_from_state,
             }),
         );
         self.writer.write(&EventRecord::index(idx_event))?;
@@ -1000,8 +1221,9 @@ impl App {
                 tags: &current.tags,
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
-                workflow_id: &workflow_id,
-                workflow_etag: Some(&index_event_id),
+                profile_id: &profile_id,
+                profile_etag: Some(&index_event_id),
+                deferred_from_state: current.deferred_from_state.as_deref(),
                 created_at: current.created_at.as_deref(),
             },
         )?;
@@ -1041,12 +1263,70 @@ fn non_empty(raw: &str) -> Option<String> {
     }
 }
 
-fn canonical_workflow_id(raw: &str) -> String {
-    normalize_workflow_id(raw).unwrap_or_else(|| raw.trim().to_ascii_lowercase())
+fn canonical_profile_id(raw: &str) -> String {
+    normalize_profile_id(raw).unwrap_or_else(|| raw.trim().to_ascii_lowercase())
+}
+
+fn normalize_state_input(raw: &str) -> Result<String, AppError> {
+    let parsed = crate::domain::state::KnotState::from_str(raw)?;
+    Ok(parsed.as_str().to_string())
 }
 
 fn normalize_tag(raw: &str) -> String {
     raw.trim().to_ascii_lowercase()
+}
+
+fn build_state_event_data(
+    from: &str,
+    to: &str,
+    profile_id: &str,
+    force: bool,
+    deferred_from_state: Option<&str>,
+    state_actor: &StateActorMetadata,
+) -> Result<Value, AppError> {
+    let mut payload = serde_json::Map::new();
+    payload.insert("from".to_string(), Value::String(from.to_string()));
+    payload.insert("to".to_string(), Value::String(to.to_string()));
+    payload.insert(
+        "profile_id".to_string(),
+        Value::String(profile_id.to_string()),
+    );
+    payload.insert("force".to_string(), Value::Bool(force));
+    if let Some(value) = deferred_from_state {
+        payload.insert(
+            "deferred_from_state".to_string(),
+            Value::String(value.to_string()),
+        );
+    }
+    append_state_actor_metadata(&mut payload, state_actor)?;
+    Ok(Value::Object(payload))
+}
+
+fn append_state_actor_metadata(
+    payload: &mut serde_json::Map<String, Value>,
+    state_actor: &StateActorMetadata,
+) -> Result<(), AppError> {
+    if let Some(raw_kind) = state_actor.actor_kind.as_deref().and_then(non_empty) {
+        let kind = raw_kind.to_ascii_lowercase();
+        if kind != "human" && kind != "agent" {
+            return Err(AppError::InvalidArgument(
+                "--actor-kind must be one of: human, agent".to_string(),
+            ));
+        }
+        payload.insert("actor_kind".to_string(), Value::String(kind));
+    }
+
+    if let Some(agent_name) = state_actor.agent_name.as_deref().and_then(non_empty) {
+        payload.insert("agent_name".to_string(), Value::String(agent_name));
+    }
+    if let Some(agent_model) = state_actor.agent_model.as_deref().and_then(non_empty) {
+        payload.insert("agent_model".to_string(), Value::String(agent_model));
+    }
+    if let Some(agent_version) = state_actor.agent_version.as_deref().and_then(non_empty) {
+        payload.insert("agent_version".to_string(), Value::String(agent_version));
+    }
+
+    Ok(())
 }
 
 fn metadata_entry_from_input(
@@ -1068,14 +1348,14 @@ fn metadata_entry_from_input(
     Ok(MetadataEntry::from_input(input, fallback_datetime))
 }
 
-fn ensure_workflow_etag(
+fn ensure_profile_etag(
     current: &KnotCacheRecord,
-    expected_workflow_etag: Option<&str>,
+    expected_profile_etag: Option<&str>,
 ) -> Result<(), AppError> {
-    let Some(expected) = expected_workflow_etag else {
+    let Some(expected) = expected_profile_etag else {
         return Ok(());
     };
-    let current_etag = current.workflow_etag.as_deref().unwrap_or("");
+    let current_etag = current.profile_etag.as_deref().unwrap_or("");
     if current_etag == expected {
         return Ok(());
     }
@@ -1096,8 +1376,9 @@ struct RehydrateProjection {
     tags: Vec<String>,
     notes: Vec<MetadataEntry>,
     handoff_capsules: Vec<MetadataEntry>,
-    workflow_id: String,
-    workflow_etag: Option<String>,
+    profile_id: String,
+    profile_etag: Option<String>,
+    deferred_from_state: Option<String>,
     created_at: Option<String>,
 }
 
@@ -1119,8 +1400,9 @@ fn rehydrate_from_events(
         tags: Vec::new(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
-        workflow_id: String::new(),
-        workflow_etag: None,
+        profile_id: String::new(),
+        profile_etag: None,
+        deferred_from_state: None,
         created_at: Some(updated_at),
     };
 
@@ -1199,17 +1481,25 @@ fn rehydrate_from_events(
         if let Some(updated_at) = data.get("updated_at").and_then(Value::as_str) {
             projection.updated_at = updated_at.to_string();
         }
-        if let Some(raw_workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
-            if let Some(workflow_id) = normalize_workflow_id(raw_workflow_id) {
-                projection.workflow_id = workflow_id;
+        let raw_profile_id = data
+            .get("profile_id")
+            .and_then(Value::as_str)
+            .or_else(|| data.get("workflow_id").and_then(Value::as_str));
+        if let Some(raw_profile_id) = raw_profile_id {
+            if let Some(profile_id) = normalize_profile_id(raw_profile_id) {
+                projection.profile_id = profile_id;
             }
         }
-        projection.workflow_etag = Some(event.event_id.clone());
+        projection.deferred_from_state = data
+            .get("deferred_from_state")
+            .and_then(Value::as_str)
+            .map(ToString::to_string);
+        projection.profile_etag = Some(event.event_id.clone());
     }
 
-    if projection.workflow_id.trim().is_empty() {
+    if projection.profile_id.trim().is_empty() {
         return Err(AppError::InvalidArgument(format!(
-            "rehydrate events for '{}' are missing workflow_id",
+            "rehydrate events for '{}' are missing profile_id",
             knot_id
         )));
     }
@@ -1230,11 +1520,19 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
             if let Some(state) = data.get("state").and_then(Value::as_str) {
                 projection.state = state.to_string();
             }
-            if let Some(raw_workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
-                if let Some(workflow_id) = normalize_workflow_id(raw_workflow_id) {
-                    projection.workflow_id = workflow_id;
+            let raw_profile_id = data
+                .get("profile_id")
+                .and_then(Value::as_str)
+                .or_else(|| data.get("workflow_id").and_then(Value::as_str));
+            if let Some(raw_profile_id) = raw_profile_id {
+                if let Some(profile_id) = normalize_profile_id(raw_profile_id) {
+                    projection.profile_id = profile_id;
                 }
             }
+            projection.deferred_from_state = data
+                .get("deferred_from_state")
+                .and_then(Value::as_str)
+                .map(ToString::to_string);
             projection.created_at = Some(event.occurred_at.clone());
             projection.updated_at = event.occurred_at.clone();
         }
@@ -1249,6 +1547,30 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
                 projection.state = value.to_string();
                 projection.updated_at = event.occurred_at.clone();
             }
+            projection.deferred_from_state = data
+                .get("deferred_from_state")
+                .and_then(Value::as_str)
+                .map(ToString::to_string);
+        }
+        "knot.profile_set" => {
+            let raw_profile_id = data
+                .get("to_profile_id")
+                .and_then(Value::as_str)
+                .or_else(|| data.get("profile_id").and_then(Value::as_str))
+                .or_else(|| data.get("workflow_id").and_then(Value::as_str));
+            if let Some(raw_profile_id) = raw_profile_id {
+                if let Some(profile_id) = normalize_profile_id(raw_profile_id) {
+                    projection.profile_id = profile_id;
+                }
+            }
+            if let Some(state) = data.get("to_state").and_then(Value::as_str) {
+                projection.state = state.to_string();
+            }
+            projection.deferred_from_state = data
+                .get("deferred_from_state")
+                .and_then(Value::as_str)
+                .map(ToString::to_string);
+            projection.updated_at = event.occurred_at.clone();
         }
         "knot.description_set" => {
             let next = data
@@ -1342,7 +1664,7 @@ fn parse_metadata_entry_for_rehydrate(
 
 impl From<KnotCacheRecord> for KnotView {
     fn from(value: KnotCacheRecord) -> Self {
-        let workflow_id = canonical_workflow_id(&value.workflow_id);
+        let profile_id = canonical_profile_id(&value.profile_id);
         Self {
             id: value.id,
             alias: None,
@@ -1356,8 +1678,9 @@ impl From<KnotCacheRecord> for KnotView {
             tags: value.tags,
             notes: value.notes,
             handoff_capsules: value.handoff_capsules,
-            workflow_id,
-            workflow_etag: value.workflow_etag,
+            profile_id,
+            profile_etag: value.profile_etag,
+            deferred_from_state: value.deferred_from_state,
             created_at: value.created_at,
         }
     }
@@ -1386,7 +1709,7 @@ pub enum AppError {
     Doctor(DoctorError),
     Snapshot(SnapshotError),
     Perf(PerfError),
-    Workflow(WorkflowError),
+    Workflow(ProfileError),
     ParseState(ParseKnotStateError),
     InvalidTransition(InvalidStateTransition),
     StaleWorkflowHead { expected: String, current: String },
@@ -1413,7 +1736,7 @@ impl fmt::Display for AppError {
             AppError::InvalidTransition(err) => write!(f, "{}", err),
             AppError::StaleWorkflowHead { expected, current } => write!(
                 f,
-                "stale workflow_etag: expected '{}', current '{}'",
+                "stale profile_etag: expected '{}', current '{}'",
                 expected, current
             ),
             AppError::InvalidArgument(message) => write!(f, "{}", message),
@@ -1512,8 +1835,8 @@ impl From<PerfError> for AppError {
     }
 }
 
-impl From<WorkflowError> for AppError {
-    fn from(value: WorkflowError) -> Self {
+impl From<ProfileError> for AppError {
+    fn from(value: ProfileError) -> Self {
         AppError::Workflow(value)
     }
 }

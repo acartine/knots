@@ -169,8 +169,9 @@ pub fn apply_latest_snapshots(
                     tags: &record.tags,
                     notes: &record.notes,
                     handoff_capsules: &record.handoff_capsules,
-                    workflow_id: &record.workflow_id,
-                    workflow_etag: record.workflow_etag.as_deref(),
+                    profile_id: &record.profile_id,
+                    profile_etag: record.profile_etag.as_deref(),
+                    deferred_from_state: record.deferred_from_state.as_deref(),
                     created_at: record.created_at.as_deref(),
                 },
             )?;
@@ -287,8 +288,9 @@ mod tests {
                 tags: &["ops".to_string()],
                 notes: &[],
                 handoff_capsules: &[],
-                workflow_id: "default",
-                workflow_etag: Some("evt-1"),
+                profile_id: "default",
+                profile_etag: Some("evt-1"),
+                deferred_from_state: None,
                 created_at: Some("2026-02-24T10:00:00Z"),
             },
         )

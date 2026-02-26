@@ -17,6 +17,7 @@ mod locks;
 #[cfg(test)]
 mod main_tests;
 mod perf;
+mod profile;
 mod remote_init;
 mod replication;
 mod self_manage;
@@ -26,6 +27,8 @@ mod tiering;
 mod ui;
 mod workflow;
 mod workflow_diagram;
+
+use std::io::IsTerminal;
 
 fn main() {
     if let Err(err) = run() {
@@ -37,7 +40,7 @@ fn main() {
 fn run() -> Result<(), app::AppError> {
     use app::UpdateKnotPatch;
     use clap::Parser;
-    use cli::{ColdSubcommands, Commands, EdgeSubcommands, ImportSubcommands};
+    use cli::{ColdSubcommands, Commands, EdgeSubcommands};
     use domain::metadata::MetadataEntryInput;
 
     let cli = cli::Cli::parse();
@@ -56,8 +59,8 @@ fn run() -> Result<(), app::AppError> {
         println!("kno uninit completed");
         return Ok(());
     }
-    if let Commands::Workflow(args) = &cli.command {
-        return run_workflow_command(args, &cli.repo_root, &cli.db);
+    if let Commands::Profile(args) = &cli.command {
+        return run_profile_command(args, &cli.repo_root, &cli.db);
     }
 
     let app = app::App::open(&cli.db, cli.repo_root)?;
@@ -68,7 +71,7 @@ fn run() -> Result<(), app::AppError> {
                 &args.title,
                 args.body.as_deref(),
                 args.state.as_deref(),
-                args.workflow.as_deref(),
+                args.profile.as_deref(),
             )?;
             println!(
                 "created {} [{}] {}",
@@ -78,8 +81,18 @@ fn run() -> Result<(), app::AppError> {
             );
         }
         Commands::State(args) => {
-            let knot =
-                app.set_state(&args.id, &args.state, args.force, args.if_match.as_deref())?;
+            let knot = app.set_state_with_actor(
+                &args.id,
+                &args.state,
+                args.force,
+                args.if_match.as_deref(),
+                app::StateActorMetadata {
+                    actor_kind: args.actor_kind.clone(),
+                    agent_name: args.agent_name.clone(),
+                    agent_model: args.agent_model.clone(),
+                    agent_version: args.agent_version.clone(),
+                },
+            )?;
             println!("updated {} -> {}", knot_ref(&knot), knot.state);
         }
         Commands::Update(args) => {
@@ -109,8 +122,14 @@ fn run() -> Result<(), app::AppError> {
                 remove_tags: args.remove_tags,
                 add_note,
                 add_handoff_capsule,
-                expected_workflow_etag: args.if_match,
+                expected_profile_etag: args.if_match,
                 force: args.force,
+                state_actor: app::StateActorMetadata {
+                    actor_kind: args.actor_kind,
+                    agent_name: args.agent_name,
+                    agent_model: args.agent_model,
+                    agent_version: args.agent_version,
+                },
             };
             let knot = app.update_knot(&args.id, patch)?;
             println!(
@@ -125,7 +144,7 @@ fn run() -> Result<(), app::AppError> {
                 include_all: args.all,
                 state: args.state.clone(),
                 knot_type: args.knot_type.clone(),
-                workflow_id: args.workflow_id.clone(),
+                profile_id: args.profile_id.clone(),
                 tags: args.tags.clone(),
                 query: args.query.clone(),
             };
@@ -155,8 +174,8 @@ fn run() -> Result<(), app::AppError> {
             }
             None => return Err(app::AppError::NotFound(args.id)),
         },
-        Commands::Workflow(_) => {
-            unreachable!("workflow commands are handled before app initialization")
+        Commands::Profile(_) => {
+            unreachable!("profile commands are handled before app initialization")
         }
         Commands::Pull(args) => {
             let summary = app.pull()?;
@@ -421,152 +440,304 @@ fn run() -> Result<(), app::AppError> {
                 }
             }
         },
-        Commands::Import(args) => match args.command {
-            ImportSubcommands::Jsonl(import_args) => {
-                let summary = app.import_jsonl(
-                    &import_args.file,
-                    import_args.since.as_deref(),
-                    import_args.dry_run,
-                )?;
-                println!(
-                    "import {} {}: status={}, processed={}, imported={}, skipped={}, errors={}",
-                    summary.source_type,
-                    summary.source_ref,
-                    summary.status,
-                    summary.processed_count,
-                    summary.imported_count,
-                    summary.skipped_count,
-                    summary.error_count
-                );
-                if let Some(checkpoint) = summary.checkpoint {
-                    println!("checkpoint: {}", checkpoint);
-                }
-                if let Some(error) = summary.last_error {
-                    println!("last_error: {}", error);
-                }
-            }
-            ImportSubcommands::Status(import_args) => {
-                let statuses = app.import_statuses()?;
-                if import_args.json {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&statuses)
-                            .expect("json serialization should work")
-                    );
-                } else if statuses.is_empty() {
-                    println!("no import runs found");
-                } else {
-                    for status in statuses {
-                        println!(
-                            "{} {} status={} processed={} imported={} skipped={} errors={}",
-                            status.source_type,
-                            status.source_ref,
-                            status.status,
-                            status.processed_count,
-                            status.imported_count,
-                            status.skipped_count,
-                            status.error_count
-                        );
-                        if let Some(checkpoint) = status.checkpoint {
-                            println!("  checkpoint={}", checkpoint);
-                        }
-                        if let Some(error) = status.last_error {
-                            println!("  last_error={}", error);
-                        }
-                    }
-                }
-            }
-        },
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
-        Commands::SelfManage(_) => unreachable!("self management commands return before app init"),
     }
 
     Ok(())
 }
 
-fn run_workflow_command(
-    args: &cli::WorkflowArgs,
+fn run_profile_command(
+    args: &cli::ProfileArgs,
     repo_root: &std::path::Path,
     db_path: &str,
 ) -> Result<(), app::AppError> {
-    use cli::WorkflowSubcommands;
+    use cli::ProfileSubcommands;
 
-    let registry = workflow::WorkflowRegistry::load()?;
+    let registry = workflow::ProfileRegistry::load()?;
+    let palette = ProfilePalette::auto();
     match &args.command {
-        WorkflowSubcommands::List(list_args) => {
-            let workflows = registry.list();
-            let repo_default = read_repo_default_workflow_id(db_path, &registry)?;
+        ProfileSubcommands::List(list_args) => {
+            let profiles = registry.list();
             if list_args.json {
                 println!(
                     "{}",
-                    serde_json::to_string_pretty(&workflows)
+                    serde_json::to_string_pretty(&profiles)
                         .expect("json serialization should work")
                 );
-            } else if workflows.is_empty() {
-                println!("no workflows found");
+            } else if profiles.is_empty() {
+                println!("{}", palette.dim("no profiles found"));
             } else {
-                for (index, workflow) in workflows.into_iter().enumerate() {
+                println!("{}", palette.heading("Profiles"));
+                let count = profiles.len();
+                for (index, profile) in profiles.into_iter().enumerate() {
                     if index > 0 {
                         println!();
                     }
-                    let workflow_name = workflow
+                    let profile_name = profile
                         .description
                         .as_deref()
-                        .unwrap_or(workflow.id.as_str());
-                    println!("name: {}", workflow_name);
-                    println!("key: {}", workflow.id);
-                    if repo_default.as_deref() == Some(workflow.id.as_str()) {
-                        println!("repo_default: true");
+                        .unwrap_or(profile.id.as_str());
+                    let fields = vec![
+                        ProfileField::new("name", profile_name),
+                        ProfileField::new("id", profile.id.clone()),
+                        ProfileField::new(
+                            "planning",
+                            format_profile_gate_mode(&profile.planning_mode),
+                        ),
+                        ProfileField::new(
+                            "impl_review",
+                            format_profile_gate_mode(&profile.implementation_review_mode),
+                        ),
+                        ProfileField::new("output", format_profile_output_mode(&profile.output)),
+                        ProfileField::new("initial_state", profile.initial_state.clone()),
+                        ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
+                    ];
+                    for line in format_profile_fields(&fields, &palette) {
+                        println!("{line}");
                     }
-                    println!("initial_state: {}", workflow.initial_state);
-                    println!("terminal_states: {}", workflow.terminal_states.join(", "));
                 }
+                if count > 1 {
+                    println!();
+                }
+                println!("{}", palette.dim(&format!("{count} profile(s)")));
             }
         }
-        WorkflowSubcommands::Show(show_args) => {
-            let workflow = registry.require(&show_args.id)?.clone();
+        ProfileSubcommands::Show(show_args) => {
+            let profile = registry.require(&show_args.id)?.clone();
             if show_args.json {
                 println!(
                     "{}",
-                    serde_json::to_string_pretty(&workflow)
-                        .expect("json serialization should work")
+                    serde_json::to_string_pretty(&profile).expect("json serialization should work")
                 );
             } else {
-                println!("id: {}", workflow.id);
-                if let Some(description) = workflow.description.as_deref() {
-                    println!("description: {}", description);
+                println!("{}", palette.heading("Profile"));
+                let mut fields = vec![
+                    ProfileField::new("id", profile.id.clone()),
+                    ProfileField::new("planning", format_profile_gate_mode(&profile.planning_mode)),
+                    ProfileField::new(
+                        "impl_review",
+                        format_profile_gate_mode(&profile.implementation_review_mode),
+                    ),
+                    ProfileField::new("output", format_profile_output_mode(&profile.output)),
+                    ProfileField::new("initial_state", profile.initial_state.clone()),
+                    ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
+                ];
+                if let Some(description) = profile.description.as_deref() {
+                    fields.insert(1, ProfileField::new("description", description));
                 }
-                for line in workflow_diagram::render(&workflow) {
+                for line in format_profile_fields(&fields, &palette) {
                     println!("{line}");
+                }
+                println!("{}", palette.dim("workflow:"));
+                for line in workflow_diagram::render(&profile) {
+                    println!("  {line}");
                 }
             }
         }
-        WorkflowSubcommands::SetDefault(set_default_args) => {
+        ProfileSubcommands::SetDefault(set_default_args) => {
             let app = app::App::open(db_path, repo_root.to_path_buf())?;
-            let workflow_id = app.set_default_workflow_id(&set_default_args.id)?;
-            println!("repo default workflow: {}", workflow_id);
+            let profile_id = app.set_default_profile_id(&set_default_args.id)?;
+            println!("default profile: {}", profile_id);
+        }
+        ProfileSubcommands::Set(set_args) => {
+            let app = app::App::open(db_path, repo_root.to_path_buf())?;
+            let profile = registry.require(&set_args.profile)?;
+            let current = app
+                .show_knot(&set_args.id)?
+                .ok_or_else(|| app::AppError::NotFound(set_args.id.clone()))?;
+            let state = resolve_profile_state_selection(
+                profile,
+                set_args.state.as_deref(),
+                &current.state,
+            )?;
+            let knot = app.set_profile(
+                &set_args.id,
+                &profile.id,
+                &state,
+                set_args.if_match.as_deref(),
+            )?;
+            println!(
+                "updated {} [{}] profile={}",
+                knot_ref(&knot),
+                knot.state,
+                knot.profile_id
+            );
         }
     }
     Ok(())
 }
 
-fn read_repo_default_workflow_id(
-    db_path: &str,
-    registry: &workflow::WorkflowRegistry,
-) -> Result<Option<String>, app::AppError> {
-    if !std::path::Path::new(db_path).exists() {
-        return Ok(None);
+fn format_profile_output_mode(mode: &workflow::OutputMode) -> &'static str {
+    match mode {
+        workflow::OutputMode::Local => "Local",
+        workflow::OutputMode::Remote => "Remote",
+        workflow::OutputMode::Pr => "Pr",
+        workflow::OutputMode::RemoteMain => "RemoteMain (merged)",
     }
-    let conn = db::open_connection(db_path)?;
-    let Some(raw) = db::get_meta(&conn, app::DEFAULT_WORKFLOW_META_KEY)? else {
-        return Ok(None);
-    };
-    let workflow = match registry.require(&raw) {
-        Ok(workflow) => workflow,
-        Err(_) => return Ok(None),
-    };
-    Ok(Some(workflow.id.clone()))
+}
+
+fn format_profile_gate_mode(mode: &workflow::GateMode) -> &'static str {
+    match mode {
+        workflow::GateMode::Required => "Required",
+        workflow::GateMode::Optional => "Optional",
+        workflow::GateMode::Skipped => "Skipped",
+    }
+}
+
+fn format_profile_fields(fields: &[ProfileField], palette: &ProfilePalette) -> Vec<String> {
+    if fields.is_empty() {
+        return Vec::new();
+    }
+    let label_width = fields
+        .iter()
+        .map(|field| field.label.len() + 1)
+        .max()
+        .unwrap_or(0);
+    fields
+        .iter()
+        .map(|field| {
+            let label = format!("{}:", field.label);
+            let label_text = format!("{label:>label_width$}");
+            format!("{}  {}", palette.label(&label_text), field.value)
+        })
+        .collect()
+}
+
+struct ProfileField {
+    label: &'static str,
+    value: String,
+}
+
+impl ProfileField {
+    fn new(label: &'static str, value: impl Into<String>) -> Self {
+        Self {
+            label,
+            value: value.into(),
+        }
+    }
+}
+
+struct ProfilePalette {
+    enabled: bool,
+}
+
+impl ProfilePalette {
+    fn auto() -> Self {
+        let enabled = std::env::var_os("NO_COLOR").is_none() && std::io::stdout().is_terminal();
+        Self { enabled }
+    }
+
+    fn paint(&self, code: &str, text: &str) -> String {
+        if self.enabled {
+            format!("\x1b[{code}m{text}\x1b[0m")
+        } else {
+            text.to_string()
+        }
+    }
+
+    fn heading(&self, text: &str) -> String {
+        self.paint("1;36", text)
+    }
+
+    fn label(&self, text: &str) -> String {
+        self.paint("36", text)
+    }
+
+    fn dim(&self, text: &str) -> String {
+        self.paint("2", text)
+    }
+}
+
+fn resolve_profile_state_selection(
+    profile: &workflow::ProfileDefinition,
+    requested_state: Option<&str>,
+    current_state: &str,
+) -> Result<String, app::AppError> {
+    let interactive = std::io::stdin().is_terminal();
+
+    if let Some(raw_state) = requested_state {
+        let state = normalize_cli_state(raw_state)?;
+        if profile.require_state(&state).is_ok() {
+            return Ok(state);
+        }
+        if !interactive {
+            return Err(app::AppError::InvalidArgument(format!(
+                "state '{}' is not valid for profile '{}'; valid states: {}",
+                state,
+                profile.id,
+                profile.states.join(", ")
+            )));
+        }
+        return prompt_for_profile_state(profile, current_state);
+    }
+
+    if !interactive {
+        return Err(app::AppError::InvalidArgument(
+            "--state is required in non-interactive mode".to_string(),
+        ));
+    }
+    prompt_for_profile_state(profile, current_state)
+}
+
+fn prompt_for_profile_state(
+    profile: &workflow::ProfileDefinition,
+    current_state: &str,
+) -> Result<String, app::AppError> {
+    use std::io::{self, Write};
+
+    if profile.states.is_empty() {
+        return Err(app::AppError::InvalidArgument(format!(
+            "profile '{}' has no valid states",
+            profile.id
+        )));
+    }
+
+    println!(
+        "choose state for profile '{}' (knot currently '{}'):",
+        profile.id, current_state
+    );
+    for (index, state) in profile.states.iter().enumerate() {
+        println!("  {}. {}", index + 1, state);
+    }
+
+    let fallback_index = profile
+        .states
+        .iter()
+        .position(|state| state == current_state)
+        .or_else(|| {
+            profile
+                .states
+                .iter()
+                .position(|state| state == &profile.initial_state)
+        })
+        .unwrap_or(0);
+    println!("press Enter to choose {}", profile.states[fallback_index]);
+
+    let mut input = String::new();
+    loop {
+        print!("state [1-{}]: ", profile.states.len());
+        io::stdout().flush()?;
+        input.clear();
+        io::stdin().read_line(&mut input)?;
+        let trimmed = input.trim();
+        if trimmed.is_empty() {
+            return Ok(profile.states[fallback_index].clone());
+        }
+        if let Ok(index) = trimmed.parse::<usize>() {
+            if (1..=profile.states.len()).contains(&index) {
+                return Ok(profile.states[index - 1].clone());
+            }
+        }
+        println!("enter a number between 1 and {}", profile.states.len());
+    }
+}
+
+fn normalize_cli_state(raw: &str) -> Result<String, app::AppError> {
+    use std::str::FromStr;
+
+    let parsed = domain::state::KnotState::from_str(raw)?;
+    Ok(parsed.as_str().to_string())
 }
 
 fn knot_ref(knot: &app::KnotView) -> String {
@@ -600,29 +771,6 @@ fn maybe_run_self_command(command: &cli::Commands) -> Result<Option<String>, app
             }
             Ok(Some(lines.join("\n")))
         }
-        Commands::SelfManage(args) => match &args.command {
-            cli::SelfSubcommands::Update(update_args) => {
-                self_manage::run_update(&self_manage::SelfUpdateOptions {
-                    version: update_args.version.clone(),
-                    repo: update_args.repo.clone(),
-                    install_dir: update_args.install_dir.clone(),
-                    script_url: update_args.script_url.clone(),
-                })?;
-                Ok(Some("updated kno binary".to_string()))
-            }
-            cli::SelfSubcommands::Uninstall(uninstall_args) => {
-                let result = self_manage::run_uninstall(&self_manage::SelfUninstallOptions {
-                    bin_path: uninstall_args.bin_path.clone(),
-                    remove_previous: uninstall_args.remove_previous,
-                })?;
-                let mut lines = vec![format!("removed {}", result.binary_path.display())];
-                if result.removed_previous {
-                    lines
-                        .push("removed previous backups (kno.previous/knots.previous)".to_string());
-                }
-                Ok(Some(lines.join("\n")))
-            }
-        },
         _ => Ok(None),
     }
 }

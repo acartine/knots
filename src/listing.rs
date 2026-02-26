@@ -1,12 +1,12 @@
 use crate::app::KnotView;
-use crate::workflow::normalize_workflow_id;
+use crate::workflow::normalize_profile_id;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct KnotListFilter {
     pub include_all: bool,
     pub state: Option<String>,
     pub knot_type: Option<String>,
-    pub workflow_id: Option<String>,
+    pub profile_id: Option<String>,
     pub tags: Vec<String>,
     pub query: Option<String>,
 }
@@ -28,7 +28,7 @@ struct NormalizedFilter {
     include_all: bool,
     state: Option<String>,
     knot_type: Option<String>,
-    workflow_id: Option<String>,
+    profile_id: Option<String>,
     tags: Vec<String>,
     query: Option<String>,
 }
@@ -37,7 +37,7 @@ impl NormalizedFilter {
     fn has_no_user_filters(&self) -> bool {
         self.state.is_none()
             && self.knot_type.is_none()
-            && self.workflow_id.is_none()
+            && self.profile_id.is_none()
             && self.tags.is_empty()
             && self.query.is_none()
     }
@@ -49,7 +49,7 @@ impl From<&KnotListFilter> for NormalizedFilter {
             include_all: value.include_all,
             state: normalize_scalar(value.state.as_deref()),
             knot_type: normalize_scalar(value.knot_type.as_deref()),
-            workflow_id: value.workflow_id.as_deref().and_then(normalize_workflow_id),
+            profile_id: value.profile_id.as_deref().and_then(normalize_profile_id),
             tags: value
                 .tags
                 .iter()
@@ -79,8 +79,8 @@ fn matches_filter(knot: &KnotView, filter: &NormalizedFilter) -> bool {
         }
     }
 
-    if let Some(expected_workflow) = filter.workflow_id.as_deref() {
-        if knot.workflow_id.to_ascii_lowercase() != expected_workflow {
+    if let Some(expected_workflow) = filter.profile_id.as_deref() {
+        if knot.profile_id.to_ascii_lowercase() != expected_workflow {
             return false;
         }
     }
@@ -135,7 +135,7 @@ fn matches_query(knot: &KnotView, query: &str) -> bool {
         || knot.title.to_ascii_lowercase().contains(&query)
         || description.contains(&query)
         || body.contains(&query)
-        || knot.workflow_id.to_ascii_lowercase().contains(&query)
+        || knot.profile_id.to_ascii_lowercase().contains(&query)
 }
 
 fn normalize_scalar(raw: Option<&str>) -> Option<String> {
@@ -173,8 +173,9 @@ mod tests {
             tags: tags.iter().map(|value| (*value).to_string()).collect(),
             notes: Vec::new(),
             handoff_capsules: Vec::new(),
-            workflow_id: "default".to_string(),
-            workflow_etag: None,
+            profile_id: "default".to_string(),
+            profile_etag: None,
+            deferred_from_state: None,
             created_at: None,
         }
     }
@@ -196,7 +197,7 @@ mod tests {
             include_all: false,
             state: Some("ImPlementing".to_string()),
             knot_type: None,
-            workflow_id: None,
+            profile_id: None,
             tags: Vec::new(),
             query: None,
         };
@@ -230,7 +231,7 @@ mod tests {
             include_all: false,
             state: None,
             knot_type: None,
-            workflow_id: None,
+            profile_id: None,
             tags: vec!["migration".to_string(), "sync".to_string()],
             query: None,
         };
@@ -264,7 +265,7 @@ mod tests {
             include_all: false,
             state: None,
             knot_type: None,
-            workflow_id: None,
+            profile_id: None,
             tags: Vec::new(),
             query: Some("STYLE".to_string()),
         };
@@ -298,7 +299,7 @@ mod tests {
             include_all: false,
             state: Some("implementing".to_string()),
             knot_type: Some("task".to_string()),
-            workflow_id: None,
+            profile_id: None,
             tags: vec!["release".to_string()],
             query: Some("flow".to_string()),
         };
@@ -331,7 +332,7 @@ mod tests {
             include_all: true,
             state: None,
             knot_type: None,
-            workflow_id: None,
+            profile_id: None,
             tags: Vec::new(),
             query: None,
         };
@@ -350,7 +351,7 @@ mod tests {
             include_all: false,
             state: Some("shipped".to_string()),
             knot_type: None,
-            workflow_id: None,
+            profile_id: None,
             tags: Vec::new(),
             query: None,
         };
@@ -376,7 +377,7 @@ mod tests {
             include_all: false,
             state: None,
             knot_type: None,
-            workflow_id: None,
+            profile_id: None,
             tags: Vec::new(),
             query: Some("root.1".to_string()),
         };
@@ -387,15 +388,15 @@ mod tests {
     }
 
     #[test]
-    fn filters_by_workflow_id() {
+    fn filters_by_profile_id() {
         let mut triage = knot("K-1", "Triage item", "work_item", Some("task"), &[], None);
-        triage.workflow_id = "triage".to_string();
+        triage.profile_id = "triage".to_string();
         let default = knot("K-2", "Default item", "work_item", Some("task"), &[], None);
         let filter = KnotListFilter {
             include_all: false,
             state: None,
             knot_type: None,
-            workflow_id: Some("triage".to_string()),
+            profile_id: Some("triage".to_string()),
             tags: Vec::new(),
             query: None,
         };

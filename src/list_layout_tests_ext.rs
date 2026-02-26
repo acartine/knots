@@ -15,8 +15,9 @@ fn knot(id: &str, alias: Option<&str>, title: &str, state: &str) -> KnotView {
         tags: Vec::new(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
-        workflow_id: "automation_granular".to_string(),
-        workflow_etag: None,
+        profile_id: "automation_granular".to_string(),
+        profile_etag: None,
+        deferred_from_state: None,
         created_at: None,
     }
 }

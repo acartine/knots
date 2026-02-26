@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use uuid::Uuid;
 
-use super::{App, AppError, UpdateKnotPatch};
+use super::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::db::{self, EdgeDirection};
 use crate::doctor::DoctorError;
 use crate::domain::state::{InvalidStateTransition, KnotState};
@@ -30,6 +30,32 @@ fn open_app(root: &Path) -> (App, String) {
     (app, db_path_str)
 }
 
+fn read_event_payloads(root: &Path, event_type: &str) -> Vec<Value> {
+    let mut payloads = Vec::new();
+    let mut stack = vec![root.join(".knots/events")];
+    while let Some(dir) = stack.pop() {
+        if !dir.exists() {
+            continue;
+        }
+        for entry in std::fs::read_dir(dir).expect("events directory should read") {
+            let path = entry.expect("dir entry should read").path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().is_none_or(|ext| ext != "json") {
+                continue;
+            }
+            let payload = std::fs::read(&path).expect("event file should read");
+            let value: Value = serde_json::from_slice(&payload).expect("event should parse");
+            if value.get("type").and_then(Value::as_str) == Some(event_type) {
+                payloads.push(value);
+            }
+        }
+    }
+    payloads
+}
+
 #[test]
 fn update_knot_covers_title_priority_and_tag_normalization_branches() {
     let root = unique_workspace();
@@ -50,8 +76,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
             remove_tags: vec![],
             add_note: None,
             add_handoff_capsule: None,
-            expected_workflow_etag: None,
+            expected_profile_etag: None,
             force: false,
+            state_actor: StateActorMetadata::default(),
         },
     );
     assert!(matches!(empty_title, Err(AppError::InvalidArgument(_))));
@@ -68,8 +95,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
             remove_tags: vec![],
             add_note: None,
             add_handoff_capsule: None,
-            expected_workflow_etag: None,
+            expected_profile_etag: None,
             force: false,
+            state_actor: StateActorMetadata::default(),
         },
     );
     assert!(matches!(bad_priority, Err(AppError::InvalidArgument(_))));
@@ -87,8 +115,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
                 remove_tags: vec!["   ".to_string()],
                 add_note: None,
                 add_handoff_capsule: None,
-                expected_workflow_etag: None,
+                expected_profile_etag: None,
                 force: false,
+                state_actor: StateActorMetadata::default(),
             },
         )
         .expect("no-op tags should still return knot state");
@@ -107,8 +136,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
                 remove_tags: vec![],
                 add_note: None,
                 add_handoff_capsule: None,
-                expected_workflow_etag: None,
+                expected_profile_etag: None,
                 force: false,
+                state_actor: StateActorMetadata::default(),
             },
         )
         .expect("tag add should succeed");
@@ -127,8 +157,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
                 remove_tags: vec!["alpha".to_string()],
                 add_note: None,
                 add_handoff_capsule: None,
-                expected_workflow_etag: None,
+                expected_profile_etag: None,
                 force: false,
+                state_actor: StateActorMetadata::default(),
             },
         )
         .expect("tag remove should succeed");
@@ -182,14 +213,14 @@ fn set_state_with_if_match_writes_preconditions() {
         .create_knot("State precondition", None, Some("idea"), Some("default"))
         .expect("knot should be created");
     let etag = created
-        .workflow_etag
+        .profile_etag
         .clone()
         .expect("created knot should have workflow etag");
 
     let updated = app
-        .set_state(&created.id, "work_item", false, Some(&etag))
+        .set_state(&created.id, "planning", false, Some(&etag))
         .expect("state update should succeed");
-    assert_eq!(updated.state, "work_item");
+    assert_eq!(updated.state, "planning");
 
     let mut saw_precondition = false;
     let mut stack = vec![root.join(".knots/events")];
@@ -232,14 +263,14 @@ fn app_error_source_covers_wrapped_error_variants() {
         AppError::Doctor(DoctorError::Io(std::io::Error::other("doctor"))),
         AppError::Snapshot(SnapshotError::Io(std::io::Error::other("snapshot"))),
         AppError::Perf(PerfError::Other("perf".to_string())),
-        AppError::Workflow(WorkflowError::MissingWorkflowReference),
+        AppError::Workflow(WorkflowError::MissingProfileReference),
         AppError::ParseState(
             "bad-state"
                 .parse::<KnotState>()
                 .expect_err("invalid state should fail"),
         ),
         AppError::InvalidTransition(InvalidStateTransition {
-            from: KnotState::Idea,
+            from: KnotState::ReadyForPlanning,
             to: KnotState::Shipped,
         }),
     ];
@@ -251,4 +282,374 @@ fn app_error_source_covers_wrapped_error_variants() {
     assert!(with_sources >= 7);
 
     let _ = EdgeDirection::Both;
+}
+
+#[test]
+fn set_profile_switches_profile_and_state_atomically_and_supports_noop() {
+    let root = unique_workspace();
+    let (app, _) = open_app(&root);
+    let created = app
+        .create_knot("Profile switch", None, Some("idea"), Some("default"))
+        .expect("knot should be created");
+    let etag = created
+        .profile_etag
+        .clone()
+        .expect("created knot should expose profile etag");
+
+    let updated = app
+        .set_profile(
+            &created.id,
+            "autopilot_no_planning",
+            "ready_for_implementation",
+            Some(&etag),
+        )
+        .expect("profile switch should succeed");
+    assert_eq!(updated.profile_id, "autopilot_no_planning");
+    assert_eq!(updated.state, "ready_for_implementation");
+
+    let before_noop_etag = updated.profile_etag.clone();
+    let no_op = app
+        .set_profile(
+            &created.id,
+            "autopilot_no_planning",
+            "ready_for_implementation",
+            updated.profile_etag.as_deref(),
+        )
+        .expect("no-op profile switch should return current state");
+    assert_eq!(no_op.profile_etag, before_noop_etag);
+
+    let profile_set_events = read_event_payloads(&root, "knot.profile_set");
+    assert_eq!(profile_set_events.len(), 1);
+    let event = &profile_set_events[0];
+    assert_eq!(
+        event
+            .get("data")
+            .and_then(Value::as_object)
+            .and_then(|value| value.get("to_profile_id"))
+            .and_then(Value::as_str),
+        Some("autopilot_no_planning")
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn set_state_with_actor_records_actor_and_deferred_provenance() {
+    let root = unique_workspace();
+    let (app, _) = open_app(&root);
+    let created = app
+        .create_knot("Actor metadata", None, Some("idea"), Some("default"))
+        .expect("knot should be created");
+
+    let planning = app
+        .set_state_with_actor(
+            &created.id,
+            "planning",
+            false,
+            None,
+            StateActorMetadata {
+                actor_kind: Some("agent".to_string()),
+                agent_name: Some("codex".to_string()),
+                agent_model: Some("gpt-5".to_string()),
+                agent_version: Some("1".to_string()),
+            },
+        )
+        .expect("state update with actor metadata should succeed");
+    assert_eq!(planning.state, "planning");
+
+    let deferred = app
+        .set_state_with_actor(
+            &created.id,
+            "deferred",
+            false,
+            planning.profile_etag.as_deref(),
+            StateActorMetadata {
+                actor_kind: Some("agent".to_string()),
+                agent_name: Some("codex".to_string()),
+                agent_model: Some("gpt-5".to_string()),
+                agent_version: Some("1".to_string()),
+            },
+        )
+        .expect("defer transition should succeed");
+    assert_eq!(deferred.state, "deferred");
+    assert_eq!(deferred.deferred_from_state.as_deref(), Some("planning"));
+
+    let resumed = app
+        .set_state(
+            &created.id,
+            "planning",
+            false,
+            deferred.profile_etag.as_deref(),
+        )
+        .expect("resume from deferred should succeed");
+    assert_eq!(resumed.state, "planning");
+
+    let state_events = read_event_payloads(&root, "knot.state_set");
+    assert!(state_events.len() >= 2);
+    let actor_event = state_events
+        .iter()
+        .find(|event| {
+            event
+                .get("data")
+                .and_then(Value::as_object)
+                .and_then(|value| value.get("actor_kind"))
+                .and_then(Value::as_str)
+                == Some("agent")
+        })
+        .expect("actor metadata should be written to state events");
+    let actor_data = actor_event
+        .get("data")
+        .and_then(Value::as_object)
+        .expect("state event data should be object");
+    assert_eq!(
+        actor_data.get("agent_name").and_then(Value::as_str),
+        Some("codex")
+    );
+    assert_eq!(
+        actor_data.get("agent_model").and_then(Value::as_str),
+        Some("gpt-5")
+    );
+
+    let deferred_event = state_events
+        .iter()
+        .find(|event| {
+            event
+                .get("data")
+                .and_then(Value::as_object)
+                .and_then(|value| value.get("to"))
+                .and_then(Value::as_str)
+                == Some("deferred")
+        })
+        .expect("deferred state event should exist");
+    assert_eq!(
+        deferred_event
+            .get("data")
+            .and_then(Value::as_object)
+            .and_then(|value| value.get("deferred_from_state"))
+            .and_then(Value::as_str),
+        Some("planning")
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn set_profile_covers_stale_etag_and_unknown_state_paths() {
+    let root = unique_workspace();
+    let (app, _) = open_app(&root);
+    let created = app
+        .create_knot("Profile errors", None, Some("idea"), Some("default"))
+        .expect("knot should be created");
+
+    let stale = app.set_profile(
+        &created.id,
+        "autopilot_no_planning",
+        "ready_for_implementation",
+        Some("stale-etag"),
+    );
+    assert!(matches!(stale, Err(AppError::StaleWorkflowHead { .. })));
+
+    let unknown_state = app.set_profile(
+        &created.id,
+        "autopilot_no_planning",
+        "plan_review",
+        created.profile_etag.as_deref(),
+    );
+    assert!(matches!(unknown_state, Err(AppError::Workflow(_))));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn set_state_actor_validation_and_deferred_resume_rules() {
+    let root = unique_workspace();
+    let (app, _) = open_app(&root);
+    let created = app
+        .create_knot("Deferred rules", None, Some("idea"), Some("default"))
+        .expect("knot should be created");
+
+    let invalid_actor = app.set_state_with_actor(
+        &created.id,
+        "planning",
+        false,
+        created.profile_etag.as_deref(),
+        StateActorMetadata {
+            actor_kind: Some("robot".to_string()),
+            agent_name: None,
+            agent_model: None,
+            agent_version: None,
+        },
+    );
+    assert!(matches!(invalid_actor, Err(AppError::InvalidArgument(_))));
+
+    let deferred = app
+        .set_state(
+            &created.id,
+            "deferred",
+            false,
+            created.profile_etag.as_deref(),
+        )
+        .expect("defer transition should succeed");
+    assert_eq!(
+        deferred.deferred_from_state.as_deref(),
+        Some("ready_for_planning")
+    );
+
+    let bad_resume = app.set_state(
+        &created.id,
+        "ready_for_implementation",
+        false,
+        deferred.profile_etag.as_deref(),
+    );
+    assert!(matches!(bad_resume, Err(AppError::InvalidArgument(_))));
+
+    let forced_resume = app
+        .set_state(
+            &created.id,
+            "ready_for_implementation",
+            true,
+            deferred.profile_etag.as_deref(),
+        )
+        .expect("forced resume should succeed");
+    assert_eq!(forced_resume.state, "ready_for_implementation");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn update_knot_state_change_writes_actor_metadata() {
+    let root = unique_workspace();
+    let (app, _) = open_app(&root);
+    let created = app
+        .create_knot("Update actor", None, Some("idea"), Some("default"))
+        .expect("knot should be created");
+
+    let updated = app
+        .update_knot(
+            &created.id,
+            UpdateKnotPatch {
+                title: None,
+                description: None,
+                priority: None,
+                status: Some("planning".to_string()),
+                knot_type: None,
+                add_tags: vec![],
+                remove_tags: vec![],
+                add_note: None,
+                add_handoff_capsule: None,
+                expected_profile_etag: created.profile_etag.clone(),
+                force: false,
+                state_actor: StateActorMetadata {
+                    actor_kind: Some("agent".to_string()),
+                    agent_name: Some("codex".to_string()),
+                    agent_model: Some("gpt-5".to_string()),
+                    agent_version: Some("1".to_string()),
+                },
+            },
+        )
+        .expect("update state change should succeed");
+    assert_eq!(updated.state, "planning");
+
+    let state_events = read_event_payloads(&root, "knot.state_set");
+    let event = state_events
+        .iter()
+        .find(|event| {
+            event
+                .get("data")
+                .and_then(Value::as_object)
+                .and_then(|value| value.get("agent_name"))
+                .and_then(Value::as_str)
+                == Some("codex")
+        })
+        .expect("update-generated state event should include actor metadata");
+    assert_eq!(
+        event
+            .get("data")
+            .and_then(Value::as_object)
+            .and_then(|value| value.get("actor_kind"))
+            .and_then(Value::as_str),
+        Some("agent")
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn default_profile_resolution_covers_config_and_fallback_paths() {
+    let root = unique_workspace();
+    let (app, _) = open_app(&root);
+    let prev_home = std::env::var_os("HOME");
+    unsafe {
+        std::env::set_var("HOME", &root);
+    }
+
+    let fallback = app
+        .default_profile_id()
+        .expect("fallback default profile should resolve");
+    assert_eq!(fallback, "autopilot");
+
+    let config_path = root.join(".config/knots/config.toml");
+    if let Some(parent) = config_path.parent() {
+        std::fs::create_dir_all(parent).expect("config parent should be creatable");
+    }
+
+    std::fs::write(&config_path, "not = [valid").expect("invalid config should write");
+    let invalid = app.default_profile_id();
+    assert!(matches!(invalid, Err(AppError::InvalidArgument(_))));
+
+    std::fs::write(&config_path, "default_profile = \"unknown\"\n").expect("config should write");
+    let unknown = app
+        .default_profile_id()
+        .expect("unknown configured profile should fall back");
+    assert_eq!(unknown, "autopilot");
+
+    std::fs::write(&config_path, "default_profile = \"semiauto\"\n").expect("config should write");
+    let configured = app
+        .default_profile_id()
+        .expect("configured profile should resolve");
+    assert_eq!(configured, "semiauto");
+
+    unsafe {
+        std::env::remove_var("HOME");
+    }
+    let missing_home = app.set_default_profile_id("autopilot");
+    assert!(matches!(missing_home, Err(AppError::InvalidArgument(_))));
+
+    if let Some(home) = prev_home {
+        unsafe {
+            std::env::set_var("HOME", home);
+        }
+    }
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn import_methods_cover_app_wrapper_paths() {
+    let root = unique_workspace();
+    let (app, _) = open_app(&root);
+    let input = root.join("issues.jsonl");
+    std::fs::write(
+        &input,
+        concat!(
+            "{\"id\":\"IMP-1\",\"title\":\"Imported\",\"status\":\"open\",",
+            "\"workflow_id\":\"default\",",
+            "\"updated_at\":\"2026-02-26T10:00:00Z\"}\n"
+        ),
+    )
+    .expect("jsonl should be writable");
+
+    let summary = app
+        .import_jsonl(input.to_str().expect("utf8 path"), None, false)
+        .expect("import wrapper should succeed");
+    assert_eq!(summary.source_type, "jsonl");
+    assert_eq!(summary.imported_count, 1);
+
+    let statuses = app
+        .import_statuses()
+        .expect("import status wrapper should succeed");
+    assert!(!statuses.is_empty());
+    assert_eq!(statuses[0].source_type, "jsonl");
+
+    let _ = std::fs::remove_dir_all(root);
 }

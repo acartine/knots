@@ -155,8 +155,7 @@ impl<'a> IncrementalApplier<'a> {
         let title = required_string(data, "title", &absolute_path)?;
         let state = required_string(data, "state", &absolute_path)?;
         let updated_at = required_string(data, "updated_at", &absolute_path)?;
-        let workflow_id =
-            required_string(data, "workflow_id", &absolute_path)?.to_ascii_lowercase();
+        let profile_id = required_profile_id(data, &absolute_path)?.to_ascii_lowercase();
 
         if is_stale_precondition(self.conn, &knot_id, event.precondition.as_ref())? {
             return Ok(false);
@@ -202,6 +201,11 @@ impl<'a> IncrementalApplier<'a> {
             .as_ref()
             .map(|record| record.handoff_capsules.clone())
             .unwrap_or_default();
+        let deferred_from_state = existing
+            .as_ref()
+            .and_then(|record| record.deferred_from_state.clone());
+        let deferred_from_state =
+            optional_string(data.get("deferred_from_state")).or(deferred_from_state);
         let created_at = existing
             .as_ref()
             .and_then(|record| record.created_at.clone())
@@ -223,8 +227,9 @@ impl<'a> IncrementalApplier<'a> {
                         tags: &tags,
                         notes: &notes,
                         handoff_capsules: &handoff_capsules,
-                        workflow_id: &workflow_id,
-                        workflow_etag: Some(&event.event_id),
+                        profile_id: &profile_id,
+                        profile_etag: Some(&event.event_id),
+                        deferred_from_state: deferred_from_state.as_deref(),
                         created_at: Some(&created_at),
                     },
                 )?;
@@ -361,8 +366,9 @@ impl<'a> IncrementalApplier<'a> {
             tags: existing.tags,
             notes: existing.notes,
             handoff_capsules: existing.handoff_capsules,
-            workflow_id: existing.workflow_id,
-            workflow_etag: existing.workflow_etag,
+            profile_id: existing.profile_id,
+            profile_etag: existing.profile_etag,
+            deferred_from_state: existing.deferred_from_state,
             created_at: existing.created_at,
         };
         mutate(&mut projection);
@@ -381,8 +387,9 @@ impl<'a> IncrementalApplier<'a> {
                 tags: &projection.tags,
                 notes: &projection.notes,
                 handoff_capsules: &projection.handoff_capsules,
-                workflow_id: &projection.workflow_id,
-                workflow_etag: projection.workflow_etag.as_deref(),
+                profile_id: &projection.profile_id,
+                profile_etag: projection.profile_etag.as_deref(),
+                deferred_from_state: projection.deferred_from_state.as_deref(),
                 created_at: projection.created_at.as_deref(),
             },
         )?;
@@ -407,8 +414,9 @@ struct MetadataProjection {
     tags: Vec<String>,
     notes: Vec<MetadataEntry>,
     handoff_capsules: Vec<MetadataEntry>,
-    workflow_id: String,
-    workflow_etag: Option<String>,
+    profile_id: String,
+    profile_etag: Option<String>,
+    deferred_from_state: Option<String>,
     created_at: Option<String>,
 }
 
@@ -431,6 +439,27 @@ fn required_string(
         .and_then(Value::as_str)
         .map(|value| value.to_string())
         .ok_or_else(|| invalid_event(path, &format!("missing '{}' string field", key)))
+}
+
+fn required_profile_id(object: &Map<String, Value>, path: &Path) -> Result<String, SyncError> {
+    if let Some(value) = object.get("profile_id").and_then(Value::as_str) {
+        let trimmed = value.trim();
+        if !trimmed.is_empty() {
+            return Ok(trimmed.to_string());
+        }
+    }
+
+    if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
+        let trimmed = value.trim();
+        if !trimmed.is_empty() {
+            return Ok(trimmed.to_string());
+        }
+    }
+
+    Err(invalid_event(
+        path,
+        "missing 'profile_id' string field (or legacy 'workflow_id')",
+    ))
 }
 
 fn optional_string(value: Option<&Value>) -> Option<String> {
@@ -488,9 +517,9 @@ fn is_stale_precondition(
         return Ok(false);
     };
     let current = db::get_knot_hot(conn, knot_id)?
-        .and_then(|record| record.workflow_etag)
+        .and_then(|record| record.profile_etag)
         .unwrap_or_default();
-    Ok(current != precondition.workflow_etag)
+    Ok(current != precondition.profile_etag)
 }
 
 #[cfg(test)]

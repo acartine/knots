@@ -5,7 +5,7 @@ use std::str::FromStr;
 use serde_json::json;
 
 use super::{
-    apply_rehydrate_event, ensure_workflow_etag, metadata_entry_from_input, non_empty,
+    apply_rehydrate_event, ensure_profile_etag, metadata_entry_from_input, non_empty,
     normalize_tag, parse_edge_direction, rehydrate_from_events, AppError, RehydrateProjection,
 };
 use crate::db::{EdgeDirection, KnotCacheRecord};
@@ -35,8 +35,9 @@ fn sample_record() -> KnotCacheRecord {
         tags: Vec::new(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
-        workflow_id: "default".to_string(),
-        workflow_etag: Some("etag-1".to_string()),
+        profile_id: "default".to_string(),
+        profile_etag: Some("etag-1".to_string()),
+        deferred_from_state: None,
         created_at: None,
     }
 }
@@ -102,10 +103,10 @@ fn helper_validations_cover_success_and_error_paths() {
     assert!(bad_datetime.is_err());
 
     let current = sample_record();
-    assert!(ensure_workflow_etag(&current, None).is_ok());
-    assert!(ensure_workflow_etag(&current, Some("etag-1")).is_ok());
+    assert!(ensure_profile_etag(&current, None).is_ok());
+    assert!(ensure_profile_etag(&current, Some("etag-1")).is_ok());
     assert!(matches!(
-        ensure_workflow_etag(&current, Some("different")),
+        ensure_profile_etag(&current, Some("different")),
         Err(AppError::StaleWorkflowHead { .. })
     ));
 }
@@ -123,8 +124,9 @@ fn apply_rehydrate_event_covers_known_event_types() {
         tags: Vec::new(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
-        workflow_id: String::new(),
-        workflow_etag: None,
+        profile_id: String::new(),
+        profile_etag: None,
+        deferred_from_state: None,
         created_at: None,
     };
 
@@ -142,7 +144,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
         "2026-02-25T10:01:00Z",
         "K-1",
         FullEventKind::KnotCreated.as_str(),
-        json!({"title":"Created","state":"work_item","workflow_id":"default"}),
+        json!({"title":"Created","state":"work_item","profile_id":"default"}),
     );
     apply_rehydrate_event(&mut projection, &created);
 
@@ -246,7 +248,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
 
     assert_eq!(projection.title, "Renamed");
     assert_eq!(projection.state, "implementing");
-    assert_eq!(projection.workflow_id, "default");
+    assert_eq!(projection.profile_id, "default");
     assert_eq!(projection.priority, Some(2));
     assert_eq!(projection.knot_type.as_deref(), Some("task"));
     assert_eq!(projection.notes.len(), 1);
@@ -370,7 +372,7 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
     assert!(parse_state.to_string().contains("state parse error"));
 
     let invalid_transition: AppError = InvalidStateTransition {
-        from: KnotState::Idea,
+        from: KnotState::ReadyForPlanning,
         to: KnotState::Shipped,
     }
     .into();
@@ -382,7 +384,7 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
         expected: "e1".to_string(),
         current: "e2".to_string(),
     };
-    assert!(stale.to_string().contains("stale workflow_etag"));
+    assert!(stale.to_string().contains("stale profile_etag"));
     assert!(stale.source().is_none());
 
     let invalid_arg = AppError::InvalidArgument("bad arg".to_string());
@@ -397,6 +399,6 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
         "idx-1",
         "2026-02-25T10:00:00Z",
         IndexEventKind::KnotHead.as_str(),
-        json!({"knot_id":"K-1","title":"x","state":"idea","workflow_id":"default"}),
+        json!({"knot_id":"K-1","title":"x","state":"idea","profile_id":"default"}),
     );
 }

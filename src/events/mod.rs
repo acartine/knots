@@ -44,6 +44,7 @@ pub enum FullEventKind {
     KnotTagRemove,
     KnotEdgeAdd,
     KnotEdgeRemove,
+    KnotProfileSet,
     KnotReviewDecision,
 }
 
@@ -64,6 +65,7 @@ impl FullEventKind {
             FullEventKind::KnotTagRemove => "knot.tag_remove",
             FullEventKind::KnotEdgeAdd => "knot.edge_add",
             FullEventKind::KnotEdgeRemove => "knot.edge_remove",
+            FullEventKind::KnotProfileSet => "knot.profile_set",
             FullEventKind::KnotReviewDecision => "knot.review_decision",
         }
     }
@@ -84,7 +86,8 @@ impl IndexEventKind {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorkflowPrecondition {
-    pub workflow_etag: String,
+    #[serde(alias = "workflow_etag")]
+    pub profile_etag: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -127,9 +130,9 @@ impl FullEvent {
         }
     }
 
-    pub fn with_precondition(mut self, workflow_etag: impl Into<String>) -> Self {
+    pub fn with_precondition(mut self, profile_etag: impl Into<String>) -> Self {
         self.precondition = Some(WorkflowPrecondition {
-            workflow_etag: workflow_etag.into(),
+            profile_etag: profile_etag.into(),
         });
         self
     }
@@ -171,9 +174,9 @@ impl IndexEvent {
         }
     }
 
-    pub fn with_precondition(mut self, workflow_etag: impl Into<String>) -> Self {
+    pub fn with_precondition(mut self, profile_etag: impl Into<String>) -> Self {
         self.precondition = Some(WorkflowPrecondition {
-            workflow_etag: workflow_etag.into(),
+            profile_etag: profile_etag.into(),
         });
         self
     }

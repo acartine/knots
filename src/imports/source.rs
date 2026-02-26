@@ -35,6 +35,8 @@ pub struct SourceIssue {
     pub id: String,
     pub title: String,
     #[serde(default)]
+    pub profile_id: Option<String>,
+    #[serde(default)]
     pub workflow_id: Option<String>,
     #[serde(default)]
     pub description: Option<String>,
@@ -150,10 +152,12 @@ pub fn map_source_state(issue: &SourceIssue) -> Result<KnotState, ImportError> {
     {
         Some(value) if value == "closed" => KnotState::Shipped,
         Some(value) if value == "deferred" => KnotState::Deferred,
-        Some(value) if value == "in_progress" || value == "in-progress" => KnotState::Implementing,
-        Some(value) if value == "blocked" => KnotState::Refining,
-        Some(value) if value == "open" => KnotState::WorkItem,
-        _ => KnotState::WorkItem,
+        Some(value) if value == "in_progress" || value == "in-progress" => {
+            KnotState::Implementation
+        }
+        Some(value) if value == "blocked" => KnotState::ReadyForImplementation,
+        Some(value) if value == "open" => KnotState::ReadyForImplementation,
+        _ => KnotState::ReadyForImplementation,
     };
     Ok(mapped)
 }
@@ -199,6 +203,7 @@ mod tests {
         SourceIssue {
             id: "ISSUE-1".to_string(),
             title: "Title".to_string(),
+            profile_id: None,
             workflow_id: Some("default".to_string()),
             description: None,
             body: None,
@@ -286,7 +291,7 @@ mod tests {
         explicit.status = Some("closed".to_string());
         assert_eq!(
             map_source_state(&explicit).expect("explicit state should parse"),
-            KnotState::Implementing
+            KnotState::Implementation
         );
 
         let mut closed = base_issue();
@@ -300,7 +305,7 @@ mod tests {
         in_progress.status = Some("in_progress".to_string());
         assert_eq!(
             map_source_state(&in_progress).expect("in_progress should map"),
-            KnotState::Implementing
+            KnotState::Implementation
         );
     }
 

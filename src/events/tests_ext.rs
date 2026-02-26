@@ -29,7 +29,7 @@ fn new_event_builders_and_preconditions_set_expected_fields() {
     assert_eq!(
         full.precondition
             .as_ref()
-            .map(|value| value.workflow_etag.as_str()),
+            .map(|value| value.profile_etag.as_str()),
         Some("etag-1")
     );
 
@@ -40,7 +40,7 @@ fn new_event_builders_and_preconditions_set_expected_fields() {
         index
             .precondition
             .as_ref()
-            .map(|value| value.workflow_etag.as_str()),
+            .map(|value| value.profile_etag.as_str()),
         Some("etag-2")
     );
 }

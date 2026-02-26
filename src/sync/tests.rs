@@ -89,7 +89,7 @@ fn sync_applies_index_and_edge_events_from_knots_branch() {
             "    \"knot_id\": \"K-1\",\n",
             "    \"title\": \"Synced knot\",\n",
             "    \"state\": \"work_item\",\n",
-            "    \"workflow_id\": \"triage\",\n",
+            "    \"profile_id\": \"triage\",\n",
             "    \"updated_at\": \"2026-02-22T10:00:00Z\",\n",
             "    \"terminal\": false\n",
             "  }\n",
@@ -153,7 +153,7 @@ fn sync_applies_index_and_edge_events_from_knots_branch() {
         .expect("knot query should succeed")
         .expect("knot should be present in hot cache");
     assert_eq!(knot.title, "Synced knot");
-    assert_eq!(knot.workflow_id, "triage");
+    assert_eq!(knot.profile_id, "triage");
 
     let edges = db::list_edges(&conn, "K-1", db::EdgeDirection::Outgoing)
         .expect("edge list should succeed");
@@ -193,7 +193,7 @@ fn sync_reduces_description_tag_and_note_events() {
             "    \"knot_id\": \"K-7\",\n",
             "    \"title\": \"Sync parity\",\n",
             "    \"state\": \"work_item\",\n",
-            "    \"workflow_id\": \"default\",\n",
+            "    \"profile_id\": \"default\",\n",
             "    \"updated_at\": \"2026-02-23T10:00:00Z\",\n",
             "    \"terminal\": false\n",
             "  }\n",
@@ -339,7 +339,7 @@ fn sync_classifies_old_knots_as_warm_and_terminal_as_cold() {
             "    \"knot_id\": \"K-warm\",\n",
             "    \"title\": \"Warm candidate\",\n",
             "    \"state\": \"work_item\",\n",
-            "    \"workflow_id\": \"default\",\n",
+            "    \"profile_id\": \"default\",\n",
             "    \"updated_at\": \"2025-01-01T00:00:00Z\",\n",
             "    \"terminal\": false\n",
             "  }\n",
@@ -372,7 +372,7 @@ fn sync_classifies_old_knots_as_warm_and_terminal_as_cold() {
             "    \"knot_id\": \"K-cold\",\n",
             "    \"title\": \"Cold candidate\",\n",
             "    \"state\": \"shipped\",\n",
-            "    \"workflow_id\": \"default\",\n",
+            "    \"profile_id\": \"default\",\n",
             "    \"updated_at\": \"2026-02-23T00:00:00Z\",\n",
             "    \"terminal\": true\n",
             "  }\n",
@@ -444,7 +444,7 @@ fn sync_ignores_events_with_stale_preconditions() {
             "    \"knot_id\": \"K-occ\",\n",
             "    \"title\": \"Original title\",\n",
             "    \"state\": \"work_item\",\n",
-            "    \"workflow_id\": \"default\",\n",
+            "    \"profile_id\": \"default\",\n",
             "    \"updated_at\": \"2026-02-24T10:00:00Z\",\n",
             "    \"terminal\": false\n",
             "  }\n",
@@ -471,11 +471,11 @@ fn sync_ignores_events_with_stale_preconditions() {
             "    \"knot_id\": \"K-occ\",\n",
             "    \"title\": \"Stale title\",\n",
             "    \"state\": \"implementing\",\n",
-            "    \"workflow_id\": \"default\",\n",
+            "    \"profile_id\": \"default\",\n",
             "    \"updated_at\": \"2026-02-24T10:00:01Z\",\n",
             "    \"terminal\": false\n",
             "  },\n",
-            "  \"precondition\": {\"workflow_etag\": \"missing-etag\"}\n",
+            "  \"precondition\": {\"profile_etag\": \"missing-etag\"}\n",
             "}\n"
         ),
     )
@@ -503,7 +503,7 @@ fn sync_ignores_events_with_stale_preconditions() {
             "  \"knot_id\": \"K-occ\",\n",
             "  \"type\": \"knot.description_set\",\n",
             "  \"data\": {\"description\": \"stale description\"},\n",
-            "  \"precondition\": {\"workflow_etag\": \"missing-etag\"}\n",
+            "  \"precondition\": {\"profile_etag\": \"missing-etag\"}\n",
             "}\n"
         ),
     )
@@ -531,9 +531,9 @@ fn sync_ignores_events_with_stale_preconditions() {
         .expect("knot should exist");
     assert_eq!(knot.title, "Original title");
     assert_eq!(knot.state, "work_item");
-    assert_eq!(knot.workflow_id, "default");
+    assert_eq!(knot.profile_id, "default");
     assert_eq!(knot.description, None);
-    assert_eq!(knot.workflow_etag.as_deref(), Some("0300"));
+    assert_eq!(knot.profile_etag.as_deref(), Some("0300"));
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -566,8 +566,8 @@ fn sync_bootstrap_loads_latest_snapshots_when_no_events_exist() {
             "      \"tags\": [\"snapshot\"],\n",
             "      \"notes\": [],\n",
             "      \"handoff_capsules\": [],\n",
-            "      \"workflow_etag\": \"snap-1\",\n",
-            "      \"workflow_id\": \"default\",\n",
+            "      \"profile_etag\": \"snap-1\",\n",
+            "      \"profile_id\": \"default\",\n",
             "      \"created_at\": \"2026-02-24T12:00:00Z\"\n",
             "    }\n",
             "  ],\n",

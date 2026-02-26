@@ -178,7 +178,7 @@ fn reapplies_migrations_idempotently() {
 }
 
 #[test]
-fn migrations_add_parity_columns_and_backfill_workflow_defaults() {
+fn migrations_add_parity_columns_and_backfill_profile_defaults() {
     let path = unique_db_path();
     let conn = rusqlite::Connection::open(&path).expect("pre-migration connection should open");
     conn.execute_batch(
@@ -212,6 +212,13 @@ CREATE TABLE knot_hot (
 );
 INSERT INTO knot_hot (id, title, state, updated_at, body, workflow_etag, created_at)
 VALUES ('K-legacy', 'Legacy', 'work_item', '2026-02-23T00:00:02Z', 'legacy body', NULL, NULL);
+
+CREATE TABLE cold_catalog (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    state TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 "#,
     )
     .expect("pre-migration schema should be writable");
@@ -225,7 +232,9 @@ VALUES ('K-legacy', 'Legacy', 'work_item', '2026-02-23T00:00:02Z', 'legacy body'
         "tags_json",
         "notes_json",
         "handoff_capsules_json",
-        "workflow_id",
+        "profile_id",
+        "profile_etag",
+        "deferred_from_state",
     ] {
         assert!(
             column_exists(&upgraded, "knot_hot", column),
@@ -243,14 +252,14 @@ VALUES ('K-legacy', 'Legacy', 'work_item', '2026-02-23T00:00:02Z', 'legacy body'
         .expect("legacy row should be queryable");
     assert_eq!(description.as_deref(), Some("legacy body"));
 
-    let workflow_id: String = upgraded
+    let profile_id: String = upgraded
         .query_row(
-            "SELECT workflow_id FROM knot_hot WHERE id = 'K-legacy'",
+            "SELECT profile_id FROM knot_hot WHERE id = 'K-legacy'",
             [],
             |row| row.get(0),
         )
-        .expect("legacy row should include workflow_id");
-    assert_eq!(workflow_id, "automation_granular");
+        .expect("legacy row should include profile_id");
+    assert_eq!(profile_id, "autopilot");
 
     cleanup_db_files(&path);
 }

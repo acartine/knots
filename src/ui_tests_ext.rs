@@ -37,8 +37,9 @@ fn sample_knot() -> KnotView {
             model: "m".to_string(),
             version: "v".to_string(),
         }],
-        workflow_id: "default".to_string(),
-        workflow_etag: Some("etag".to_string()),
+        profile_id: "default".to_string(),
+        profile_etag: Some("etag".to_string()),
+        deferred_from_state: None,
         created_at: Some("2026-02-24T10:00:00Z".to_string()),
     }
 }

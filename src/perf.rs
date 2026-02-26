@@ -140,8 +140,9 @@ fn benchmark_write_path(app: &App, iterations: u32) -> Result<f64, PerfError> {
                     remove_tags: vec![],
                     add_note: None,
                     add_handoff_capsule: None,
-                    expected_workflow_etag: knot.workflow_etag.clone(),
+                    expected_profile_etag: knot.profile_etag.clone(),
                     force: false,
+                    state_actor: crate::app::StateActorMetadata::default(),
                 },
             )
             .map_err(|err| PerfError::Other(err.to_string()))?;
