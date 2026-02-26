@@ -26,6 +26,10 @@ pub(crate) fn run_profile_command(
             } else if profiles.is_empty() {
                 println!("{}", palette.dim("no profiles found"));
             } else {
+                let app = app::App::open(db_path, repo_root.to_path_buf())?;
+                let default_id = app.default_profile_id().ok();
+                let default_quick_id = app.default_quick_profile_id().ok();
+
                 println!("{}", palette.heading("Profiles"));
                 let count = profiles.len();
                 for (index, profile) in profiles.into_iter().enumerate() {
@@ -36,9 +40,17 @@ pub(crate) fn run_profile_command(
                         .description
                         .as_deref()
                         .unwrap_or(profile.id.as_str());
+                    let mut marker = String::new();
+                    if default_id.as_deref() == Some(&profile.id) {
+                        marker.push_str(" (default)");
+                    }
+                    if default_quick_id.as_deref() == Some(&profile.id) {
+                        marker.push_str(" (default quick)");
+                    }
+                    let id_display = format!("{}{}", profile.id, marker);
                     let fields = vec![
                         ProfileField::new("name", profile_name),
-                        ProfileField::new("id", profile.id.clone()),
+                        ProfileField::new("id", id_display),
                         ProfileField::new(
                             "planning",
                             format_profile_gate_mode(&profile.planning_mode),
@@ -97,6 +109,11 @@ pub(crate) fn run_profile_command(
             let app = app::App::open(db_path, repo_root.to_path_buf())?;
             let profile_id = app.set_default_profile_id(&set_default_args.id)?;
             println!("default profile: {}", profile_id);
+        }
+        ProfileSubcommands::SetDefaultQuick(set_default_quick_args) => {
+            let app = app::App::open(db_path, repo_root.to_path_buf())?;
+            let profile_id = app.set_default_quick_profile_id(&set_default_quick_args.id)?;
+            println!("default quick profile: {}", profile_id);
         }
         ProfileSubcommands::Set(set_args) => {
             let app = app::App::open(db_path, repo_root.to_path_buf())?;

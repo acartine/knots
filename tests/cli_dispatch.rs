@@ -147,6 +147,11 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
 
     let state = run_knots(&root, &db, &["state", &first_id, "planning"]);
     assert_success(&state);
+    let state_stdout = String::from_utf8_lossy(&state.stdout);
+    assert!(
+        state_stdout.contains("[PLANNING]"),
+        "kno state output should contain uppercase bracketed state: {state_stdout}"
+    );
 
     let update = run_knots(
         &root,
@@ -163,6 +168,11 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
         ],
     );
     assert_success(&update);
+    let update_stdout = String::from_utf8_lossy(&update.stdout);
+    assert!(
+        update_stdout.contains("[READY_FOR_PLAN_REVIEW]"),
+        "kno update output should contain uppercase bracketed state: {update_stdout}"
+    );
 
     let edge_add = run_knots(
         &root,
@@ -314,7 +324,13 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
 
     assert_success(&run_knots(&root, &db, &["ls"]));
     assert_success(&run_knots(&root, &db, &["show", &knot_id]));
-    assert_success(&run_knots(&root, &db, &["profile", "list"]));
+    let profile_list = run_knots(&root, &db, &["profile", "list"]);
+    assert_success(&profile_list);
+    let profile_list_stdout = String::from_utf8_lossy(&profile_list.stdout);
+    assert!(
+        profile_list_stdout.contains("(default)"),
+        "profile list should show (default) marker: {profile_list_stdout}"
+    );
     assert_success(&run_knots(&root, &db, &["profile", "show", "autopilot"]));
     assert_success(&run_knots(&root, &db, &["fsck"]));
     assert_success(&run_knots(&root, &db, &["rehydrate", &knot_id]));
@@ -458,6 +474,88 @@ fn cli_dispatch_covers_json_branches_and_cold_search_results() {
     let cold_search_text = run_knots(&root, &db, &["cold", "search", "Cold"]);
     assert_success(&cold_search_text);
     assert!(String::from_utf8_lossy(&cold_search_text.stdout).contains("Cold"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn completions_command_generates_bash_output() {
+    let root = unique_workspace("knots-cli-completions");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let result = run_knots(&root, &db, &["completions", "bash"]);
+    assert_success(&result);
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(!stdout.is_empty(), "completions output should be non-empty");
+    assert!(
+        stdout.contains("kno"),
+        "completions should reference kno: {stdout}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn new_fast_flag_and_q_command_use_quick_profile() {
+    let root = unique_workspace("knots-cli-new-fast");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    // kno new -f should use the default quick profile (autopilot_no_planning)
+    let fast = run_knots(&root, &db, &["new", "Fast task", "-f"]);
+    assert_success(&fast);
+    let fast_stdout = String::from_utf8_lossy(&fast.stdout);
+    // autopilot_no_planning starts at ready_for_implementation
+    assert!(
+        fast_stdout.contains("[READY_FOR_IMPLEMENTATION]"),
+        "kno new -f should use quick profile: {fast_stdout}"
+    );
+
+    // kno q should also use the quick profile
+    let q = run_knots(&root, &db, &["q", "Quick task"]);
+    assert_success(&q);
+    let q_stdout = String::from_utf8_lossy(&q.stdout);
+    assert!(
+        q_stdout.contains("[READY_FOR_IMPLEMENTATION]"),
+        "kno q should use quick profile: {q_stdout}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn skill_command_accepts_state_name_as_fallback() {
+    let root = unique_workspace("knots-cli-skill-state");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    // Lowercase state name
+    let skill_planning = run_knots(&root, &db, &["skill", "planning"]);
+    assert_success(&skill_planning);
+    let skill_stdout = String::from_utf8_lossy(&skill_planning.stdout);
+    assert!(
+        skill_stdout.contains("# Planning"),
+        "kno skill planning should print planning markdown: {skill_stdout}"
+    );
+
+    // Uppercase state name (case-insensitive)
+    let skill_upper = run_knots(&root, &db, &["skill", "PLANNING"]);
+    assert_success(&skill_upper);
+    let upper_stdout = String::from_utf8_lossy(&skill_upper.stdout);
+    assert!(
+        upper_stdout.contains("# Planning"),
+        "kno skill PLANNING should work case-insensitively: {upper_stdout}"
+    );
+
+    // Nonsense state name should fail
+    let skill_nonsense = run_knots(&root, &db, &["skill", "nonsense"]);
+    assert_failure(&skill_nonsense);
+    assert!(
+        String::from_utf8_lossy(&skill_nonsense.stderr)
+            .contains("is not a knot id or skill state name"),
+        "skill nonsense should produce helpful error"
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

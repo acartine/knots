@@ -98,6 +98,45 @@ fn run_profile_command_handles_list_show_and_set_default() {
         &db_str,
     )
     .expect("profile set-default should succeed");
+
+    let config_path = root.join(".config/knots/config.toml");
+    let config = std::fs::read_to_string(&config_path).expect("config should be readable");
+    assert!(config.contains("semiauto"));
+
+    // Also test set-default-quick while HOME is overridden
+    run_profile_command(
+        &ProfileArgs {
+            command: ProfileSubcommands::SetDefaultQuick(ProfileSetDefaultArgs {
+                id: "autopilot_no_planning".to_string(),
+            }),
+        },
+        &root,
+        &db_str,
+    )
+    .expect("profile set-default-quick should succeed");
+
+    let config2 = std::fs::read_to_string(&config_path).expect("config should be readable");
+    assert!(
+        config2.contains("default_quick_profile"),
+        "config should contain default_quick_profile: {config2}"
+    );
+    assert!(
+        config2.contains("autopilot_no_planning"),
+        "config should preserve quick profile id: {config2}"
+    );
+    // Verify both defaults coexist
+    assert!(
+        config2.contains("semiauto"),
+        "config should still contain default_profile: {config2}"
+    );
+
+    // Verify App reads it back correctly
+    let app = crate::app::App::open(&db_str, root.clone()).expect("app should open");
+    let quick = app
+        .default_quick_profile_id()
+        .expect("should read quick default");
+    assert_eq!(quick, "autopilot_no_planning");
+
     if let Some(home) = prev_home {
         unsafe {
             std::env::set_var("HOME", home);
@@ -107,10 +146,6 @@ fn run_profile_command_handles_list_show_and_set_default() {
             std::env::remove_var("HOME");
         }
     }
-
-    let config_path = root.join(".config/knots/config.toml");
-    let config = std::fs::read_to_string(config_path).expect("config should be readable");
-    assert!(config.contains("default_profile = \"semiauto\""));
 
     let _ = std::fs::remove_dir_all(root);
 }

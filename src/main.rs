@@ -1,6 +1,7 @@
 mod app;
 mod cli;
 mod cli_ops;
+mod completions;
 mod db;
 mod doctor;
 mod domain;
@@ -52,7 +53,7 @@ fn run() -> Result<(), app::AppError> {
     use domain::metadata::MetadataEntryInput;
 
     let cli = cli::Cli::parse();
-    if let Some(outcome) = maybe_run_self_command(&cli.command)? {
+    if let Some(outcome) = self_manage::maybe_run_self_command(&cli.command)? {
         println!("{outcome}");
         return Ok(());
     }
@@ -67,6 +68,9 @@ fn run() -> Result<(), app::AppError> {
         println!("kno uninit completed");
         return Ok(());
     }
+    if let Commands::Completions(args) = &cli.command {
+        return completions::run_completions_command(args.shell.as_deref(), args.install);
+    }
     if let Commands::Profile(args) = &cli.command {
         return profile_commands::run_profile_command(args, &cli.repo_root, &cli.db);
     }
@@ -75,11 +79,17 @@ fn run() -> Result<(), app::AppError> {
 
     match cli.command {
         Commands::New(args) => {
+            let profile_override = if args.fast {
+                Some(app.default_quick_profile_id()?)
+            } else {
+                None
+            };
+            let profile = profile_override.as_deref().or(args.profile.as_deref());
             let knot = app.create_knot(
                 &args.title,
                 args.desc.as_deref(),
                 args.state.as_deref(),
-                args.profile.as_deref(),
+                profile,
             )?;
             let palette = ui::Palette::auto();
             println!(
@@ -102,7 +112,12 @@ fn run() -> Result<(), app::AppError> {
                     agent_version: args.agent_version.clone(),
                 },
             )?;
-            println!("updated {} -> {}", knot_ref(&knot), knot.state);
+            let palette = ui::Palette::auto();
+            println!(
+                "updated {} -> {}",
+                palette.id(&knot_ref(&knot)),
+                palette.state(&knot.state)
+            );
         }
         Commands::Update(args) => {
             let add_note = args.add_note.map(|content| MetadataEntryInput {
@@ -143,10 +158,11 @@ fn run() -> Result<(), app::AppError> {
                 },
             };
             let knot = app.update_knot(&args.id, patch)?;
+            let palette = ui::Palette::auto();
             println!(
-                "updated {} [{}] {}",
-                knot_ref(&knot),
-                knot.state,
+                "updated {} {} {}",
+                palette.id(&knot_ref(&knot)),
+                palette.state(&knot.state),
                 knot.title
             );
         }
@@ -410,17 +426,49 @@ fn run() -> Result<(), app::AppError> {
         Commands::Next(args) => {
             let (knot, next) = resolve_next_state(&app, &args.id)?;
             let updated = app.set_state(&knot.id, &next, false, None)?;
-            println!("updated {} -> {}", knot_ref(&updated), updated.state);
+            let palette = ui::Palette::auto();
+            println!(
+                "updated {} -> {}",
+                palette.id(&knot_ref(&updated)),
+                palette.state(&updated.state)
+            );
         }
         Commands::Skill(args) => {
-            let (_knot, next) = resolve_next_state(&app, &args.id)?;
-            let content = skills::skill_for_state(&next).ok_or_else(|| {
-                app::AppError::InvalidArgument(format!("no skill for state '{next}'"))
+            let content = match resolve_next_state(&app, &args.id) {
+                Ok((_knot, next)) => skills::skill_for_state(&next),
+                Err(app::AppError::NotFound(_)) => {
+                    let normalized = args.id.trim().to_ascii_lowercase().replace('-', "_");
+                    skills::skill_for_state(&normalized)
+                }
+                Err(err) => return Err(err),
+            };
+            let content = content.ok_or_else(|| {
+                app::AppError::InvalidArgument(format!(
+                    "'{}' is not a knot id or skill state name",
+                    args.id
+                ))
             })?;
             print!("{content}");
         }
+        Commands::Q(args) => {
+            let quick_profile = app.default_quick_profile_id()?;
+            let knot = app.create_knot(
+                &args.title,
+                args.desc.as_deref(),
+                args.state.as_deref(),
+                Some(&quick_profile),
+            )?;
+            let palette = ui::Palette::auto();
+            println!(
+                "created {} {} {}",
+                palette.id(&knot_ref(&knot)),
+                palette.state(&knot.state),
+                knot.title
+            );
+        }
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
+        Commands::Completions(_) => unreachable!("completions handled before app init"),
     }
 
     Ok(())
@@ -444,32 +492,4 @@ fn resolve_next_state(app: &app::App, id: &str) -> Result<(app::KnotView, String
         app::AppError::InvalidArgument(format!("no next state from '{}'", knot.state))
     })?;
     Ok((knot, next.to_string()))
-}
-
-fn maybe_run_self_command(command: &cli::Commands) -> Result<Option<String>, app::AppError> {
-    use cli::Commands;
-
-    match command {
-        Commands::Upgrade(update_args) => {
-            self_manage::run_update(&self_manage::SelfUpdateOptions {
-                version: update_args.version.clone(),
-                repo: update_args.repo.clone(),
-                install_dir: update_args.install_dir.clone(),
-                script_url: update_args.script_url.clone(),
-            })?;
-            Ok(Some("updated kno binary".to_string()))
-        }
-        Commands::Uninstall(uninstall_args) => {
-            let result = self_manage::run_uninstall(&self_manage::SelfUninstallOptions {
-                bin_path: uninstall_args.bin_path.clone(),
-                remove_previous: uninstall_args.remove_previous,
-            })?;
-            let mut lines = vec![format!("removed {}", result.binary_path.display())];
-            if result.removed_previous {
-                lines.push("removed previous backups (kno.previous/knots.previous)".to_string());
-            }
-            Ok(Some(lines.join("\n")))
-        }
-        _ => Ok(None),
-    }
 }

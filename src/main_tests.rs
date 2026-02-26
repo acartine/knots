@@ -2,7 +2,8 @@ use std::path::PathBuf;
 
 use crate::cli::{Commands, SelfUninstallArgs, SelfUpdateArgs};
 
-use super::{knot_ref, maybe_run_self_command};
+use super::knot_ref;
+use crate::self_manage::maybe_run_self_command;
 
 fn unique_dir(prefix: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("{}-{}", prefix, uuid::Uuid::now_v7()));

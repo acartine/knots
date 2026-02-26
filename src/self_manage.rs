@@ -133,6 +133,36 @@ fn previous_paths(binary_path: &Path) -> Vec<PathBuf> {
     vec![parent.join("kno.previous"), parent.join("knots.previous")]
 }
 
+pub fn maybe_run_self_command(
+    command: &crate::cli::Commands,
+) -> Result<Option<String>, crate::app::AppError> {
+    use crate::cli::Commands;
+
+    match command {
+        Commands::Upgrade(update_args) => {
+            run_update(&SelfUpdateOptions {
+                version: update_args.version.clone(),
+                repo: update_args.repo.clone(),
+                install_dir: update_args.install_dir.clone(),
+                script_url: update_args.script_url.clone(),
+            })?;
+            Ok(Some("updated kno binary".to_string()))
+        }
+        Commands::Uninstall(uninstall_args) => {
+            let result = run_uninstall(&SelfUninstallOptions {
+                bin_path: uninstall_args.bin_path.clone(),
+                remove_previous: uninstall_args.remove_previous,
+            })?;
+            let mut lines = vec![format!("removed {}", result.binary_path.display())];
+            if result.removed_previous {
+                lines.push("removed previous backups (kno.previous/knots.previous)".to_string());
+            }
+            Ok(Some(lines.join("\n")))
+        }
+        _ => Ok(None),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{

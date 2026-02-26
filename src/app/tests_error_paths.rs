@@ -1,12 +1,12 @@
 use std::error::Error;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use serde_json::json;
 
 use super::{
     apply_rehydrate_event, ensure_profile_etag, metadata_entry_from_input, non_empty,
-    normalize_tag, parse_edge_direction, rehydrate_from_events, AppError, RehydrateProjection,
+    normalize_tag, parse_edge_direction, rehydrate_from_events, App, AppError, RehydrateProjection,
 };
 use crate::db::{EdgeDirection, KnotCacheRecord};
 use crate::doctor::DoctorError;
@@ -398,4 +398,31 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
         IndexEventKind::KnotHead.as_str(),
         json!({"knot_id":"K-1","title":"x","state":"idea","profile_id":"default"}),
     );
+}
+
+fn unique_workspace() -> PathBuf {
+    let root = std::env::temp_dir().join(format!("knots-app-errpath-{}", uuid::Uuid::now_v7()));
+    std::fs::create_dir_all(&root).expect("workspace should be creatable");
+    root
+}
+
+fn open_app(root: &Path) -> App {
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let db_str = db_path.to_str().expect("utf8 db path").to_string();
+    App::open(&db_str, root.to_path_buf()).expect("app should open")
+}
+
+#[test]
+fn default_quick_profile_id_falls_back_to_skipped_planning_profile() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+
+    // No quick profile configured; should fall back to first profile
+    // with planning_mode == Skipped (autopilot_no_planning).
+    let quick = app
+        .default_quick_profile_id()
+        .expect("fallback quick profile should resolve");
+    assert_eq!(quick, "autopilot_no_planning");
+
+    let _ = std::fs::remove_dir_all(root);
 }

@@ -92,6 +92,14 @@ pub struct EdgeView {
     pub dst: String,
 }
 
+#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
+pub struct UserConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_profile: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_quick_profile: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct ColdKnotView {
     pub id: String,
@@ -187,49 +195,75 @@ impl App {
         )
     }
 
-    fn read_user_default_profile_id(&self) -> Result<Option<String>, AppError> {
+    fn read_user_config(&self) -> Result<UserConfig, AppError> {
         let Some(path) = Self::config_path() else {
-            return Ok(None);
+            return Ok(UserConfig::default());
         };
         if !path.exists() {
-            return Ok(None);
+            return Ok(UserConfig::default());
         }
-
-        #[derive(serde::Deserialize)]
-        struct ProfileConfig {
-            default_profile: Option<String>,
-        }
-
         let raw = fs::read_to_string(path)?;
-        let parsed: ProfileConfig = toml::from_str(&raw)
+        let parsed: UserConfig = toml::from_str(&raw)
             .map_err(|err| AppError::InvalidArgument(format!("invalid profile config: {err}")))?;
-        let Some(raw_id) = parsed.default_profile else {
-            return Ok(None);
-        };
-        let profile = match self.profile_registry.require(&raw_id) {
-            Ok(profile) => profile,
-            Err(_) => return Ok(None),
-        };
-        Ok(Some(profile.id.clone()))
+        Ok(parsed)
     }
 
-    pub fn default_profile_id(&self) -> Result<String, AppError> {
-        if let Some(profile_id) = self.read_user_default_profile_id()? {
-            return Ok(profile_id);
-        }
-        self.fallback_profile_id()
-    }
-
-    pub fn set_default_profile_id(&self, profile_id: &str) -> Result<String, AppError> {
-        let profile = self.profile_registry.require(profile_id)?;
+    fn write_user_config(&self, config: &UserConfig) -> Result<(), AppError> {
         let path = Self::config_path().ok_or_else(|| {
             AppError::InvalidArgument("unable to resolve $HOME for profile config".to_string())
         })?;
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
-        let rendered = format!("default_profile = \"{}\"\n", profile.id);
+        let rendered = toml::to_string_pretty(config).map_err(|err| {
+            AppError::InvalidArgument(format!("failed to serialize config: {err}"))
+        })?;
         fs::write(path, rendered)?;
+        Ok(())
+    }
+
+    fn resolve_config_profile(&self, raw: &Option<String>) -> Option<String> {
+        let raw_id = raw.as_deref()?;
+        let profile = self.profile_registry.require(raw_id).ok()?;
+        Some(profile.id.clone())
+    }
+
+    pub fn default_profile_id(&self) -> Result<String, AppError> {
+        let config = self.read_user_config()?;
+        if let Some(id) = self.resolve_config_profile(&config.default_profile) {
+            return Ok(id);
+        }
+        self.fallback_profile_id()
+    }
+
+    pub fn set_default_profile_id(&self, profile_id: &str) -> Result<String, AppError> {
+        let profile = self.profile_registry.require(profile_id)?;
+        let mut config = self.read_user_config()?;
+        config.default_profile = Some(profile.id.clone());
+        self.write_user_config(&config)?;
+        Ok(profile.id.clone())
+    }
+
+    pub fn default_quick_profile_id(&self) -> Result<String, AppError> {
+        let config = self.read_user_config()?;
+        if let Some(id) = self.resolve_config_profile(&config.default_quick_profile) {
+            return Ok(id);
+        }
+        // Fallback: first profile with planning_mode == Skipped
+        let profiles = self.profile_registry.list();
+        for profile in &profiles {
+            if profile.planning_mode == crate::workflow::GateMode::Skipped {
+                return Ok(profile.id.clone());
+            }
+        }
+        self.fallback_profile_id()
+    }
+
+    pub fn set_default_quick_profile_id(&self, profile_id: &str) -> Result<String, AppError> {
+        let profile = self.profile_registry.require(profile_id)?;
+        let mut config = self.read_user_config()?;
+        config.default_quick_profile = Some(profile.id.clone());
+        self.write_user_config(&config)?;
         Ok(profile.id.clone())
     }
 

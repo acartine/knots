@@ -91,6 +91,41 @@ pub enum Commands {
     Next(NextArgs),
     #[command(about = "Print the skill prompt for a knot's next action state.")]
     Skill(SkillArgs),
+    #[command(about = "Quick-create a knot using the default quick profile.")]
+    Q(QuickNewArgs),
+    #[command(about = "Generate or install shell completions.")]
+    Completions(CompletionsArgs),
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Quick-create a knot.")]
+pub struct QuickNewArgs {
+    #[arg(help = "Knot title.")]
+    pub title: String,
+
+    #[arg(short = 'd', long = "desc", help = "Optional description text.")]
+    pub desc: Option<String>,
+
+    #[arg(
+        short = 's',
+        long,
+        help = "Initial knot state (defaults to profile initial_state)."
+    )]
+    pub state: Option<String>,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Generate or install shell completions.")]
+pub struct CompletionsArgs {
+    #[arg(help = "Shell name (bash, zsh, fish). Auto-detected if omitted.")]
+    pub shell: Option<String>,
+
+    #[arg(
+        short = 'i',
+        long = "install",
+        help = "Write completions to the canonical path for the shell."
+    )]
+    pub install: bool,
 }
 
 #[derive(Debug, Args)]
@@ -115,6 +150,13 @@ pub struct NewArgs {
         help = "Profile id (defaults to the user default profile)."
     )]
     pub profile: Option<String>,
+
+    #[arg(
+        short = 'f',
+        long = "fast",
+        help = "Use the default quick profile (skips planning)."
+    )]
+    pub fast: bool,
 }
 
 #[derive(Debug, Args)]
@@ -303,6 +345,8 @@ pub enum ProfileSubcommands {
     Show(ProfileShowArgs),
     #[command(about = "Set the user default profile id.")]
     SetDefault(ProfileSetDefaultArgs),
+    #[command(about = "Set the user default quick profile id.")]
+    SetDefaultQuick(ProfileSetDefaultArgs),
     #[command(about = "Set one knot profile and optionally remap state.")]
     Set(ProfileSetArgs),
 }
@@ -368,92 +412,10 @@ pub struct NextArgs {
 #[derive(Debug, Args)]
 #[command(about = "Print skill for knot's next state.")]
 pub struct SkillArgs {
-    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
+    #[arg(help = "Knot id/alias, or a state name (e.g. planning).")]
     pub id: String,
 }
 
 #[cfg(test)]
-mod tests {
-    use clap::Parser;
-
-    use super::{Cli, Commands, ProfileSubcommands};
-
-    fn parse(args: &[&str]) -> Cli {
-        Cli::parse_from(args)
-    }
-
-    #[test]
-    fn profile_list_parses() {
-        let cli = parse(&["kno", "profile", "list"]);
-        match cli.command {
-            Commands::Profile(args) => {
-                assert!(matches!(args.command, ProfileSubcommands::List(_)));
-            }
-            other => panic!("expected Profile, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn profile_show_parses_with_id() {
-        let cli = parse(&["kno", "profile", "show", "autopilot"]);
-        match cli.command {
-            Commands::Profile(args) => match args.command {
-                ProfileSubcommands::Show(show_args) => {
-                    assert_eq!(show_args.id, "autopilot");
-                }
-                other => panic!("expected Show, got {:?}", other),
-            },
-            other => panic!("expected Profile, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn doctor_fix_flag_parses() {
-        let cli = parse(&["kno", "doctor", "--fix"]);
-        match cli.command {
-            Commands::Doctor(args) => assert!(args.fix),
-            other => panic!("expected Doctor, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn new_desc_flag_parses() {
-        let cli = parse(&["kno", "new", "My title", "--desc", "A description"]);
-        match cli.command {
-            Commands::New(args) => {
-                assert_eq!(args.title, "My title");
-                assert_eq!(args.desc.as_deref(), Some("A description"));
-            }
-            other => panic!("expected New, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn new_short_d_flag_parses() {
-        let cli = parse(&["kno", "new", "Title", "-d", "Short desc"]);
-        match cli.command {
-            Commands::New(args) => {
-                assert_eq!(args.desc.as_deref(), Some("Short desc"));
-            }
-            other => panic!("expected New, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn next_parses() {
-        let cli = parse(&["kno", "next", "abc123"]);
-        match cli.command {
-            Commands::Next(args) => assert_eq!(args.id, "abc123"),
-            other => panic!("expected Next, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn skill_parses() {
-        let cli = parse(&["kno", "skill", "abc123"]);
-        match cli.command {
-            Commands::Skill(args) => assert_eq!(args.id, "abc123"),
-            other => panic!("expected Skill, got {:?}", other),
-        }
-    }
-}
+#[path = "cli_tests.rs"]
+mod tests;
