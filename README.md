@@ -4,43 +4,9 @@
 [![Coverage][coverage-badge]][coverage-url]
 [![License: MIT][license-badge]][license-url]
 
-Knots is a local-first, git-backed issue tracker designed for fast local workflows with
-append-only events and a SQLite cache.
+Knots is a local-first, git-backed Agentic Memory Management Framework designed for fast local workflows with append-only events and a SQLite cache.
 
-## Why Knots
-- Keep issue data out of normal code PR diffs.
-- Work offline first and sync through git when needed.
-- Keep `new`, `state`, `ls`, and `show` fast by reading local cache data.
-- Import existing history from JSONL (source-only import).
-
-## Quickstart
-### Prerequisites
-- Rust (stable)
-- Git
-- SQLite is bundled through `rusqlite` (`bundled` feature enabled)
-
-### Build from source
-```bash
-cargo build --release
-cargo run -- --help
-```
-
-### Run with a local repo + cache path
-```bash
-kno --repo-root . --db .knots/cache/state.sqlite ls
-```
-
-## Milestone status
-- M0 Workspace/Tracking: complete
-- M1 Local Event + Cache Core: complete
-- M1.5 Import Ingestion: complete
-- M2 Dedicated Branch Sync: complete
-- M2.5 Public Repo Readiness: complete
-- M2.6 Release + Curl Install: complete
-- M2.7 Field Parity + Migration Readiness: complete
-- M3+ Tiering, concurrency, and operability: pending
-
-## Install with curl
+# Install with curl
 The installer pulls from GitHub Releases and installs to `${HOME}/.local/bin` by default.
 
 Latest release:
@@ -48,18 +14,30 @@ Latest release:
 curl -fsSL https://raw.githubusercontent.com/acartine/knots/main/install.sh | sh
 ```
 
-Pinned release:
-```bash
-curl -fsSL https://raw.githubusercontent.com/acartine/knots/main/install.sh \
-  | KNOTS_VERSION=v0.1.0 sh
-```
+# Why Knot
+Yet another home-rolled agent memory thing when we already have Beads.  :-)
 
-Custom install directory:
-```bash
-curl -fsSL https://raw.githubusercontent.com/acartine/knots/main/install.sh \
-  | KNOTS_INSTALL_DIR="$HOME/.knots/bin" sh
-```
+Its purpose is to provide a fast, opinionated workflow and responsibility enforcer.  Each knot allows for human-gating or agentic-delegation at each step of the workflow.  You decide what you need to see and what you don't.
 
+# Basic Concepts
+## Actions and Queues
+Each step of the workflow is either an Action or a Queue.
+- Action states are "In Progress".  They cannot be assigned.
+- Queue states are, obviously, the opposite.
+
+This makes it easy to see what needs to be done, and what is being worked on.
+
+## Profiles
+### Action Ownership and Output
+Knots provides one workflow - but several profiles.  A profile assigns ownership to actions,
+and in some cases it defines the output of action steps. This means you can have an Implementation Review step that is human gated, where the input is a branch, a PR, or a merged commit (gasp).  This provides granular control over what agents can do along with a a definition of done.
+
+### Knot-Level Profiles
+This means you can have different profiles for different knots.  You can decide if something is a 
+small patch that skips planning and review, or a full-blown feature that goes through the full workflow.
+
+
+# Other Commands
 Verify install:
 ```bash
 kno --version
@@ -78,16 +56,16 @@ kno uninstall --remove-previous
 ```
 
 ## Core usage
-Create an issue:
+Create a knot:
 ```bash
-kno new "Document release pipeline" --state work_item
-kno new "Triage regression"                  # uses repo default workflow
-kno new "Hotfix gate" --workflow human_gate
+kno new "Document release pipeline" --state ready_for_implementation
+kno new "Triage regression"                  # uses repo default profile
+kno new "Hotfix gate" --profile semiauto
 ```
 
 Update state:
 ```bash
-kno state <knot-id> implementing
+kno state <knot-id> implementation
 ```
 
 Patch fields with one command:
@@ -96,7 +74,7 @@ kno update <knot-id> \
   --title "Refine import reducer" \
   --description "Carry full migration metadata" \
   --priority 1 \
-  --status implementing \
+  --status implementation \
   --type task \
   --add-tag migration \
   --add-note "handoff context" \
@@ -112,19 +90,11 @@ List and inspect:
 kno ls
 kno ls               # shipped knots hidden by default
 kno ls --all         # include shipped knots
-kno ls --state implementing --tag release
-kno ls --workflow automation_granular
+kno ls --state implementation --tag release
+kno ls --profile semiauto
 kno ls --type task --query importer
 kno show <knot-id>
 kno show <knot-id> --json
-```
-
-Workflow inspection:
-```bash
-kno workflow list     # or: kno wf list
-kno workflow show automation_granular
-kno workflow show human_gate
-kno workflow set-default human_gate
 ```
 
 Sync from dedicated `knots` branch/worktree:
@@ -139,89 +109,15 @@ kno edge list <src-id> --direction outgoing
 kno edge remove <src-id> blocked_by <dst-id>
 ```
 
-## Workflow definitions
-Workflow definitions are embedded in the `kno` CLI and are not read from repo-local
-`.knots/workflows.toml`.
-
-Notes:
-- Workflow ids and states are normalized to lowercase.
-- Use transition `from = "*"` for wildcard transitions.
-- Built-ins:
-- `automation_granular`: full state graph optimized for automation.
-- `human_gate`: coarse graph with a human checkpoint after PR creation.
-- `kno init` prompts you to set the repo default workflow.
-
-## Import from Beads
-Export Beads to JSONL, then import.
-
-```bash
-bd sync --flush-only
-kno import jsonl --file .beads/issues.jsonl
-kno import status
-```
-
 Import supports parity fields when present:
 - `description`, `priority`, `issue_type`/`type`
 - `labels`/`tags`
 - `notes` as legacy string or structured array entries
 - `handoff_capsules` structured array entries
 
-## Release process
-Knots uses Changesets to manage release metadata.
+# Developing
+For information on the release process and local development testing, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-1. Add a changeset for user-facing changes.
-2. Merge to `main`.
-3. Changesets workflow opens/updates a `Version Packages` PR.
-4. Merge version PR.
-5. Release workflow builds binaries, creates release assets, and publishes tag `v<version>`.
-
-Published assets:
-- `knots-v<semver>-darwin-arm64.tar.gz`
-- `knots-v<semver>-linux-x86_64.tar.gz`
-- `knots-v<semver>-checksums.txt`
-
-### Local release/install smoke test
-Run the installer smoke script before publishing major release process changes:
-
-```bash
-scripts/release/smoke-install.sh
-```
-
-The script validates both latest and pinned install flows and confirms `kno.previous` is
-retained after reinstall. It also verifies the installed binary exactly matches the local
-`cargo build --release` output (version + SHA-256 hash).
-
-Optional smoke test env vars:
-- `KNOTS_SMOKE_INSTALL_DIR=/absolute/path` keeps the installed binary at a persistent location.
-- `KNOTS_SMOKE_KEEP_TMP=1` retains temporary tarball/server artifacts after the run.
-
-### Toggle between release and local test binaries
-Use channel scripts to keep both binaries installed and switch with a symlink:
-
-```bash
-# Install GitHub release binary into ~/.local/bin/acartine_knots/release/kno
-scripts/release/channel-install.sh release
-
-# Install local smoke-tested build into ~/.local/bin/acartine_knots/local/kno
-scripts/release/channel-install.sh local
-
-# Switch active ~/.local/bin/kno symlink
-scripts/release/channel-use.sh release
-scripts/release/channel-use.sh local
-
-# Show current active target
-scripts/release/channel-use.sh show
-```
-
-You can override defaults with:
-- `KNOTS_CHANNEL_ROOT` (default: `~/.local/bin/acartine_knots`)
-- `KNOTS_ACTIVE_LINK` (default: `~/.local/bin/kno`)
-- `KNOTS_LEGACY_LINK` (default: `~/.local/bin/knots`)
-
-Knots remains supported as a compatibility alias:
-```bash
-knots --version
-```
 
 ## Security and support
 - Security policy: see `SECURITY.md`
