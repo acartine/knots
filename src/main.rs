@@ -68,7 +68,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::New(args) => {
             let knot = app.create_knot(
                 &args.title,
-                args.body.as_deref(),
+                args.desc.as_deref(),
                 args.state.as_deref(),
                 args.profile.as_deref(),
             )?;

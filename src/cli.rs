@@ -93,8 +93,8 @@ pub struct NewArgs {
     #[arg(help = "Knot title.")]
     pub title: String,
 
-    #[arg(short = 'b', long, help = "Optional body/description text.")]
-    pub body: Option<String>,
+    #[arg(short = 'd', long = "desc", help = "Optional description text.")]
+    pub desc: Option<String>,
 
     #[arg(
         short = 's',
@@ -573,6 +573,29 @@ mod tests {
         match cli.command {
             Commands::Doctor(args) => assert!(args.fix),
             other => panic!("expected Doctor, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn new_desc_flag_parses() {
+        let cli = parse(&["kno", "new", "My title", "--desc", "A description"]);
+        match cli.command {
+            Commands::New(args) => {
+                assert_eq!(args.title, "My title");
+                assert_eq!(args.desc.as_deref(), Some("A description"));
+            }
+            other => panic!("expected New, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn new_short_d_flag_parses() {
+        let cli = parse(&["kno", "new", "Title", "-d", "Short desc"]);
+        match cli.command {
+            Commands::New(args) => {
+                assert_eq!(args.desc.as_deref(), Some("Short desc"));
+            }
+            other => panic!("expected New, got {:?}", other),
         }
     }
 }
