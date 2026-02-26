@@ -37,11 +37,11 @@ fn knot_ref_prefers_alias_when_available() {
         deferred_from_state: None,
         created_at: None,
     };
-    assert_eq!(knot_ref(&with_alias), "A.1 (K-123)");
+    assert_eq!(knot_ref(&with_alias), "A.1 (123)");
 
     let mut without_alias = with_alias;
     without_alias.alias = None;
-    assert_eq!(knot_ref(&without_alias), "K-123");
+    assert_eq!(knot_ref(&without_alias), "123");
 }
 
 #[test]

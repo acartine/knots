@@ -72,11 +72,15 @@ fn normalize_slug(raw: &str) -> String {
         .collect::<String>()
 }
 
+pub fn display_id(id: &str) -> &str {
+    id.rsplit_once('-').map_or(id, |(_, suffix)| suffix)
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
 
-    use super::{generate_knot_id, repo_slug};
+    use super::{display_id, generate_knot_id, repo_slug};
 
     #[test]
     fn slug_fallbacks_to_repo_name_when_git_remote_missing() {
@@ -102,5 +106,12 @@ mod tests {
             4
         );
         let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn display_id_strips_prefix() {
+        assert_eq!(display_id("knots-19dc"), "19dc");
+        assert_eq!(display_id("my-repo-a1b2"), "a1b2");
+        assert_eq!(display_id("nohyphen"), "nohyphen");
     }
 }

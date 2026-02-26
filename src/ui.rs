@@ -34,9 +34,10 @@ pub fn print_knot_show(knot: &KnotView) {
 fn format_knot_row(row: &DisplayKnot, palette: &Palette) -> String {
     let knot = &row.knot;
     let indent = indentation_prefix(row.depth, palette);
+    let short_id = crate::knot_id::display_id(&knot.id);
     let display_id = match knot.alias.as_deref() {
-        Some(alias) => format!("{alias} ({})", knot.id),
-        None => knot.id.clone(),
+        Some(alias) => format!("{alias} ({short_id})"),
+        None => short_id.to_string(),
     };
     let mut line = format!(
         "{}{} {} {}",
@@ -108,7 +109,7 @@ fn format_knot_show(knot: &KnotView, palette: &Palette, value_width: usize) -> V
 }
 
 fn knot_show_fields(knot: &KnotView) -> Vec<ShowField> {
-    let mut fields = vec![ShowField::new("id", knot.id.clone())];
+    let mut fields = vec![ShowField::new("id", crate::knot_id::display_id(&knot.id))];
     if let Some(alias) = knot.alias.as_deref() {
         fields.push(ShowField::new("alias", alias));
     }
