@@ -70,33 +70,9 @@ CREATE INDEX IF NOT EXISTS idx_cold_catalog_updated_at ON cold_catalog(updated_a
     },
     Migration {
         version: 2,
-        name: "import_tracking_v1",
+        name: "reserved_v2",
         sql: r#"
-CREATE TABLE IF NOT EXISTS import_state (
-    source_key TEXT PRIMARY KEY,
-    source_type TEXT NOT NULL,
-    source_ref TEXT NOT NULL,
-    last_run_at TEXT NOT NULL,
-    last_status TEXT NOT NULL,
-    processed_count INTEGER NOT NULL DEFAULT 0,
-    imported_count INTEGER NOT NULL DEFAULT 0,
-    skipped_count INTEGER NOT NULL DEFAULT 0,
-    error_count INTEGER NOT NULL DEFAULT 0,
-    checkpoint TEXT,
-    last_error TEXT
-);
-
-CREATE TABLE IF NOT EXISTS import_fingerprints (
-    fingerprint TEXT PRIMARY KEY,
-    source_key TEXT NOT NULL,
-    knot_id TEXT NOT NULL,
-    occurred_at TEXT NOT NULL,
-    action TEXT NOT NULL,
-    created_at TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_import_fingerprints_source_key
-    ON import_fingerprints(source_key);
+-- Reserved for backward compatibility with previously shipped schema version 2.
 "#,
     },
     Migration {

@@ -9,7 +9,6 @@ use crate::db::{self, EdgeDirection};
 use crate::doctor::DoctorError;
 use crate::domain::state::{InvalidStateTransition, KnotState};
 use crate::fsck::FsckError;
-use crate::imports::ImportError;
 use crate::locks::LockError;
 use crate::perf::PerfError;
 use crate::remote_init::RemoteInitError;
@@ -255,7 +254,6 @@ fn app_error_source_covers_wrapped_error_variants() {
         AppError::Event(crate::events::EventWriteError::Io(std::io::Error::other(
             "event",
         ))),
-        AppError::Import(ImportError::InvalidRecord("bad".to_string())),
         AppError::Sync(SyncError::GitUnavailable),
         AppError::Lock(LockError::Busy(PathBuf::from("/tmp/lock"))),
         AppError::RemoteInit(RemoteInitError::NotGitRepository),
@@ -620,36 +618,6 @@ fn default_profile_resolution_covers_config_and_fallback_paths() {
             std::env::set_var("HOME", home);
         }
     }
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn import_methods_cover_app_wrapper_paths() {
-    let root = unique_workspace();
-    let (app, _) = open_app(&root);
-    let input = root.join("issues.jsonl");
-    std::fs::write(
-        &input,
-        concat!(
-            "{\"id\":\"IMP-1\",\"title\":\"Imported\",\"status\":\"open\",",
-            "\"workflow_id\":\"default\",",
-            "\"updated_at\":\"2026-02-26T10:00:00Z\"}\n"
-        ),
-    )
-    .expect("jsonl should be writable");
-
-    let summary = app
-        .import_jsonl(input.to_str().expect("utf8 path"), None, false)
-        .expect("import wrapper should succeed");
-    assert_eq!(summary.source_type, "jsonl");
-    assert_eq!(summary.imported_count, 1);
-
-    let statuses = app
-        .import_statuses()
-        .expect("import status wrapper should succeed");
-    assert!(!statuses.is_empty());
-    assert_eq!(statuses[0].source_type, "jsonl");
 
     let _ = std::fs::remove_dir_all(root);
 }

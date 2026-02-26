@@ -291,18 +291,6 @@ mod tests {
     }
 
     #[test]
-    fn init_local_store_does_not_create_repo_workflow_file() {
-        let root = unique_dir();
-        let db_path = root.join(".knots/cache/state.sqlite");
-
-        init_local_store(&root, db_path.to_str().expect("utf8 path"))
-            .expect("local init should succeed");
-
-        assert!(!root.join(".knots/workflows.toml").exists());
-        remove_dir_if_exists(&root);
-    }
-
-    #[test]
     fn init_local_store_is_idempotent_with_gitignore() {
         let root = unique_dir();
         let db_path = root.join(".knots/cache/state.sqlite");

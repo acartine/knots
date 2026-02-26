@@ -21,7 +21,6 @@ use crate::events::{
 };
 use crate::fsck::{run_fsck, FsckError, FsckReport};
 use crate::hierarchy_alias::{build_alias_maps, AliasMaps};
-use crate::imports::{ImportError, ImportService, ImportStatus, ImportSummary};
 use crate::knot_id::generate_knot_id;
 use crate::locks::{FileLock, LockError};
 use crate::perf::{run_perf_harness, PerfError, PerfReport};
@@ -1063,23 +1062,6 @@ impl App {
         Ok(rows.into_iter().map(EdgeView::from).collect())
     }
 
-    #[allow(dead_code)]
-    pub fn import_jsonl(
-        &self,
-        file: &str,
-        since: Option<&str>,
-        dry_run: bool,
-    ) -> Result<ImportSummary, AppError> {
-        let service = ImportService::new(&self.conn, &self.writer);
-        Ok(service.import_jsonl(file, since, dry_run)?)
-    }
-
-    #[allow(dead_code)]
-    pub fn import_statuses(&self) -> Result<Vec<ImportStatus>, AppError> {
-        let service = ImportService::new(&self.conn, &self.writer);
-        Ok(service.list_statuses()?)
-    }
-
     pub fn cold_sync(&self) -> Result<SyncSummary, AppError> {
         self.pull()
     }
@@ -1701,7 +1683,6 @@ pub enum AppError {
     Io(std::io::Error),
     Db(rusqlite::Error),
     Event(EventWriteError),
-    Import(ImportError),
     Sync(SyncError),
     Lock(LockError),
     RemoteInit(RemoteInitError),
@@ -1723,7 +1704,6 @@ impl fmt::Display for AppError {
             AppError::Io(err) => write!(f, "I/O error: {}", err),
             AppError::Db(err) => write!(f, "database error: {}", err),
             AppError::Event(err) => write!(f, "event write error: {}", err),
-            AppError::Import(err) => write!(f, "import error: {}", err),
             AppError::Sync(err) => write!(f, "sync error: {}", err),
             AppError::Lock(err) => write!(f, "lock error: {}", err),
             AppError::RemoteInit(err) => write!(f, "remote init error: {}", err),
@@ -1751,7 +1731,6 @@ impl Error for AppError {
             AppError::Io(err) => Some(err),
             AppError::Db(err) => Some(err),
             AppError::Event(err) => Some(err),
-            AppError::Import(err) => Some(err),
             AppError::Sync(err) => Some(err),
             AppError::Lock(err) => Some(err),
             AppError::RemoteInit(err) => Some(err),
@@ -1784,12 +1763,6 @@ impl From<rusqlite::Error> for AppError {
 impl From<EventWriteError> for AppError {
     fn from(value: EventWriteError) -> Self {
         AppError::Event(value)
-    }
-}
-
-impl From<ImportError> for AppError {
-    fn from(value: ImportError) -> Self {
-        AppError::Import(value)
     }
 }
 
