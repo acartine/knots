@@ -6,7 +6,6 @@ mod domain;
 mod events;
 mod fsck;
 mod hierarchy_alias;
-mod imports;
 mod init;
 mod knot_id;
 mod list_layout;
@@ -73,10 +72,11 @@ fn run() -> Result<(), app::AppError> {
                 args.state.as_deref(),
                 args.profile.as_deref(),
             )?;
+            let palette = ui::Palette::auto();
             println!(
-                "created {} [{}] {}",
-                knot_ref(&knot),
-                knot.state,
+                "created {} {} {}",
+                palette.id(&knot_ref(&knot)),
+                palette.state(&knot.state),
                 knot.title
             );
         }
