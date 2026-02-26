@@ -4,7 +4,7 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-const DEFAULT_PROFILES_TOML: &str = include_str!("default_profiles.toml");
+const PROFILES_TOML: &str = include_str!("profiles.toml");
 const WILDCARD_STATE: &str = "*";
 
 pub const READY_FOR_PLANNING: &str = "ready_for_planning";
@@ -217,7 +217,7 @@ impl From<InvalidWorkflowTransition> for ProfileError {
 
 impl ProfileRegistry {
     pub fn load() -> Result<Self, ProfileError> {
-        Self::from_toml(DEFAULT_PROFILES_TOML)
+        Self::from_toml(PROFILES_TOML)
     }
 
     pub(crate) fn from_toml(raw: &str) -> Result<Self, ProfileError> {

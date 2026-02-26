@@ -14,7 +14,6 @@ use crate::domain::metadata::MetadataEntryInput;
 use crate::domain::state::{InvalidStateTransition, KnotState};
 use crate::events::{EventWriteError, FullEvent, FullEventKind, IndexEvent, IndexEventKind};
 use crate::fsck::FsckError;
-use crate::imports::ImportError;
 use crate::locks::LockError;
 use crate::perf::PerfError;
 use crate::remote_init::RemoteInitError;
@@ -338,9 +337,6 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
     }
     .into();
     assert!(event.to_string().contains("event write error"));
-
-    let import: AppError = ImportError::InvalidRecord("bad source".to_string()).into();
-    assert!(import.to_string().contains("import error"));
 
     let sync: AppError = SyncError::GitUnavailable.into();
     assert!(sync.to_string().contains("sync error"));

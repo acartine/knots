@@ -92,8 +92,6 @@ fn initializes_required_tables_and_schema_version() {
         "edge",
         "review_stats",
         "cold_catalog",
-        "import_state",
-        "import_fingerprints",
     ];
     for table in tables {
         assert!(
@@ -191,7 +189,7 @@ CREATE TABLE schema_migrations (
 INSERT INTO schema_migrations (version, name, applied_at)
 VALUES (1, 'baseline_cache_schema_v1', '2026-02-23T00:00:00Z');
 INSERT INTO schema_migrations (version, name, applied_at)
-VALUES (2, 'import_tracking_v1', '2026-02-23T00:00:01Z');
+VALUES (2, 'reserved_v2', '2026-02-23T00:00:01Z');
 
 CREATE TABLE meta (
     key TEXT PRIMARY KEY,

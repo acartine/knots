@@ -17,7 +17,6 @@
   - `kno new "<title>" --state work_item`
   - `kno update <knot-id> --status implementing`
   - `kno show <knot-id>`
-  - `kno wf list`
   - `kno sync`
 
 ## Pre-Push Sanity (Required)
