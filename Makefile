@@ -19,7 +19,7 @@ coverage:
 	  exit 1; \
 	fi
 	mkdir -p coverage
-	cargo tarpaulin --all-features --workspace --timeout 120 --out Xml \
+	cargo tarpaulin --engine llvm --all-features --workspace --timeout 120 --out Xml \
 	  --output-dir coverage --fail-under "$(COVERAGE_MIN)"
 
 sanity: fmt lint test coverage

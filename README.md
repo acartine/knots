@@ -2,6 +2,7 @@
 
 [![CI][ci-badge]][ci-url]
 [![Coverage][coverage-badge]][coverage-url]
+[![License: MIT][license-badge]][license-url]
 
 Knots is a local-first, git-backed issue tracker designed for fast local workflows with
 append-only events and a SQLite cache.
@@ -241,3 +242,5 @@ MIT. See `LICENSE`.
 [ci-url]: https://github.com/acartine/knots/actions/workflows/ci.yml
 [coverage-badge]: https://codecov.io/gh/acartine/knots/graph/badge.svg?branch=main
 [coverage-url]: https://codecov.io/gh/acartine/knots
+[license-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
+[license-url]: https://opensource.org/licenses/MIT
