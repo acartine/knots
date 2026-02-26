@@ -242,17 +242,17 @@ fn non_empty(raw: &str) -> Option<&str> {
     }
 }
 
-struct Palette {
+pub(crate) struct Palette {
     enabled: bool,
 }
 
 impl Palette {
-    fn auto() -> Self {
+    pub(crate) fn auto() -> Self {
         let enabled = std::env::var_os("NO_COLOR").is_none() && io::stdout().is_terminal();
         Self { enabled }
     }
 
-    fn paint(&self, code: &str, text: &str) -> String {
+    pub(crate) fn paint(&self, code: &str, text: &str) -> String {
         if self.enabled {
             format!("\x1b[{code}m{text}\x1b[0m")
         } else {
@@ -272,11 +272,11 @@ impl Palette {
         self.paint("2", text)
     }
 
-    fn id(&self, text: &str) -> String {
+    pub(crate) fn id(&self, text: &str) -> String {
         self.paint("1;94", text)
     }
 
-    fn state(&self, state: &str) -> String {
+    pub(crate) fn state(&self, state: &str) -> String {
         let upper = state.to_ascii_uppercase();
         self.paint(state_color_code(state), &format!("[{upper}]"))
     }

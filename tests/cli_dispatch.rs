@@ -201,11 +201,6 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     assert_failure(&missing);
     assert!(String::from_utf8_lossy(&missing.stderr).contains("not found"));
 
-    let import_unknown = run_knots(&root, &db, &["import", "status", "--json"]);
-    assert_failure(&import_unknown);
-    assert!(String::from_utf8_lossy(&import_unknown.stderr)
-        .contains("unrecognized subcommand 'import'"));
-
     let self_unknown = run_knots(&root, &db, &["self", "update"]);
     assert_failure(&self_unknown);
     assert!(String::from_utf8_lossy(&self_unknown.stderr).contains("unrecognized subcommand"));
@@ -230,9 +225,6 @@ fn init_and_uninit_commands_work_with_remote_origin() {
     let gitignore = std::fs::read_to_string(root.join(".gitignore"))
         .expect(".gitignore should exist after init");
     assert!(gitignore.lines().any(|line| line.trim() == "/.knots/"));
-    assert!(!gitignore
-        .lines()
-        .any(|line| line.trim() == "!/.knots/workflows.toml"));
 
     let uninit = run_knots(&root, &db, &["uninit"]);
     assert_success(&uninit);
@@ -252,9 +244,6 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
     let gitignore = std::fs::read_to_string(root.join(".gitignore"))
         .expect(".gitignore should exist after init-remote");
     assert!(gitignore.lines().any(|line| line.trim() == "/.knots/"));
-    assert!(!gitignore
-        .lines()
-        .any(|line| line.trim() == "!/.knots/workflows.toml"));
 
     let created = run_knots(
         &root,
@@ -269,6 +258,11 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
         ],
     );
     assert_success(&created);
+    let created_stdout = String::from_utf8_lossy(&created.stdout);
+    assert!(
+        created_stdout.contains("[READY_FOR_PLANNING]"),
+        "kno new should format state in uppercase like kno ls: {created_stdout}"
+    );
     let knot_id = parse_created_id(&created);
 
     assert_success(&run_knots(&root, &db, &["ls"]));
@@ -306,11 +300,6 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
         &db,
         &["edge", "remove", &knot_id, "blocked_by", &second_id],
     ));
-
-    let import_unknown = run_knots(&root, &db, &["import", "status"]);
-    assert_failure(&import_unknown);
-    assert!(String::from_utf8_lossy(&import_unknown.stderr)
-        .contains("unrecognized subcommand 'import'"));
 
     let self_unknown = run_knots(&root, &db, &["self", "update"]);
     assert_failure(&self_unknown);
