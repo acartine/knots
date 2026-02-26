@@ -322,6 +322,20 @@ impl ProfileDefinition {
         }
         .into())
     }
+
+    pub fn next_happy_path_state(&self, current: &str) -> Option<&str> {
+        let pos = self.states.iter().position(|s| s == current)?;
+        for candidate in &self.states[pos + 1..] {
+            let valid = self
+                .transitions
+                .iter()
+                .any(|t| t.from == current && t.to == *candidate);
+            if valid {
+                return Some(candidate);
+            }
+        }
+        None
+    }
 }
 
 pub fn normalize_profile_id(raw: &str) -> Option<String> {
@@ -467,25 +481,5 @@ fn legacy_aliases(id: &str) -> &'static [&'static str] {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{GateMode, ProfileRegistry};
-
-    #[test]
-    fn loads_builtin_profiles_and_legacy_aliases() {
-        let registry = ProfileRegistry::load().expect("registry should load");
-        assert!(registry.require("autopilot").is_ok());
-        assert!(registry.require("default").is_ok());
-        assert!(registry.require("human_gate").is_ok());
-    }
-
-    #[test]
-    fn no_planning_profiles_start_at_ready_for_implementation() {
-        let registry = ProfileRegistry::load().expect("registry should load");
-        let profile = registry
-            .require("autopilot_no_planning")
-            .expect("profile should exist");
-        assert_eq!(profile.initial_state, "ready_for_implementation");
-        assert_eq!(profile.planning_mode, GateMode::Skipped);
-        assert!(profile.states.iter().all(|state| !state.contains("plan")));
-    }
-}
+#[path = "profile_tests.rs"]
+mod tests;

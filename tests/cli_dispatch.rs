@@ -209,6 +209,49 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     assert_failure(&self_unknown);
     assert!(String::from_utf8_lossy(&self_unknown.stderr).contains("unrecognized subcommand"));
 
+    // first_id is in ready_for_plan_review, so skill resolves plan_review
+    let skill = run_knots(&root, &db, &["skill", &first_id]);
+    assert_success(&skill);
+    let skill_stdout = String::from_utf8_lossy(&skill.stdout);
+    assert!(
+        skill_stdout.contains("# Plan Review"),
+        "skill should print plan review markdown: {skill_stdout}"
+    );
+
+    // next advances ready_for_plan_review -> plan_review
+    let next = run_knots(&root, &db, &["next", &first_id]);
+    assert_success(&next);
+    let next_stdout = String::from_utf8_lossy(&next.stdout);
+    assert!(
+        next_stdout.contains("updated"),
+        "next should print updated: {next_stdout}"
+    );
+
+    let next_missing = run_knots(&root, &db, &["next", "missing-id"]);
+    assert_failure(&next_missing);
+
+    let skill_missing = run_knots(&root, &db, &["skill", "missing-id"]);
+    assert_failure(&skill_missing);
+
+    // Terminal state has no next - test error path
+    let shipped_knot = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Shipped knot",
+            "--profile",
+            "autopilot",
+            "--state",
+            "shipped",
+        ],
+    );
+    assert_success(&shipped_knot);
+    let shipped_id = parse_created_id(&shipped_knot);
+    let next_terminal = run_knots(&root, &db, &["next", &shipped_id]);
+    assert_failure(&next_terminal);
+    assert!(String::from_utf8_lossy(&next_terminal.stderr).contains("no next state"));
+
     let doctor = run_knots(&root, &db, &["doctor", "--json"]);
     assert_failure(&doctor);
     assert!(String::from_utf8_lossy(&doctor.stderr).contains("doctor found"));

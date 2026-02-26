@@ -1,5 +1,6 @@
 mod app;
 mod cli;
+mod cli_ops;
 mod db;
 mod doctor;
 mod domain;
@@ -17,9 +18,11 @@ mod locks;
 mod main_tests;
 mod perf;
 mod profile;
+mod profile_commands;
 mod remote_init;
 mod replication;
 mod self_manage;
+mod skills;
 mod snapshots;
 mod sync;
 mod tiering;
@@ -27,13 +30,18 @@ mod ui;
 mod workflow;
 mod workflow_diagram;
 
-use std::io::IsTerminal;
-
 fn main() {
     if let Err(err) = run() {
         eprintln!("error: {}", err);
         std::process::exit(1);
     }
+}
+
+fn print_json(value: &impl serde::Serialize) {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(value).expect("json serialization should work")
+    );
 }
 
 fn run() -> Result<(), app::AppError> {
@@ -59,7 +67,7 @@ fn run() -> Result<(), app::AppError> {
         return Ok(());
     }
     if let Commands::Profile(args) = &cli.command {
-        return run_profile_command(args, &cli.repo_root, &cli.db);
+        return profile_commands::run_profile_command(args, &cli.repo_root, &cli.db);
     }
 
     let app = app::App::open(&cli.db, cli.repo_root)?;
@@ -150,10 +158,7 @@ fn run() -> Result<(), app::AppError> {
             };
             let knots = listing::apply_filters(app.list_knots()?, &filter);
             if args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&knots).expect("json serialization should work")
-                );
+                print_json(&knots);
             } else {
                 let layout_edges = app.list_layout_edges()?;
                 let rows = list_layout::layout_knots(knots, &layout_edges);
@@ -163,11 +168,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Show(args) => match app.show_knot(&args.id)? {
             Some(knot) => {
                 if args.json {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&knot)
-                            .expect("json serialization should work")
-                    );
+                    print_json(&knot);
                 } else {
                     ui::print_knot_show(&knot);
                 }
@@ -180,10 +181,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Pull(args) => {
             let summary = app.pull()?;
             if args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&summary).expect("json serialization should work")
-                );
+                print_json(&summary);
             } else {
                 println!(
                     concat!(
@@ -202,10 +200,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Push(args) => {
             let summary = app.push()?;
             if args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&summary).expect("json serialization should work")
-                );
+                print_json(&summary);
             } else {
                 println!(
                     "push local_event_files={} copied_files={} committed={} pushed={}{}",
@@ -224,10 +219,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Sync(args) => {
             let summary = app.sync()?;
             if args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&summary).expect("json serialization should work")
-                );
+                print_json(&summary);
             } else {
                 println!(
                     "sync push(local_event_files={} copied_files={} committed={} pushed={}) \
@@ -255,10 +247,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Fsck(args) => {
             let report = app.fsck()?;
             if args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&report).expect("json serialization should work")
-                );
+                print_json(&report);
             } else {
                 println!(
                     "fsck scanned_files={} issues={}",
@@ -279,10 +268,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Doctor(args) => {
             let report = app.doctor(args.fix)?;
             if args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&report).expect("json serialization should work")
-                );
+                print_json(&report);
             } else {
                 for check in &report.checks {
                     println!(
@@ -305,10 +291,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Perf(args) => {
             let report = app.perf_harness(args.iterations)?;
             if args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&report).expect("json serialization should work")
-                );
+                print_json(&report);
             } else {
                 println!("perf iterations={}", report.iterations);
                 for measurement in &report.measurements {
@@ -336,10 +319,7 @@ fn run() -> Result<(), app::AppError> {
             }
             let summary = app.compact_write_snapshots()?;
             if args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&summary).expect("json serialization should work")
-                );
+                print_json(&summary);
             } else {
                 println!(
                     "snapshots written hot={} warm={} cold={} active={} cold_path={}",
@@ -355,11 +335,7 @@ fn run() -> Result<(), app::AppError> {
             ColdSubcommands::Sync(sync_args) => {
                 let summary = app.cold_sync()?;
                 if sync_args.json {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&summary)
-                            .expect("json serialization should work")
-                    );
+                    print_json(&summary);
                 } else {
                     println!(
                         concat!(
@@ -378,11 +354,7 @@ fn run() -> Result<(), app::AppError> {
             ColdSubcommands::Search(search_args) => {
                 let matches = app.cold_search(&search_args.term)?;
                 if search_args.json {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&matches)
-                            .expect("json serialization should work")
-                    );
+                    print_json(&matches);
                 } else if matches.is_empty() {
                     println!("no cold knots matched '{}'", search_args.term);
                 } else {
@@ -398,11 +370,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Rehydrate(args) => match app.rehydrate(&args.id)? {
             Some(knot) => {
                 if args.json {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&knot)
-                            .expect("json serialization should work")
-                    );
+                    print_json(&knot);
                 } else {
                     println!(
                         "rehydrated {} [{}] {}",
@@ -426,11 +394,7 @@ fn run() -> Result<(), app::AppError> {
             EdgeSubcommands::List(edge_args) => {
                 let edges = app.list_edges(&edge_args.id, &edge_args.direction)?;
                 if edge_args.json {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&edges)
-                            .expect("json serialization should work")
-                    );
+                    print_json(&edges);
                 } else if edges.is_empty() {
                     println!("no edges for {}", edge_args.id);
                 } else {
@@ -440,304 +404,23 @@ fn run() -> Result<(), app::AppError> {
                 }
             }
         },
+        Commands::Next(args) => {
+            let (knot, next) = resolve_next_state(&app, &args.id)?;
+            let updated = app.set_state(&knot.id, &next, false, None)?;
+            println!("updated {} -> {}", knot_ref(&updated), updated.state);
+        }
+        Commands::Skill(args) => {
+            let (_knot, next) = resolve_next_state(&app, &args.id)?;
+            let content = skills::skill_for_state(&next).ok_or_else(|| {
+                app::AppError::InvalidArgument(format!("no skill for state '{next}'"))
+            })?;
+            print!("{content}");
+        }
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
     }
 
     Ok(())
-}
-
-fn run_profile_command(
-    args: &cli::ProfileArgs,
-    repo_root: &std::path::Path,
-    db_path: &str,
-) -> Result<(), app::AppError> {
-    use cli::ProfileSubcommands;
-
-    let registry = workflow::ProfileRegistry::load()?;
-    let palette = ProfilePalette::auto();
-    match &args.command {
-        ProfileSubcommands::List(list_args) => {
-            let profiles = registry.list();
-            if list_args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&profiles)
-                        .expect("json serialization should work")
-                );
-            } else if profiles.is_empty() {
-                println!("{}", palette.dim("no profiles found"));
-            } else {
-                println!("{}", palette.heading("Profiles"));
-                let count = profiles.len();
-                for (index, profile) in profiles.into_iter().enumerate() {
-                    if index > 0 {
-                        println!();
-                    }
-                    let profile_name = profile
-                        .description
-                        .as_deref()
-                        .unwrap_or(profile.id.as_str());
-                    let fields = vec![
-                        ProfileField::new("name", profile_name),
-                        ProfileField::new("id", profile.id.clone()),
-                        ProfileField::new(
-                            "planning",
-                            format_profile_gate_mode(&profile.planning_mode),
-                        ),
-                        ProfileField::new(
-                            "impl_review",
-                            format_profile_gate_mode(&profile.implementation_review_mode),
-                        ),
-                        ProfileField::new("output", format_profile_output_mode(&profile.output)),
-                        ProfileField::new("initial_state", profile.initial_state.clone()),
-                        ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
-                    ];
-                    for line in format_profile_fields(&fields, &palette) {
-                        println!("{line}");
-                    }
-                }
-                if count > 1 {
-                    println!();
-                }
-                println!("{}", palette.dim(&format!("{count} profile(s)")));
-            }
-        }
-        ProfileSubcommands::Show(show_args) => {
-            let profile = registry.require(&show_args.id)?.clone();
-            if show_args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&profile).expect("json serialization should work")
-                );
-            } else {
-                println!("{}", palette.heading("Profile"));
-                let mut fields = vec![
-                    ProfileField::new("id", profile.id.clone()),
-                    ProfileField::new("planning", format_profile_gate_mode(&profile.planning_mode)),
-                    ProfileField::new(
-                        "impl_review",
-                        format_profile_gate_mode(&profile.implementation_review_mode),
-                    ),
-                    ProfileField::new("output", format_profile_output_mode(&profile.output)),
-                    ProfileField::new("initial_state", profile.initial_state.clone()),
-                    ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
-                ];
-                if let Some(description) = profile.description.as_deref() {
-                    fields.insert(1, ProfileField::new("description", description));
-                }
-                for line in format_profile_fields(&fields, &palette) {
-                    println!("{line}");
-                }
-                println!("{}", palette.dim("workflow:"));
-                for line in workflow_diagram::render(&profile) {
-                    println!("  {line}");
-                }
-            }
-        }
-        ProfileSubcommands::SetDefault(set_default_args) => {
-            let app = app::App::open(db_path, repo_root.to_path_buf())?;
-            let profile_id = app.set_default_profile_id(&set_default_args.id)?;
-            println!("default profile: {}", profile_id);
-        }
-        ProfileSubcommands::Set(set_args) => {
-            let app = app::App::open(db_path, repo_root.to_path_buf())?;
-            let profile = registry.require(&set_args.profile)?;
-            let current = app
-                .show_knot(&set_args.id)?
-                .ok_or_else(|| app::AppError::NotFound(set_args.id.clone()))?;
-            let state = resolve_profile_state_selection(
-                profile,
-                set_args.state.as_deref(),
-                &current.state,
-            )?;
-            let knot = app.set_profile(
-                &set_args.id,
-                &profile.id,
-                &state,
-                set_args.if_match.as_deref(),
-            )?;
-            println!(
-                "updated {} [{}] profile={}",
-                knot_ref(&knot),
-                knot.state,
-                knot.profile_id
-            );
-        }
-    }
-    Ok(())
-}
-
-fn format_profile_output_mode(mode: &workflow::OutputMode) -> &'static str {
-    match mode {
-        workflow::OutputMode::Local => "Local",
-        workflow::OutputMode::Remote => "Remote",
-        workflow::OutputMode::Pr => "Pr",
-        workflow::OutputMode::RemoteMain => "RemoteMain (merged)",
-    }
-}
-
-fn format_profile_gate_mode(mode: &workflow::GateMode) -> &'static str {
-    match mode {
-        workflow::GateMode::Required => "Required",
-        workflow::GateMode::Optional => "Optional",
-        workflow::GateMode::Skipped => "Skipped",
-    }
-}
-
-fn format_profile_fields(fields: &[ProfileField], palette: &ProfilePalette) -> Vec<String> {
-    if fields.is_empty() {
-        return Vec::new();
-    }
-    let label_width = fields
-        .iter()
-        .map(|field| field.label.len() + 1)
-        .max()
-        .unwrap_or(0);
-    fields
-        .iter()
-        .map(|field| {
-            let label = format!("{}:", field.label);
-            let label_text = format!("{label:>label_width$}");
-            format!("{}  {}", palette.label(&label_text), field.value)
-        })
-        .collect()
-}
-
-struct ProfileField {
-    label: &'static str,
-    value: String,
-}
-
-impl ProfileField {
-    fn new(label: &'static str, value: impl Into<String>) -> Self {
-        Self {
-            label,
-            value: value.into(),
-        }
-    }
-}
-
-struct ProfilePalette {
-    enabled: bool,
-}
-
-impl ProfilePalette {
-    fn auto() -> Self {
-        let enabled = std::env::var_os("NO_COLOR").is_none() && std::io::stdout().is_terminal();
-        Self { enabled }
-    }
-
-    fn paint(&self, code: &str, text: &str) -> String {
-        if self.enabled {
-            format!("\x1b[{code}m{text}\x1b[0m")
-        } else {
-            text.to_string()
-        }
-    }
-
-    fn heading(&self, text: &str) -> String {
-        self.paint("1;36", text)
-    }
-
-    fn label(&self, text: &str) -> String {
-        self.paint("36", text)
-    }
-
-    fn dim(&self, text: &str) -> String {
-        self.paint("2", text)
-    }
-}
-
-fn resolve_profile_state_selection(
-    profile: &workflow::ProfileDefinition,
-    requested_state: Option<&str>,
-    current_state: &str,
-) -> Result<String, app::AppError> {
-    let interactive = std::io::stdin().is_terminal();
-
-    if let Some(raw_state) = requested_state {
-        let state = normalize_cli_state(raw_state)?;
-        if profile.require_state(&state).is_ok() {
-            return Ok(state);
-        }
-        if !interactive {
-            return Err(app::AppError::InvalidArgument(format!(
-                "state '{}' is not valid for profile '{}'; valid states: {}",
-                state,
-                profile.id,
-                profile.states.join(", ")
-            )));
-        }
-        return prompt_for_profile_state(profile, current_state);
-    }
-
-    if !interactive {
-        return Err(app::AppError::InvalidArgument(
-            "--state is required in non-interactive mode".to_string(),
-        ));
-    }
-    prompt_for_profile_state(profile, current_state)
-}
-
-fn prompt_for_profile_state(
-    profile: &workflow::ProfileDefinition,
-    current_state: &str,
-) -> Result<String, app::AppError> {
-    use std::io::{self, Write};
-
-    if profile.states.is_empty() {
-        return Err(app::AppError::InvalidArgument(format!(
-            "profile '{}' has no valid states",
-            profile.id
-        )));
-    }
-
-    println!(
-        "choose state for profile '{}' (knot currently '{}'):",
-        profile.id, current_state
-    );
-    for (index, state) in profile.states.iter().enumerate() {
-        println!("  {}. {}", index + 1, state);
-    }
-
-    let fallback_index = profile
-        .states
-        .iter()
-        .position(|state| state == current_state)
-        .or_else(|| {
-            profile
-                .states
-                .iter()
-                .position(|state| state == &profile.initial_state)
-        })
-        .unwrap_or(0);
-    println!("press Enter to choose {}", profile.states[fallback_index]);
-
-    let mut input = String::new();
-    loop {
-        print!("state [1-{}]: ", profile.states.len());
-        io::stdout().flush()?;
-        input.clear();
-        io::stdin().read_line(&mut input)?;
-        let trimmed = input.trim();
-        if trimmed.is_empty() {
-            return Ok(profile.states[fallback_index].clone());
-        }
-        if let Ok(index) = trimmed.parse::<usize>() {
-            if (1..=profile.states.len()).contains(&index) {
-                return Ok(profile.states[index - 1].clone());
-            }
-        }
-        println!("enter a number between 1 and {}", profile.states.len());
-    }
-}
-
-fn normalize_cli_state(raw: &str) -> Result<String, app::AppError> {
-    use std::str::FromStr;
-
-    let parsed = domain::state::KnotState::from_str(raw)?;
-    Ok(parsed.as_str().to_string())
 }
 
 fn knot_ref(knot: &app::KnotView) -> String {
@@ -746,6 +429,18 @@ fn knot_ref(knot: &app::KnotView) -> String {
         Some(alias) => format!("{alias} ({short_id})"),
         None => short_id.to_string(),
     }
+}
+
+fn resolve_next_state(app: &app::App, id: &str) -> Result<(app::KnotView, String), app::AppError> {
+    let knot = app
+        .show_knot(id)?
+        .ok_or_else(|| app::AppError::NotFound(id.to_string()))?;
+    let registry = workflow::ProfileRegistry::load()?;
+    let profile = registry.require(&knot.profile_id)?;
+    let next = profile.next_happy_path_state(&knot.state).ok_or_else(|| {
+        app::AppError::InvalidArgument(format!("no next state from '{}'", knot.state))
+    })?;
+    Ok((knot, next.to_string()))
 }
 
 fn maybe_run_self_command(command: &cli::Commands) -> Result<Option<String>, app::AppError> {
