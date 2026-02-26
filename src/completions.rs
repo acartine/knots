@@ -275,6 +275,8 @@ mod tests {
         assert_eq!(detect_current_shell(), Some(Shell::Elvish));
         unsafe { std::env::set_var("SHELL", "/usr/bin/pwsh") };
         assert_eq!(detect_current_shell(), Some(Shell::PowerShell));
+        unsafe { std::env::set_var("SHELL", "/usr/bin/csh") };
+        assert_eq!(detect_current_shell(), None);
         if let Some(val) = prev {
             unsafe { std::env::set_var("SHELL", val) };
         } else {

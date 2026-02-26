@@ -121,6 +121,33 @@ mod tests {
     }
 
     #[test]
+    fn self_edges_and_unknown_ids_are_skipped() {
+        let ids = vec!["a-1".to_string(), "b-2".to_string()];
+        let edges = vec![
+            ("a-1".to_string(), "a-1".to_string()),  // self-edge → skipped
+            ("x-9".to_string(), "b-2".to_string()),  // unknown parent → skipped
+            ("a-1".to_string(), "z-99".to_string()), // unknown child → skipped
+        ];
+        let maps = build_alias_maps(ids, &edges);
+        assert_eq!(maps.id_to_alias.len(), 2);
+        // Both should be roots (no valid parent edges survived)
+        assert_eq!(maps.id_to_alias.get("a-1").map(String::as_str), Some("a-1"));
+        assert_eq!(maps.id_to_alias.get("b-2").map(String::as_str), Some("b-2"));
+    }
+
+    #[test]
+    fn cycle_edges_do_not_cause_infinite_loop() {
+        let ids = vec!["a-1".to_string(), "b-2".to_string()];
+        // Mutual parent edges — only the lex-smallest parent wins
+        let edges = vec![
+            ("a-1".to_string(), "b-2".to_string()),
+            ("b-2".to_string(), "a-1".to_string()),
+        ];
+        let maps = build_alias_maps(ids, &edges);
+        assert_eq!(maps.id_to_alias.len(), 2);
+    }
+
+    #[test]
     fn picks_lexicographically_smallest_parent_for_alias_path() {
         let ids = vec![
             "a-1111".to_string(),
