@@ -741,9 +741,10 @@ fn normalize_cli_state(raw: &str) -> Result<String, app::AppError> {
 }
 
 fn knot_ref(knot: &app::KnotView) -> String {
+    let short_id = knot_id::display_id(&knot.id);
     match knot.alias.as_deref() {
-        Some(alias) => format!("{alias} ({})", knot.id),
-        None => knot.id.clone(),
+        Some(alias) => format!("{alias} ({short_id})"),
+        None => short_id.to_string(),
     }
 }
 

@@ -55,7 +55,7 @@ fn row_and_indent_formatting_cover_alias_tag_and_type_paths() {
         depth: 2,
     };
     let formatted = format_knot_row(&row, &palette);
-    assert!(formatted.contains("A.1 (K-1)"));
+    assert!(formatted.contains("A.1 (1)"));
     assert!(formatted.contains("(task)"));
     assert!(formatted.contains("#alpha #beta"));
 
@@ -64,7 +64,7 @@ fn row_and_indent_formatting_cover_alias_tag_and_type_paths() {
     knot.knot_type = None;
     knot.tags.clear();
     let plain = format_knot_row(&DisplayKnot { knot, depth: 0 }, &palette);
-    assert!(plain.contains("K-1"));
+    assert!(plain.starts_with("1 "));
     assert!(!plain.contains('#'));
 }
 

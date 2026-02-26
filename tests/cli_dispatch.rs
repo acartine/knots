@@ -136,9 +136,13 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     let show = run_knots(&root, &db, &["show", &first_id, "--json"]);
     assert_success(&show);
     let shown: Value = serde_json::from_slice(&show.stdout).expect("show should emit json");
-    assert_eq!(
-        shown.get("id").and_then(Value::as_str),
-        Some(first_id.as_str())
+    let shown_id = shown
+        .get("id")
+        .and_then(Value::as_str)
+        .expect("shown knot should have an id field");
+    assert!(
+        shown_id.ends_with(&first_id),
+        "full id '{shown_id}' should end with display id '{first_id}'"
     );
 
     let state = run_knots(&root, &db, &["state", &first_id, "planning"]);
