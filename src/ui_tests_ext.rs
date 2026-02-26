@@ -92,16 +92,23 @@ fn palette_and_state_color_cover_all_branches() {
     assert!(enabled.label("l").contains('l'));
     assert!(enabled.dim("d").contains('d'));
     assert!(enabled.id("i").contains('i'));
-    assert!(enabled.state("idea").contains("IDEA"));
+    assert!(enabled.state("planning").contains("PLANNING"));
     assert!(enabled.type_label("task").contains("task"));
     assert!(enabled.tags("#x").contains("#x"));
 
-    assert_eq!(state_color_code("idea"), "34");
-    assert_eq!(state_color_code("work_item"), "36");
-    assert_eq!(state_color_code("implementing"), "33");
-    assert_eq!(state_color_code("reviewing"), "35");
-    assert_eq!(state_color_code("done"), "32");
-    assert_eq!(state_color_code("blocked"), "31");
+    // WFV2 color mapping
+    assert_eq!(state_color_code("planning"), "32");
+    assert_eq!(state_color_code("plan_review"), "32");
+    assert_eq!(state_color_code("implementation"), "32");
+    assert_eq!(state_color_code("implementation_review"), "32");
+    assert_eq!(state_color_code("shipment"), "32");
+    assert_eq!(state_color_code("shipment_review"), "32");
+    assert_eq!(state_color_code("ready_for_planning"), "33");
+    assert_eq!(state_color_code("ready_for_implementation"), "33");
+    assert_eq!(state_color_code("ready_for_shipment"), "33");
+    assert_eq!(state_color_code("abandoned"), "31");
+    assert_eq!(state_color_code("shipped"), "34");
+    assert_eq!(state_color_code("deferred"), "35");
     assert_eq!(state_color_code("unknown"), "37");
 }
 
