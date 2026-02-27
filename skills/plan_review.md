@@ -11,9 +11,9 @@
 4. Approve or request revisions
 
 ## Output
-- Approved: `kno state <id> ready_for_implementation`
-- Needs revision: `kno state <id> ready_for_planning` with review notes
+- Approved: `kno next <id>`
+- Needs revision: `kno update <id> --status ready_for_planning --add-note "<feedback>"`
 
 ## Failure Modes
-- Plan fundamentally flawed: `kno state <id> ready_for_planning` with feedback
-- Requirements changed: `kno state <id> ready_for_planning` with updated context
+- Plan fundamentally flawed: `kno update <id> --status ready_for_planning --add-note "<feedback>"`
+- Requirements changed: `kno update <id> --status ready_for_planning --add-note "<feedback>"`

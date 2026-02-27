@@ -11,10 +11,10 @@
 4. Final sign-off
 
 ## Output
-- Approved: `kno state <id> shipped`
-- Issues found: `kno state <id> ready_for_shipment` to retry
-- Critical regression: `kno state <id> ready_for_implementation` to fix
+- Approved: `kno next <id>`
+- Needs revision: `kno update <id> --status ready_for_implementation --add-note "<blocker details>"`
+- Critical regression: `kno update <id> --status ready_for_implementation --add-note "<blocker details>"`
 
 ## Failure Modes
-- Deployment issue: `kno state <id> ready_for_shipment` with details
-- Regression detected: `kno state <id> ready_for_implementation` with bug report
+- Deployment issue: `kno update <id> --status ready_for_shipment --add-note "<blocker details>"`
+- Regression detected: `kno update <id> --status ready_for_implementation --add-note "<blocker details>"`

@@ -120,7 +120,7 @@ $ kno poll --claim
 ```
 # fix foo
 
-**ID**: abc123  |  **Priority**: none  |  **Type**: task
+**ID**: abc123  |  **Priority**: 3  |  **Type**: work
 **Profile**: autopilot  |  **State**: planning
 
 ## Description
@@ -133,20 +133,24 @@ The foo module panics on empty input
 
 ## Input
 - Knot in `ready_for_planning` state
+- Knot title, description, and any existing notes/context
 
 ## Actions
-1. Read the knot title and description
-2. Research the codebase to understand scope
-3. Write an implementation plan as a knot note
-4. Include estimated files to change and test strategy
+1. Analyze the knot requirements and constraints
+2. Research relevant code, dependencies, and prior art
+3. Draft an implementation plan with steps, file changes, and test strategy
+4. Estimate complexity and identify risks
+5. Write the plan as a knot note via `kno update <id> --add-note "<plan>"`
+6. Create a hierarchy of knots via `kno new "<title>"` for parent knots, `kno q "title"` for child knots and `kno edge <id> parent_of <id>` for edges
 
 ## Output
-- Plan documented as a knot note
-- Transition: `kno state <id> ready_for_plan_review`
+- Detailed implementation plan attached as a knot note
+- Hierarchy of knots created
+- Transition: `kno next <id>`
 
-## Completion
-
-`kno state abc123 ready_for_plan_review --actor-kind agent`
+## Failure Modes
+- Insufficient context: `kno update <id> --status ready_for_planning --add-note "<note>"`
+- Out of scope / too complex: `kno update <id> --status ready_for_planning --add-note "<note>"`
 ```
 
 `poll --claim` atomically grabs the highest-priority item, transitions it
@@ -220,8 +224,8 @@ Both commands support `--json` for programmatic consumption:
   "id": "K-abc123",
   "title": "fix foo",
   "state": "planning",
-  "priority": null,
-  "type": "task",
+  "priority": 3,
+  "type": "work",
   "profile_id": "autopilot",
   "prompt": "# fix foo\n\n**ID**: abc123 ..."
 }
@@ -289,7 +293,7 @@ kno update <knot-id> \
   --description "Carry full migration metadata" \
   --priority 1 \
   --status implementation \
-  --type task \
+  --type work \
   --add-tag migration \
   --add-note "handoff context" \
   --note-username acartine \
@@ -306,7 +310,7 @@ kno ls               # shipped knots hidden by default
 kno ls --all         # include shipped knots
 kno ls --state implementation --tag release
 kno ls --profile semiauto
-kno ls --type task --query importer
+kno ls --type work --query importer
 kno show <knot-id>
 kno show <knot-id> --json
 ```
