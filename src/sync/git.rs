@@ -187,7 +187,12 @@ impl GitAdapter {
     pub fn push_branch(&self, cwd: &Path, remote: &str, branch: &str) -> Result<(), SyncError> {
         self.run_checked(
             cwd,
-            vec!["push".to_string(), remote.to_string(), branch.to_string()],
+            vec![
+                "push".to_string(),
+                "--no-verify".to_string(),
+                remote.to_string(),
+                branch.to_string(),
+            ],
         )?;
         Ok(())
     }
