@@ -1,5 +1,12 @@
 # kno
 
+## 0.2.2
+
+### Patch Changes
+
+- 0ae389c: Switch poll and claim completion guidance to `kno next --actor-kind agent` and add
+  `--actor-kind`, `--agent-name`, `--agent-model`, and `--agent-version` to `kno next`.
+
 ## 0.2.1
 
 ### Patch Changes
