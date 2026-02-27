@@ -141,17 +141,7 @@ print_result() {
   "${INSTALL_DIR}/kno" --version
 }
 
-maybe_install_completions() {
-  if [[ ! -t 0 ]]; then
-    return
-  fi
-  printf "Would you like to install shell completions? [Y/n] "
-  read -r answer
-  case "${answer}" in
-    [nN]*)
-      return
-      ;;
-  esac
+install_completions() {
   "${INSTALL_DIR}/kno" completions --install || true
 }
 
@@ -173,4 +163,4 @@ download_release_assets
 verify_checksum
 install_binary
 print_result
-maybe_install_completions
+install_completions

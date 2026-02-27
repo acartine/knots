@@ -24,20 +24,18 @@ pub fn detect_current_shell() -> Option<Shell> {
     }
 }
 
-pub fn completions_install_path(shell: Shell) -> Option<PathBuf> {
-    let home = std::env::var("HOME").ok()?;
-    let home = PathBuf::from(home);
+fn completions_install_path_for_home(shell: Shell, home: &std::path::Path) -> Option<PathBuf> {
     match shell {
         Shell::Bash => {
             let dir = home.join(".local/share/bash-completion/completions");
             Some(dir.join("kno"))
         }
         Shell::Zsh => {
-            let dir = home.join(".zfunc");
-            Some(dir.join("_kno"))
+            let dir = home.join(".config/knots/completions");
+            Some(dir.join("kno.zsh"))
         }
         Shell::Fish => {
-            let dir = home.join(".config").join("fish").join("completions");
+            let dir = home.join(".config/fish/completions");
             Some(dir.join("kno.fish"))
         }
         _ => None,
@@ -45,7 +43,10 @@ pub fn completions_install_path(shell: Shell) -> Option<PathBuf> {
 }
 
 pub fn install_completions(shell: Shell) -> io::Result<PathBuf> {
-    let path = completions_install_path(shell).ok_or_else(|| {
+    let home = std::env::var("HOME").map_err(|e| io::Error::new(io::ErrorKind::NotFound, e))?;
+    let home = PathBuf::from(home);
+
+    let path = completions_install_path_for_home(shell, &home).ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::Unsupported,
             format!("no install path for {shell:?}"),
@@ -57,7 +58,33 @@ pub fn install_completions(shell: Shell) -> io::Result<PathBuf> {
     let mut buf = Vec::new();
     generate_completions(shell, &mut buf);
     std::fs::write(&path, buf)?;
+
+    if shell == Shell::Zsh {
+        patch_zshrc(&home, &path)?;
+    }
+
     Ok(path)
+}
+
+fn patch_zshrc(home: &std::path::Path, completions_path: &std::path::Path) -> io::Result<()> {
+    let zshrc = home.join(".zshrc");
+    let source_line = format!("source \"{}\"", completions_path.display());
+
+    if zshrc.exists() {
+        let content = std::fs::read_to_string(&zshrc)?;
+        if content.contains(&source_line) {
+            return Ok(());
+        }
+    }
+
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&zshrc)?;
+    writeln!(file)?;
+    writeln!(file, "# kno shell completions")?;
+    writeln!(file, "{source_line}")?;
+    Ok(())
 }
 
 fn parse_shell(raw: &str) -> Option<Shell> {
@@ -90,19 +117,6 @@ pub fn run_completions_command(
     if install {
         let path = install_completions(shell)?;
         println!("completions installed to {}", path.display());
-        match shell {
-            Shell::Zsh => {
-                println!(
-                    "ensure {} is in your $fpath and run: compinit",
-                    path.parent()
-                        .map_or("~/.zfunc".into(), |p| { p.display().to_string() })
-                );
-            }
-            Shell::Bash => {
-                println!("ensure bash-completion is sourced in your profile");
-            }
-            _ => {}
-        }
     } else {
         let mut stdout = io::stdout().lock();
         generate_completions(shell, &mut stdout);
@@ -132,37 +146,13 @@ mod tests {
 
     #[test]
     fn completions_install_path_for_known_shells() {
-        let prev = std::env::var_os("HOME");
-        unsafe { std::env::set_var("HOME", "/tmp/test-home") };
-        let bash_path = completions_install_path(Shell::Bash);
-        assert!(bash_path.is_some());
-        assert!(bash_path
-            .as_ref()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .contains("bash-completion"));
-        let zsh_path = completions_install_path(Shell::Zsh);
-        assert!(zsh_path.is_some());
-        assert!(zsh_path
-            .as_ref()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .contains("_kno"));
-        let fish_path = completions_install_path(Shell::Fish);
-        assert!(fish_path.is_some());
-        assert!(fish_path
-            .as_ref()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .contains("kno.fish"));
-        if let Some(val) = prev {
-            unsafe { std::env::set_var("HOME", val) };
-        } else {
-            unsafe { std::env::remove_var("HOME") };
-        }
+        let home = PathBuf::from("/tmp/test-home");
+        let bash = completions_install_path_for_home(Shell::Bash, &home);
+        assert!(bash.unwrap().to_str().unwrap().contains("bash-completion"));
+        let zsh = completions_install_path_for_home(Shell::Zsh, &home);
+        assert!(zsh.unwrap().to_str().unwrap().contains("kno.zsh"));
+        let fish = completions_install_path_for_home(Shell::Fish, &home);
+        assert!(fish.unwrap().to_str().unwrap().contains("kno.fish"));
     }
 
     #[test]
@@ -189,26 +179,53 @@ mod tests {
     }
 
     #[test]
-    fn install_completions_writes_file_to_disk() {
+    fn install_and_run_completions_with_zshrc_patching() {
         let prev_home = std::env::var_os("HOME");
-        let dir = std::env::temp_dir().join(format!("knots-comp-install-{}", uuid::Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("knots-comp-all-{}", uuid::Uuid::now_v7()));
         std::fs::create_dir_all(&dir).expect("dir should be creatable");
         unsafe { std::env::set_var("HOME", &dir) };
 
-        let path = install_completions(Shell::Bash).expect("install should succeed");
-        assert!(path.exists(), "completions file should exist");
+        // Bash install writes file
+        let path = install_completions(Shell::Bash).expect("bash install should succeed");
+        assert!(path.exists());
         let content = std::fs::read_to_string(&path).expect("should read file");
-        assert!(content.contains("kno"), "completions should reference kno");
+        assert!(content.contains("kno"));
 
+        // Zsh install writes completions file and patches .zshrc
         let zsh_path = install_completions(Shell::Zsh).expect("zsh install should succeed");
         assert!(zsh_path.exists());
+        let zshrc = dir.join(".zshrc");
+        assert!(zshrc.exists(), ".zshrc should be created");
+        let rc_content = std::fs::read_to_string(&zshrc).expect("should read .zshrc");
+        assert!(
+            rc_content.contains("source"),
+            ".zshrc should source completions"
+        );
+        assert!(
+            rc_content.contains("kno.zsh"),
+            ".zshrc should reference kno.zsh"
+        );
 
+        // Second install is idempotent — no duplicate source line
+        install_completions(Shell::Zsh).expect("second zsh install should succeed");
+        let rc_after = std::fs::read_to_string(&zshrc).expect("should read .zshrc again");
+        assert_eq!(
+            rc_content.matches("source").count(),
+            rc_after.matches("source").count(),
+            "source line should not be duplicated"
+        );
+
+        // Fish install
         let fish_path = install_completions(Shell::Fish).expect("fish install should succeed");
         assert!(fish_path.exists());
 
         // Unsupported shell returns error
-        let err = install_completions(Shell::Elvish);
-        assert!(err.is_err());
+        assert!(install_completions(Shell::Elvish).is_err());
+
+        // run_completions_command install mode
+        assert!(run_completions_command(Some("bash"), true).is_ok());
+        assert!(run_completions_command(Some("zsh"), true).is_ok());
+        assert!(run_completions_command(Some("fish"), true).is_ok());
 
         if let Some(val) = prev_home {
             unsafe { std::env::set_var("HOME", val) };
@@ -219,53 +236,20 @@ mod tests {
     }
 
     #[test]
-    fn run_completions_command_print_mode_succeeds() {
-        // Print mode with explicit shell
+    fn run_completions_command_print_and_error_modes() {
         let result = run_completions_command(Some("bash"), false);
         assert!(result.is_ok());
-
-        // Print mode with auto-detect (SHELL is set in most test environments)
         let result2 = run_completions_command(None, false);
         assert!(result2.is_ok());
-    }
-
-    #[test]
-    fn run_completions_command_unknown_shell_fails() {
-        let result = run_completions_command(Some("nonsense"), false);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn run_completions_command_install_mode_succeeds() {
-        let prev_home = std::env::var_os("HOME");
-        let dir = std::env::temp_dir().join(format!("knots-comp-run-{}", uuid::Uuid::now_v7()));
-        std::fs::create_dir_all(&dir).expect("dir should be creatable");
-        unsafe { std::env::set_var("HOME", &dir) };
-
-        // Install bash completions
-        let result = run_completions_command(Some("bash"), true);
-        assert!(result.is_ok());
-
-        // Install zsh completions (covers Zsh branch in install hints)
-        let result = run_completions_command(Some("zsh"), true);
-        assert!(result.is_ok());
-
-        // Install fish completions (covers catch-all branch in install hints)
-        let result = run_completions_command(Some("fish"), true);
-        assert!(result.is_ok());
-
-        if let Some(val) = prev_home {
-            unsafe { std::env::set_var("HOME", val) };
-        } else {
-            unsafe { std::env::remove_var("HOME") };
-        }
-        let _ = std::fs::remove_dir_all(dir);
+        let result3 = run_completions_command(Some("nonsense"), false);
+        assert!(result3.is_err());
     }
 
     #[test]
     fn completions_install_path_returns_none_for_unsupported_shell() {
-        assert!(completions_install_path(Shell::Elvish).is_none());
-        assert!(completions_install_path(Shell::PowerShell).is_none());
+        let home = PathBuf::from("/tmp/test-home");
+        assert!(completions_install_path_for_home(Shell::Elvish, &home).is_none());
+        assert!(completions_install_path_for_home(Shell::PowerShell, &home).is_none());
     }
 
     #[test]
