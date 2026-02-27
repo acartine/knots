@@ -278,6 +278,20 @@ impl ProfileRegistry {
     }
 }
 
+impl ProfileOwners {
+    pub fn for_action_state(&self, state: &str) -> Option<&StepOwner> {
+        match state {
+            PLANNING => Some(&self.planning),
+            PLAN_REVIEW => Some(&self.plan_review),
+            IMPLEMENTATION => Some(&self.implementation),
+            IMPLEMENTATION_REVIEW => Some(&self.implementation_review),
+            SHIPMENT => Some(&self.shipment),
+            SHIPMENT_REVIEW => Some(&self.shipment_review),
+            _ => None,
+        }
+    }
+}
+
 impl ProfileDefinition {
     pub fn is_terminal_state(&self, state: &str) -> bool {
         self.terminal_states

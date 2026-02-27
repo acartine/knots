@@ -4,7 +4,9 @@ use clap::CommandFactory;
 
 use crate::cli::Cli;
 
-const COMMON_COMMANDS: &[&str] = &["init", "ls", "new", "q", "sync", "update", "upgrade"];
+const COMMON_COMMANDS: &[&str] = &[
+    "claim", "init", "ls", "new", "poll", "q", "sync", "update", "upgrade",
+];
 
 pub fn is_toplevel_help(args: &[String]) -> bool {
     let non_global: Vec<&str> = args[1..]

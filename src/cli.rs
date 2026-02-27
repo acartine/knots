@@ -102,6 +102,10 @@ pub enum Commands {
     Q(QuickNewArgs),
     #[command(about = "Generate or install shell completions.")]
     Completions(CompletionsArgs),
+    #[command(about = "Peek at the highest-priority claimable knot.")]
+    Poll(PollArgs),
+    #[command(about = "Claim a knot and get its action prompt.")]
+    Claim(ClaimArgs),
 }
 
 #[derive(Debug, Args)]
@@ -421,6 +425,54 @@ pub struct NextArgs {
 pub struct SkillArgs {
     #[arg(help = "Knot id/alias, or a state name (e.g. planning).")]
     pub id: String,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Peek at the highest-priority claimable knot.")]
+pub struct PollArgs {
+    #[arg(help = "Optional stage filter (e.g. implementation).")]
+    pub stage: Option<String>,
+
+    #[arg(
+        short = 'o',
+        long = "owner",
+        help = "Owner kind filter (default: agent)."
+    )]
+    pub owner: Option<String>,
+
+    #[arg(long = "claim", help = "Atomically claim the top item.")]
+    pub claim: bool,
+
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
+
+    #[arg(long = "agent-name", help = "Agent name for claim metadata.")]
+    pub agent_name: Option<String>,
+
+    #[arg(long = "agent-model", help = "Agent model for claim metadata.")]
+    pub agent_model: Option<String>,
+
+    #[arg(long = "agent-version", help = "Agent version for claim metadata.")]
+    pub agent_version: Option<String>,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Claim a knot and get its action prompt.")]
+pub struct ClaimArgs {
+    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
+    pub id: String,
+
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
+
+    #[arg(long = "agent-name", help = "Agent name for claim metadata.")]
+    pub agent_name: Option<String>,
+
+    #[arg(long = "agent-model", help = "Agent model for claim metadata.")]
+    pub agent_model: Option<String>,
+
+    #[arg(long = "agent-version", help = "Agent version for claim metadata.")]
+    pub agent_version: Option<String>,
 }
 
 #[cfg(test)]

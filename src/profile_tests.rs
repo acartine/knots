@@ -44,3 +44,29 @@ fn next_happy_path_returns_none_for_terminal() {
     assert_eq!(profile.next_happy_path_state("shipped"), None);
     assert_eq!(profile.next_happy_path_state("abandoned"), None);
 }
+
+#[test]
+fn owner_for_action_state_returns_correct_owner() {
+    let registry = ProfileRegistry::load().expect("registry should load");
+    let autopilot = registry.require("autopilot").expect("profile should exist");
+    let semiauto = registry.require("semiauto").expect("profile should exist");
+
+    // autopilot: all agent
+    let owner = autopilot.owners.for_action_state("implementation").unwrap();
+    assert_eq!(owner.kind, super::OwnerKind::Agent);
+
+    // semiauto: plan_review is human
+    let owner = semiauto.owners.for_action_state("plan_review").unwrap();
+    assert_eq!(owner.kind, super::OwnerKind::Human);
+
+    // semiauto: implementation is agent
+    let owner = semiauto.owners.for_action_state("implementation").unwrap();
+    assert_eq!(owner.kind, super::OwnerKind::Agent);
+
+    // non-action state returns None
+    assert!(autopilot
+        .owners
+        .for_action_state("ready_for_planning")
+        .is_none());
+    assert!(autopilot.owners.for_action_state("shipped").is_none());
+}
