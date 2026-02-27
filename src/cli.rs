@@ -3,7 +3,13 @@ use std::path::PathBuf;
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{Args, Parser, Subcommand};
 
+use clap::CommandFactory;
+
 pub use crate::cli_ops::*;
+
+pub fn styled_command() -> clap::Command {
+    Cli::command()
+}
 
 fn cli_styles() -> Styles {
     Styles::styled()
@@ -11,6 +17,7 @@ fn cli_styles() -> Styles {
         .usage(AnsiColor::BrightYellow.on_default() | Effects::BOLD)
         .literal(AnsiColor::BrightGreen.on_default() | Effects::BOLD)
         .placeholder(AnsiColor::BrightMagenta.on_default())
+        .valid(AnsiColor::Cyan.on_default() | Effects::BOLD)
 }
 
 #[derive(Debug, Parser)]
@@ -69,7 +76,7 @@ pub enum Commands {
     Sync(SyncArgs),
     #[command(about = "Initialize local store, add .knots gitignore entries, and init remote.")]
     Init,
-    #[command(about = "Remove local knots store artifacts and delete remote knots branch.")]
+    #[command(about = "Remove local knots store artifacts and delete remote branch.")]
     Uninit,
     #[command(about = "Create remote knots branch and ensure .knots is gitignored.")]
     InitRemote,

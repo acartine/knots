@@ -1,13 +1,10 @@
 use std::io::{self, Write};
 use std::path::PathBuf;
 
-use clap::CommandFactory;
 use clap_complete::{generate, Shell};
 
-use crate::cli::Cli;
-
 pub fn generate_completions(shell: Shell, buf: &mut dyn Write) {
-    let mut cmd = Cli::command();
+    let mut cmd = crate::cli::styled_command();
     generate(shell, &mut cmd, "kno", buf);
 }
 

@@ -1,5 +1,6 @@
 mod app;
 mod cli;
+mod cli_help;
 mod cli_ops;
 mod completions;
 mod db;
@@ -32,27 +33,31 @@ mod workflow;
 mod workflow_diagram;
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if cli_help::is_toplevel_help(&args) {
+        cli_help::print_custom_help();
+        return;
+    }
     if let Err(err) = run() {
         eprintln!("error: {}", err);
         std::process::exit(1);
     }
 }
 
-fn print_json(value: &impl serde::Serialize) {
-    println!(
-        "{}",
-        serde_json::to_string_pretty(value).expect("json serialization should work")
-    );
+fn print_json(val: &impl serde::Serialize) {
+    let s = serde_json::to_string_pretty(val).expect("json serialize");
+    println!("{s}");
 }
 
 fn run() -> Result<(), app::AppError> {
     use app::UpdateKnotPatch;
-    use clap::Parser;
+    use clap::FromArgMatches;
     use cli::{ColdSubcommands, Commands, EdgeSubcommands};
     use domain::knot_type::KnotType;
     use domain::metadata::MetadataEntryInput;
 
-    let cli = cli::Cli::parse();
+    let cli = cli::Cli::from_arg_matches_mut(&mut cli::styled_command().get_matches())
+        .expect("arg matches should be valid");
     if let Some(outcome) = self_manage::maybe_run_self_command(&cli.command)? {
         println!("{outcome}");
         return Ok(());
@@ -475,17 +480,16 @@ fn run() -> Result<(), app::AppError> {
 }
 
 fn knot_ref(knot: &app::KnotView) -> String {
-    let short_id = knot_id::display_id(&knot.id);
-    match knot.alias.as_deref() {
-        Some(alias) => format!("{alias} ({short_id})"),
-        None => short_id.to_string(),
-    }
+    let sid = knot_id::display_id(&knot.id);
+    knot.alias
+        .as_deref()
+        .map_or(sid.to_string(), |a| format!("{a} ({sid})"))
 }
 
 fn resolve_next_state(app: &app::App, id: &str) -> Result<(app::KnotView, String), app::AppError> {
     let knot = app
         .show_knot(id)?
-        .ok_or_else(|| app::AppError::NotFound(id.to_string()))?;
+        .ok_or_else(|| app::AppError::NotFound(id.into()))?;
     let registry = workflow::ProfileRegistry::load()?;
     let profile = registry.require(&knot.profile_id)?;
     let next = profile.next_happy_path_state(&knot.state).ok_or_else(|| {
