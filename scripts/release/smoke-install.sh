@@ -105,14 +105,14 @@ KNOTS_GITHUB_REPO="local/knots" \
 KNOTS_INSTALL_DIR="${install_dir}" \
 KNOTS_RELEASE_API_BASE="http://127.0.0.1:${port}/repos" \
 KNOTS_RELEASE_DOWNLOAD_BASE="http://127.0.0.1:${port}" \
-"${INSTALLER}"
+"${INSTALLER}" </dev/null
 
 KNOTS_GITHUB_REPO="local/knots" \
 KNOTS_INSTALL_DIR="${install_dir}" \
 KNOTS_RELEASE_API_BASE="http://127.0.0.1:${port}/repos" \
 KNOTS_RELEASE_DOWNLOAD_BASE="http://127.0.0.1:${port}" \
 KNOTS_VERSION="${VERSION}" \
-"${INSTALLER}"
+"${INSTALLER}" </dev/null
 
 if [[ ! -x "${install_dir}/knots" ]]; then
   echo "error: knots compatibility binary was not installed" >&2
