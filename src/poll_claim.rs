@@ -105,13 +105,7 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
         knot.profile_etag.as_deref(),
         claim_actor,
     )?;
-    let completion_state = profile
-        .next_happy_path_state(next_action)
-        .unwrap_or("shipped");
-    let completion_cmd = format!(
-        "kno state {} {} --actor-kind agent",
-        claimed.id, completion_state
-    );
+    let completion_cmd = format!("kno next {} --actor-kind agent", claimed.id);
     Ok(PollResult {
         knot: claimed,
         skill,
@@ -171,13 +165,7 @@ fn match_pollable(
         Some(s) => s,
         None => return Ok(None),
     };
-    let completion_state = profile
-        .next_happy_path_state(next_action)
-        .unwrap_or("shipped");
-    let completion_cmd = format!(
-        "kno state {} {} --actor-kind agent",
-        knot.id, completion_state
-    );
+    let completion_cmd = format!("kno next {} --actor-kind agent", knot.id);
     Ok(Some(PollResult {
         knot: knot.clone(),
         skill,

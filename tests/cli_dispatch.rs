@@ -594,6 +594,14 @@ fn poll_returns_highest_priority_agent_owned_knot() {
         stdout.contains("## Completion"),
         "poll should include completion: {stdout}"
     );
+    assert!(
+        stdout.contains("kno next"),
+        "poll completion should use kno next: {stdout}"
+    );
+    assert!(
+        stdout.contains("--actor-kind agent"),
+        "poll completion should include actor kind: {stdout}"
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -682,6 +690,14 @@ fn claim_transitions_and_returns_prompt() {
         stdout.contains("# Implementation"),
         "claim should include skill: {stdout}"
     );
+    assert!(
+        stdout.contains("kno next"),
+        "claim completion should use kno next: {stdout}"
+    );
+    assert!(
+        stdout.contains("--actor-kind agent"),
+        "claim completion should include actor kind: {stdout}"
+    );
 
     // Show should confirm state changed to implementation
     let show = run_knots(&root, &db, &["show", &knot_id, "--json"]);
@@ -725,6 +741,71 @@ fn claim_json_output() {
         .as_str()
         .unwrap()
         .contains("# Implementation"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn next_accepts_actor_metadata_and_validates_actor_kind() {
+    let root = unique_workspace("knots-cli-next-actor");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Next actor metadata",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_plan_review",
+        ],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    let next_ok = run_knots(
+        &root,
+        &db,
+        &[
+            "next",
+            &knot_id,
+            "--actor-kind",
+            "agent",
+            "--agent-name",
+            "codex",
+            "--agent-model",
+            "gpt-5",
+            "--agent-version",
+            "1.0",
+        ],
+    );
+    assert_success(&next_ok);
+
+    let created_bad = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Next actor invalid",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_plan_review",
+        ],
+    );
+    assert_success(&created_bad);
+    let knot_bad_id = parse_created_id(&created_bad);
+
+    let next_bad = run_knots(&root, &db, &["next", &knot_bad_id, "--actor-kind", "robot"]);
+    assert_failure(&next_bad);
+    assert!(
+        String::from_utf8_lossy(&next_bad.stderr)
+            .contains("--actor-kind must be one of: human, agent"),
+        "next invalid actor-kind should be rejected"
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

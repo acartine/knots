@@ -418,6 +418,18 @@ pub struct SyncArgs {
 pub struct NextArgs {
     #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
     pub id: String,
+
+    #[arg(long = "actor-kind", help = "Actor kind for the step: human or agent.")]
+    pub actor_kind: Option<String>,
+
+    #[arg(long = "agent-name", help = "Agent name for step metadata.")]
+    pub agent_name: Option<String>,
+
+    #[arg(long = "agent-model", help = "Agent model for step metadata.")]
+    pub agent_model: Option<String>,
+
+    #[arg(long = "agent-version", help = "Agent version for step metadata.")]
+    pub agent_version: Option<String>,
 }
 
 #[derive(Debug, Args)]

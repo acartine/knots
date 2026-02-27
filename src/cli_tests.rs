@@ -109,7 +109,40 @@ fn q_command_parses() {
 fn next_parses() {
     let cli = parse(&["kno", "next", "abc123"]);
     match cli.command {
-        Commands::Next(args) => assert_eq!(args.id, "abc123"),
+        Commands::Next(args) => {
+            assert_eq!(args.id, "abc123");
+            assert!(args.actor_kind.is_none());
+            assert!(args.agent_name.is_none());
+            assert!(args.agent_model.is_none());
+            assert!(args.agent_version.is_none());
+        }
+        other => panic!("expected Next, got {:?}", other),
+    }
+}
+
+#[test]
+fn next_parses_actor_metadata_flags() {
+    let cli = parse(&[
+        "kno",
+        "next",
+        "abc123",
+        "--actor-kind",
+        "agent",
+        "--agent-name",
+        "codex",
+        "--agent-model",
+        "gpt-5",
+        "--agent-version",
+        "1.0",
+    ]);
+    match cli.command {
+        Commands::Next(args) => {
+            assert_eq!(args.id, "abc123");
+            assert_eq!(args.actor_kind.as_deref(), Some("agent"));
+            assert_eq!(args.agent_name.as_deref(), Some("codex"));
+            assert_eq!(args.agent_model.as_deref(), Some("gpt-5"));
+            assert_eq!(args.agent_version.as_deref(), Some("1.0"));
+        }
         other => panic!("expected Next, got {:?}", other),
     }
 }

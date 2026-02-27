@@ -432,7 +432,18 @@ fn run() -> Result<(), app::AppError> {
         },
         Commands::Next(args) => {
             let (knot, next) = resolve_next_state(&app, &args.id)?;
-            let updated = app.set_state(&knot.id, &next, false, None)?;
+            let updated = app.set_state_with_actor(
+                &knot.id,
+                &next,
+                false,
+                None,
+                app::StateActorMetadata {
+                    actor_kind: args.actor_kind,
+                    agent_name: args.agent_name,
+                    agent_model: args.agent_model,
+                    agent_version: args.agent_version,
+                },
+            )?;
             let palette = ui::Palette::auto();
             println!(
                 "updated {} -> {}",
