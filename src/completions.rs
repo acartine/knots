@@ -5,7 +5,16 @@ use clap_complete::{generate, Shell};
 
 pub fn generate_completions(shell: Shell, buf: &mut dyn Write) {
     let mut cmd = crate::cli::styled_command();
-    generate(shell, &mut cmd, "kno", buf);
+    if shell == Shell::Zsh {
+        let mut raw = Vec::new();
+        generate(shell, &mut cmd, "kno", &mut raw);
+        let script = String::from_utf8_lossy(&raw);
+        let grouped = group_zsh_toplevel_commands(&script);
+        buf.write_all(grouped.as_bytes())
+            .expect("write completions");
+    } else {
+        generate(shell, &mut cmd, "kno", buf);
+    }
 }
 
 pub fn detect_current_shell() -> Option<Shell> {
@@ -82,6 +91,56 @@ fn patch_zshrc(home: &std::path::Path, completions_path: &std::path::Path) -> io
     writeln!(file, "# kno shell completions")?;
     writeln!(file, "{source_line}")?;
     Ok(())
+}
+
+fn group_zsh_toplevel_commands(script: &str) -> String {
+    let s = group_zsh_command_fn(script, "_kno_commands");
+    group_zsh_command_fn(&s, "_kno__help_commands")
+}
+
+fn group_zsh_command_fn(script: &str, fn_name: &str) -> String {
+    let guard = format!("(( $+functions[{fn_name}] )) ||");
+    let Some(start) = script.find(&guard) else {
+        return script.to_string();
+    };
+    let rest = &script[start..];
+    let Some(end_rel) = rest.find("\n}\n") else {
+        return script.to_string();
+    };
+    let block_end = start + end_rel + 2; // include the `}`
+
+    let block = &script[start..block_end];
+    let mut entries = Vec::new();
+
+    for line in block.lines() {
+        let trimmed = line.trim();
+        let entry = trimmed.trim_end_matches(" \\");
+        if entry.starts_with('\'') && entry.contains(':') {
+            entries.push(entry.to_string());
+        }
+    }
+    entries.sort_by_key(|entry| {
+        entry
+            .split_once(':')
+            .map(|(name, _)| name)
+            .unwrap_or(entry.as_str())
+            .to_string()
+    });
+
+    let mut out = String::new();
+    // Omit the (( $+functions[...] )) || guard so that sourcing the
+    // file always installs the sorted definition over cached versions.
+    out.push_str(&format!("{fn_name}() {{\n"));
+    out.push_str("    local -a commands\n");
+    out.push_str("    commands=(\n");
+    for entry in &entries {
+        out.push_str(&format!("{entry} \\\n"));
+    }
+    out.push_str("    )\n");
+    out.push_str("    _describe -t commands 'kno commands' commands \"$@\"\n");
+    out.push('}');
+
+    format!("{}{}{}", &script[..start], out, &script[block_end..])
 }
 
 fn parse_shell(raw: &str) -> Option<Shell> {
@@ -247,6 +306,93 @@ mod tests {
         let home = PathBuf::from("/tmp/test-home");
         assert!(completions_install_path_for_home(Shell::Elvish, &home).is_none());
         assert!(completions_install_path_for_home(Shell::PowerShell, &home).is_none());
+    }
+
+    #[test]
+    fn zsh_completions_are_flat_and_unstyled() {
+        let mut buf = Vec::new();
+        generate_completions(Shell::Zsh, &mut buf);
+        let text = String::from_utf8_lossy(&buf);
+        assert!(
+            text.contains("_describe -t commands 'kno commands' commands \"$@\""),
+            "zsh completions should use one flat commands list"
+        );
+        assert!(
+            text.contains("commands=("),
+            "zsh completions should define a single commands array"
+        );
+        assert!(
+            !text.contains("Common Commands"),
+            "zsh completions should not contain section headers"
+        );
+        assert!(
+            !text.contains("Other Commands"),
+            "zsh completions should not contain section headers"
+        );
+        assert!(
+            !text.contains("list-colors"),
+            "zsh completions should not inject list-colors styles"
+        );
+        assert!(
+            !text.contains("common_entries"),
+            "zsh completions should not define grouped arrays"
+        );
+        assert!(
+            !text.contains("other_entries"),
+            "zsh completions should not define grouped arrays"
+        );
+        assert!(
+            !text.contains("compadd -V"),
+            "zsh completions should not use grouped compadd sections"
+        );
+    }
+
+    #[test]
+    fn zsh_commands_are_sorted_alphabetically() {
+        let mut buf = Vec::new();
+        generate_completions(Shell::Zsh, &mut buf);
+        let text = String::from_utf8_lossy(&buf);
+
+        // Find _kno_commands function (guard is stripped) and verify
+        // command entries are sorted alphabetically.
+        let marker = "\n_kno_commands() {";
+        let start = text.find(marker).expect("should find _kno_commands");
+        let rest = &text[start..];
+        let end = rest.find("\n}\n").expect("should find function end");
+        let block = &rest[..end + 2];
+
+        let cmds_start = block
+            .find("commands=(")
+            .expect("commands array should exist");
+        let describe_start = block
+            .find("_describe -t commands")
+            .expect("commands should be passed to _describe");
+        let cmds_section = &block[cmds_start..describe_start];
+        let names: Vec<&str> = cmds_section
+            .lines()
+            .filter_map(|line| {
+                let entry = line.trim().trim_end_matches(" \\");
+                if !entry.starts_with('\'') {
+                    return None;
+                }
+                let colon = entry.find(':')?;
+                Some(&entry[1..colon])
+            })
+            .collect();
+
+        assert!(!names.is_empty(), "commands list should not be empty");
+        let mut sorted = names.clone();
+        sorted.sort();
+        assert_eq!(names, sorted, "commands should be alphabetical");
+        assert!(names.contains(&"init"), "init should exist");
+        assert!(names.contains(&"ls"), "ls should exist");
+        assert!(names.contains(&"sync"), "sync should exist");
+    }
+
+    #[test]
+    fn group_zsh_noop_when_function_not_found() {
+        let input = "some random script content";
+        assert_eq!(group_zsh_command_fn(input, "_kno_commands"), input);
     }
 
     #[test]

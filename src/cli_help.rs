@@ -4,7 +4,7 @@ use clap::CommandFactory;
 
 use crate::cli::Cli;
 
-const COMMON_COMMANDS: &[&str] = &[
+pub(crate) const COMMON_COMMANDS: &[&str] = &[
     "claim", "init", "ls", "new", "poll", "q", "sync", "update", "upgrade",
 ];
 

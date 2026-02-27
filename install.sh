@@ -136,13 +136,17 @@ install_binary() {
 }
 
 print_result() {
-  echo "Installed kno to ${INSTALL_DIR}/kno"
-  echo "Compatibility binary at ${INSTALL_DIR}/knots"
-  "${INSTALL_DIR}/kno" --version
-}
+  local ver comp_out comp_path
+  ver="$("${INSTALL_DIR}/kno" --version)"
+  comp_out="$("${INSTALL_DIR}/kno" completions --install 2>/dev/null || true)"
+  comp_path="${comp_out#completions installed to }"
 
-install_completions() {
-  "${INSTALL_DIR}/kno" completions --install || true
+  printf "%13s  %s\n" "kno" "${INSTALL_DIR}/kno"
+  printf "%13s  %s\n" "compat" "${INSTALL_DIR}/knots"
+  printf "%13s  %s\n" "version" "${ver}"
+  if [[ -n "${comp_path}" && "${comp_path}" != "${comp_out}" ]]; then
+    printf "%13s  %s\n" "completions" "${comp_path}"
+  fi
 }
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
@@ -163,4 +167,3 @@ download_release_assets
 verify_checksum
 install_binary
 print_result
-install_completions
