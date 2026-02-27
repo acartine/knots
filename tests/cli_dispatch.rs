@@ -525,6 +525,285 @@ fn new_fast_flag_and_q_command_use_quick_profile() {
 }
 
 #[test]
+fn poll_returns_highest_priority_agent_owned_knot() {
+    let root = unique_workspace("knots-cli-poll");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    // Create two knots with different priorities
+    let low_prio = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Low priority",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&low_prio);
+    let low_id = parse_created_id(&low_prio);
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &low_id, "--priority", "3"],
+    ));
+
+    let high_prio = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "High priority",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&high_prio);
+    let high_id = parse_created_id(&high_prio);
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &high_id, "--priority", "1"],
+    ));
+
+    // Poll should return the high-priority knot
+    let poll = run_knots(&root, &db, &["poll", "--json"]);
+    assert_success(&poll);
+    let poll_json: Value = serde_json::from_slice(&poll.stdout).expect("poll json should parse");
+    assert_eq!(poll_json["title"], "High priority");
+    assert!(poll_json["prompt"]
+        .as_str()
+        .unwrap()
+        .contains("# High priority"));
+
+    // Poll text output should contain the skill
+    let poll_text = run_knots(&root, &db, &["poll"]);
+    assert_success(&poll_text);
+    let stdout = String::from_utf8_lossy(&poll_text.stdout);
+    assert!(stdout.contains("# High priority"), "poll text: {stdout}");
+    assert!(
+        stdout.contains("# Implementation"),
+        "poll should include skill: {stdout}"
+    );
+    assert!(
+        stdout.contains("## Completion"),
+        "poll should include completion: {stdout}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn poll_with_stage_filter() {
+    let root = unique_workspace("knots-cli-poll-stage");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Plan me",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_planning",
+        ],
+    );
+    assert_success(&created);
+
+    // Poll for implementation should find nothing
+    let poll_impl = run_knots(&root, &db, &["poll", "implementation"]);
+    assert_failure(&poll_impl);
+
+    // Poll for planning should find the knot
+    let poll_plan = run_knots(&root, &db, &["poll", "planning"]);
+    assert_success(&poll_plan);
+    let stdout = String::from_utf8_lossy(&poll_plan.stdout);
+    assert!(stdout.contains("Plan me"), "poll planning: {stdout}");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn poll_returns_nothing_when_queue_empty() {
+    let root = unique_workspace("knots-cli-poll-empty");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let poll = run_knots(&root, &db, &["poll"]);
+    assert_failure(&poll);
+    let stderr = String::from_utf8_lossy(&poll.stderr);
+    assert!(
+        stderr.contains("no claimable knots found"),
+        "empty poll: {stderr}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn claim_transitions_and_returns_prompt() {
+    let root = unique_workspace("knots-cli-claim");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Claim me",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    // Claim should transition and return prompt
+    let claim = run_knots(
+        &root,
+        &db,
+        &["claim", &knot_id, "--agent-name", "test-agent"],
+    );
+    assert_success(&claim);
+    let stdout = String::from_utf8_lossy(&claim.stdout);
+    assert!(stdout.contains("# Claim me"), "claim text: {stdout}");
+    assert!(
+        stdout.contains("# Implementation"),
+        "claim should include skill: {stdout}"
+    );
+
+    // Show should confirm state changed to implementation
+    let show = run_knots(&root, &db, &["show", &knot_id, "--json"]);
+    assert_success(&show);
+    let shown: Value = serde_json::from_slice(&show.stdout).unwrap();
+    assert_eq!(shown["state"], "implementation");
+
+    // Second claim should fail (already in action state)
+    let claim2 = run_knots(&root, &db, &["claim", &knot_id]);
+    assert_failure(&claim2);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn claim_json_output() {
+    let root = unique_workspace("knots-cli-claim-json");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "JSON claim",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    let claim = run_knots(&root, &db, &["claim", &knot_id, "--json"]);
+    assert_success(&claim);
+    let json: Value = serde_json::from_slice(&claim.stdout).expect("claim json should parse");
+    assert_eq!(json["title"], "JSON claim");
+    assert!(json["prompt"]
+        .as_str()
+        .unwrap()
+        .contains("# Implementation"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn poll_claim_flag_atomically_grabs() {
+    let root = unique_workspace("knots-cli-poll-claim");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Grab me",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    let poll_claim = run_knots(&root, &db, &["poll", "--claim"]);
+    assert_success(&poll_claim);
+    let stdout = String::from_utf8_lossy(&poll_claim.stdout);
+    assert!(stdout.contains("# Grab me"), "poll --claim: {stdout}");
+    assert!(stdout.contains("# Implementation"), "skill: {stdout}");
+
+    // Verify the knot is now in action state
+    let show = run_knots(&root, &db, &["show", &knot_id, "--json"]);
+    assert_success(&show);
+    let shown: Value = serde_json::from_slice(&show.stdout).unwrap();
+    assert_eq!(shown["state"], "implementation");
+
+    // Queue should now be empty
+    let poll_empty = run_knots(&root, &db, &["poll"]);
+    assert_failure(&poll_empty);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn poll_filters_human_owned_stages() {
+    let root = unique_workspace("knots-cli-poll-human");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    // semiauto profile: plan_review is human-owned
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Human gate",
+            "--profile",
+            "semiauto",
+            "--state",
+            "ready_for_plan_review",
+        ],
+    );
+    assert_success(&created);
+
+    // Default poll (agent owner) should not find it
+    let poll_agent = run_knots(&root, &db, &["poll"]);
+    assert_failure(&poll_agent);
+
+    // Poll with --owner human should find it
+    let poll_human = run_knots(&root, &db, &["poll", "--owner", "human"]);
+    assert_success(&poll_human);
+    let stdout = String::from_utf8_lossy(&poll_human.stdout);
+    assert!(stdout.contains("Human gate"), "human poll: {stdout}");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn skill_command_accepts_state_name_as_fallback() {
     let root = unique_workspace("knots-cli-skill-state");
     setup_repo(&root);

@@ -19,8 +19,10 @@ mod locks;
 #[cfg(test)]
 mod main_tests;
 mod perf;
+mod poll_claim;
 mod profile;
 mod profile_commands;
+mod prompt;
 mod remote_init;
 mod replication;
 mod self_manage;
@@ -471,6 +473,8 @@ fn run() -> Result<(), app::AppError> {
                 knot.title
             );
         }
+        Commands::Poll(args) => poll_claim::run_poll(&app, args)?,
+        Commands::Claim(args) => poll_claim::run_claim(&app, args)?,
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
         Commands::Completions(_) => unreachable!("completions handled before app init"),

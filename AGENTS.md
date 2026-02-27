@@ -3,7 +3,7 @@
 ## Limits
 - Maximum file length: 500 lines.
 - Maximum line length: 100 characters.
-- Minimum test coverage: 90%.
+- Minimum test coverage: 95%.
 
 ## Notes
 - Prefer small focused modules.
@@ -14,9 +14,9 @@
 - Preferred CLI command is `kno` (`knots` is a compatibility alias).
 - Common commands:
   - `kno ls`
-  - `kno new "<title>" --state work_item`
-  - `kno update <knot-id> --status implementing`
   - `kno show <knot-id>`
+  - `kno new "<title>" -d "<description>"`
+  - `kno update <knot-id> --status <state>`
   - `kno sync`
 
 ## Pre-Push Sanity (Required)

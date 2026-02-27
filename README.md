@@ -75,6 +75,182 @@ graph TD
   SHIPPED --> END(( ))
 ```
 
+# Quick Start
+
+The full flow from initialization to completion:
+
+### 1. Initialize knots in your repo
+
+```bash
+$ kno init
+```
+```
+═══════════════════════════════════════════
+  FIT TO BE TIED 🎉
+═══════════════════════════════════════════
+  ▸ initializing local store
+  ▸ opening cache database at .knots/cache/state.sqlite
+  ▸ ensuring gitignore includes .knots rule
+  ✔ local store initialized
+  ▸ initializing remote branch origin/knots
+  ⋯ this can take a bit...
+  ✔ remote branch origin/knots initialized
+```
+
+This creates the `.knots/` directory, initializes the SQLite cache, adds
+`.knots/` to `.gitignore`, and sets up the `origin/knots` tracking branch.
+
+### 2. Create a knot
+
+```bash
+$ kno new "fix foo" --desc "The foo module panics on empty input"
+```
+```
+created abc123 ready_for_planning fix foo
+```
+
+The knot enters the first queue state (`ready_for_planning`) and is
+immediately available for an agent to pick up.
+
+### 3. Claim the work
+
+```bash
+$ kno poll --claim
+```
+```
+# fix foo
+
+**ID**: abc123  |  **Priority**: none  |  **Type**: task
+**Profile**: autopilot  |  **State**: planning
+
+## Description
+
+The foo module panics on empty input
+
+---
+
+# Planning
+
+## Input
+- Knot in `ready_for_planning` state
+
+## Actions
+1. Read the knot title and description
+2. Research the codebase to understand scope
+3. Write an implementation plan as a knot note
+4. Include estimated files to change and test strategy
+
+## Output
+- Plan documented as a knot note
+- Transition: `kno state <id> ready_for_plan_review`
+
+## Completion
+
+`kno state abc123 ready_for_plan_review --actor-kind agent`
+```
+
+`poll --claim` atomically grabs the highest-priority item, transitions it
+from a queue state to its action state, and prints a self-contained
+prompt blob. The output contains everything an agent needs: the knot
+context, the skill instructions for the current step, and the exact
+command to run when done.
+
+### 4. Advance to the next state
+
+When the agent finishes the work, it runs the completion command from the
+prompt (or uses `kno next` for a shorthand advance):
+
+```bash
+$ kno next abc123
+```
+```
+updated abc123 -> ready_for_plan_review
+```
+
+The knot moves to the next queue state, where it waits for the next
+action to be claimed.
+
+### Repeat
+
+The agent loop is just two commands:
+
+```bash
+while true; do
+  kno poll --claim || { sleep 30; continue; }
+  # ... do the work described in the prompt ...
+  # ... run the completion command from the output ...
+done
+```
+
+Each iteration claims work, executes it, and advances the knot through
+the workflow until it reaches `shipped`.
+
+# Agent Integration
+
+## Poll and Claim
+
+`poll` and `claim` are the primary agent interface. CLI stdout IS the
+prompt delivery mechanism — no file injection, no hooks, no
+agent-specific APIs required.
+
+```bash
+kno poll                       # peek at the top claimable knot
+kno poll implementation        # filter to a specific stage
+kno poll --owner human         # show human-owned stages instead
+kno poll --claim               # atomically grab the top item
+kno poll --claim --json        # machine-readable output
+kno claim <id>                 # claim a specific knot by id
+kno claim <id> --json          # machine-readable claim
+```
+
+Agent metadata is recorded on each claim:
+```bash
+kno claim <id> \
+  --agent-name "claude-code" \
+  --agent-model "opus-4" \
+  --agent-version "1.0"
+```
+
+## JSON output
+
+Both commands support `--json` for programmatic consumption:
+
+```json
+{
+  "id": "K-abc123",
+  "title": "fix foo",
+  "state": "planning",
+  "priority": null,
+  "type": "task",
+  "profile_id": "autopilot",
+  "prompt": "# fix foo\n\n**ID**: abc123 ..."
+}
+```
+
+## Consumption patterns
+
+**Any agent runtime** (the command output IS the prompt):
+```bash
+kno poll --claim | agent-runner --prompt -
+```
+
+**Programmatic (Python, SDK, etc.)**:
+```python
+result = subprocess.run(["kno", "poll", "--claim", "--json"],
+                        capture_output=True)
+item = json.loads(result.stdout)
+agent.run(prompt=item["prompt"])
+```
+
+**CI/CD**:
+```yaml
+- run: |
+    WORK=$(kno poll --json)
+    if [ -n "$WORK" ]; then
+      kno claim $(echo $WORK | jq -r .id) --json | agent-runner
+    fi
+```
+
 # Other Commands
 Verify install:
 ```bash
