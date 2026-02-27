@@ -1,5 +1,12 @@
 # kno
 
+## 0.2.1
+
+### Patch Changes
+
+- f633514: Fix `kno sync` failing when a pre-push hook is installed by adding `--no-verify` to the internal knots branch push.
+- b534ff2: Refinement of skills to eliminate hardcoding local project bias.
+
 ## 0.2.0
 
 ### Minor Changes
