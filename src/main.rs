@@ -4,6 +4,7 @@ mod cli_help;
 mod cli_ops;
 mod completions;
 mod db;
+mod dispatch;
 mod doctor;
 mod domain;
 mod events;
@@ -55,6 +56,7 @@ fn run() -> Result<(), app::AppError> {
     use app::UpdateKnotPatch;
     use clap::FromArgMatches;
     use cli::{ColdSubcommands, Commands, EdgeSubcommands};
+    use dispatch::{knot_ref, resolve_next_state};
     use domain::knot_type::KnotType;
     use domain::metadata::MetadataEntryInput;
 
@@ -296,16 +298,7 @@ fn run() -> Result<(), app::AppError> {
             if args.json {
                 print_json(&report);
             } else {
-                for check in &report.checks {
-                    println!(
-                        "{} [{}] {}",
-                        check.name,
-                        serde_json::to_string(&check.status)
-                            .expect("status serialization should work")
-                            .trim_matches('"'),
-                        check.detail
-                    );
-                }
+                ui::print_doctor_report(&report);
             }
             if report.failure_count() > 0 {
                 return Err(app::AppError::InvalidArgument(format!(
@@ -486,29 +479,11 @@ fn run() -> Result<(), app::AppError> {
         }
         Commands::Poll(args) => poll_claim::run_poll(&app, args)?,
         Commands::Claim(args) => poll_claim::run_claim(&app, args)?,
+        Commands::Ready(args) => poll_claim::run_ready(&app, args)?,
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
         Commands::Completions(_) => unreachable!("completions handled before app init"),
     }
 
     Ok(())
-}
-
-fn knot_ref(knot: &app::KnotView) -> String {
-    let sid = knot_id::display_id(&knot.id);
-    knot.alias
-        .as_deref()
-        .map_or(sid.to_string(), |a| format!("{a} ({sid})"))
-}
-
-fn resolve_next_state(app: &app::App, id: &str) -> Result<(app::KnotView, String), app::AppError> {
-    let knot = app
-        .show_knot(id)?
-        .ok_or_else(|| app::AppError::NotFound(id.into()))?;
-    let registry = workflow::ProfileRegistry::load()?;
-    let profile = registry.require(&knot.profile_id)?;
-    let next = profile.next_happy_path_state(&knot.state).ok_or_else(|| {
-        app::AppError::InvalidArgument(format!("no next state from '{}'", knot.state))
-    })?;
-    Ok((knot, next.to_string()))
 }

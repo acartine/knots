@@ -1,6 +1,7 @@
 use std::io::{self, IsTerminal};
 
 use crate::app::KnotView;
+use crate::doctor::{DoctorCheck, DoctorReport, DoctorStatus};
 use crate::list_layout::DisplayKnot;
 use crate::listing::KnotListFilter;
 
@@ -31,7 +32,28 @@ pub fn print_knot_show(knot: &KnotView) {
     }
 }
 
-fn format_knot_row(row: &DisplayKnot, palette: &Palette) -> String {
+pub fn print_doctor_report(report: &DoctorReport) {
+    let palette = Palette::auto();
+    for check in &report.checks {
+        println!("{}", format_doctor_line(check, &palette));
+    }
+}
+
+pub(crate) fn format_doctor_line(check: &DoctorCheck, palette: &Palette) -> String {
+    let (icon, color_code) = match check.status {
+        DoctorStatus::Pass => ("\u{2713}", "32"),
+        DoctorStatus::Warn => ("\u{26a0}", "33"),
+        DoctorStatus::Fail => ("\u{2717}", "31"),
+    };
+    format!(
+        "{} {}  {}",
+        palette.paint(color_code, icon),
+        check.name,
+        check.detail
+    )
+}
+
+pub fn format_knot_row(row: &DisplayKnot, palette: &Palette) -> String {
     let knot = &row.knot;
     let indent = indentation_prefix(row.depth, palette);
     let short_id = crate::knot_id::display_id(&knot.id);

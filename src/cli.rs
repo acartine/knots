@@ -106,6 +106,8 @@ pub enum Commands {
     Poll(PollArgs),
     #[command(about = "Claim a knot and get its action prompt.")]
     Claim(ClaimArgs),
+    #[command(about = "List knots queued for action (ready_for_* states).")]
+    Ready(ReadyArgs),
 }
 
 #[derive(Debug, Args)]

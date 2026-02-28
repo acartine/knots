@@ -182,3 +182,14 @@ pub struct RehydrateArgs {
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
 }
+
+#[derive(Debug, Args)]
+#[command(about = "List knots queued for action.")]
+pub struct ReadyArgs {
+    #[arg(help = "Optional ready type filter \
+                (e.g. plan, implementation, plan_review).")]
+    pub ready_type: Option<String>,
+
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
+}

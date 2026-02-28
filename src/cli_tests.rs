@@ -179,3 +179,50 @@ fn skill_parses() {
         other => panic!("expected Skill, got {:?}", other),
     }
 }
+
+#[test]
+fn ready_parses_without_type() {
+    let cli = parse(&["kno", "ready"]);
+    match cli.command {
+        Commands::Ready(args) => {
+            assert!(args.ready_type.is_none());
+            assert!(!args.json);
+        }
+        other => panic!("expected Ready, got {:?}", other),
+    }
+}
+
+#[test]
+fn ready_parses_with_type() {
+    let cli = parse(&["kno", "ready", "plan"]);
+    match cli.command {
+        Commands::Ready(args) => {
+            assert_eq!(args.ready_type.as_deref(), Some("plan"));
+        }
+        other => panic!("expected Ready, got {:?}", other),
+    }
+}
+
+#[test]
+fn ready_parses_with_json_flag() {
+    let cli = parse(&["kno", "ready", "--json"]);
+    match cli.command {
+        Commands::Ready(args) => {
+            assert!(args.ready_type.is_none());
+            assert!(args.json);
+        }
+        other => panic!("expected Ready, got {:?}", other),
+    }
+}
+
+#[test]
+fn ready_parses_with_type_and_json() {
+    let cli = parse(&["kno", "ready", "implementation", "--json"]);
+    match cli.command {
+        Commands::Ready(args) => {
+            assert_eq!(args.ready_type.as_deref(), Some("implementation"));
+            assert!(args.json);
+        }
+        other => panic!("expected Ready, got {:?}", other),
+    }
+}

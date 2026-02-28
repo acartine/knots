@@ -1,5 +1,5 @@
 use crate::app::{App, AppError, KnotView, StateActorMetadata};
-use crate::cli::{ClaimArgs, PollArgs};
+use crate::cli::{ClaimArgs, PollArgs, ReadyArgs};
 use crate::listing::{apply_filters, KnotListFilter};
 use crate::prompt;
 use crate::skills;
@@ -121,7 +121,35 @@ pub fn render_json(result: &PollResult) -> serde_json::Value {
     prompt::render_prompt_json(&result.knot, result.skill, &result.completion_cmd)
 }
 
-fn list_queue_candidates(app: &App, stage: Option<&str>) -> Result<Vec<KnotView>, AppError> {
+pub fn run_ready(app: &App, args: ReadyArgs) -> Result<(), AppError> {
+    let stage = normalize_ready_type(args.ready_type.as_deref());
+    let candidates = list_queue_candidates(app, stage.as_deref())?;
+    if args.json {
+        let json =
+            serde_json::to_string_pretty(&candidates).expect("JSON serialization should work");
+        println!("{json}");
+    } else if candidates.is_empty() {
+        println!("no knots ready for action");
+    } else {
+        let palette = crate::ui::Palette::auto();
+        for knot in &candidates {
+            let sid = crate::knot_id::display_id(&knot.id);
+            let display_id = knot
+                .alias
+                .as_deref()
+                .map_or(sid.to_string(), |a| format!("{a} ({sid})"));
+            println!(
+                "{} {} {}",
+                palette.id(&display_id),
+                palette.state(&knot.state),
+                knot.title
+            );
+        }
+    }
+    Ok(())
+}
+
+pub fn list_queue_candidates(app: &App, stage: Option<&str>) -> Result<Vec<KnotView>, AppError> {
     let state_filter = stage.map(|s| format!("ready_for_{}", s));
     let filter = KnotListFilter {
         include_all: false,
@@ -173,6 +201,19 @@ fn match_pollable(
     }))
 }
 
+fn normalize_ready_type(raw: Option<&str>) -> Option<String> {
+    let trimmed = raw?.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let lowered = trimmed.to_ascii_lowercase().replace('-', "_");
+    if lowered.starts_with("ready_for_") {
+        Some(lowered.trim_start_matches("ready_for_").to_string())
+    } else {
+        Some(lowered)
+    }
+}
+
 fn parse_owner_filter(raw: Option<&str>) -> OwnerKind {
     match raw.map(|s| s.trim().to_ascii_lowercase()).as_deref() {
         Some("human") => OwnerKind::Human,
@@ -183,6 +224,13 @@ fn parse_owner_filter(raw: Option<&str>) -> OwnerKind {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
+
+    fn unique_workspace() -> PathBuf {
+        let root = std::env::temp_dir().join(format!("knots-poll-test-{}", uuid::Uuid::now_v7()));
+        std::fs::create_dir_all(&root).expect("workspace should be creatable");
+        root
+    }
 
     #[test]
     fn parse_owner_defaults_to_agent() {
@@ -195,5 +243,85 @@ mod tests {
     fn parse_owner_recognizes_human() {
         assert_eq!(parse_owner_filter(Some("human")), OwnerKind::Human);
         assert_eq!(parse_owner_filter(Some("Human")), OwnerKind::Human);
+    }
+
+    #[test]
+    fn normalize_ready_type_none_returns_none() {
+        assert_eq!(normalize_ready_type(None), None);
+    }
+
+    #[test]
+    fn normalize_ready_type_empty_returns_none() {
+        assert_eq!(normalize_ready_type(Some("")), None);
+        assert_eq!(normalize_ready_type(Some("  ")), None);
+    }
+
+    #[test]
+    fn normalize_ready_type_strips_prefix() {
+        assert_eq!(
+            normalize_ready_type(Some("ready_for_planning")),
+            Some("planning".to_string())
+        );
+    }
+
+    #[test]
+    fn normalize_ready_type_passes_through_stage() {
+        assert_eq!(normalize_ready_type(Some("plan")), Some("plan".to_string()));
+        assert_eq!(
+            normalize_ready_type(Some("implementation")),
+            Some("implementation".to_string())
+        );
+    }
+
+    #[test]
+    fn normalize_ready_type_lowercases_and_replaces_dashes() {
+        assert_eq!(
+            normalize_ready_type(Some("Plan-Review")),
+            Some("plan_review".to_string())
+        );
+    }
+
+    #[test]
+    fn run_ready_empty_queue_prints_message() {
+        let root = unique_workspace();
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app =
+            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+        let args = ReadyArgs {
+            ready_type: None,
+            json: false,
+        };
+        run_ready(&app, args).expect("run_ready should succeed");
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn run_ready_json_empty_queue() {
+        let root = unique_workspace();
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app =
+            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+        let args = ReadyArgs {
+            ready_type: None,
+            json: true,
+        };
+        run_ready(&app, args).expect("run_ready json should succeed");
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn run_ready_with_knot_in_queue() {
+        let root = unique_workspace();
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app =
+            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+        app.create_knot("Test ready", None, Some("work_item"), Some("default"))
+            .expect("create should succeed");
+        let args = ReadyArgs {
+            ready_type: None,
+            json: false,
+        };
+        run_ready(&app, args).expect("run_ready with knot should succeed");
+        let _ = std::fs::remove_dir_all(root);
     }
 }
