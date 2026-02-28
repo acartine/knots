@@ -193,6 +193,12 @@ mod tests {
         assert_eq!(detect_current_shell(), Some(Shell::Bash));
         unsafe { std::env::set_var("SHELL", "/usr/bin/fish") };
         assert_eq!(detect_current_shell(), Some(Shell::Fish));
+        unsafe { std::env::set_var("SHELL", "/usr/bin/elvish") };
+        assert_eq!(detect_current_shell(), Some(Shell::Elvish));
+        unsafe { std::env::set_var("SHELL", "/usr/bin/pwsh") };
+        assert_eq!(detect_current_shell(), Some(Shell::PowerShell));
+        unsafe { std::env::set_var("SHELL", "/usr/bin/csh") };
+        assert_eq!(detect_current_shell(), None);
         if let Some(val) = prev {
             unsafe { std::env::set_var("SHELL", val) };
         } else {
@@ -393,21 +399,5 @@ mod tests {
     fn group_zsh_noop_when_function_not_found() {
         let input = "some random script content";
         assert_eq!(group_zsh_command_fn(input, "_kno_commands"), input);
-    }
-
-    #[test]
-    fn detect_elvish_and_powershell() {
-        let prev = std::env::var_os("SHELL");
-        unsafe { std::env::set_var("SHELL", "/usr/bin/elvish") };
-        assert_eq!(detect_current_shell(), Some(Shell::Elvish));
-        unsafe { std::env::set_var("SHELL", "/usr/bin/pwsh") };
-        assert_eq!(detect_current_shell(), Some(Shell::PowerShell));
-        unsafe { std::env::set_var("SHELL", "/usr/bin/csh") };
-        assert_eq!(detect_current_shell(), None);
-        if let Some(val) = prev {
-            unsafe { std::env::set_var("SHELL", val) };
-        } else {
-            unsafe { std::env::remove_var("SHELL") };
-        }
     }
 }
