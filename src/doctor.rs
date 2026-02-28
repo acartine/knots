@@ -213,7 +213,12 @@ const VERSION_CHECK_TIMEOUT_SECS: u32 = 5;
 
 pub(crate) fn check_version() -> DoctorCheck {
     let current = env!("CARGO_PKG_VERSION");
-    match fetch_latest_tag(RELEASES_API_URL, VERSION_CHECK_TIMEOUT_SECS) {
+    let tag = fetch_latest_tag(RELEASES_API_URL, VERSION_CHECK_TIMEOUT_SECS);
+    build_version_check(current, tag)
+}
+
+fn build_version_check(current: &str, tag: Option<String>) -> DoctorCheck {
+    match tag {
         Some(tag) => {
             let latest = strip_v_prefix(&tag);
             match is_outdated(current, latest) {
@@ -338,12 +343,41 @@ mod tests {
         );
     }
 
-    use super::{fetch_latest_tag, is_outdated, parse_tag, strip_v_prefix};
+    use super::{build_version_check, fetch_latest_tag, is_outdated, parse_tag, strip_v_prefix};
 
     #[test]
     fn fetch_latest_tag_returns_none_for_unreachable_url() {
         let result = fetch_latest_tag("http://127.0.0.1:1/nonexistent", 1);
         assert_eq!(result, None);
+    }
+
+    #[test]
+    fn build_version_check_warns_when_outdated() {
+        let check = build_version_check("0.1.0", Some("v0.2.0".to_string()));
+        assert_eq!(check.status, DoctorStatus::Warn);
+        assert!(check.detail.contains("update available"));
+        assert!(check.detail.contains("kno upgrade"));
+    }
+
+    #[test]
+    fn build_version_check_passes_when_up_to_date() {
+        let check = build_version_check("0.2.0", Some("v0.2.0".to_string()));
+        assert_eq!(check.status, DoctorStatus::Pass);
+        assert!(check.detail.contains("up to date"));
+    }
+
+    #[test]
+    fn build_version_check_warns_on_unparseable_remote() {
+        let check = build_version_check("0.2.0", Some("beta-1".to_string()));
+        assert_eq!(check.status, DoctorStatus::Warn);
+        assert!(check.detail.contains("unable to compare"));
+    }
+
+    #[test]
+    fn build_version_check_warns_when_fetch_fails() {
+        let check = build_version_check("0.2.0", None);
+        assert_eq!(check.status, DoctorStatus::Warn);
+        assert!(check.detail.contains("unable to check"));
     }
 
     #[test]
