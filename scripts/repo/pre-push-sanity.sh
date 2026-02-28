@@ -11,7 +11,9 @@ cd "${repo_root}"
 
 # Unset git env vars that leak into hooks so tests creating
 # temporary git repos are not confused by the parent context.
-unset GIT_DIR GIT_QUARANTINE_PATH GIT_WORK_TREE 2>/dev/null || true
+while IFS= read -r var; do
+  unset "$var" 2>/dev/null || true
+done < <(env | grep '^GIT_' | cut -d= -f1)
 
 echo "Running make sanity before push..."
 make sanity
