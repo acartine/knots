@@ -1,5 +1,12 @@
 # kno
 
+## 0.4.0
+
+### Minor Changes
+
+- 30cf4b7: Add version check to `kno doctor` that verifies the installed CLI version
+  matches the latest published release.
+
 ## 0.3.0
 
 ### Minor Changes
