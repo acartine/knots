@@ -1,8 +1,10 @@
 use super::{
-    format_knot_row, format_show_fields, indentation_prefix, knot_show_fields, print_knot_list,
-    print_knot_show, state_color_code, wrap_split_index, wrap_value, Palette, ShowField,
+    format_doctor_line, format_knot_row, format_show_fields, indentation_prefix, knot_show_fields,
+    print_doctor_report, print_knot_list, print_knot_show, state_color_code, wrap_split_index,
+    wrap_value, Palette, ShowField,
 };
 use crate::app::KnotView;
+use crate::doctor::{DoctorCheck, DoctorReport, DoctorStatus};
 use crate::domain::metadata::MetadataEntry;
 use crate::list_layout::DisplayKnot;
 use crate::listing::KnotListFilter;
@@ -141,4 +143,84 @@ fn show_and_print_paths_cover_empty_field_and_public_print_functions() {
     print_knot_list(&[], &filter);
     print_knot_list(&[row], &filter);
     print_knot_show(&sample_knot());
+}
+
+#[test]
+fn doctor_pass_renders_green_checkmark() {
+    let check = DoctorCheck {
+        name: "lock_health".to_string(),
+        status: DoctorStatus::Pass,
+        detail: "all good".to_string(),
+    };
+    let palette = Palette { enabled: true };
+    let line = format_doctor_line(&check, &palette);
+    assert!(line.contains("\u{2713}"), "should contain checkmark");
+    assert!(line.contains("\x1b[32m"), "should contain green ANSI code");
+    assert!(line.contains("lock_health"));
+    assert!(line.contains("all good"));
+}
+
+#[test]
+fn doctor_warn_renders_yellow_warning() {
+    let check = DoctorCheck {
+        name: "lock_health".to_string(),
+        status: DoctorStatus::Warn,
+        detail: "locks busy".to_string(),
+    };
+    let palette = Palette { enabled: true };
+    let line = format_doctor_line(&check, &palette);
+    assert!(line.contains("\u{26a0}"), "should contain warning icon");
+    assert!(line.contains("\x1b[33m"), "should contain yellow ANSI code");
+}
+
+#[test]
+fn doctor_fail_renders_red_x() {
+    let check = DoctorCheck {
+        name: "worktree".to_string(),
+        status: DoctorStatus::Fail,
+        detail: "not a git repo".to_string(),
+    };
+    let palette = Palette { enabled: true };
+    let line = format_doctor_line(&check, &palette);
+    assert!(line.contains("\u{2717}"), "should contain X mark");
+    assert!(line.contains("\x1b[31m"), "should contain red ANSI code");
+}
+
+#[test]
+fn doctor_no_color_omits_ansi_codes() {
+    let check = DoctorCheck {
+        name: "remote".to_string(),
+        status: DoctorStatus::Pass,
+        detail: "origin reachable".to_string(),
+    };
+    let palette = Palette { enabled: false };
+    let line = format_doctor_line(&check, &palette);
+    assert!(!line.contains("\x1b["), "should not contain ANSI codes");
+    assert!(line.contains("\u{2713}"));
+    assert!(line.contains("remote"));
+    assert!(line.contains("origin reachable"));
+}
+
+#[test]
+fn print_doctor_report_covers_all_statuses() {
+    let report = DoctorReport {
+        checks: vec![
+            DoctorCheck {
+                name: "a".to_string(),
+                status: DoctorStatus::Pass,
+                detail: "ok".to_string(),
+            },
+            DoctorCheck {
+                name: "b".to_string(),
+                status: DoctorStatus::Warn,
+                detail: "meh".to_string(),
+            },
+            DoctorCheck {
+                name: "c".to_string(),
+                status: DoctorStatus::Fail,
+                detail: "bad".to_string(),
+            },
+        ],
+    };
+    print_doctor_report(&report);
 }
