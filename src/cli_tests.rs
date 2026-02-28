@@ -51,10 +51,10 @@ fn profile_show_parses_with_id() {
 }
 
 #[test]
-fn doctor_fix_flag_parses() {
-    let cli = parse(&["kno", "doctor", "--fix"]);
+fn doctor_json_flag_parses() {
+    let cli = parse(&["kno", "doctor", "--json"]);
     match cli.command {
-        Commands::Doctor(args) => assert!(args.fix),
+        Commands::Doctor(args) => assert!(args.json),
         other => panic!("expected Doctor, got {:?}", other),
     }
 }

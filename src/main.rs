@@ -292,7 +292,7 @@ fn run() -> Result<(), app::AppError> {
             }
         }
         Commands::Doctor(args) => {
-            let report = app.doctor(args.fix)?;
+            let report = app.doctor()?;
             if args.json {
                 print_json(&report);
             } else {

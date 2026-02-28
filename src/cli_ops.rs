@@ -139,9 +139,6 @@ pub struct FsckArgs {
 pub struct DoctorArgs {
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
-
-    #[arg(short = 'f', long, help = "Auto-fix issues where possible.")]
-    pub fix: bool,
 }
 
 #[derive(Debug, Args)]
