@@ -74,7 +74,7 @@ fn doctor_error_display_source_and_from_cover_variants() {
 fn remote_check_warns_when_knots_missing_and_passes_when_present() {
     let (root, local) = setup_repo_with_origin();
 
-    let initial = run_doctor(&local, false).expect("doctor should run");
+    let initial = run_doctor(&local).expect("doctor should run");
     let remote_initial = initial
         .checks
         .iter()
@@ -84,7 +84,7 @@ fn remote_check_warns_when_knots_missing_and_passes_when_present() {
     assert!(remote_initial.detail.contains("knots branch missing"));
 
     run_git(&local, &["push", "origin", "HEAD:knots"]);
-    let after = run_doctor(&local, false).expect("doctor should run after knots push");
+    let after = run_doctor(&local).expect("doctor should run after knots push");
     let remote_after = after
         .checks
         .iter()
@@ -110,7 +110,7 @@ fn remote_check_reports_unreachable_origin() {
         &["remote", "add", "origin", "file:///no/such/repo.git"],
     );
 
-    let report = run_doctor(&root, false).expect("doctor should run");
+    let report = run_doctor(&root).expect("doctor should run");
     let remote = report
         .checks
         .iter()

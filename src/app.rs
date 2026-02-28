@@ -1048,8 +1048,8 @@ impl App {
         Ok(run_fsck(&self.repo_root)?)
     }
 
-    pub fn doctor(&self, fix: bool) -> Result<DoctorReport, AppError> {
-        Ok(run_doctor(&self.repo_root, fix)?)
+    pub fn doctor(&self) -> Result<DoctorReport, AppError> {
+        Ok(run_doctor(&self.repo_root)?)
     }
 
     pub fn compact_write_snapshots(&self) -> Result<SnapshotWriteSummary, AppError> {
