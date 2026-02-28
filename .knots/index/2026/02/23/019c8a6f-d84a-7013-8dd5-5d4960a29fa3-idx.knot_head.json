@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Add Cargo/package version sync automation",
-    "updated_at": "2026-02-23T07:18:52Z"
+    "updated_at": "2026-02-23T07:18:52Z",
+    "profile_id": "default"
   }
 }

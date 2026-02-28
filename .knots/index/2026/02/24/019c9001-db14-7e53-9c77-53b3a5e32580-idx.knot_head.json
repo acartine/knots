@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "AC27/W2 Persist workflow identity across model/events",
-    "updated_at": "2026-02-24T14:16:06.671906Z"
+    "updated_at": "2026-02-24T14:16:06.671906Z",
+    "profile_id": "default"
   }
 }

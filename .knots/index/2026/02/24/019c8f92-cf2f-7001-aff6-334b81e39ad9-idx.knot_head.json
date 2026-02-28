@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Optional: precondition embedding and stale-event filter",
-    "updated_at": "2026-02-24T12:14:49.131121Z"
+    "updated_at": "2026-02-24T12:14:49.131121Z",
+    "profile_id": "default"
   }
 }

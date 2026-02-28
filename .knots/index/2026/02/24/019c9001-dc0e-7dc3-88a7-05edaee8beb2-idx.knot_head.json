@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "AC27/W1.3 Implement workflow registry with default fallback",
-    "updated_at": "2026-02-24T14:16:06.922383Z"
+    "updated_at": "2026-02-24T14:16:06.922383Z",
+    "profile_id": "default"
   }
 }

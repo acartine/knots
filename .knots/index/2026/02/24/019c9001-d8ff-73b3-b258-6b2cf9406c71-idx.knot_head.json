@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "AC27/W3 Workflow-aware transition engine",
-    "updated_at": "2026-02-24T14:16:06.143044Z"
+    "updated_at": "2026-02-24T14:16:06.143044Z",
+    "profile_id": "default"
   }
 }

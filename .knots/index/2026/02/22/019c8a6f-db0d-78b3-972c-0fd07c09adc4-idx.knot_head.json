@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Milestone M1.5: Import Ingestion Available",
-    "updated_at": "2026-02-22T22:11:24Z"
+    "updated_at": "2026-02-22T22:11:24Z",
+    "profile_id": "default"
   }
 }

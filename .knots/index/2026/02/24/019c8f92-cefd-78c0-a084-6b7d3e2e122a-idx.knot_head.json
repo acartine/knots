@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Implement fsck command",
-    "updated_at": "2026-02-24T12:14:49.080618Z"
+    "updated_at": "2026-02-24T12:14:49.080618Z",
+    "profile_id": "default"
   }
 }

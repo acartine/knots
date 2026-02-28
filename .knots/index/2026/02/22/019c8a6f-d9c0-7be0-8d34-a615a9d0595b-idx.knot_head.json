@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Define domain state machine",
-    "updated_at": "2026-02-22T17:34:15Z"
+    "updated_at": "2026-02-22T17:34:15Z",
+    "profile_id": "default"
   }
 }

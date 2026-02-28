@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "Implement repo/cache locks and ordering",
-    "updated_at": "2026-02-22T17:22:29Z"
+    "updated_at": "2026-02-22T17:22:29Z",
+    "profile_id": "default"
   }
 }

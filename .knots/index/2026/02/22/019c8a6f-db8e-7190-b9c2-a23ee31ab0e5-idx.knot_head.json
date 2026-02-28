@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Dolt extractor adapter",
-    "updated_at": "2026-02-22T22:11:45Z"
+    "updated_at": "2026-02-22T22:11:45Z",
+    "profile_id": "default"
   }
 }

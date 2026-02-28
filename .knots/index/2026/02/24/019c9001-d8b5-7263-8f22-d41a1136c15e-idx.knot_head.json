@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "AC27/W2.2 Carry workflow_id in write paths and projections",
-    "updated_at": "2026-02-24T14:16:06.069518Z"
+    "updated_at": "2026-02-24T14:16:06.069518Z",
+    "profile_id": "default"
   }
 }

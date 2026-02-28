@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "Optional: precondition embedding and stale-event filter",
-    "updated_at": "2026-02-22T17:22:31Z"
+    "updated_at": "2026-02-22T17:22:31Z",
+    "profile_id": "default"
   }
 }

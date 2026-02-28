@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Implement rehydrate flow",
-    "updated_at": "2026-02-24T11:59:37.06734Z"
+    "updated_at": "2026-02-24T11:59:37.06734Z",
+    "profile_id": "default"
   }
 }

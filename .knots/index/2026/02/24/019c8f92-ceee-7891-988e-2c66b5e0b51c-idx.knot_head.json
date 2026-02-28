@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Milestone M5: Integrity + Operability",
-    "updated_at": "2026-02-24T12:14:49.064924Z"
+    "updated_at": "2026-02-24T12:14:49.064924Z",
+    "profile_id": "default"
   }
 }

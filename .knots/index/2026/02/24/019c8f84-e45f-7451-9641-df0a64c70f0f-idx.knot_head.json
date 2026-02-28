@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Implement hot/warm/cold classification engine",
-    "updated_at": "2026-02-24T11:59:37.050662Z"
+    "updated_at": "2026-02-24T11:59:37.050662Z",
+    "profile_id": "default"
   }
 }

@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Optional: snapshot compaction/read path",
-    "updated_at": "2026-02-24T12:14:49.119378Z"
+    "updated_at": "2026-02-24T12:14:49.119378Z",
+    "profile_id": "default"
   }
 }

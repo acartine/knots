@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Add robust public README with install/usage/release docs",
-    "updated_at": "2026-02-23T07:18:51Z"
+    "updated_at": "2026-02-23T07:18:51Z",
+    "profile_id": "default"
   }
 }

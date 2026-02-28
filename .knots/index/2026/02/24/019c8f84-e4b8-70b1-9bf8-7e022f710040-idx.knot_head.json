@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Implement auto-sync policy and try-lock behavior",
-    "updated_at": "2026-02-24T11:59:37.140127Z"
+    "updated_at": "2026-02-24T11:59:37.140127Z",
+    "profile_id": "default"
   }
 }

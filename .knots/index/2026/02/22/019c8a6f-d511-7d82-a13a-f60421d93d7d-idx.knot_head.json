@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Milestone M0: Workspace/Tracking Initialized",
-    "updated_at": "2026-02-22T17:28:42Z"
+    "updated_at": "2026-02-22T17:28:42Z",
+    "profile_id": "default"
   }
 }

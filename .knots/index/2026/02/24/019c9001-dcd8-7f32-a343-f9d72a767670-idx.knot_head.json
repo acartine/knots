@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "AC27/W5.1 Unit tests for schema and transition validation",
-    "updated_at": "2026-02-24T14:16:07.123355Z"
+    "updated_at": "2026-02-24T14:16:07.123355Z",
+    "profile_id": "default"
   }
 }

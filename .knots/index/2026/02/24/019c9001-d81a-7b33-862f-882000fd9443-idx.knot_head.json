@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "AC27/W1.2 Implement workflow parser + validator",
-    "updated_at": "2026-02-24T14:16:05.913999Z"
+    "updated_at": "2026-02-24T14:16:05.913999Z",
+    "profile_id": "default"
   }
 }

@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Milestone M1: Local Event+Cache Core",
-    "updated_at": "2026-02-22T21:57:36Z"
+    "updated_at": "2026-02-22T21:57:36Z",
+    "profile_id": "default"
   }
 }

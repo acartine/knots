@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "yet another test knot",
-    "updated_at": "2026-02-25T08:00:37.069461Z"
+    "updated_at": "2026-02-25T08:00:37.069461Z",
+    "profile_id": "default"
   }
 }

@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Build release binaries for macOS arm64 + Linux x86_64",
-    "updated_at": "2026-02-23T07:18:52Z"
+    "updated_at": "2026-02-23T07:18:52Z",
+    "profile_id": "default"
   }
 }

@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Implement local-first write with push retry budget",
-    "updated_at": "2026-02-24T11:59:37.126294Z"
+    "updated_at": "2026-02-24T11:59:37.126294Z",
+    "profile_id": "default"
   }
 }

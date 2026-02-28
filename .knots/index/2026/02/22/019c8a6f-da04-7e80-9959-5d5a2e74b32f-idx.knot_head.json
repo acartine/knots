@@ -7,6 +7,7 @@
     "state": "shipped",
     "terminal": true,
     "title": "Implement event schema + append-only writers",
-    "updated_at": "2026-02-22T18:41:59Z"
+    "updated_at": "2026-02-22T18:41:59Z",
+    "profile_id": "default"
   }
 }

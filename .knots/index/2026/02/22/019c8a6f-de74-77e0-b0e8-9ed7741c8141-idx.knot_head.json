@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "Milestone M4: Concurrency + OCC + Invisible Networking",
-    "updated_at": "2026-02-22T17:22:25Z"
+    "updated_at": "2026-02-22T17:22:25Z",
+    "profile_id": "default"
   }
 }

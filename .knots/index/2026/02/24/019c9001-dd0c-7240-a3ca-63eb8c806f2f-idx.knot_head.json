@@ -7,6 +7,7 @@
     "state": "work_item",
     "terminal": false,
     "title": "AC27/W5.2 Integration tests for app/sync/import multi-workflow paths",
-    "updated_at": "2026-02-24T14:16:07.175897Z"
+    "updated_at": "2026-02-24T14:16:07.175897Z",
+    "profile_id": "default"
   }
 }
