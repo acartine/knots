@@ -1,5 +1,11 @@
 # kno
 
+## 0.3.0
+
+### Minor Changes
+
+- 6ea8d04: Add `--peek` flag to `kno claim` that shows the claim output without advancing knot state.
+
 ## 0.2.2
 
 ### Patch Changes
