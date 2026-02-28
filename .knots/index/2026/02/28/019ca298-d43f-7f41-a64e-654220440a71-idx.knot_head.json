@@ -1,0 +1,14 @@
+{
+  "event_id": "019ca298-d43f-7f41-a64e-654220440a71",
+  "occurred_at": "2026-02-28T04:54:10.75152Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-5dd9",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "add colors, green checkmarks to kno doctor",
+    "updated_at": "2026-02-28T04:54:10.75152Z"
+  }
+}
