@@ -1,9 +1,1 @@
-/target/
-/node_modules/
 /.knots/
-/.DS_Store
-/.claude/
-/coverage/
-/*.profraw
-/tarpaulin-report.html
-/tarpaulin-report.xml
