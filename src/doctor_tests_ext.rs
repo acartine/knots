@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use uuid::Uuid;
 
-use super::{run_doctor, wait_for_lock_release, DoctorError, DoctorStatus};
+use super::{check_version, run_doctor, wait_for_lock_release, DoctorError, DoctorStatus};
 
 fn unique_workspace() -> PathBuf {
     let root = std::env::temp_dir().join(format!("knots-doctor-ext-{}", Uuid::now_v7()));
@@ -120,6 +120,43 @@ fn remote_check_reports_unreachable_origin() {
     assert!(remote.detail.contains("origin is not reachable"));
 
     let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn version_check_is_present_in_doctor_report() {
+    let (root, local) = setup_repo_with_origin();
+
+    let report = run_doctor(&local).expect("doctor should run");
+    let version = report
+        .checks
+        .iter()
+        .find(|check| check.name == "version")
+        .expect("version check should exist");
+    assert!(
+        version.status == DoctorStatus::Pass || version.status == DoctorStatus::Warn,
+        "version check should be pass or warn, got {:?}: {}",
+        version.status,
+        version.detail
+    );
+    assert!(
+        version
+            .detail
+            .contains(&format!("v{}", env!("CARGO_PKG_VERSION"))),
+        "detail should contain current version: {}",
+        version.detail
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn check_version_returns_valid_doctor_check() {
+    let check = check_version();
+    assert_eq!(check.name, "version");
+    assert!(check.status == DoctorStatus::Pass || check.status == DoctorStatus::Warn);
+    assert!(check
+        .detail
+        .contains(&format!("v{}", env!("CARGO_PKG_VERSION"))));
 }
 
 #[test]

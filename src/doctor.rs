@@ -78,6 +78,7 @@ pub fn run_doctor(repo_root: &Path) -> Result<DoctorReport, DoctorError> {
         check_locks(repo_root)?,
         check_worktree(repo_root),
         check_remote(repo_root)?,
+        check_version(),
     ];
     Ok(DoctorReport { checks })
 }
@@ -207,6 +208,92 @@ fn check_remote(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
     })
 }
 
+const RELEASES_API_URL: &str = "https://api.github.com/repos/acartine/knots/releases/latest";
+const VERSION_CHECK_TIMEOUT_SECS: u32 = 5;
+
+pub(crate) fn check_version() -> DoctorCheck {
+    let current = env!("CARGO_PKG_VERSION");
+    let tag = fetch_latest_tag(RELEASES_API_URL, VERSION_CHECK_TIMEOUT_SECS);
+    build_version_check(current, tag)
+}
+
+fn build_version_check(current: &str, tag: Option<String>) -> DoctorCheck {
+    match tag {
+        Some(tag) => {
+            let latest = strip_v_prefix(&tag);
+            match is_outdated(current, latest) {
+                Some(true) => DoctorCheck {
+                    name: "version".to_string(),
+                    status: DoctorStatus::Warn,
+                    detail: format!(
+                        "update available: v{current} -> v{latest} \
+                         (run `kno upgrade`)"
+                    ),
+                },
+                Some(false) => DoctorCheck {
+                    name: "version".to_string(),
+                    status: DoctorStatus::Pass,
+                    detail: format!("v{current} is up to date"),
+                },
+                None => DoctorCheck {
+                    name: "version".to_string(),
+                    status: DoctorStatus::Warn,
+                    detail: format!("unable to compare v{current} with remote {tag}"),
+                },
+            }
+        }
+        None => DoctorCheck {
+            name: "version".to_string(),
+            status: DoctorStatus::Warn,
+            detail: format!("v{current} (unable to check for updates)"),
+        },
+    }
+}
+
+fn fetch_latest_tag(api_url: &str, timeout_secs: u32) -> Option<String> {
+    let output = Command::new("curl")
+        .args(["--max-time", &timeout_secs.to_string(), "-fsSL", api_url])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let body = String::from_utf8_lossy(&output.stdout);
+    parse_tag(&body)
+}
+
+fn parse_tag(json: &str) -> Option<String> {
+    let tag_start = json.find("\"tag_name\"")?;
+    let rest = &json[tag_start..];
+    let colon = rest.find(':')?;
+    let after_colon = rest[colon + 1..].trim_start();
+    if !after_colon.starts_with('"') {
+        return None;
+    }
+    let value_start = 1;
+    let value_end = after_colon[value_start..].find('"')?;
+    Some(after_colon[value_start..value_start + value_end].to_string())
+}
+
+fn strip_v_prefix(tag: &str) -> &str {
+    tag.strip_prefix('v').unwrap_or(tag)
+}
+
+fn is_outdated(current: &str, latest: &str) -> Option<bool> {
+    let cur: Vec<u64> = current
+        .split('.')
+        .map(|s| s.parse().ok())
+        .collect::<Option<Vec<_>>>()?;
+    let lat: Vec<u64> = latest
+        .split('.')
+        .map(|s| s.parse().ok())
+        .collect::<Option<Vec<_>>>()?;
+    if cur.len() != 3 || lat.len() != 3 {
+        return None;
+    }
+    Some(cur < lat)
+}
+
 #[cfg(test)]
 pub fn wait_for_lock_release(
     lock_path: &Path,
@@ -254,6 +341,95 @@ mod tests {
             args,
             String::from_utf8_lossy(&output.stderr)
         );
+    }
+
+    use super::{build_version_check, fetch_latest_tag, is_outdated, parse_tag, strip_v_prefix};
+
+    #[test]
+    fn fetch_latest_tag_returns_none_for_unreachable_url() {
+        let result = fetch_latest_tag("http://127.0.0.1:1/nonexistent", 1);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn build_version_check_warns_when_outdated() {
+        let check = build_version_check("0.1.0", Some("v0.2.0".to_string()));
+        assert_eq!(check.status, DoctorStatus::Warn);
+        assert!(check.detail.contains("update available"));
+        assert!(check.detail.contains("kno upgrade"));
+    }
+
+    #[test]
+    fn build_version_check_passes_when_up_to_date() {
+        let check = build_version_check("0.2.0", Some("v0.2.0".to_string()));
+        assert_eq!(check.status, DoctorStatus::Pass);
+        assert!(check.detail.contains("up to date"));
+    }
+
+    #[test]
+    fn build_version_check_warns_on_unparseable_remote() {
+        let check = build_version_check("0.2.0", Some("beta-1".to_string()));
+        assert_eq!(check.status, DoctorStatus::Warn);
+        assert!(check.detail.contains("unable to compare"));
+    }
+
+    #[test]
+    fn build_version_check_warns_when_fetch_fails() {
+        let check = build_version_check("0.2.0", None);
+        assert_eq!(check.status, DoctorStatus::Warn);
+        assert!(check.detail.contains("unable to check"));
+    }
+
+    #[test]
+    fn parse_tag_handles_whitespace_and_nested_json() {
+        let json = r#"{
+            "tag_name" :  "v1.0.0" ,
+            "other": "data"
+        }"#;
+        assert_eq!(parse_tag(json), Some("v1.0.0".to_string()));
+    }
+
+    #[test]
+    fn parse_tag_returns_none_for_non_string_value() {
+        assert_eq!(parse_tag(r#"{"tag_name": 123}"#), None);
+    }
+
+    #[test]
+    fn parse_tag_extracts_tag_name_from_json() {
+        let json = r#"{"tag_name": "v0.2.2", "name": "v0.2.2"}"#;
+        assert_eq!(parse_tag(json), Some("v0.2.2".to_string()));
+    }
+
+    #[test]
+    fn parse_tag_returns_none_for_missing_field() {
+        assert_eq!(parse_tag(r#"{"name": "v0.2.2"}"#), None);
+        assert_eq!(parse_tag("not json"), None);
+        assert_eq!(parse_tag(""), None);
+    }
+
+    #[test]
+    fn strip_v_prefix_removes_leading_v() {
+        assert_eq!(strip_v_prefix("v1.2.3"), "1.2.3");
+        assert_eq!(strip_v_prefix("1.2.3"), "1.2.3");
+        assert_eq!(strip_v_prefix("v0.0.1"), "0.0.1");
+    }
+
+    #[test]
+    fn is_outdated_compares_semver_parts() {
+        assert_eq!(is_outdated("0.2.2", "0.2.3"), Some(true));
+        assert_eq!(is_outdated("0.2.2", "0.3.0"), Some(true));
+        assert_eq!(is_outdated("0.2.2", "1.0.0"), Some(true));
+        assert_eq!(is_outdated("0.2.2", "0.2.2"), Some(false));
+        assert_eq!(is_outdated("0.2.3", "0.2.2"), Some(false));
+        assert_eq!(is_outdated("1.0.0", "0.9.9"), Some(false));
+    }
+
+    #[test]
+    fn is_outdated_returns_none_for_invalid_versions() {
+        assert_eq!(is_outdated("abc", "0.2.2"), None);
+        assert_eq!(is_outdated("0.2.2", "abc"), None);
+        assert_eq!(is_outdated("0.2", "0.2.2"), None);
+        assert_eq!(is_outdated("0.2.2.1", "0.2.2"), None);
     }
 
     #[test]
