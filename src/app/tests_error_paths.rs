@@ -392,6 +392,10 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
     assert!(not_found.to_string().contains("not found"));
     assert!(not_found.source().is_none());
 
+    let not_init = AppError::NotInitialized;
+    assert!(not_init.to_string().contains("not initialized"));
+    assert!(not_init.source().is_none());
+
     let _ = IndexEvent::with_identity(
         "idx-1",
         "2026-02-25T10:00:00Z",
@@ -423,6 +427,43 @@ fn default_quick_profile_id_falls_back_to_skipped_planning_profile() {
         .default_quick_profile_id()
         .expect("fallback quick profile should resolve");
     assert_eq!(quick, "autopilot_no_planning");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn open_returns_not_initialized_when_knots_dir_missing() {
+    let root = unique_workspace();
+    assert!(!root.join(".knots").exists());
+
+    let result = App::open(".knots/cache/state.sqlite", root.clone());
+    assert!(matches!(result, Err(AppError::NotInitialized)));
+
+    // No .knots directory created as a side effect
+    assert!(!root.join(".knots").exists());
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn open_succeeds_when_knots_dir_exists() {
+    let root = unique_workspace();
+    std::fs::create_dir_all(root.join(".knots")).expect("create .knots");
+
+    let result = App::open(".knots/cache/state.sqlite", root.clone());
+    assert!(result.is_ok());
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn open_with_custom_db_path_skips_init_check() {
+    let root = unique_workspace();
+    let db_path = root.join("custom/state.sqlite");
+    let db_str = db_path.to_str().expect("utf8 path");
+
+    let result = App::open(db_str, root.clone());
+    assert!(result.is_ok());
 
     let _ = std::fs::remove_dir_all(root);
 }

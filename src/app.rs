@@ -131,6 +131,14 @@ impl UpdateKnotPatch {
 
 impl App {
     pub fn open(db_path: &str, repo_root: PathBuf) -> Result<Self, AppError> {
+        let db = std::path::Path::new(db_path);
+        let is_default_path = db
+            .components()
+            .next()
+            .is_some_and(|c| c.as_os_str() == ".knots");
+        if is_default_path && !repo_root.join(".knots").exists() {
+            return Err(AppError::NotInitialized);
+        }
         ensure_parent_dir(db_path)?;
         let conn = db::open_connection(db_path)?;
         let profile_registry = ProfileRegistry::load()?;
@@ -1726,6 +1734,7 @@ pub enum AppError {
     StaleWorkflowHead { expected: String, current: String },
     InvalidArgument(String),
     NotFound(String),
+    NotInitialized,
 }
 
 impl fmt::Display for AppError {
@@ -1751,6 +1760,10 @@ impl fmt::Display for AppError {
             ),
             AppError::InvalidArgument(message) => write!(f, "{}", message),
             AppError::NotFound(id) => write!(f, "knot '{}' not found in local cache", id),
+            AppError::NotInitialized => write!(
+                f,
+                "knots is not initialized in this repository; run `kno init` first"
+            ),
         }
     }
 }
@@ -1774,6 +1787,7 @@ impl Error for AppError {
             AppError::StaleWorkflowHead { .. } => None,
             AppError::InvalidArgument(_) => None,
             AppError::NotFound(_) => None,
+            AppError::NotInitialized => None,
         }
     }
 }
