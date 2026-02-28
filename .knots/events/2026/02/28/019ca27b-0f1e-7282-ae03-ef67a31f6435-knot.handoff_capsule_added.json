@@ -1,0 +1,15 @@
+{
+  "event_id": "019ca27b-0f1e-7282-ae03-ef67a31f6435",
+  "occurred_at": "2026-02-28T04:21:39.742406Z",
+  "knot_id": "knots-9df7",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Removed workflow check from kno doctor. Deleted check_workflows() function and fix parameter from run_doctor(). Updated all 6 callers/tests. Coverage +0.04%.",
+    "datetime": "2026-02-28T04:21:39.742406Z",
+    "entry_id": "019ca27b-0f1e-7282-ae03-ef50ab2536a9",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

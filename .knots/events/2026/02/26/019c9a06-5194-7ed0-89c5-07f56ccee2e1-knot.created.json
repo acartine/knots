@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9a06-5194-7ed0-89c5-07f56ccee2e1",
+  "occurred_at": "2026-02-26T12:57:11.31682Z",
+  "knot_id": "knots-35a4",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "generate skill files for each action state"
+  }
+}

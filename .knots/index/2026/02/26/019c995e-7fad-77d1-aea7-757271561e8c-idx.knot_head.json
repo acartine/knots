@@ -1,0 +1,14 @@
+{
+  "event_id": "019c995e-7fad-77d1-aea7-757271561e8c",
+  "occurred_at": "2026-02-26T09:53:53.064226Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-42ce",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "WFV2/W6 Docs, mermaid alignment, test matrix, rollout notes",
+    "updated_at": "2026-02-26T09:53:53.064226Z"
+  }
+}

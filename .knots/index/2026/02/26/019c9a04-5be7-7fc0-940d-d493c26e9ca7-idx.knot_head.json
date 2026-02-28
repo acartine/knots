@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a04-5be7-7fc0-940d-d493c26e9ca7",
+  "occurred_at": "2026-02-26T12:55:02.887812Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-8c11",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "test color",
+    "updated_at": "2026-02-26T12:55:02.887812Z"
+  }
+}

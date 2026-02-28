@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9973-f227-7812-a952-0e60595b43f1",
+  "occurred_at": "2026-02-26T10:17:18.631573Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-a59d",
+    "profile_id": "autopilot",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "W3.1 Add DB migrations and legacy remap SQL",
+    "updated_at": "2026-02-26T10:17:18.631573Z"
+  }
+}

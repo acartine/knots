@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-a850-78e3-a2a1-ff01562eb96f",
+  "occurred_at": "2026-02-26T10:04:58.832815Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-4fc4",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "AC27/W2.3 Backward compatibility for missing workflow_id",
+    "updated_at": "2026-02-26T10:04:58.832815Z"
+  }
+}

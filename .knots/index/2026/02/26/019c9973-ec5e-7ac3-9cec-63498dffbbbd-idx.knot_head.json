@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9973-ec5e-7ac3-9cec-63498dffbbbd",
+  "occurred_at": "2026-02-26T10:17:17.150606Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-4d0a",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "W4.1 CLI argument changes (--profile, remove workflow CLI, add profile subcommands)",
+    "updated_at": "2026-02-26T10:17:17.150606Z"
+  }
+}

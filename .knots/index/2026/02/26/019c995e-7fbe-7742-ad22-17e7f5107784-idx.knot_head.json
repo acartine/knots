@@ -1,0 +1,14 @@
+{
+  "event_id": "019c995e-7fbe-7742-ad22-17e7f5107784",
+  "occurred_at": "2026-02-26T09:53:53.086411Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-e78b",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "W6.2 Full regression tests + make sanity pass + coverage gate confirmation",
+    "updated_at": "2026-02-26T09:53:53.086411Z"
+  }
+}

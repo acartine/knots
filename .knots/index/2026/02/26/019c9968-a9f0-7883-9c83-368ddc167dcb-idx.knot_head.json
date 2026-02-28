@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-a9f0-7883-9c83-368ddc167dcb",
+  "occurred_at": "2026-02-26T10:04:59.248498Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-ccfd",
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "terminal": false,
+    "title": "W2.1 Add profile schema/loader and built-in TOML with 6 profiles",
+    "updated_at": "2026-02-26T10:04:59.248498Z"
+  }
+}

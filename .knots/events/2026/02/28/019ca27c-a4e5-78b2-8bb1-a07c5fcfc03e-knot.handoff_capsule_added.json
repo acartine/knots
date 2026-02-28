@@ -1,0 +1,15 @@
+{
+  "event_id": "019ca27c-a4e5-78b2-8bb1-a07c5fcfc03e",
+  "occurred_at": "2026-02-28T04:23:23.621251Z",
+  "knot_id": "knots-30a1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Verified flat alphabetical zsh completions implementation. Tests pass: zsh_completions_are_flat_and_unstyled, zsh_commands_are_sorted_alphabetically. Fixed env var race in detect_shell tests by merging into single test. Fixed pre-push hook git env var leakage causing spurious test failures.",
+    "datetime": "2026-02-28T04:00:00Z",
+    "entry_id": "019ca27c-a4e5-78b2-8bb1-a06e5faab6ca",
+    "model": "opus-4",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-abaf-74a1-a19f-8fbe107a4dae",
+  "occurred_at": "2026-02-26T10:04:59.695514Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-9eb2",
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "terminal": false,
+    "title": "W6.1 Update README/architecture for profile-first model",
+    "updated_at": "2026-02-26T10:04:59.695514Z"
+  }
+}

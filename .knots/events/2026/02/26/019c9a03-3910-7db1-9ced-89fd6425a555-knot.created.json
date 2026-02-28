@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9a03-3910-7db1-9ced-89fd6425a555",
+  "occurred_at": "2026-02-26T12:53:48.432485Z",
+  "knot_id": "knots-ee0f",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno new command should color code the same way as kno ls does."
+  }
+}

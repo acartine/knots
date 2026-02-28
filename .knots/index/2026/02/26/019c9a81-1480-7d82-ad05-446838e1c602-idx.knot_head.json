@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a81-1480-7d82-ad05-446838e1c602",
+  "occurred_at": "2026-02-26T15:11:16.608713Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-b779",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "kno skill PLANNING shows 'PLANNING' not found in local cache.  probably true for all skills.",
+    "updated_at": "2026-02-26T15:11:16.608713Z"
+  }
+}

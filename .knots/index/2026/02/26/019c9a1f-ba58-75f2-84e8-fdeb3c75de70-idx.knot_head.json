@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a1f-ba58-75f2-84e8-fdeb3c75de70",
+  "occurred_at": "2026-02-26T13:24:56.536716Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-6170",
+    "profile_id": "autopilot",
+    "state": "planning",
+    "terminal": false,
+    "title": "don't show id prefix in cli commands",
+    "updated_at": "2026-02-26T13:24:56.536716Z"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019c9f12-ffa5-7802-8cb1-0336293200ec",
+  "occurred_at": "2026-02-27T12:29:08.38981Z",
+  "knot_id": "knots-30a1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "User changed direction: remove all autocomplete coloring/sectioning and use one flat alphabetical command list. Implemented by simplifying zsh post-processing to emit a single sorted commands array for _kno_commands/_kno__help_commands and one _describe call (`_describe -t commands 'kno commands' commands \"$@\"`). Removed grouped/colored markers from generated script. Updated tests accordingly (`zsh_completions_are_flat_and_unstyled`, `zsh_commands_are_sorted_alphabetically`).",
+    "datetime": "2026-02-27T12:29:08.38981Z",
+    "entry_id": "019c9f12-ffa5-7802-8cb1-0329d5388ca5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

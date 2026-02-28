@@ -1,0 +1,14 @@
+{
+  "event_id": "019ca290-d424-7ff2-add5-2321e4fff875",
+  "occurred_at": "2026-02-28T04:45:26.436172Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-d816",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "add 'kno ready <optional_ready_type>' command",
+    "updated_at": "2026-02-28T04:45:26.436172Z"
+  }
+}

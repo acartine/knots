@@ -1,0 +1,14 @@
+{
+  "event_id": "019c995e-7b22-7580-a6ec-a8fbb750be09",
+  "occurred_at": "2026-02-26T09:53:51.906171Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-6444",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "WFV2/W3 DB/event/schema migration: workflow->profile + deferred provenance",
+    "updated_at": "2026-02-26T09:53:51.906171Z"
+  }
+}

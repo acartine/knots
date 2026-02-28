@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9de0-a6a2-7b02-b3f7-2df422701e6c",
+  "occurred_at": "2026-02-27T06:54:31.586229Z",
+  "knot_id": "knots-d816",
+  "type": "knot.created",
+  "data": {
+    "body": "list queued knots in workflow order, with optional filter based on implicit ready types such as plan_review, implementation_review, plan, implementation, etc.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "add 'kno ready <optional_ready_type>' command"
+  }
+}

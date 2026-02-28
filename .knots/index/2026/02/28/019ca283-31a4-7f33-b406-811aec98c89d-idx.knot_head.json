@@ -1,0 +1,17 @@
+{
+  "event_id": "019ca283-31a4-7f33-b406-811aec98c89d",
+  "occurred_at": "2026-02-28T04:30:32.868554Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-d388",
+    "profile_id": "autopilot",
+    "state": "planning",
+    "terminal": false,
+    "title": "add kno claim wihc requires an id and works like poll",
+    "updated_at": "2026-02-28T04:30:32.868554Z"
+  },
+  "precondition": {
+    "profile_etag": "019ca25e-e753-7a43-885f-d709d63467bd"
+  }
+}

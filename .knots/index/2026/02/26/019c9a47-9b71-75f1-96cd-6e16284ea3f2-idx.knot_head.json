@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a47-9b71-75f1-96cd-6e16284ea3f2",
+  "occurred_at": "2026-02-26T14:08:30.065492Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-ac90",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "color code status in cli commands",
+    "updated_at": "2026-02-26T14:08:30.065492Z"
+  }
+}

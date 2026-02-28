@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a02-b49e-7bc1-a705-3c69597a4549",
+  "occurred_at": "2026-02-26T12:53:14.526164Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-f353",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "kno ls should not show abandoned or deferred knots unless explicitly specified by the user",
+    "updated_at": "2026-02-26T12:53:14.526164Z"
+  }
+}

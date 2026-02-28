@@ -1,0 +1,15 @@
+{
+  "event_id": "019c9efd-e8ee-7d71-a4b9-3c533c11eecf",
+  "occurred_at": "2026-02-27T12:06:06.31852Z",
+  "knot_id": "knots-30a1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Third attempt after user feedback: fixed compadd display regression by building display rows as '<command><padding><description>' instead of description-only strings, and removed inherited \"$@\" args from compadd calls to avoid group option collisions. Group headers remain explicit cyan via -X prompt escapes on distinct -V groups (common-commands/other-commands). Local checks pass: cargo test completions::tests::zsh_ and zsh -n on generated script.",
+    "datetime": "2026-02-27T12:06:06.31852Z",
+    "entry_id": "019c9efd-e8ee-7d71-a4b9-3c4005b26d64",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-a7ef-7fb0-9ef6-8e5f6f0b95a7",
+  "occurred_at": "2026-02-26T10:04:58.735055Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-df59",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "AC27/W4.3 Surface workflow_id in show/list outputs and filters",
+    "updated_at": "2026-02-26T10:04:58.735055Z"
+  }
+}

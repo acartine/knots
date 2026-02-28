@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9a71-7576-70f1-a12b-3a63307d7533",
+  "occurred_at": "2026-02-26T14:54:12.854447Z",
+  "knot_id": "knots-2f5e",
+  "type": "knot.created",
+  "data": {
+    "body": "we want to support a default 'quick' flow alongside the 'full' flow.  this way users can open a knot that doesn't start with planning",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "add new -f and kno q as alias to kno new -f"
+  }
+}

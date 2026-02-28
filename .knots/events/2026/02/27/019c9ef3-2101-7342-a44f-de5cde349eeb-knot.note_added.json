@@ -1,0 +1,15 @@
+{
+  "event_id": "019c9ef3-2101-7342-a44f-de5cde349eeb",
+  "occurred_at": "2026-02-27T11:54:19.777638Z",
+  "knot_id": "knots-30a1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Tried zsh completion grouping fix in src/completions.rs: injected zstyle list-grouped true for :completion:*:*:kno:*, kept cyan bold Common/Other headers, and added regression assertion. User retest after restarting zsh reports behavior unchanged (still flat alphabetical list).",
+    "datetime": "2026-02-27T11:54:19.777638Z",
+    "entry_id": "019c9ef3-2101-7342-a44f-de4b2ef0d32e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

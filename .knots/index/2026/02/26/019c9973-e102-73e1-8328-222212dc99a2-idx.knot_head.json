@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9973-e102-73e1-8328-222212dc99a2",
+  "occurred_at": "2026-02-26T10:17:14.242217Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-bf18",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "W5.2 Update import source parsing for profile_id with legacy workflow_id fallback",
+    "updated_at": "2026-02-26T10:17:14.242217Z"
+  }
+}

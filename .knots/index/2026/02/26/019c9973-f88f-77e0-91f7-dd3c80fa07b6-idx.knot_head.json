@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9973-f88f-77e0-91f7-dd3c80fa07b6",
+  "occurred_at": "2026-02-26T10:17:20.271626Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-d042",
+    "profile_id": "autopilot",
+    "state": "ready_for_shipment_review",
+    "terminal": false,
+    "title": "W1.2 Enforce deferred provenance and terminal semantics",
+    "updated_at": "2026-02-26T10:17:20.271626Z"
+  }
+}

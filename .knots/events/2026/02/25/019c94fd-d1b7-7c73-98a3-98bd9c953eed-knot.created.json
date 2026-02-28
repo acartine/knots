@@ -1,0 +1,12 @@
+{
+  "event_id": "019c94fd-d1b7-7c73-98a3-98bd9c953eed",
+  "occurred_at": "2026-02-25T13:29:48.21519Z",
+  "knot_id": "knots-096f",
+  "type": "knot.created",
+  "data": {
+    "body": "Build centralized workflow management through kno instead of repo-local files. Scope ideas: (1) compile locally installed workflow definitions into a validated registry artifact, (2) warnings/errors for workflow schema and transition problems before activation, (3) install/list/remove workflow packs with clear versioning and migration handling.",
+    "state": "idea",
+    "title": "Support managed custom workflows via kno",
+    "workflow_id": "default"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a81-ca45-74e0-a07a-d59a69e60589",
+  "occurred_at": "2026-02-26T15:12:03.141124Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-d264",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "should support autocompletions, prompting user on first time install.  should also be a command from cli",
+    "updated_at": "2026-02-26T15:12:03.141124Z"
+  }
+}

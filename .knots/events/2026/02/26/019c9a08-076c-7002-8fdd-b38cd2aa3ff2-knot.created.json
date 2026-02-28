@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9a08-076c-7002-8fdd-b38cd2aa3ff2",
+  "occurred_at": "2026-02-26T12:59:03.404472Z",
+  "knot_id": "knots-700e",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "title": "verify color formatting"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-aa77-7cd2-826c-7d54dbed8a13",
+  "occurred_at": "2026-02-26T10:04:59.383085Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-4d48",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation_review",
+    "terminal": false,
+    "title": "W3.3 Add knot.profile_set event + projection support",
+    "updated_at": "2026-02-26T10:04:59.383085Z"
+  }
+}

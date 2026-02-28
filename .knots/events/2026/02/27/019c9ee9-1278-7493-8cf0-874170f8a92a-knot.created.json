@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9ee9-1278-7493-8cf0-874170f8a92a",
+  "occurred_at": "2026-02-27T11:43:20.696009Z",
+  "knot_id": "knots-30a1",
+  "type": "knot.created",
+  "data": {
+    "body": "## Problem\nThe zsh tab completions for `kno` should display commands in two visual groups\n(Common Commands / Other Commands) matching the `kno --help` layout with cyan\nbold headers. After multiple iterations the headers appear but commands are\nstill rendered as one flat alphabetical list.\n\n## Commits (uncommitted, on main)\n- `src/cli_help.rs`: Made COMMON_COMMANDS pub(crate) so completions can share\n  the list.\n- `src/completions.rs`:\n  - Post-processes clap_complete zsh output to split `_kno_commands()` and\n    `_kno__help_commands()` into two `_describe` calls (common vs other).\n  - Injects `zstyle` directives at the top of the generated script for\n    `group-name ''` and cyan bold `format` per tag.\n  - Removed the `(( $+functions[...] )) ||` guard on modified functions so\n    re-sourcing always picks up the new definition over .zcompdump cache.\n  - Added `-V` (unsorted group) flag to `_describe` calls to prevent zsh\n    from merging groups alphabetically.\n- `install.sh`: Merged `print_result` and `install_completions` into one\n  function with right-aligned printf labels (kno/compat/version/completions).\n- `AGENTS.md`: Synced with CLAUDE.md to fix repo_guardrails test.\n\n## Strategies tried\n1. Two `_describe -t <tag>` calls with different tags — headers appeared but\n   items merged into one alphabetical list.\n2. Added `zstyle ':completion:*:*:kno:*' group-name ''` and per-tag `format`\n   styles — headers rendered in cyan bold but grouping still flat.\n3. Removed `(( $+functions[...] )) ||` guard — fixed stale .zcompdump cache\n   preventing new definitions from loading on `source ~/.zshrc`.\n4. Added `-V` flag to `_describe` for unsorted groups — not yet verified by\n   user.\n\n## Next steps to investigate\n- Verify `-V` approach in a clean shell (new terminal, not just source).\n- Try `_alternative` instead of `_describe` for explicit group dispatch.\n- Try `compadd -V 'group' -d descriptions` directly instead of `_describe`.\n- Check if user's oh-my-zsh / prezto / custom zstyles override our settings.\n- Consider generating a fully custom zsh completion script rather than\n  post-processing clap_complete output.",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "title": "zsh completions: grouped command display not working"
+  }
+}

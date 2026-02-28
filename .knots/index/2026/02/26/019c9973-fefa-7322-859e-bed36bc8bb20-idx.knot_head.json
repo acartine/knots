@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9973-fefa-7322-859e-bed36bc8bb20",
+  "occurred_at": "2026-02-26T10:17:21.914008Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-1f1a",
+    "profile_id": "autopilot",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "WFV2/W4 CLI rewrite: remove workflow commands, add profile commands, actor flags",
+    "updated_at": "2026-02-26T10:17:21.914008Z"
+  }
+}

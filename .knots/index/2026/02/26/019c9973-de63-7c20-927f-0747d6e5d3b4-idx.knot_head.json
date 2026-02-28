@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9973-de63-7c20-927f-0747d6e5d3b4",
+  "occurred_at": "2026-02-26T10:17:13.571352Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-c8ee",
+    "profile_id": "autopilot",
+    "state": "ready_for_shipment_review",
+    "terminal": false,
+    "title": "W5.3 Update rehydrate paths for old/new keys and remapped states",
+    "updated_at": "2026-02-26T10:17:13.571352Z"
+  }
+}

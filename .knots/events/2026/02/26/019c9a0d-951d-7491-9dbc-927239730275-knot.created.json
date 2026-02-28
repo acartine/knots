@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9a0d-951d-7491-9dbc-927239730275",
+  "occurred_at": "2026-02-26T13:05:07.357392Z",
+  "knot_id": "knots-ac90",
+  "type": "knot.created",
+  "data": {
+    "body": "green for actions states, orange for queue states, red for abandoned, blue for shipped, orange for deferred",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "color code status in cli commands"
+  }
+}

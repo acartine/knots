@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-a926-7ea0-a5a3-1eacf073df8c",
+  "occurred_at": "2026-02-26T10:04:59.046655Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-c480",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation_review",
+    "terminal": false,
+    "title": "WFV2/W1 Single Rust workflow state machine + transition engine",
+    "updated_at": "2026-02-26T10:04:59.046655Z"
+  }
+}

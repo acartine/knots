@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9a08-b470-7713-a3fe-2f1e9af16f6e",
+  "occurred_at": "2026-02-26T12:59:47.696912Z",
+  "knot_id": "knots-c8e0",
+  "type": "knot.created",
+  "data": {
+    "body": "this should return the skill required to move the knot to the next state of it's workflow profile",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "add kno skill <knot-id>"
+  }
+}

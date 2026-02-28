@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9973-fa95-7400-a84a-a553ba29974a",
+  "occurred_at": "2026-02-26T10:17:20.78964Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-7bc4",
+    "profile_id": "autopilot",
+    "state": "ready_for_shipment_review",
+    "terminal": false,
+    "title": "W1.1 Implement new KnotState enum + transition table from full_workflow.md",
+    "updated_at": "2026-02-26T10:17:20.78964Z"
+  }
+}

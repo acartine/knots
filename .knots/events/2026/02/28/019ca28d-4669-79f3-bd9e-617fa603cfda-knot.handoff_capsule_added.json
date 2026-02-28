@@ -1,0 +1,15 @@
+{
+  "event_id": "019ca28d-4669-79f3-bd9e-617fa603cfda",
+  "occurred_at": "2026-02-28T04:41:33.545967Z",
+  "knot_id": "knots-d816",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Added kno ready command with optional ready_type filter. Lists knots in ready_for_* states sorted by priority then updated_at. Refactored main.rs to stay under 500 lines by extracting knot_ref and resolve_next_state to dispatch.rs module. Added normalize_ready_type to handle prefix stripping and dash-to-underscore conversion.",
+    "datetime": "2026-02-28T04:45:00Z",
+    "entry_id": "019ca28d-4669-79f3-bd9e-61695ac4dfed",
+    "model": "opus-4",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

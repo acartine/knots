@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9a0a-5a65-7031-bf81-faeb8580fdf4",
+  "occurred_at": "2026-02-26T13:01:35.71707Z",
+  "knot_id": "knots-a096",
+  "type": "knot.created",
+  "data": {
+    "body": "instead of having to manually specify the correct state, this command allows the user/agent to say 'the current step was successful, let's move on to the next step'",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "add kno next, move to next workflow profile step"
+  }
+}

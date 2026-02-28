@@ -1,0 +1,15 @@
+{
+  "event_id": "019c9f0c-6e41-7cf2-8732-4ff86f9ad6da",
+  "occurred_at": "2026-02-27T12:21:57.953878Z",
+  "knot_id": "knots-30a1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Sixth attempt: changed list-colors injection from group-scoped zstyle keys to a kno-context rule (`zstyle ':completion:*:*:kno:*' list-colors ...`) because zsh applies list-colors by completion context (group specificity is typically expressed inside the value), and kept zmodload -i zsh/complist to ensure color support. Also kept separator embedded in Other Commands header and command column right-padding for correct alignment.",
+    "datetime": "2026-02-27T12:21:57.953878Z",
+    "entry_id": "019c9f0c-6e41-7cf2-8732-4fe793ae914c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

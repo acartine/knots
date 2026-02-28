@@ -1,0 +1,12 @@
+{
+  "event_id": "019ca25e-e753-7a43-885f-d6f2684a0803",
+  "occurred_at": "2026-02-28T03:50:54.547401Z",
+  "knot_id": "knots-d388",
+  "type": "knot.created",
+  "data": {
+    "body": "agents should be able to claim a knot and receive the same detail+prompt that they get from kno poll",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "add kno claim wihc requires an id and works like poll"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-a8d3-7dd3-a879-0efe572226ae",
+  "occurred_at": "2026-02-26T10:04:58.963704Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-3442",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "AC27/W3 Workflow-aware transition engine",
+    "updated_at": "2026-02-26T10:04:58.963704Z"
+  }
+}

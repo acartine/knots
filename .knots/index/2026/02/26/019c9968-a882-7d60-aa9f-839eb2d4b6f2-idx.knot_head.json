@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-a882-7d60-aa9f-839eb2d4b6f2",
+  "occurred_at": "2026-02-26T10:04:58.882731Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-f498",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "AC27/W1.3 Implement workflow registry with default fallback",
+    "updated_at": "2026-02-26T10:04:58.882731Z"
+  }
+}

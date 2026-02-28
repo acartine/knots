@@ -1,0 +1,14 @@
+{
+  "event_id": "019c995e-7d04-7070-9836-c6db41957d21",
+  "occurred_at": "2026-02-26T09:53:52.383214Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-d07b",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "WFV2/W2 Profile model, built-in TOML registry, and owner semantics",
+    "updated_at": "2026-02-26T09:53:52.383214Z"
+  }
+}

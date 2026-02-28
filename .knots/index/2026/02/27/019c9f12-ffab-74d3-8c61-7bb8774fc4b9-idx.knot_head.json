@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9f12-ffab-74d3-8c61-7bb8774fc4b9",
+  "occurred_at": "2026-02-27T12:29:08.38981Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-30a1",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "zsh completions: grouped command display not working",
+    "updated_at": "2026-02-27T12:29:08.38981Z"
+  }
+}

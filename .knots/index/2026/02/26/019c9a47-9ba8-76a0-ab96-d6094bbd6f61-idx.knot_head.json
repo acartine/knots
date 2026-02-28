@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a47-9ba8-76a0-ab96-d6094bbd6f61",
+  "occurred_at": "2026-02-26T14:08:30.120985Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-a096",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "add kno next, move to next workflow profile step",
+    "updated_at": "2026-02-26T14:08:30.120985Z"
+  }
+}

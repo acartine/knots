@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a1f-ba86-7832-be1b-bc041cc0cc28",
+  "occurred_at": "2026-02-26T13:24:56.582412Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-096f",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "Support managed custom workflows via kno",
+    "updated_at": "2026-02-26T13:24:56.582412Z"
+  }
+}

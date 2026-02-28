@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-a8b3-7f43-9ac7-959f84d091a6",
+  "occurred_at": "2026-02-26T10:04:58.931662Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-ac27",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "Workflow designs / configurations",
+    "updated_at": "2026-02-26T10:04:58.931662Z"
+  }
+}

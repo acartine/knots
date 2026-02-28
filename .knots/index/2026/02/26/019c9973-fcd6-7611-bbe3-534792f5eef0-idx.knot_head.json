@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9973-fcd6-7611-bbe3-534792f5eef0",
+  "occurred_at": "2026-02-26T10:17:21.366323Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-4d9b",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "WFV2/W5 Sync/import/rehydrate compatibility for old/new field/state payloads",
+    "updated_at": "2026-02-26T10:17:21.366323Z"
+  }
+}

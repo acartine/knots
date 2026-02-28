@@ -1,0 +1,15 @@
+{
+  "event_id": "019c9f0b-f31e-71c2-a87b-50dd919e8445",
+  "occurred_at": "2026-02-27T12:21:26.430708Z",
+  "knot_id": "knots-30a1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Fifth attempt: fixed command alignment by switching display padding back to right-padding (${(r:...)}), moved separator into Other Commands header text to keep divider between groups instead of top-of-list, and ensured zsh/complist is loaded in generated script (zmodload -i zsh/complist) so list-colors and %F/%B escapes can render. Completion unit tests still pass.",
+    "datetime": "2026-02-27T12:21:26.430708Z",
+    "entry_id": "019c9f0b-f31e-71c2-a87b-50c794086666",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

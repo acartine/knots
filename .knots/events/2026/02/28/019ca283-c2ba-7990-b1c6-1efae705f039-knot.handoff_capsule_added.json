@@ -1,0 +1,15 @@
+{
+  "event_id": "019ca283-c2ba-7990-b1c6-1efae705f039",
+  "occurred_at": "2026-02-28T04:31:10.010646Z",
+  "knot_id": "knots-d388",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "kno claim was already implemented in poll_claim.rs before this knot was created. run_claim() takes an ID, claims the knot, and returns the same detail+prompt output as poll. No code changes needed.",
+    "datetime": "2026-02-28T00:00:00Z",
+    "entry_id": "019ca283-c2ba-7990-b1c6-1ee2ee3dae94",
+    "model": "opus-4",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

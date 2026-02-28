@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9973-f48e-7c72-a0ae-8888d2ea930a",
+  "occurred_at": "2026-02-26T10:17:19.246514Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-dd5f",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "W2.2 Implement profile-conditioned transition policy (required|optional|skipped)",
+    "updated_at": "2026-02-26T10:17:19.246514Z"
+  }
+}

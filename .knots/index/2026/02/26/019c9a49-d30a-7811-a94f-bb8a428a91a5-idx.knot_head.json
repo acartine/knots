@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a49-d30a-7811-a94f-bb8a428a91a5",
+  "occurred_at": "2026-02-26T14:10:55.370138Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-e977",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "design simple workflow",
+    "updated_at": "2026-02-26T14:10:55.370138Z"
+  }
+}

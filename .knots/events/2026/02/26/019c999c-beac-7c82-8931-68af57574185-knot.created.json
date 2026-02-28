@@ -1,0 +1,12 @@
+{
+  "event_id": "019c999c-beac-7c82-8931-68af57574185",
+  "occurred_at": "2026-02-26T11:01:52.428435Z",
+  "knot_id": "knots-e3e9",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "profile_id": "semiauto",
+    "state": "ready_for_planning",
+    "title": "Test knot"
+  }
+}

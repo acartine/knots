@@ -1,0 +1,14 @@
+{
+  "event_id": "019c995e-7bcb-7b91-a21f-d0c2fcdbb81b",
+  "occurred_at": "2026-02-26T09:53:52.070189Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-9ae9",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "WFV2 Epic: Single Rust workflow + per-knot profiles",
+    "updated_at": "2026-02-26T09:53:52.070189Z"
+  }
+}

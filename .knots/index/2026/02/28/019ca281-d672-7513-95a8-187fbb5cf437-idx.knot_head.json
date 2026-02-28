@@ -1,0 +1,14 @@
+{
+  "event_id": "019ca281-d672-7513-95a8-187fbb5cf437",
+  "occurred_at": "2026-02-28T04:29:03.986069Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-9df7",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "remove workflow check from kno doctor",
+    "updated_at": "2026-02-28T04:29:03.986069Z"
+  }
+}

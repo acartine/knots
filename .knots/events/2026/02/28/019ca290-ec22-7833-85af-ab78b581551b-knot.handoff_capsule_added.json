@@ -1,0 +1,15 @@
+{
+  "event_id": "019ca290-ec22-7833-85af-ab78b581551b",
+  "occurred_at": "2026-02-28T04:45:32.578699Z",
+  "knot_id": "knots-5dd9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Added colored output to kno doctor: green checkmark for pass, yellow warning for warn, red X for fail. Moved rendering to ui::print_doctor_report(). Added tests for all doctor status rendering.",
+    "datetime": "2026-02-28T04:45:00Z",
+    "entry_id": "019ca290-ec22-7833-85af-ab6aa5d1e403",
+    "model": "opus-4",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

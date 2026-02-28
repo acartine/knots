@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a71-7576-70f1-a12b-3a73bd4cc36a",
+  "occurred_at": "2026-02-26T14:54:12.854447Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-2f5e",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "add new -f and kno q as alias to kno new -f",
+    "updated_at": "2026-02-26T14:54:12.854447Z"
+  }
+}

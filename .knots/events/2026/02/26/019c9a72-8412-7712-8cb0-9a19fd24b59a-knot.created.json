@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9a72-8412-7712-8cb0-9a19fd24b59a",
+  "occurred_at": "2026-02-26T14:55:22.13064Z",
+  "knot_id": "knots-6f3c",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno profile list should show the default full and default quick profiles"
+  }
+}

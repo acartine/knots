@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9f02-4f0d-7a33-b596-bf6e52995eb6",
+  "occurred_at": "2026-02-27T12:10:54.605299Z",
+  "knot_id": "knots-87cf",
+  "type": "knot.created",
+  "data": {
+    "body": "as title says, if the repo isn't using knots, don't create residual cruft that has to be cleaned up",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "if knots is not initialized in the current directory, don't create a local .knot dir"
+  }
+}

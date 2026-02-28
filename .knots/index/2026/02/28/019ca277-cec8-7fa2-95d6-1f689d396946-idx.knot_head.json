@@ -1,0 +1,14 @@
+{
+  "event_id": "019ca277-cec8-7fa2-95d6-1f689d396946",
+  "occurred_at": "2026-02-28T04:18:06.664296Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-87cf",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "if knots is not initialized in the current directory, don't create a local .knot dir",
+    "updated_at": "2026-02-28T04:18:06.664296Z"
+  }
+}

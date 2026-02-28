@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-a893-7dd1-ad47-46c8f83ec9d7",
+  "occurred_at": "2026-02-26T10:04:58.899142Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-a87d",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "AC27/W1.2 Implement workflow parser + validator",
+    "updated_at": "2026-02-26T10:04:58.899142Z"
+  }
+}

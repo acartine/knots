@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a06-ce34-7a53-8ef3-9cbea1d7b9e5",
+  "occurred_at": "2026-02-26T12:57:43.220788Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-19dc",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "change kno new -b --body to -d --desc",
+    "updated_at": "2026-02-26T12:57:43.220788Z"
+  }
+}

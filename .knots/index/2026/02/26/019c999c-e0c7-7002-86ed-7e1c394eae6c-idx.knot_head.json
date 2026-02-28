@@ -1,0 +1,14 @@
+{
+  "event_id": "019c999c-e0c7-7002-86ed-7e1c394eae6c",
+  "occurred_at": "2026-02-26T11:02:01.159377Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-e3e9",
+    "profile_id": "semiauto",
+    "state": "planning",
+    "terminal": false,
+    "title": "Test knot",
+    "updated_at": "2026-02-26T11:02:01.159377Z"
+  }
+}

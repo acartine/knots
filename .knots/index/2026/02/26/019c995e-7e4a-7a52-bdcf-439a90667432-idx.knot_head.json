@@ -1,0 +1,14 @@
+{
+  "event_id": "019c995e-7e4a-7a52-bdcf-439a90667432",
+  "occurred_at": "2026-02-26T09:53:52.714753Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-6f07",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "W4.3 Implement interactive/non-interactive kno profile set state-selection behavior",
+    "updated_at": "2026-02-26T09:53:52.714753Z"
+  }
+}

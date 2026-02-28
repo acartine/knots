@@ -1,0 +1,12 @@
+{
+  "event_id": "019c9a4a-a62b-74b0-8e07-6fa2f96f7cd1",
+  "occurred_at": "2026-02-26T14:11:49.419241Z",
+  "knot_id": "knots-a2f4",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "update kno state output to have same color coding as kno ls"
+  }
+}

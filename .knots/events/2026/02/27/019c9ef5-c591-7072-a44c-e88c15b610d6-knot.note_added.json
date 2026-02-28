@@ -1,0 +1,15 @@
+{
+  "event_id": "019c9ef5-c591-7072-a44c-e88c15b610d6",
+  "occurred_at": "2026-02-27T11:57:12.977389Z",
+  "knot_id": "knots-30a1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Second attempt: replaced top-level zsh grouping logic to use explicit compadd groups in generated _kno_commands/_kno__help_commands (compadd -V common-commands / other-commands with -X '%B%F{cyan}...%f%b' headers), instead of relying on _describe + zstyle grouping behavior. Removed injected zstyle dependency for these sections. Local validation: cargo test completions::tests::zsh_ passes and generated script parses with zsh -n. Awaiting user runtime verification.",
+    "datetime": "2026-02-27T11:57:12.977389Z",
+    "entry_id": "019c9ef5-c591-7072-a44c-e872cd44fb4d",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

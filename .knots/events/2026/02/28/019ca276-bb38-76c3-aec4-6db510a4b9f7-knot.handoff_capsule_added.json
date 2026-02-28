@@ -1,0 +1,15 @@
+{
+  "event_id": "019ca276-bb38-76c3-aec4-6db510a4b9f7",
+  "occurred_at": "2026-02-28T04:16:56.120183Z",
+  "knot_id": "knots-87cf",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Guarded .knots/ directory creation in App::open(). When the default db path is used and .knots/ doesn't exist, returns NotInitialized error instead of creating the directory.",
+    "datetime": "2026-02-28T00:00:00Z",
+    "entry_id": "019ca276-bb38-76c3-aec4-6daa05324c5f",
+    "model": "opus-4",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

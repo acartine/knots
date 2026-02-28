@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9968-aaa7-74a2-9e92-b2b83ae868b1",
+  "occurred_at": "2026-02-26T10:04:59.43174Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-07ac",
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "terminal": false,
+    "title": "W4.2 Implement kno profile set-default at ~/.config/knots/config.toml",
+    "updated_at": "2026-02-26T10:04:59.43174Z"
+  }
+}

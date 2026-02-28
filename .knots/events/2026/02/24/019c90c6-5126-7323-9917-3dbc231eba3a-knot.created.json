@@ -1,0 +1,11 @@
+{
+  "event_id": "019c90c6-5126-7323-9917-3dbc231eba3a",
+  "occurred_at": "2026-02-24T17:50:41.958095Z",
+  "knot_id": "knots-e977",
+  "type": "knot.created",
+  "data": {
+    "body": "we want a traditional workflow like\n\nwork_item\nimplementing\nqueued_for_review\nreviewing\nreviewed\nshipping\nshipped\n\nlet's define it in another toml file similar to teh other one\n",
+    "state": "work_item",
+    "title": "design simple workflow"
+  }
+}

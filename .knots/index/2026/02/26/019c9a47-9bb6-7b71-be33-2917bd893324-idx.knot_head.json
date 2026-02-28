@@ -1,0 +1,14 @@
+{
+  "event_id": "019c9a47-9bb6-7b71-be33-2917bd893324",
+  "occurred_at": "2026-02-26T14:08:30.134891Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-c8e0",
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "terminal": false,
+    "title": "add kno skill <knot-id>",
+    "updated_at": "2026-02-26T14:08:30.134891Z"
+  }
+}
