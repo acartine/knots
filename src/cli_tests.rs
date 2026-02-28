@@ -226,3 +226,26 @@ fn ready_parses_with_type_and_json() {
         other => panic!("expected Ready, got {:?}", other),
     }
 }
+
+#[test]
+fn claim_peek_flag_parses() {
+    let cli = parse(&["kno", "claim", "abc123", "--peek"]);
+    match cli.command {
+        Commands::Claim(args) => {
+            assert_eq!(args.id, "abc123");
+            assert!(args.peek);
+        }
+        other => panic!("expected Claim, got {:?}", other),
+    }
+}
+
+#[test]
+fn claim_without_peek_defaults_false() {
+    let cli = parse(&["kno", "claim", "abc123"]);
+    match cli.command {
+        Commands::Claim(args) => {
+            assert!(!args.peek);
+        }
+        other => panic!("expected Claim, got {:?}", other),
+    }
+}

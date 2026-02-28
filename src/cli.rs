@@ -487,6 +487,9 @@ pub struct ClaimArgs {
 
     #[arg(long = "agent-version", help = "Agent version for claim metadata.")]
     pub agent_version: Option<String>,
+
+    #[arg(long, help = "Show claim output without advancing state.")]
+    pub peek: bool,
 }
 
 #[cfg(test)]

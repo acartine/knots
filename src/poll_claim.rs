@@ -39,15 +39,45 @@ pub fn run_poll(app: &App, args: PollArgs) -> Result<(), AppError> {
 }
 
 pub fn run_claim(app: &App, args: ClaimArgs) -> Result<(), AppError> {
-    let actor = StateActorMetadata {
-        actor_kind: Some("agent".to_string()),
-        agent_name: args.agent_name,
-        agent_model: args.agent_model,
-        agent_version: args.agent_version,
+    let result = if args.peek {
+        peek_knot(app, &args.id)?
+    } else {
+        let actor = StateActorMetadata {
+            actor_kind: Some("agent".to_string()),
+            agent_name: args.agent_name,
+            agent_model: args.agent_model,
+            agent_version: args.agent_version,
+        };
+        claim_knot(app, &args.id, actor)?
     };
-    let result = claim_knot(app, &args.id, actor)?;
     print_result(&result, args.json);
     Ok(())
+}
+
+pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
+    let registry = ProfileRegistry::load()?;
+    let knot = app
+        .show_knot(id)?
+        .ok_or_else(|| AppError::NotFound(id.to_string()))?;
+    let profile = registry.require(&knot.profile_id)?;
+    let next_action = profile.next_happy_path_state(&knot.state).ok_or_else(|| {
+        AppError::InvalidArgument(format!(
+            "knot '{}' in state '{}' has no next action state",
+            knot.id, knot.state
+        ))
+    })?;
+    let skill = skills::skill_for_state(next_action).ok_or_else(|| {
+        AppError::InvalidArgument(format!(
+            "next state '{}' is not an action state with a skill",
+            next_action
+        ))
+    })?;
+    let completion_cmd = format!("kno next {} --actor-kind agent", knot.id);
+    Ok(PollResult {
+        knot,
+        skill,
+        completion_cmd,
+    })
 }
 
 fn print_result(result: &PollResult, json: bool) {
@@ -306,6 +336,26 @@ mod tests {
             json: true,
         };
         run_ready(&app, args).expect("run_ready json should succeed");
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn peek_knot_does_not_advance_state() {
+        let root = unique_workspace();
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app =
+            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+        let created = app
+            .create_knot("Peek test", None, Some("work_item"), Some("default"))
+            .expect("create should succeed");
+        let original_state = created.state.clone();
+        let result = peek_knot(&app, &created.id);
+        assert!(result.is_ok(), "peek_knot should succeed");
+        let after = app
+            .show_knot(&created.id)
+            .expect("show should succeed")
+            .expect("knot should exist");
+        assert_eq!(after.state, original_state, "state should be unchanged");
         let _ = std::fs::remove_dir_all(root);
     }
 
