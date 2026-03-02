@@ -141,6 +141,7 @@ fn sync_applies_index_and_edge_events_from_knots_branch() {
     .expect("db parent should be creatable");
     let conn = db::open_connection(db_path.to_str().expect("utf8 path"))
         .expect("sync test database should open");
+    db::set_meta(&conn, "hot_window_days", "365").expect("hot_window_days should be settable");
 
     let service = SyncService::new(&conn, root.clone());
     let summary = service.sync().expect("sync should succeed");
@@ -292,6 +293,7 @@ fn sync_reduces_description_tag_and_note_events() {
     .expect("db parent should be creatable");
     let conn = db::open_connection(db_path.to_str().expect("utf8 path"))
         .expect("sync test database should open");
+    db::set_meta(&conn, "hot_window_days", "365").expect("hot_window_days should be settable");
 
     let service = SyncService::new(&conn, root.clone());
     let summary = service.sync().expect("sync should succeed");
