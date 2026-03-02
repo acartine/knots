@@ -2,7 +2,6 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::fmt;
 use std::fs;
-use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
@@ -38,6 +37,7 @@ pub struct App {
     writer: EventWriter,
     repo_root: PathBuf,
     profile_registry: ProfileRegistry,
+    home_override: Option<Option<PathBuf>>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -148,7 +148,13 @@ impl App {
             writer,
             repo_root,
             profile_registry,
+            home_override: None,
         })
+    }
+
+    pub(crate) fn with_home_override(mut self, home: Option<PathBuf>) -> Self {
+        self.home_override = Some(home);
+        self
     }
 
     fn repo_lock_path(&self) -> PathBuf {
@@ -193,18 +199,16 @@ impl App {
             .ok_or_else(|| AppError::InvalidArgument("no profiles are defined".to_string()))
     }
 
-    fn config_path() -> Option<PathBuf> {
-        let home = std::env::var_os("HOME")?;
-        Some(
-            Path::new(&home)
-                .join(".config")
-                .join("knots")
-                .join("config.toml"),
-        )
+    fn config_path(&self) -> Option<PathBuf> {
+        let home = match &self.home_override {
+            Some(explicit) => explicit.clone(),
+            None => std::env::var_os("HOME").map(PathBuf::from),
+        }?;
+        Some(home.join(".config").join("knots").join("config.toml"))
     }
 
     fn read_user_config(&self) -> Result<UserConfig, AppError> {
-        let Some(path) = Self::config_path() else {
+        let Some(path) = self.config_path() else {
             return Ok(UserConfig::default());
         };
         if !path.exists() {
@@ -217,7 +221,7 @@ impl App {
     }
 
     fn write_user_config(&self, config: &UserConfig) -> Result<(), AppError> {
-        let path = Self::config_path().ok_or_else(|| {
+        let path = self.config_path().ok_or_else(|| {
             AppError::InvalidArgument("unable to resolve $HOME for profile config".to_string())
         })?;
         if let Some(parent) = path.parent() {

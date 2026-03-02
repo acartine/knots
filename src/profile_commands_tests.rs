@@ -84,11 +84,7 @@ fn run_profile_command_handles_list_show_and_set_default() {
     )
     .expect("profile show json path should succeed");
 
-    let prev_home = std::env::var_os("HOME");
-    unsafe {
-        std::env::set_var("HOME", &root);
-    }
-    run_profile_command(
+    run_profile_command_with_home(
         &ProfileArgs {
             command: ProfileSubcommands::SetDefault(ProfileSetDefaultArgs {
                 id: "semiauto".to_string(),
@@ -96,6 +92,7 @@ fn run_profile_command_handles_list_show_and_set_default() {
         },
         &root,
         &db_str,
+        Some(root.clone()),
     )
     .expect("profile set-default should succeed");
 
@@ -103,8 +100,7 @@ fn run_profile_command_handles_list_show_and_set_default() {
     let config = std::fs::read_to_string(&config_path).expect("config should be readable");
     assert!(config.contains("semiauto"));
 
-    // Also test set-default-quick while HOME is overridden
-    run_profile_command(
+    run_profile_command_with_home(
         &ProfileArgs {
             command: ProfileSubcommands::SetDefaultQuick(ProfileSetDefaultArgs {
                 id: "autopilot_no_planning".to_string(),
@@ -112,6 +108,7 @@ fn run_profile_command_handles_list_show_and_set_default() {
         },
         &root,
         &db_str,
+        Some(root.clone()),
     )
     .expect("profile set-default-quick should succeed");
 
@@ -124,28 +121,18 @@ fn run_profile_command_handles_list_show_and_set_default() {
         config2.contains("autopilot_no_planning"),
         "config should preserve quick profile id: {config2}"
     );
-    // Verify both defaults coexist
     assert!(
         config2.contains("semiauto"),
         "config should still contain default_profile: {config2}"
     );
 
-    // Verify App reads it back correctly
-    let app = crate::app::App::open(&db_str, root.clone()).expect("app should open");
+    let app = crate::app::App::open(&db_str, root.clone())
+        .expect("app should open")
+        .with_home_override(Some(root.clone()));
     let quick = app
         .default_quick_profile_id()
         .expect("should read quick default");
     assert_eq!(quick, "autopilot_no_planning");
-
-    if let Some(home) = prev_home {
-        unsafe {
-            std::env::set_var("HOME", home);
-        }
-    } else {
-        unsafe {
-            std::env::remove_var("HOME");
-        }
-    }
 
     let _ = std::fs::remove_dir_all(root);
 }

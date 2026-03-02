@@ -10,8 +10,24 @@ pub(crate) fn run_profile_command(
     repo_root: &std::path::Path,
     db_path: &str,
 ) -> Result<(), app::AppError> {
+    run_profile_command_with_home(args, repo_root, db_path, None)
+}
+
+pub(crate) fn run_profile_command_with_home(
+    args: &cli::ProfileArgs,
+    repo_root: &std::path::Path,
+    db_path: &str,
+    home_override: Option<std::path::PathBuf>,
+) -> Result<(), app::AppError> {
     use cli::ProfileSubcommands;
 
+    let open_app = || -> Result<app::App, app::AppError> {
+        let app = app::App::open(db_path, repo_root.to_path_buf())?;
+        Ok(match home_override.clone() {
+            Some(home) => app.with_home_override(Some(home)),
+            None => app,
+        })
+    };
     let registry = workflow::ProfileRegistry::load()?;
     let palette = ProfilePalette::auto();
     match &args.command {
@@ -26,7 +42,7 @@ pub(crate) fn run_profile_command(
             } else if profiles.is_empty() {
                 println!("{}", palette.dim("no profiles found"));
             } else {
-                let app = app::App::open(db_path, repo_root.to_path_buf())?;
+                let app = open_app()?;
                 let default_id = app.default_profile_id().ok();
                 let default_quick_id = app.default_quick_profile_id().ok();
 
@@ -106,17 +122,17 @@ pub(crate) fn run_profile_command(
             }
         }
         ProfileSubcommands::SetDefault(set_default_args) => {
-            let app = app::App::open(db_path, repo_root.to_path_buf())?;
+            let app = open_app()?;
             let profile_id = app.set_default_profile_id(&set_default_args.id)?;
             println!("default profile: {}", profile_id);
         }
         ProfileSubcommands::SetDefaultQuick(set_default_quick_args) => {
-            let app = app::App::open(db_path, repo_root.to_path_buf())?;
+            let app = open_app()?;
             let profile_id = app.set_default_quick_profile_id(&set_default_quick_args.id)?;
             println!("default quick profile: {}", profile_id);
         }
         ProfileSubcommands::Set(set_args) => {
-            let app = app::App::open(db_path, repo_root.to_path_buf())?;
+            let app = open_app()?;
             let profile = registry.require(&set_args.profile)?;
             let current = app
                 .show_knot(&set_args.id)?

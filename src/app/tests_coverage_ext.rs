@@ -576,10 +576,7 @@ fn update_knot_state_change_writes_actor_metadata() {
 fn default_profile_resolution_covers_config_and_fallback_paths() {
     let root = unique_workspace();
     let (app, _) = open_app(&root);
-    let prev_home = std::env::var_os("HOME");
-    unsafe {
-        std::env::set_var("HOME", &root);
-    }
+    let app = app.with_home_override(Some(root.clone()));
 
     let fallback = app
         .default_profile_id()
@@ -607,17 +604,9 @@ fn default_profile_resolution_covers_config_and_fallback_paths() {
         .expect("configured profile should resolve");
     assert_eq!(configured, "semiauto");
 
-    unsafe {
-        std::env::remove_var("HOME");
-    }
-    let missing_home = app.set_default_profile_id("autopilot");
+    let no_home_app = app.with_home_override(None);
+    let missing_home = no_home_app.set_default_profile_id("autopilot");
     assert!(matches!(missing_home, Err(AppError::InvalidArgument(_))));
-
-    if let Some(home) = prev_home {
-        unsafe {
-            std::env::set_var("HOME", home);
-        }
-    }
 
     let _ = std::fs::remove_dir_all(root);
 }

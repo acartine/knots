@@ -19,6 +19,10 @@ pub fn is_toplevel_help(args: &[String]) -> bool {
 
 pub fn print_custom_help() {
     let color = std::env::var_os("NO_COLOR").is_none() && std::io::stdout().is_terminal();
+    print_custom_help_with_color(color);
+}
+
+fn print_custom_help_with_color(color: bool) {
     let p = Paint { color };
     let cmd = Cli::command();
 
@@ -145,15 +149,9 @@ mod tests {
 
     #[test]
     fn print_custom_help_does_not_panic() {
-        // Redirect via NO_COLOR to avoid terminal detection issues.
-        let prev = std::env::var_os("NO_COLOR");
-        unsafe { std::env::set_var("NO_COLOR", "1") };
+        // Also exercises the public wrapper (NO_COLOR detection).
         print_custom_help();
-        if let Some(val) = prev {
-            unsafe { std::env::set_var("NO_COLOR", val) };
-        } else {
-            unsafe { std::env::remove_var("NO_COLOR") };
-        }
+        print_custom_help_with_color(false);
     }
 
     #[test]

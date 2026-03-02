@@ -19,7 +19,11 @@ pub fn generate_completions(shell: Shell, buf: &mut dyn Write) {
 
 pub fn detect_current_shell() -> Option<Shell> {
     let shell_var = std::env::var("SHELL").ok()?;
-    let basename = shell_var.rsplit('/').next()?;
+    shell_from_path(&shell_var)
+}
+
+fn shell_from_path(path: &str) -> Option<Shell> {
+    let basename = path.rsplit('/').next()?;
     match basename {
         "bash" => Some(Shell::Bash),
         "zsh" => Some(Shell::Zsh),
@@ -50,9 +54,11 @@ fn completions_install_path_for_home(shell: Shell, home: &std::path::Path) -> Op
 
 pub fn install_completions(shell: Shell) -> io::Result<PathBuf> {
     let home = std::env::var("HOME").map_err(|e| io::Error::new(io::ErrorKind::NotFound, e))?;
-    let home = PathBuf::from(home);
+    install_completions_to(shell, &PathBuf::from(home))
+}
 
-    let path = completions_install_path_for_home(shell, &home).ok_or_else(|| {
+fn install_completions_to(shell: Shell, home: &std::path::Path) -> io::Result<PathBuf> {
+    let path = completions_install_path_for_home(shell, home).ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::Unsupported,
             format!("no install path for {shell:?}"),
@@ -66,7 +72,7 @@ pub fn install_completions(shell: Shell) -> io::Result<PathBuf> {
     std::fs::write(&path, buf)?;
 
     if shell == Shell::Zsh {
-        patch_zshrc(&home, &path)?;
+        patch_zshrc(home, &path)?;
     }
 
     Ok(path)
@@ -158,6 +164,14 @@ pub fn run_completions_command(
     shell_arg: Option<&str>,
     install: bool,
 ) -> Result<(), crate::app::AppError> {
+    run_completions_command_with_home(shell_arg, install, None)
+}
+
+pub(crate) fn run_completions_command_with_home(
+    shell_arg: Option<&str>,
+    install: bool,
+    home_override: Option<&std::path::Path>,
+) -> Result<(), crate::app::AppError> {
     let shell = if let Some(name) = shell_arg {
         parse_shell(name).ok_or_else(|| {
             crate::app::AppError::InvalidArgument(format!("unknown shell '{name}'"))
@@ -171,7 +185,10 @@ pub fn run_completions_command(
     };
 
     if install {
-        let path = install_completions(shell)?;
+        let path = match home_override {
+            Some(home) => install_completions_to(shell, home)?,
+            None => install_completions(shell)?,
+        };
         println!("completions installed to {}", path.display());
     } else {
         let mut stdout = io::stdout().lock();
@@ -185,25 +202,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn detect_shell_from_env() {
-        let prev = std::env::var_os("SHELL");
-        unsafe { std::env::set_var("SHELL", "/bin/zsh") };
-        assert_eq!(detect_current_shell(), Some(Shell::Zsh));
-        unsafe { std::env::set_var("SHELL", "/usr/bin/bash") };
-        assert_eq!(detect_current_shell(), Some(Shell::Bash));
-        unsafe { std::env::set_var("SHELL", "/usr/bin/fish") };
-        assert_eq!(detect_current_shell(), Some(Shell::Fish));
-        unsafe { std::env::set_var("SHELL", "/usr/bin/elvish") };
-        assert_eq!(detect_current_shell(), Some(Shell::Elvish));
-        unsafe { std::env::set_var("SHELL", "/usr/bin/pwsh") };
-        assert_eq!(detect_current_shell(), Some(Shell::PowerShell));
-        unsafe { std::env::set_var("SHELL", "/usr/bin/csh") };
-        assert_eq!(detect_current_shell(), None);
-        if let Some(val) = prev {
-            unsafe { std::env::set_var("SHELL", val) };
-        } else {
-            unsafe { std::env::remove_var("SHELL") };
-        }
+    fn shell_from_path_parses_known_shells() {
+        assert_eq!(shell_from_path("/bin/zsh"), Some(Shell::Zsh));
+        assert_eq!(shell_from_path("/usr/bin/bash"), Some(Shell::Bash));
+        assert_eq!(shell_from_path("/usr/bin/fish"), Some(Shell::Fish));
+        assert_eq!(shell_from_path("/usr/bin/elvish"), Some(Shell::Elvish));
+        assert_eq!(shell_from_path("/usr/bin/pwsh"), Some(Shell::PowerShell));
+        assert_eq!(shell_from_path("/usr/bin/csh"), None);
     }
 
     #[test]
@@ -241,20 +246,19 @@ mod tests {
     }
 
     #[test]
-    fn install_and_run_completions_with_zshrc_patching() {
-        let prev_home = std::env::var_os("HOME");
+    fn install_completions_with_zshrc_patching() {
         let dir = std::env::temp_dir().join(format!("knots-comp-all-{}", uuid::Uuid::now_v7()));
         std::fs::create_dir_all(&dir).expect("dir should be creatable");
-        unsafe { std::env::set_var("HOME", &dir) };
 
         // Bash install writes file
-        let path = install_completions(Shell::Bash).expect("bash install should succeed");
+        let path = install_completions_to(Shell::Bash, &dir).expect("bash install should succeed");
         assert!(path.exists());
         let content = std::fs::read_to_string(&path).expect("should read file");
         assert!(content.contains("kno"));
 
         // Zsh install writes completions file and patches .zshrc
-        let zsh_path = install_completions(Shell::Zsh).expect("zsh install should succeed");
+        let zsh_path =
+            install_completions_to(Shell::Zsh, &dir).expect("zsh install should succeed");
         assert!(zsh_path.exists());
         let zshrc = dir.join(".zshrc");
         assert!(zshrc.exists(), ".zshrc should be created");
@@ -269,7 +273,7 @@ mod tests {
         );
 
         // Second install is idempotent — no duplicate source line
-        install_completions(Shell::Zsh).expect("second zsh install should succeed");
+        install_completions_to(Shell::Zsh, &dir).expect("second zsh install should succeed");
         let rc_after = std::fs::read_to_string(&zshrc).expect("should read .zshrc again");
         assert_eq!(
             rc_content.matches("source").count(),
@@ -278,22 +282,18 @@ mod tests {
         );
 
         // Fish install
-        let fish_path = install_completions(Shell::Fish).expect("fish install should succeed");
+        let fish_path =
+            install_completions_to(Shell::Fish, &dir).expect("fish install should succeed");
         assert!(fish_path.exists());
 
         // Unsupported shell returns error
-        assert!(install_completions(Shell::Elvish).is_err());
+        assert!(install_completions_to(Shell::Elvish, &dir).is_err());
 
-        // run_completions_command install mode
-        assert!(run_completions_command(Some("bash"), true).is_ok());
-        assert!(run_completions_command(Some("zsh"), true).is_ok());
-        assert!(run_completions_command(Some("fish"), true).is_ok());
+        // run_completions_command_with_home install mode
+        assert!(run_completions_command_with_home(Some("bash"), true, Some(&dir)).is_ok());
+        assert!(run_completions_command_with_home(Some("zsh"), true, Some(&dir)).is_ok());
+        assert!(run_completions_command_with_home(Some("fish"), true, Some(&dir)).is_ok());
 
-        if let Some(val) = prev_home {
-            unsafe { std::env::set_var("HOME", val) };
-        } else {
-            unsafe { std::env::remove_var("HOME") };
-        }
         let _ = std::fs::remove_dir_all(dir);
     }
 
