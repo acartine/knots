@@ -1,4 +1,7 @@
-use super::{get_sync_fetch_blob_limit_kb, open_connection, set_meta, CURRENT_SCHEMA_VERSION};
+use super::{
+    get_pull_drift_warn_threshold, get_sync_fetch_blob_limit_kb, open_connection, set_meta,
+    CURRENT_SCHEMA_VERSION,
+};
 use rusqlite::params;
 use std::sync::mpsc;
 use std::thread;
@@ -149,6 +152,15 @@ fn initializes_required_tables_and_schema_version() {
         .expect("sync_fetch_blob_limit_kb default should exist");
     assert_eq!(fetch_blob_limit, "0");
 
+    let drift_warn_threshold: String = conn
+        .query_row(
+            "SELECT value FROM meta WHERE key='pull_drift_warn_threshold'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("pull_drift_warn_threshold default should exist");
+    assert_eq!(drift_warn_threshold, "25");
+
     cleanup_db_files(&path);
 }
 
@@ -276,6 +288,23 @@ fn reads_optional_fetch_blob_limit_from_meta() {
     set_meta(&conn, "sync_fetch_blob_limit_kb", "4").expect("meta update should succeed");
     let configured = get_sync_fetch_blob_limit_kb(&conn).expect("fetch blob limit should read");
     assert_eq!(configured, Some(4));
+
+    cleanup_db_files(&path);
+}
+
+#[test]
+fn reads_pull_drift_warn_threshold_from_meta() {
+    let path = unique_db_path();
+    let conn = open_connection(&path).expect("connection should open");
+
+    let initial =
+        get_pull_drift_warn_threshold(&conn).expect("drift warning threshold should read");
+    assert_eq!(initial, 25);
+
+    set_meta(&conn, "pull_drift_warn_threshold", "5").expect("meta update should succeed");
+    let configured =
+        get_pull_drift_warn_threshold(&conn).expect("drift warning threshold should read");
+    assert_eq!(configured, 5);
 
     cleanup_db_files(&path);
 }

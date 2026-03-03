@@ -136,6 +136,7 @@ fn run() -> Result<(), app::AppError> {
         }
         Commands::Pull(args) => {
             let summary = app.pull()?;
+            let drift_warning = app.pull_drift_warning()?;
             if args.json {
                 print_json(&summary);
             } else {
@@ -150,6 +151,13 @@ fn run() -> Result<(), app::AppError> {
                     summary.knot_updates,
                     summary.edge_adds,
                     summary.edge_removes
+                );
+            }
+            if let Some(warning) = drift_warning {
+                eprintln!(
+                    "warning: local knots drift is high (unpushed_event_files={} > \
+                     threshold={}); run `kno push`",
+                    warning.unpushed_event_files, warning.threshold
                 );
             }
         }

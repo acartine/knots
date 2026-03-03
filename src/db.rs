@@ -14,13 +14,14 @@ pub const CURRENT_SCHEMA_VERSION: i64 = 6;
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
 const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
-const REQUIRED_META_DEFAULT_KEYS: [&str; 6] = [
+const REQUIRED_META_DEFAULT_KEYS: [&str; 7] = [
     "hot_window_days",
     "sync_policy",
     "sync_auto_budget_ms",
     "sync_try_lock_ms",
     "push_retry_budget_ms",
     "sync_fetch_blob_limit_kb",
+    "pull_drift_warn_threshold",
 ];
 
 struct Migration {
@@ -270,6 +271,14 @@ ON CONFLICT(key) DO NOTHING
         r#"
 INSERT INTO meta (key, value)
 VALUES ('sync_fetch_blob_limit_kb', '0')
+ON CONFLICT(key) DO NOTHING
+"#,
+        [],
+    )?;
+    tx.execute(
+        r#"
+INSERT INTO meta (key, value)
+VALUES ('pull_drift_warn_threshold', '25')
 ON CONFLICT(key) DO NOTHING
 "#,
         [],
@@ -731,6 +740,17 @@ pub fn get_sync_fetch_blob_limit_kb(conn: &Connection) -> Result<Option<u64>> {
     } else {
         Ok(None)
     }
+}
+
+pub fn get_pull_drift_warn_threshold(conn: &Connection) -> Result<u64> {
+    let value = get_meta(conn, "pull_drift_warn_threshold")?;
+    let parsed = value
+        .as_deref()
+        .unwrap_or("25")
+        .trim()
+        .parse::<u64>()
+        .unwrap_or(25);
+    Ok(parsed)
 }
 
 pub fn get_meta(conn: &Connection, key: &str) -> Result<Option<String>> {

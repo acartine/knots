@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
+use rusqlite::params;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -64,6 +65,19 @@ fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
         .args(args)
         .output()
         .expect("knots command should run")
+}
+
+fn set_meta_value(db_path: &Path, key: &str, value: &str) {
+    let conn = rusqlite::Connection::open(db_path).expect("db should open");
+    conn.execute(
+        r#"
+INSERT INTO meta (key, value)
+VALUES (?1, ?2)
+ON CONFLICT(key) DO UPDATE SET value = excluded.value
+"#,
+        params![key, value],
+    )
+    .expect("meta should be writable");
 }
 
 fn assert_success(output: &Output) {
@@ -415,6 +429,43 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
     let doctor = run_knots(&root, &db, &["doctor"]);
     assert_success(&doctor);
     assert!(String::from_utf8_lossy(&doctor.stdout).contains("lock_health"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn pull_warns_when_local_drift_exceeds_threshold() {
+    let root = unique_workspace("knots-cli-pull-drift-warning");
+    let _remote = setup_repo_with_remote(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    assert_success(&run_knots(&root, &db, &["init-remote"]));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Drift warning knot",
+            "--profile",
+            "autopilot",
+            "--state",
+            "idea",
+        ],
+    ));
+
+    set_meta_value(&db, "pull_drift_warn_threshold", "1");
+
+    let pull = run_knots(&root, &db, &["pull"]);
+    assert_success(&pull);
+    let stderr = String::from_utf8_lossy(&pull.stderr);
+    assert!(
+        stderr.contains("warning: local knots drift is high"),
+        "pull warning stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("run `kno push`"),
+        "pull warning stderr: {stderr}"
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

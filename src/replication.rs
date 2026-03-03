@@ -115,6 +115,22 @@ impl<'a> ReplicationService<'a> {
         Ok(ReplicationSummary { push, pull })
     }
 
+    pub fn count_unpushed_event_files(&self) -> Result<u64, SyncError> {
+        let worktree = KnotsWorktree::new(self.repo_root.clone());
+        worktree.ensure_exists(&self.git)?;
+        self.reset_worktree_to_remote_or_local(&worktree)?;
+        worktree.ensure_clean(&self.git)?;
+
+        let local_files = self.collect_local_event_files()?;
+        let mut unpushed = 0u64;
+        for relative in local_files {
+            if self.event_file_missing_or_changed(worktree.path(), &relative)? {
+                unpushed += 1;
+            }
+        }
+        Ok(unpushed)
+    }
+
     fn reset_worktree_to_remote_or_local(&self, worktree: &KnotsWorktree) -> Result<(), SyncError> {
         match self.git.fetch_branch_with_filter(
             &self.repo_root,
@@ -203,6 +219,25 @@ impl<'a> ReplicationService<'a> {
         }
 
         Ok(copied)
+    }
+
+    fn event_file_missing_or_changed(
+        &self,
+        worktree_root: &Path,
+        relative_file: &Path,
+    ) -> Result<bool, SyncError> {
+        let src = self.repo_root.join(relative_file);
+        if !src.exists() {
+            return Ok(false);
+        }
+
+        let dst = worktree_root.join(relative_file);
+        let src_bytes = std::fs::read(&src)?;
+        if !dst.exists() {
+            return Ok(true);
+        }
+        let dst_bytes = std::fs::read(&dst)?;
+        Ok(dst_bytes != src_bytes)
     }
 }
 

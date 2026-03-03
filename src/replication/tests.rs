@@ -272,6 +272,36 @@ fn second_push_is_noop_when_remote_already_matches_local_events() {
 }
 
 #[test]
+fn count_unpushed_event_files_tracks_remote_alignment() {
+    let root = unique_workspace();
+    let (_origin, dev1) = setup_origin_and_dev1(&root);
+    write_local_knot_events(&dev1);
+    init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
+
+    let db_path = dev1.join(".knots/cache/state.sqlite");
+    std::fs::create_dir_all(db_path.parent().expect("db parent should exist"))
+        .expect("db parent should be creatable");
+    let conn = db::open_connection(db_path.to_str().expect("utf8 path")).expect("db should open");
+    let service = ReplicationService::new(&conn, dev1.clone());
+
+    let before_push = service
+        .count_unpushed_event_files()
+        .expect("unpushed count should be readable");
+    assert!(
+        before_push >= 2,
+        "expected at least two unpushed local event files, got {before_push}"
+    );
+
+    service.push().expect("push should succeed");
+    let after_push = service
+        .count_unpushed_event_files()
+        .expect("unpushed count should be readable");
+    assert_eq!(after_push, 0);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn push_reports_conflict_when_remote_file_content_differs() {
     let root = unique_workspace();
     let (_origin, dev1) = setup_origin_and_dev1(&root);

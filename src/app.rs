@@ -109,6 +109,12 @@ pub struct ColdKnotView {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PullDriftWarning {
+    pub unpushed_event_files: u64,
+    pub threshold: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SyncPolicy {
     Auto,
     Always,
@@ -185,6 +191,10 @@ impl App {
             db::get_meta(&self.conn, "sync_auto_budget_ms")?.unwrap_or_else(|| "750".to_string());
         let budget = raw.trim().parse::<u64>().unwrap_or(750);
         Ok(budget)
+    }
+
+    fn read_pull_drift_warn_threshold(&self) -> Result<u64, AppError> {
+        Ok(db::get_pull_drift_warn_threshold(&self.conn)?)
     }
 
     fn fallback_profile_id(&self) -> Result<String, AppError> {
@@ -1035,6 +1045,21 @@ impl App {
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
         self.pull_unlocked()
+    }
+
+    pub fn pull_drift_warning(&self) -> Result<Option<PullDriftWarning>, AppError> {
+        let threshold = self.read_pull_drift_warn_threshold()?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        let unpushed_event_files = service.count_unpushed_event_files()?;
+        if unpushed_event_files > threshold {
+            Ok(Some(PullDriftWarning {
+                unpushed_event_files,
+                threshold,
+            }))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn push(&self) -> Result<PushSummary, AppError> {
