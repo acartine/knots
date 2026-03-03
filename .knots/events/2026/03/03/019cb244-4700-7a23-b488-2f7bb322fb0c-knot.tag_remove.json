@@ -1,0 +1,9 @@
+{
+  "event_id": "019cb244-4700-7a23-b488-2f7bb322fb0c",
+  "occurred_at": "2026-03-03T05:55:45.024942Z",
+  "knot_id": "knots-06b1",
+  "type": "knot.tag_remove",
+  "data": {
+    "tag": "attempt:1"
+  }
+}

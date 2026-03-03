@@ -1,0 +1,14 @@
+{
+  "event_id": "019ca4c5-0f07-7ed0-84e8-4697913ce256",
+  "occurred_at": "2026-02-28T15:01:43.815701Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-4bea",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "knots doctor should check for new versions",
+    "updated_at": "2026-02-28T15:01:43.815701Z"
+  }
+}

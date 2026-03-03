@@ -1,0 +1,12 @@
+{
+  "event_id": "019ca300-c8eb-7690-8157-9bebb741d2d6",
+  "occurred_at": "2026-02-28T06:47:43.595289Z",
+  "knot_id": "knots-e750",
+  "type": "knot.created",
+  "data": {
+    "body": "Add git_hooks::check_hooks(repo_root) call to run_doctor() checks vec in doctor.rs. Returns Warn when managed hooks missing, Pass when installed. Add test in doctor_tests_ext.rs.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Integrate hooks into kno doctor check"
+  }
+}

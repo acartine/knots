@@ -1,0 +1,12 @@
+{
+  "event_id": "019caf71-5a6b-7042-af99-4d1c01c904ed",
+  "occurred_at": "2026-03-02T16:46:07.467671Z",
+  "knot_id": "knots-a9b9",
+  "type": "knot.created",
+  "data": {
+    "body": "Document Knots concurrency requirements for SQLite lock contention: queue and serialize write operations, allow immediate reads under WAL snapshot isolation, keep WAL enabled, keep/set busy timeout, add bounded write retries with jitter for SQLITE_BUSY/SQLITE_LOCKED, keep write transactions short, and define read-after-write behavior for commands requiring strict freshness.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Document SQLite concurrency strategy for lock contention"
+  }
+}

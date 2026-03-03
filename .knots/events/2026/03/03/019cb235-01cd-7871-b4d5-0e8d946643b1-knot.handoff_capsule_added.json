@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb235-01cd-7871-b4d5-0e8d946643b1",
+  "occurred_at": "2026-03-03T05:39:04.269313Z",
+  "knot_id": "knots-06b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implemented --json flag for kno next. JSON output includes id, previous_state, state, and owner_kind fields. Text output also shows owner kind. Added owner_kind_for_state method to ProfileOwners that maps both queue and action states to their corresponding owner. All tests pass with 95.14% coverage.",
+    "datetime": "2026-03-03T05:38:00Z",
+    "entry_id": "019cb235-01cd-7871-b4d5-0e7fed848e88",
+    "model": "claude-opus-4-6",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}

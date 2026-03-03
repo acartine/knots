@@ -1,0 +1,12 @@
+{
+  "event_id": "019cb226-fc17-7e13-97e4-77577b01da48",
+  "occurred_at": "2026-03-03T05:23:45.303576Z",
+  "knot_id": "knots-06b1",
+  "type": "knot.created",
+  "data": {
+    "body": "as title says.  let's make kno next a bit more helpful",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "'kno next' should support json, and show the new state and the owner type of the new state."
+  }
+}

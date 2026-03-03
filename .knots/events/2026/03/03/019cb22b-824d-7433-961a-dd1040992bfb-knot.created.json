@@ -1,0 +1,12 @@
+{
+  "event_id": "019cb22b-824d-7433-961a-dd1040992bfb",
+  "occurred_at": "2026-03-03T05:28:41.805849Z",
+  "knot_id": "knots-27ef",
+  "type": "knot.created",
+  "data": {
+    "body": "in ./skills we have a markdown file for each state that is sent to the agent as a response to `kno claim <id>`.\n\nwherever the the prompt says to call `kno next <id>`, update the prompt to include the following command options:\n\n      --actor-kind agent    \n      --agent-name <AGENT_NAME>        Agent name for step metadata.\n      --agent-model <AGENT_MODEL>      Agent model for step metadata.\n      --agent-version <AGENT_VERSION>  Agent version for step metadata.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Augment kno claim state markdown files"
+  }
+}

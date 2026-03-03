@@ -1,0 +1,12 @@
+{
+  "event_id": "019ca300-ba35-70a2-806b-7aa6e6b29481",
+  "occurred_at": "2026-02-28T06:47:39.829356Z",
+  "knot_id": "knots-27f3",
+  "type": "knot.created",
+  "data": {
+    "body": "New module ~120 lines. Constants for MANAGED_HOOKS (post-commit, post-merge) and KNOTS_HOOK_MARKER. Functions: resolve_hooks_dir, is_knots_managed, install_hook, uninstall_hook, check_hooks (DoctorCheck), install_hooks, uninstall_hooks, hooks_status. Hook template runs kno sync in background, chains existing hooks via .local suffix. Includes unit tests for install/uninstall/idempotency/preservation/core.hooksPath.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Create src/git_hooks.rs module with hook install/uninstall/detect/status logic"
+  }
+}

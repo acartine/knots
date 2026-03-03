@@ -1,0 +1,14 @@
+{
+  "event_id": "019caf73-087f-7833-b97a-db7ee7ae8551",
+  "occurred_at": "2026-03-02T16:47:57.567945Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-a9b9",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Document SQLite concurrency strategy for lock contention",
+    "updated_at": "2026-03-02T16:47:57.567945Z"
+  }
+}

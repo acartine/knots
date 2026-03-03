@@ -1,0 +1,15 @@
+{
+  "event_id": "019caf73-0842-7551-82dd-9ccbc0d87eaa",
+  "occurred_at": "2026-03-02T16:47:57.50648Z",
+  "knot_id": "knots-a9b9",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented: added README section 'SQLite concurrency requirements' documenting write-queue/read-immediate policy, WAL requirement, busy-timeout and retry guidance, short transactions, and strict read-after-write handling. Verified with make sanity (fmt, clippy, tests, and coverage).",
+    "datetime": "2026-03-02T16:47:57.50648Z",
+    "entry_id": "019caf73-0842-7551-82dd-9cb0098feb47",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

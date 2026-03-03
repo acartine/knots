@@ -1,0 +1,12 @@
+{
+  "event_id": "019caf8b-77ee-7722-a72f-d2a95a8a4070",
+  "occurred_at": "2026-03-02T17:14:38.958976Z",
+  "knot_id": "knots-73bc",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement runtime concurrency fix for SQLite lock contention: avoid write transactions during routine DB open when schema/defaults are already up to date, make auto-sync reads non-blocking on cache lock, and add bounded retry with jitter for SQLITE_BUSY/SQLITE_LOCKED on DB write operations.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Implement SQLite write serialization and lock-retry behavior"
+  }
+}

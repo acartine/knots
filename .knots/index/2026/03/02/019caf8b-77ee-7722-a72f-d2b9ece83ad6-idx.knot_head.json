@@ -1,0 +1,14 @@
+{
+  "event_id": "019caf8b-77ee-7722-a72f-d2b9ece83ad6",
+  "occurred_at": "2026-03-02T17:14:38.958976Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-73bc",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "Implement SQLite write serialization and lock-retry behavior",
+    "updated_at": "2026-03-02T17:14:38.958976Z"
+  }
+}

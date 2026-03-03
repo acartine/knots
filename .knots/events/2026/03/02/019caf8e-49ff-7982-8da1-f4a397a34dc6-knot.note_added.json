@@ -1,0 +1,15 @@
+{
+  "event_id": "019caf8e-49ff-7982-8da1-f4a397a34dc6",
+  "occurred_at": "2026-03-02T17:17:43.807558Z",
+  "knot_id": "knots-73bc",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented runtime SQLite concurrency fix: open_connection now skips migration/meta write transactions when schema/defaults are already current, DB write operations now use bounded retry with jitter for SQLITE_BUSY/SQLITE_LOCKED, and auto-sync-for-read now uses non-blocking cache lock acquisition so reads are not queued behind writers. Added tests in src/db/tests.rs for open under writer lock and retry-on-temporary-lock. Verified with make sanity (fmt, clippy, tests, coverage 95.04%).",
+    "datetime": "2026-03-02T17:17:43.807558Z",
+    "entry_id": "019caf8e-49ff-7982-8da1-f49226c93f41",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

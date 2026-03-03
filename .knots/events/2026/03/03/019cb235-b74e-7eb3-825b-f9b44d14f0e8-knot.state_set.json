@@ -1,0 +1,18 @@
+{
+  "event_id": "019cb235-b74e-7eb3-825b-f9b44d14f0e8",
+  "occurred_at": "2026-03-03T05:39:50.734749Z",
+  "knot_id": "knots-06b1",
+  "type": "knot.state_set",
+  "data": {
+    "actor_kind": "agent",
+    "agent_model": "opus",
+    "agent_name": "Claude Code",
+    "force": false,
+    "from": "ready_for_shipment",
+    "profile_id": "autopilot_no_planning",
+    "to": "shipment"
+  },
+  "precondition": {
+    "profile_etag": "019cb235-7009-7ed2-9af5-edf97b8eb829"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019ca318-e1fc-7ee2-b3fb-de8b04350540",
+  "occurred_at": "2026-02-28T07:14:02.876166Z",
+  "knot_id": "knots-4bea",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implemented version check in kno doctor. Queries GitHub releases API (https://api.github.com/repos/acartine/knots/releases/latest) with 5s timeout via curl subprocess. Compares semver versions using pure Rust helpers (parse_tag, strip_v_prefix, is_outdated). Shows Pass when current, Warn when outdated with `kno upgrade` hint, Warn on network failure. All branches tested via build_version_check() extraction. PR #10: https://github.com/acartine/knots/pull/10. Coverage 95.09%.",
+    "datetime": "2026-02-28T07:14:02.876166Z",
+    "entry_id": "019ca318-e1fc-7ee2-b3fb-de725c1f9760",
+    "model": "claude-opus-4-6",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

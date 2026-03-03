@@ -1,0 +1,14 @@
+{
+  "event_id": "019cb237-23e5-7ea2-bbf2-418b1da2ecff",
+  "occurred_at": "2026-03-03T05:41:24.069576Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-06b1",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_shipment_review",
+    "terminal": false,
+    "title": "'kno next' should support json, and show the new state and the owner type of the new state.",
+    "updated_at": "2026-03-03T05:41:24.069576Z"
+  }
+}

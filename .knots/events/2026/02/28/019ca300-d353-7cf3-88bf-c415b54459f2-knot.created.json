@@ -1,0 +1,12 @@
+{
+  "event_id": "019ca300-d353-7cf3-88bf-c415b54459f2",
+  "occurred_at": "2026-02-28T06:47:46.259687Z",
+  "knot_id": "knots-3b33",
+  "type": "knot.created",
+  "data": {
+    "body": "In self_manage.rs, after successful upgrade print hint: run kno hooks install to update hook templates.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Add hooks hint to kno upgrade output"
+  }
+}

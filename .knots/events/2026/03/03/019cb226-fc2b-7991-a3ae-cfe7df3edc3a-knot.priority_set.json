@@ -1,0 +1,9 @@
+{
+  "event_id": "019cb226-fc2b-7991-a3ae-cfe7df3edc3a",
+  "occurred_at": "2026-03-03T05:23:45.323697Z",
+  "knot_id": "knots-06b1",
+  "type": "knot.priority_set",
+  "data": {
+    "priority": 0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event_id": "019ca300-c1c2-7f23-909e-8c1503495bc1",
+  "occurred_at": "2026-02-28T06:47:41.7623Z",
+  "knot_id": "knots-c4bf",
+  "type": "knot.created",
+  "data": {
+    "body": "Add Commands::Hooks(HooksArgs) to cli.rs. Add HooksArgs and HooksSubcommands enum (Install, Uninstall, Status) to cli_ops.rs. Dispatch in main.rs before app init since hooks don't need DB.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Add kno hooks CLI subcommand (install/uninstall/status)"
+  }
+}
