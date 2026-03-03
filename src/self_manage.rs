@@ -216,8 +216,9 @@ fn paint(code: &str, text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        canonical_binary_path, remove_file_if_present, resolve_binary_path, run_uninstall,
-        run_update, SelfUninstallOptions, SelfUpdateOptions,
+        canonical_binary_path, format_titled_fields, format_upgrade_summary, paint,
+        remove_file_if_present, resolve_binary_path, run_uninstall, run_update,
+        SelfUninstallOptions, SelfUpdateOptions,
     };
     use std::path::Path;
     use std::path::PathBuf;
@@ -392,5 +393,37 @@ mod tests {
         }
 
         let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn upgrade_summary_right_aligns_labels_and_left_aligns_values() {
+        let install_dir = Path::new("/tmp/kno-test-install");
+        let summary =
+            format_upgrade_summary(Some("v1.2.3"), Some("acartine/knots"), Some(install_dir));
+        let lines = summary.lines().collect::<Vec<_>>();
+        assert_eq!(lines[0], "Upgrade");
+        assert_eq!(lines[1], "     status:  updated kno binary");
+        assert_eq!(lines[2], "    version:  v1.2.3");
+        assert_eq!(lines[3], "       repo:  acartine/knots");
+        assert_eq!(lines[4], "install_dir:  /tmp/kno-test-install");
+    }
+
+    #[test]
+    fn titled_fields_render_plain_text_when_color_is_disabled() {
+        std::env::set_var("NO_COLOR", "1");
+        let rendered =
+            format_titled_fields("Upgrade", &[("status", "updated kno binary".to_string())]);
+        std::env::remove_var("NO_COLOR");
+        assert_eq!(rendered.lines().next(), Some("Upgrade"));
+        assert!(!rendered.contains("\x1b["));
+        assert!(rendered.contains("status:  updated kno binary"));
+    }
+
+    #[test]
+    fn paint_respects_no_color() {
+        std::env::set_var("NO_COLOR", "1");
+        let rendered = paint("1;36", "Upgrade");
+        std::env::remove_var("NO_COLOR");
+        assert_eq!(rendered, "Upgrade");
     }
 }
