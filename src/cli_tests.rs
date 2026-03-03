@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 
 use super::{Cli, Commands, ProfileSubcommands};
 
@@ -129,6 +129,22 @@ fn next_parses() {
         }
         other => panic!("expected Next, got {:?}", other),
     }
+}
+
+#[test]
+fn next_help_uses_current_state_value_name() {
+    let mut root = Cli::command();
+    let next = root
+        .find_subcommand_mut("next")
+        .expect("next subcommand should exist");
+    let mut buf = Vec::new();
+    next.write_long_help(&mut buf)
+        .expect("next help should render");
+    let help = String::from_utf8(buf).expect("next help should be utf-8");
+    assert!(
+        help.contains("<currentState>"),
+        "next help should use currentState placeholder: {help}"
+    );
 }
 
 #[test]

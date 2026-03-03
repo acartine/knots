@@ -16,7 +16,7 @@
 - Detailed implementation plan attached as a knot note
 - Hierarchy of knots created
 - Transition:
-  `kno next <id> <current-state> --actor-kind agent --agent-name <AGENT_NAME>`
+  `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`
   `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
 
 ## Failure Modes
