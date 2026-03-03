@@ -160,6 +160,37 @@ fn check_version_returns_valid_doctor_check() {
 }
 
 #[test]
+fn hooks_check_warns_when_missing_and_passes_after_install() {
+    let root = unique_workspace();
+    run_git(&root, &["init"]);
+    run_git(&root, &["config", "user.email", "knots@example.com"]);
+    run_git(&root, &["config", "user.name", "Knots Test"]);
+    std::fs::write(root.join("README.md"), "# doctor\n").expect("readme");
+    run_git(&root, &["add", "README.md"]);
+    run_git(&root, &["commit", "-m", "init"]);
+
+    let report = run_doctor(&root).expect("doctor should run");
+    let hooks = report
+        .checks
+        .iter()
+        .find(|c| c.name == "hooks")
+        .expect("hooks check should exist");
+    assert_eq!(hooks.status, DoctorStatus::Warn);
+    assert!(hooks.detail.contains("missing sync hooks"));
+
+    crate::git_hooks::install_hooks(&root).expect("install hooks");
+    let after = run_doctor(&root).expect("doctor should run after install");
+    let hooks_after = after
+        .checks
+        .iter()
+        .find(|c| c.name == "hooks")
+        .expect("hooks check should exist");
+    assert_eq!(hooks_after.status, DoctorStatus::Pass);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn wait_for_lock_release_succeeds_for_unlocked_path() {
     let root = unique_workspace();
     let lock_path = root.join(".knots/locks/repo.lock");

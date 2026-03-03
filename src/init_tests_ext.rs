@@ -58,3 +58,44 @@ fn gitignore_helpers_cover_append_and_noop_removal_paths() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn init_all_installs_sync_hooks() {
+    use std::path::PathBuf;
+
+    fn setup_repo_with_remote_for_hooks() -> (PathBuf, PathBuf) {
+        let root =
+            std::env::temp_dir().join(format!("knots-init-hooks-int-{}", uuid::Uuid::now_v7()));
+        let remote = root.join("remote.git");
+        let local = root.join("local");
+        std::fs::create_dir_all(&local).expect("local dir");
+        run_git(&root, &["init", "--bare", remote.to_str().expect("utf8")]);
+        run_git(&local, &["init"]);
+        run_git(&local, &["config", "user.email", "knots@example.com"]);
+        run_git(&local, &["config", "user.name", "Knots Test"]);
+        std::fs::write(local.join("README.md"), "# test\n").unwrap();
+        run_git(&local, &["add", "README.md"]);
+        run_git(&local, &["commit", "-m", "init"]);
+        run_git(
+            &local,
+            &["remote", "add", "origin", remote.to_str().expect("utf8")],
+        );
+        (root, local)
+    }
+
+    let (root, local) = setup_repo_with_remote_for_hooks();
+    let db_path = local.join(".knots/cache/state.sqlite");
+    super::init_all(&local, db_path.to_str().expect("utf8")).expect("init_all should succeed");
+
+    let hooks_dir = local.join(".git").join("hooks");
+    for hook_name in crate::git_hooks::MANAGED_HOOKS {
+        let hook = hooks_dir.join(hook_name);
+        assert!(hook.exists(), "{hook_name} hook should exist after init");
+        let contents = std::fs::read_to_string(&hook).unwrap();
+        assert!(
+            contents.contains("knots-managed"),
+            "{hook_name} should be knots-managed"
+        );
+    }
+    let _ = std::fs::remove_dir_all(root);
+}

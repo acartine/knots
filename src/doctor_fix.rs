@@ -39,6 +39,7 @@ pub(crate) fn apply_fixes(repo_root: &Path, checks: &[DoctorCheck]) {
             "worktree" => fix_worktree(repo_root),
             "remote" => fix_remote(repo_root),
             "version" => fix_version(),
+            "hooks" => fix_hooks(repo_root),
             _ => {}
         }
     }
@@ -84,6 +85,10 @@ fn fix_remote(repo_root: &Path) {
         return;
     }
     let _ = init_remote_knots_branch(repo_root);
+}
+
+fn fix_hooks(repo_root: &Path) {
+    let _ = crate::git_hooks::install_hooks(repo_root);
 }
 
 fn run_git(cwd: &Path, args: &[&str]) -> bool {

@@ -183,6 +183,10 @@ fn format_upgrade_summary(
     if let Some(install_dir) = install_dir {
         fields.push(("install_dir", install_dir.display().to_string()));
     }
+    fields.push((
+        "hint",
+        "run `kno hooks install` to update hook templates".to_string(),
+    ));
     format_titled_fields("Upgrade", &fields)
 }
 
@@ -406,6 +410,7 @@ mod tests {
         assert_eq!(lines[2], "    version:  v1.2.3");
         assert_eq!(lines[3], "       repo:  acartine/knots");
         assert_eq!(lines[4], "install_dir:  /tmp/kno-test-install");
+        assert!(lines[5].contains("kno hooks install"));
     }
 
     #[test]

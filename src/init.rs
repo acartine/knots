@@ -26,6 +26,11 @@ pub(crate) fn init_all(repo_root: &Path, db_path: &str) -> Result<(), AppError> 
     progress_note("this can take a bit...")?;
     init_remote_knots_branch(repo_root)?;
     progress_ok("remote branch origin/knots initialized")?;
+    progress("installing sync hooks (post-commit, post-merge)")?;
+    match crate::git_hooks::install_hooks(repo_root) {
+        Ok(_) => progress_ok("sync hooks installed")?,
+        Err(err) => progress_warn(&format!("sync hook install failed: {err}"))?,
+    }
     Ok(())
 }
 

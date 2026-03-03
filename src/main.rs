@@ -10,6 +10,7 @@ mod doctor_fix;
 mod domain;
 mod events;
 mod fsck;
+mod git_hooks;
 mod hierarchy_alias;
 mod init;
 mod knot_id;
@@ -75,6 +76,9 @@ fn run() -> Result<(), app::AppError> {
         init::uninit_all(&cli.repo_root, &cli.db)?;
         println!("kno uninit completed");
         return Ok(());
+    }
+    if let Commands::Hooks(args) = &cli.command {
+        return run_hooks_command(&cli.repo_root, &args.command);
     }
     if let Commands::Completions(args) = &cli.command {
         return completions::run_completions_command(args.shell.as_deref(), args.install);
@@ -387,7 +391,48 @@ fn run() -> Result<(), app::AppError> {
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
         Commands::Completions(_) => unreachable!("completions handled before app init"),
+        Commands::Hooks(_) => unreachable!("hooks handled before app init"),
     }
 
+    Ok(())
+}
+
+fn run_hooks_command(
+    repo_root: &std::path::Path,
+    command: &cli::HooksSubcommands,
+) -> Result<(), app::AppError> {
+    use cli::HooksSubcommands;
+    match command {
+        HooksSubcommands::Install => {
+            let summary = git_hooks::install_hooks(repo_root)?;
+            for (name, outcome) in &summary.outcomes {
+                let label = match outcome {
+                    git_hooks::HookInstallOutcome::Installed => "installed",
+                    git_hooks::HookInstallOutcome::AlreadyManaged => "up to date",
+                    git_hooks::HookInstallOutcome::PreservedExisting => {
+                        "installed (existing hook preserved as .local)"
+                    }
+                };
+                println!("{name}: {label}");
+            }
+        }
+        HooksSubcommands::Uninstall => {
+            let summary = git_hooks::uninstall_hooks(repo_root)?;
+            for (name, outcome) in &summary.outcomes {
+                let label = match outcome {
+                    git_hooks::HookInstallOutcome::Installed => "removed",
+                    _ => "not installed",
+                };
+                println!("{name}: {label}");
+            }
+        }
+        HooksSubcommands::Status => {
+            let report = git_hooks::hooks_status(repo_root);
+            for (name, managed) in &report.hooks {
+                let label = if *managed { "installed" } else { "missing" };
+                println!("{name}: {label}");
+            }
+        }
+    }
     Ok(())
 }

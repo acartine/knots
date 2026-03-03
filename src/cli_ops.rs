@@ -3,6 +3,23 @@ use std::path::PathBuf;
 use clap::{Args, Subcommand};
 
 #[derive(Debug, Args)]
+#[command(about = "Manage git sync hooks.")]
+pub struct HooksArgs {
+    #[command(subcommand)]
+    pub command: HooksSubcommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum HooksSubcommands {
+    #[command(about = "Install knots-managed sync hooks.")]
+    Install,
+    #[command(about = "Remove knots-managed sync hooks.")]
+    Uninstall,
+    #[command(about = "Show sync hook installation status.")]
+    Status,
+}
+
+#[derive(Debug, Args)]
 #[command(about = "Update kno binary.")]
 pub struct SelfUpdateArgs {
     #[arg(short = 'v', long, help = "Version to install (defaults to latest).")]

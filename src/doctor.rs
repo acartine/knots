@@ -79,6 +79,7 @@ pub fn run_doctor(repo_root: &Path) -> Result<DoctorReport, DoctorError> {
         check_worktree(repo_root),
         check_remote(repo_root)?,
         check_version(),
+        crate::git_hooks::check_hooks(repo_root),
     ];
     Ok(DoctorReport { checks })
 }

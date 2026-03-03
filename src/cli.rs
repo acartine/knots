@@ -108,6 +108,8 @@ pub enum Commands {
     Claim(ClaimArgs),
     #[command(about = "List knots queued for action (ready_for_* states).")]
     Ready(ReadyArgs),
+    #[command(about = "Manage git sync hooks (post-commit/post-merge).")]
+    Hooks(HooksArgs),
 }
 
 #[derive(Debug, Args)]
