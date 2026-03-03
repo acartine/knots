@@ -1,0 +1,12 @@
+{
+  "event_id": "019cb2a0-fe95-7012-9205-32e7ccde2ca8",
+  "occurred_at": "2026-03-03T07:37:01.333435Z",
+  "knot_id": "knots-a81d",
+  "type": "knot.created",
+  "data": {
+    "body": "as title says.  should fix all 4 traacked items if --fix is used.\n\nif --fix is not used, should say 'kno doctor --fix to address these items' if anything is not in a good state",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "add kno doctor --fix"
+  }
+}

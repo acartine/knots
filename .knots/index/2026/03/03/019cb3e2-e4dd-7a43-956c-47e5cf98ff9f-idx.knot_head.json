@@ -1,0 +1,14 @@
+{
+  "event_id": "019cb3e2-e4dd-7a43-956c-47e5cf98ff9f",
+  "occurred_at": "2026-03-03T13:28:37.341559Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-3b33",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add hooks hint to kno upgrade output",
+    "updated_at": "2026-03-03T13:28:37.341559Z"
+  }
+}

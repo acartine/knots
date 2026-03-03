@@ -1,0 +1,12 @@
+{
+  "event_id": "019cb431-6fa0-7732-bb75-810e002f1602",
+  "occurred_at": "2026-03-03T14:54:24.672887Z",
+  "knot_id": "knots-4be6",
+  "type": "knot.created",
+  "data": {
+    "body": "currently agents are just assigning a simple short hash, probably because the skill prompts aren't clear - we want each commit hash tagged on the knot as 'commit:<hash>' - this makes it easy to gather all teh commits, because they all have the same prefix.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "update skills with proper directions for tagging knots with commits"
+  }
+}

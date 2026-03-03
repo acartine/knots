@@ -1,0 +1,14 @@
+{
+  "event_id": "019cb3e5-3e85-7d10-9943-5f8bd0db815e",
+  "occurred_at": "2026-03-03T13:31:11.355321Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-88ee",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Integrate hooks into kno init flow",
+    "updated_at": "2026-03-03T13:31:11.355321Z"
+  }
+}

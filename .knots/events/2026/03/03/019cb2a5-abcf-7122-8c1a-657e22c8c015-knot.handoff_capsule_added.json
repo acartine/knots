@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb2a5-abcf-7122-8c1a-657e22c8c015",
+  "occurred_at": "2026-03-03T07:42:07.823976Z",
+  "knot_id": "knots-53cd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented colored titles and aligned label/value output for kno doctor and kno upgrade, with tests and make sanity pass.",
+    "datetime": "2026-03-03T07:41:27Z",
+    "entry_id": "019cb2a5-abcf-7122-8c1a-656d81199cd0",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1.0"
+  }
+}

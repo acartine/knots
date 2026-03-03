@@ -1,0 +1,17 @@
+{
+  "event_id": "019cb3e4-c5b0-79b1-929d-25b3e3dcdb24",
+  "occurred_at": "2026-03-03T13:30:40.432031Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-cb7f",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "support generating git hooks for auto sync of knots.  requires integratio into install, upgrades, and doctor functionality paths",
+    "updated_at": "2026-03-03T13:30:40.432031Z"
+  },
+  "precondition": {
+    "profile_etag": "019cb3e4-b74c-7663-99c9-73ac6355af70"
+  }
+}

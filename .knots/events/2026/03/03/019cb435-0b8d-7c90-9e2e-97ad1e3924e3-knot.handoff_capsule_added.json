@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb435-0b8d-7c90-9e2e-97ad1e3924e3",
+  "occurred_at": "2026-03-03T14:58:21.197904Z",
+  "knot_id": "knots-4be6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Updated implementation.md and shipment.md skill prompts to include explicit commit:<hash> tagging instructions. Added step 6 to implementation skill and step 2 to shipment skill directing agents to use kno update --add-tag with the commit: prefix and full 40-char hash for every commit. Added 2 tests in src/skills.rs verifying both skills contain the tagging instruction.",
+    "datetime": "2026-03-03T14:58:00Z",
+    "entry_id": "019cb435-0b8d-7c90-9e2e-979ddaf794fa",
+    "model": "claude-opus-4-6",
+    "username": "unknown",
+    "version": "opus-4.6"
+  }
+}

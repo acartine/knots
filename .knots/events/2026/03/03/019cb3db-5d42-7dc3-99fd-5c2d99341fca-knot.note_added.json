@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb3db-5d42-7dc3-99fd-5c2d99341fca",
+  "occurred_at": "2026-03-03T13:20:23.874179Z",
+  "knot_id": "knots-27f3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: Create src/git_hooks.rs with MANAGED_HOOKS const, KNOTS_HOOK_MARKER const, resolve_hooks_dir (respects core.hooksPath), is_knots_managed, install_hook/uninstall_hook with .local preservation, check_hooks for doctor, install_hooks/uninstall_hooks/hooks_status public API. Unit tests for all paths.",
+    "datetime": "2026-03-03T13:20:23.874179Z",
+    "entry_id": "019cb3db-5d42-7dc3-99fd-5c1d89a8a7c5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

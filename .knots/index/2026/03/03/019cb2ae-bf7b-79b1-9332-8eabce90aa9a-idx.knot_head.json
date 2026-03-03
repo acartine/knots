@@ -1,0 +1,17 @@
+{
+  "event_id": "019cb2ae-bf7b-79b1-9332-8eabce90aa9a",
+  "occurred_at": "2026-03-03T07:52:02.683949Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-53cd",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Add more fun to kno doctor and kno upgrade",
+    "updated_at": "2026-03-03T07:52:02.683949Z"
+  },
+  "precondition": {
+    "profile_etag": "019cb2ae-468e-7572-b68e-980f46e192eb"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "event_id": "019cb3e2-95fb-7bd3-acc5-8709a75020ea",
+  "occurred_at": "2026-03-03T13:28:17.147066Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-c4bf",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_shipment_review",
+    "terminal": false,
+    "title": "Add kno hooks CLI subcommand (install/uninstall/status)",
+    "updated_at": "2026-03-03T13:28:17.147066Z"
+  }
+}

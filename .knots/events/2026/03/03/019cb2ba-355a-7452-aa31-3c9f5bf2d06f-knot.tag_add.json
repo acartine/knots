@@ -1,0 +1,9 @@
+{
+  "event_id": "019cb2ba-355a-7452-aa31-3c9f5bf2d06f",
+  "occurred_at": "2026-03-03T08:04:33.754369Z",
+  "knot_id": "knots-53cd",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "stage:retry"
+  }
+}

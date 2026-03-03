@@ -1,0 +1,14 @@
+{
+  "event_id": "019cb2c5-5392-77b0-aa70-7b263f2fe1b7",
+  "occurred_at": "2026-03-03T08:16:42.38678Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-a81d",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "add kno doctor --fix",
+    "updated_at": "2026-03-03T08:16:42.38678Z"
+  }
+}

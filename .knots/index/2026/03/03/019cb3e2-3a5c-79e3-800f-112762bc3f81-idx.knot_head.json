@@ -1,0 +1,17 @@
+{
+  "event_id": "019cb3e2-3a5c-79e3-800f-112762bc3f81",
+  "occurred_at": "2026-03-03T13:27:53.692266Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-e750",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "Integrate hooks into kno doctor check",
+    "updated_at": "2026-03-03T13:27:53.692266Z"
+  },
+  "precondition": {
+    "profile_etag": "019cb3e0-ef85-7882-bff7-f2fe1642b4ac"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019cb3db-83f6-7613-80ee-a1d84d2a7b48",
+  "occurred_at": "2026-03-03T13:20:33.782535Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-27f3",
+    "profile_id": "autopilot",
+    "state": "plan_review",
+    "terminal": false,
+    "title": "Create src/git_hooks.rs module with hook install/uninstall/detect/status logic",
+    "updated_at": "2026-03-03T13:20:33.782535Z"
+  },
+  "precondition": {
+    "profile_etag": "019cb3db-7149-7283-8708-db1f32e6b4b7"
+  }
+}

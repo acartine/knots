@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb2ad-1a26-7dd2-b704-b87f366c970a",
+  "occurred_at": "2026-03-03T07:50:14.822304Z",
+  "knot_id": "knots-a81d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented kno doctor --fix remediation workflow: added --fix flag, fix handlers for lock/worktree/remote/version checks, and tests for doctor hint and fix behavior. Sanity validated.",
+    "datetime": "2026-03-03T07:50:04Z",
+    "entry_id": "019cb2ad-1a26-7dd2-b704-b86a8011c716",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5-codex"
+  }
+}
