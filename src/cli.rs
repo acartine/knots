@@ -425,9 +425,16 @@ pub struct NextArgs {
 
     #[arg(
         value_name = "currentState",
-        help = "Expected current state for optimistic progression."
+        help = "Legacy positional expected state for optimistic progression."
     )]
-    pub current_state: String,
+    pub current_state: Option<String>,
+
+    #[arg(
+        long = "expected-state",
+        value_name = "STATE",
+        help = "Reject transition unless the knot is currently in this state."
+    )]
+    pub expected_state: Option<String>,
 
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,

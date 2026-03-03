@@ -75,7 +75,7 @@ pub struct UpdateOperation {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct NextOperation {
     pub id: String,
-    pub current_state: String,
+    pub expected_state: Option<String>,
     pub json: bool,
     pub actor_kind: Option<String>,
     pub agent_name: Option<String>,

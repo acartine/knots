@@ -239,7 +239,7 @@ fn match_pollable(
 }
 
 fn completion_command(knot_id: &str, current_state: &str) -> String {
-    format!("kno next {knot_id} {current_state} {AGENT_COMPLETION_METADATA_FLAGS}")
+    format!("kno next {knot_id} --expected-state {current_state} {AGENT_COMPLETION_METADATA_FLAGS}")
 }
 
 fn normalize_ready_type(raw: Option<&str>) -> Option<String> {
@@ -391,8 +391,9 @@ mod tests {
         let cmd = completion_command("knots-27ef", "implementation");
         assert_eq!(
             cmd,
-            "kno next knots-27ef implementation --actor-kind agent --agent-name <AGENT_NAME> \
-             --agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>"
+            "kno next knots-27ef --expected-state implementation --actor-kind agent \
+             --agent-name <AGENT_NAME> --agent-model <AGENT_MODEL> \
+             --agent-version <AGENT_VERSION>"
         );
     }
 

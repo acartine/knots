@@ -34,15 +34,3 @@ pub fn resolve_next_state(
         .map(owner_kind_label);
     Ok((knot, next.to_string(), owner))
 }
-
-pub fn owner_kind_for_state(
-    profile_id: &str,
-    state: &str,
-) -> Result<Option<&'static str>, AppError> {
-    let registry = workflow::ProfileRegistry::load()?;
-    let profile = registry.require(profile_id)?;
-    Ok(profile
-        .owners
-        .owner_kind_for_state(state)
-        .map(owner_kind_label))
-}

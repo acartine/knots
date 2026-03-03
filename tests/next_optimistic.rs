@@ -92,7 +92,7 @@ fn read_event_payloads(root: &Path, event_type: &str) -> Vec<Value> {
 }
 
 #[test]
-fn next_is_idempotent_when_expected_state_is_stale() {
+fn next_rejects_stale_expected_state() {
     let root = unique_workspace("knots-next-optimistic");
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
@@ -115,7 +115,13 @@ fn next_is_idempotent_when_expected_state_is_stale() {
     let first_next = run_knots(
         &root,
         &db,
-        &["next", &knot_id, "ready_for_plan_review", "--json"],
+        &[
+            "next",
+            &knot_id,
+            "--expected-state",
+            "ready_for_plan_review",
+            "--json",
+        ],
     );
     assert_success(&first_next);
     let first_json: Value =
@@ -126,17 +132,24 @@ fn next_is_idempotent_when_expected_state_is_stale() {
     let stale_next = run_knots(
         &root,
         &db,
-        &["next", &knot_id, "ready_for_plan_review", "--json"],
+        &[
+            "next",
+            &knot_id,
+            "--expected-state",
+            "ready_for_plan_review",
+            "--json",
+        ],
     );
-    assert_success(&stale_next);
-    let stale_json: Value =
-        serde_json::from_slice(&stale_next.stdout).expect("stale next json should parse");
-    assert_eq!(stale_json["previous_state"], "ready_for_plan_review");
-    assert_eq!(stale_json["state"], "plan_review");
-    assert_eq!(stale_json["owner_kind"], "agent");
-    assert_eq!(
-        stale_json, first_json,
-        "repeated optimistic next should return the same payload"
+    assert!(
+        !stale_next.status.success(),
+        "stale optimistic next should fail.\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&stale_next.stdout),
+        String::from_utf8_lossy(&stale_next.stderr)
+    );
+    let stale_stderr = String::from_utf8_lossy(&stale_next.stderr);
+    assert!(
+        stale_stderr.contains("expected state 'ready_for_plan_review' but knot is currently"),
+        "stale optimistic next should report mismatch: {stale_stderr}"
     );
 
     let state_events = read_event_payloads(&root, "knot.state_set");
@@ -176,6 +189,7 @@ fn next_preserves_first_metadata_when_followup_request_is_stale() {
         &[
             "next",
             &knot_id,
+            "--expected-state",
             "ready_for_plan_review",
             "--actor-kind",
             "agent",
@@ -191,6 +205,7 @@ fn next_preserves_first_metadata_when_followup_request_is_stale() {
         &[
             "next",
             &knot_id,
+            "--expected-state",
             "ready_for_plan_review",
             "--actor-kind",
             "robot",
@@ -198,7 +213,12 @@ fn next_preserves_first_metadata_when_followup_request_is_stale() {
             "second-agent",
         ],
     );
-    assert_success(&stale);
+    assert!(
+        !stale.status.success(),
+        "stale optimistic next should fail.\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&stale.stdout),
+        String::from_utf8_lossy(&stale.stderr)
+    );
 
     let state_events = read_event_payloads(&root, "knot.state_set");
     assert_eq!(

@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crate::app::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::cli::{Cli, Commands, EdgeSubcommands};
-use crate::dispatch::{knot_ref, owner_kind_for_state, resolve_next_state};
+use crate::dispatch::{knot_ref, resolve_next_state};
 use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::MetadataEntryInput;
 use crate::domain::state::KnotState;
@@ -89,7 +89,10 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
         })),
         Commands::Next(args) => Some(WriteOperation::Next(NextOperation {
             id: args.id.clone(),
-            current_state: args.current_state.clone(),
+            expected_state: args
+                .expected_state
+                .clone()
+                .or_else(|| args.current_state.clone()),
             json: args.json,
             actor_kind: args.actor_kind.clone(),
             agent_name: args.agent_name.clone(),
@@ -254,15 +257,14 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
             let knot = app
                 .show_knot(&args.id)?
                 .ok_or_else(|| AppError::NotFound(args.id.clone()))?;
-            let expected_state = normalize_expected_state(&args.current_state);
-            if knot.state != expected_state {
-                let owner_kind = owner_kind_for_state(&knot.profile_id, &knot.state)?;
-                return Ok(format_next_output(
-                    &knot,
-                    &expected_state,
-                    owner_kind,
-                    args.json,
-                ));
+            if let Some(expected_state_raw) = args.expected_state.as_deref() {
+                let expected_state = normalize_expected_state(expected_state_raw);
+                if knot.state != expected_state {
+                    return Err(AppError::InvalidArgument(format!(
+                        "expected state '{expected_state}' but knot is currently '{}'",
+                        knot.state
+                    )));
+                }
             }
             let (knot, next, owner_kind) = resolve_next_state(app, &knot.id)?;
             let previous_state = knot.state.clone();

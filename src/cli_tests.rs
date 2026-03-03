@@ -120,7 +120,8 @@ fn next_parses() {
     match cli.command {
         Commands::Next(args) => {
             assert_eq!(args.id, "abc123");
-            assert_eq!(args.current_state, "planning");
+            assert_eq!(args.current_state.as_deref(), Some("planning"));
+            assert!(args.expected_state.is_none());
             assert!(!args.json);
             assert!(args.actor_kind.is_none());
             assert!(args.agent_name.is_none());
@@ -142,8 +143,12 @@ fn next_help_uses_current_state_value_name() {
         .expect("next help should render");
     let help = String::from_utf8(buf).expect("next help should be utf-8");
     assert!(
-        help.contains("<currentState>"),
-        "next help should use currentState placeholder: {help}"
+        help.contains("<currentState>") || help.contains("[currentState]"),
+        "next help should expose currentState placeholder: {help}"
+    );
+    assert!(
+        help.contains("--expected-state <STATE>"),
+        "next help should include --expected-state: {help}"
     );
 }
 
@@ -153,7 +158,8 @@ fn next_parses_json_flag() {
     match cli.command {
         Commands::Next(args) => {
             assert_eq!(args.id, "abc123");
-            assert_eq!(args.current_state, "planning");
+            assert_eq!(args.current_state.as_deref(), Some("planning"));
+            assert!(args.expected_state.is_none());
             assert!(args.json);
         }
         other => panic!("expected Next, got {:?}", other),
@@ -166,8 +172,23 @@ fn next_parses_json_short_flag() {
     match cli.command {
         Commands::Next(args) => {
             assert_eq!(args.id, "abc123");
-            assert_eq!(args.current_state, "planning");
+            assert_eq!(args.current_state.as_deref(), Some("planning"));
+            assert!(args.expected_state.is_none());
             assert!(args.json);
+        }
+        other => panic!("expected Next, got {:?}", other),
+    }
+}
+
+#[test]
+fn next_parses_expected_state_flag() {
+    let cli = parse(&["kno", "next", "abc123", "--expected-state", "planning"]);
+    match cli.command {
+        Commands::Next(args) => {
+            assert_eq!(args.id, "abc123");
+            assert!(args.current_state.is_none());
+            assert_eq!(args.expected_state.as_deref(), Some("planning"));
+            assert!(!args.json);
         }
         other => panic!("expected Next, got {:?}", other),
     }
@@ -192,7 +213,8 @@ fn next_parses_actor_metadata_flags() {
     match cli.command {
         Commands::Next(args) => {
             assert_eq!(args.id, "abc123");
-            assert_eq!(args.current_state, "planning");
+            assert_eq!(args.current_state.as_deref(), Some("planning"));
+            assert!(args.expected_state.is_none());
             assert_eq!(args.actor_kind.as_deref(), Some("agent"));
             assert_eq!(args.agent_name.as_deref(), Some("codex"));
             assert_eq!(args.agent_model.as_deref(), Some("gpt-5"));
