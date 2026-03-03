@@ -176,6 +176,7 @@ impl GitAdapter {
             cwd,
             vec![
                 "commit".to_string(),
+                "--no-verify".to_string(),
                 "--no-gpg-sign".to_string(),
                 "-m".to_string(),
                 message.to_string(),

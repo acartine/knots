@@ -3,7 +3,7 @@ use std::process::Command;
 
 use crate::doctor::{DoctorCheck, DoctorStatus};
 
-pub const MANAGED_HOOKS: &[&str] = &["post-commit", "post-merge"];
+pub const MANAGED_HOOKS: &[&str] = &["post-merge"];
 const KNOTS_HOOK_MARKER: &str = "knots-managed";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,7 +59,7 @@ fn hook_template(hook_name: &str) -> String {
          if [ -x \"$(dirname \"$0\")/{hook_name}.local\" ]; then\n\
          \x20 \"$(dirname \"$0\")/{hook_name}.local\" \"$@\"\n\
          fi\n\
-         kno sync >/dev/null 2>&1 &\n"
+         kno pull\n"
     )
 }
 
@@ -256,14 +256,14 @@ mod tests {
     fn install_hooks_creates_managed_hooks() {
         let root = setup_git_repo();
         let summary = install_hooks(&root).expect("install should succeed");
-        assert_eq!(summary.outcomes.len(), 2);
+        assert_eq!(summary.outcomes.len(), 1);
         for (name, outcome) in &summary.outcomes {
             assert_eq!(*outcome, HookInstallOutcome::Installed);
             let path = root.join(".git").join("hooks").join(name);
             assert!(path.exists());
             let contents = std::fs::read_to_string(&path).unwrap();
             assert!(contents.contains(KNOTS_HOOK_MARKER));
-            assert!(contents.contains("kno sync"));
+            assert!(contents.contains("kno pull"));
         }
         let _ = std::fs::remove_dir_all(root);
     }
@@ -284,22 +284,22 @@ mod tests {
         let root = setup_git_repo();
         let hooks_dir = root.join(".git").join("hooks");
         std::fs::create_dir_all(&hooks_dir).unwrap();
-        std::fs::write(hooks_dir.join("post-commit"), "#!/bin/sh\necho user hook\n").unwrap();
+        std::fs::write(hooks_dir.join("post-merge"), "#!/bin/sh\necho user hook\n").unwrap();
 
         let summary = install_hooks(&root).expect("install should succeed");
-        let pc = summary
+        let pm = summary
             .outcomes
             .iter()
-            .find(|(n, _)| n == "post-commit")
+            .find(|(n, _)| n == "post-merge")
             .unwrap();
-        assert_eq!(pc.1, HookInstallOutcome::PreservedExisting);
+        assert_eq!(pm.1, HookInstallOutcome::PreservedExisting);
 
-        let local = hooks_dir.join("post-commit.local");
+        let local = hooks_dir.join("post-merge.local");
         assert!(local.exists());
         let local_contents = std::fs::read_to_string(&local).unwrap();
         assert!(local_contents.contains("echo user hook"));
 
-        let managed = std::fs::read_to_string(hooks_dir.join("post-commit")).unwrap();
+        let managed = std::fs::read_to_string(hooks_dir.join("post-merge")).unwrap();
         assert!(managed.contains(KNOTS_HOOK_MARKER));
         let _ = std::fs::remove_dir_all(root);
     }
@@ -309,21 +309,21 @@ mod tests {
         let root = setup_git_repo();
         let hooks_dir = root.join(".git").join("hooks");
         std::fs::create_dir_all(&hooks_dir).unwrap();
-        std::fs::write(hooks_dir.join("post-commit"), "#!/bin/sh\necho user hook\n").unwrap();
+        std::fs::write(hooks_dir.join("post-merge"), "#!/bin/sh\necho user hook\n").unwrap();
 
         install_hooks(&root).expect("install");
         let summary = uninstall_hooks(&root).expect("uninstall");
 
-        let pc = summary
+        let pm = summary
             .outcomes
             .iter()
-            .find(|(n, _)| n == "post-commit")
+            .find(|(n, _)| n == "post-merge")
             .unwrap();
-        assert_eq!(pc.1, HookInstallOutcome::Installed);
+        assert_eq!(pm.1, HookInstallOutcome::Installed);
 
-        let restored = std::fs::read_to_string(hooks_dir.join("post-commit")).unwrap();
+        let restored = std::fs::read_to_string(hooks_dir.join("post-merge")).unwrap();
         assert!(restored.contains("echo user hook"));
-        assert!(!hooks_dir.join("post-commit.local").exists());
+        assert!(!hooks_dir.join("post-merge.local").exists());
         let _ = std::fs::remove_dir_all(root);
     }
 
@@ -380,10 +380,10 @@ mod tests {
 
     #[test]
     fn hook_template_contains_marker_and_sync() {
-        let tmpl = hook_template("post-commit");
-        assert!(tmpl.contains("knots-managed-post-commit-hook"));
-        assert!(tmpl.contains("kno sync"));
-        assert!(tmpl.contains("post-commit.local"));
+        let tmpl = hook_template("post-merge");
+        assert!(tmpl.contains("knots-managed-post-merge-hook"));
+        assert!(tmpl.contains("kno pull"));
+        assert!(tmpl.contains("post-merge.local"));
         assert!(tmpl.starts_with("#!/usr/bin/env bash"));
     }
 
@@ -392,22 +392,22 @@ mod tests {
         let root = setup_git_repo();
         let hooks_dir = root.join(".git").join("hooks");
         std::fs::create_dir_all(&hooks_dir).unwrap();
-        std::fs::write(hooks_dir.join("post-commit"), "#!/bin/sh\necho original\n").unwrap();
+        std::fs::write(hooks_dir.join("post-merge"), "#!/bin/sh\necho original\n").unwrap();
         std::fs::write(
-            hooks_dir.join("post-commit.local"),
+            hooks_dir.join("post-merge.local"),
             "#!/bin/sh\necho local\n",
         )
         .unwrap();
 
         let summary = install_hooks(&root).expect("install");
-        let pc = summary
+        let pm = summary
             .outcomes
             .iter()
-            .find(|(n, _)| n == "post-commit")
+            .find(|(n, _)| n == "post-merge")
             .unwrap();
-        assert_eq!(pc.1, HookInstallOutcome::PreservedExisting);
+        assert_eq!(pm.1, HookInstallOutcome::PreservedExisting);
 
-        let local = std::fs::read_to_string(hooks_dir.join("post-commit.local")).unwrap();
+        let local = std::fs::read_to_string(hooks_dir.join("post-merge.local")).unwrap();
         assert!(local.contains("echo local"));
 
         let backups: Vec<_> = std::fs::read_dir(&hooks_dir)
@@ -416,7 +416,7 @@ mod tests {
             .filter(|e| {
                 e.file_name()
                     .to_string_lossy()
-                    .starts_with("post-commit.backup.")
+                    .starts_with("post-merge.backup.")
             })
             .collect();
         assert_eq!(backups.len(), 1);
