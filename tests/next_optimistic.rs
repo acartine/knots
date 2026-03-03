@@ -131,9 +131,13 @@ fn next_is_idempotent_when_expected_state_is_stale() {
     assert_success(&stale_next);
     let stale_json: Value =
         serde_json::from_slice(&stale_next.stdout).expect("stale next json should parse");
-    assert_eq!(stale_json["previous_state"], "plan_review");
+    assert_eq!(stale_json["previous_state"], "ready_for_plan_review");
     assert_eq!(stale_json["state"], "plan_review");
     assert_eq!(stale_json["owner_kind"], "agent");
+    assert_eq!(
+        stale_json, first_json,
+        "repeated optimistic next should return the same payload"
+    );
 
     let state_events = read_event_payloads(&root, "knot.state_set");
     assert_eq!(

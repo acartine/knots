@@ -259,7 +259,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 let owner_kind = owner_kind_for_state(&knot.profile_id, &knot.state)?;
                 return Ok(format_next_output(
                     &knot,
-                    &knot.state,
+                    &expected_state,
                     owner_kind,
                     args.json,
                 ));
