@@ -6,6 +6,7 @@ mod completions;
 mod db;
 mod dispatch;
 mod doctor;
+mod doctor_fix;
 mod domain;
 mod events;
 mod fsck;
@@ -217,11 +218,14 @@ fn run() -> Result<(), app::AppError> {
             }
         }
         Commands::Doctor(args) => {
-            let report = app.doctor()?;
+            let report = app.doctor(args.fix)?;
             if args.json {
                 print_json(&report);
             } else {
                 ui::print_doctor_report(&report);
+            }
+            if !args.fix && doctor_fix::has_non_pass_checks(&report.checks) {
+                eprintln!("kno doctor --fix to address these items");
             }
             if report.failure_count() > 0 {
                 return Err(app::AppError::InvalidArgument(format!(

@@ -11,7 +11,7 @@ use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::db::{self, EdgeDirection, EdgeRecord, KnotCacheRecord, UpsertKnotHot};
-use crate::doctor::{run_doctor, DoctorError, DoctorReport};
+use crate::doctor::{run_doctor_with_fix, DoctorError, DoctorReport};
 use crate::domain::knot_type::{parse_knot_type, KnotType};
 use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
 use crate::domain::state::{InvalidStateTransition, ParseKnotStateError};
@@ -1062,8 +1062,8 @@ impl App {
         Ok(run_fsck(&self.repo_root)?)
     }
 
-    pub fn doctor(&self) -> Result<DoctorReport, AppError> {
-        Ok(run_doctor(&self.repo_root)?)
+    pub fn doctor(&self, fix: bool) -> Result<DoctorReport, AppError> {
+        Ok(run_doctor_with_fix(&self.repo_root, fix)?)
     }
 
     pub fn compact_write_snapshots(&self) -> Result<SnapshotWriteSummary, AppError> {

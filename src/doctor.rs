@@ -83,6 +83,15 @@ pub fn run_doctor(repo_root: &Path) -> Result<DoctorReport, DoctorError> {
     Ok(DoctorReport { checks })
 }
 
+pub fn run_doctor_with_fix(repo_root: &Path, fix: bool) -> Result<DoctorReport, DoctorError> {
+    let report = run_doctor(repo_root)?;
+    if !fix {
+        return Ok(report);
+    }
+    crate::doctor_fix::apply_fixes(repo_root, &report.checks);
+    run_doctor(repo_root)
+}
+
 fn check_locks(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
     let repo_lock_path = repo_root.join(".knots").join("locks").join("repo.lock");
     let cache_lock_path = repo_root.join(".knots").join("cache").join("cache.lock");

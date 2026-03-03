@@ -265,6 +265,41 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     let doctor = run_knots(&root, &db, &["doctor", "--json"]);
     assert_failure(&doctor);
     assert!(String::from_utf8_lossy(&doctor.stderr).contains("doctor found"));
+    assert!(
+        String::from_utf8_lossy(&doctor.stderr).contains("kno doctor --fix to address these items")
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn doctor_without_fix_prints_hint_and_fix_creates_knots_branch() {
+    let root = unique_workspace("knots-cli-doctor-fix");
+    let _remote = setup_repo_with_remote(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let doctor = run_knots(&root, &db, &["doctor"]);
+    assert_success(&doctor);
+    assert!(
+        String::from_utf8_lossy(&doctor.stderr).contains("kno doctor --fix to address these items")
+    );
+
+    let doctor_fix = run_knots(&root, &db, &["doctor", "--fix"]);
+    assert_success(&doctor_fix);
+    assert!(!String::from_utf8_lossy(&doctor_fix.stderr)
+        .contains("kno doctor --fix to address these items"));
+
+    let knots_remote = Command::new("git")
+        .arg("-C")
+        .arg(&root)
+        .args(["ls-remote", "--exit-code", "--heads", "origin", "knots"])
+        .output()
+        .expect("git ls-remote should run");
+    assert!(
+        knots_remote.status.success(),
+        "expected origin/knots after doctor --fix, stderr: {}",
+        String::from_utf8_lossy(&knots_remote.stderr)
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

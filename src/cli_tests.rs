@@ -60,6 +60,15 @@ fn doctor_json_flag_parses() {
 }
 
 #[test]
+fn doctor_fix_flag_parses() {
+    let cli = parse(&["kno", "doctor", "--fix"]);
+    match cli.command {
+        Commands::Doctor(args) => assert!(args.fix),
+        other => panic!("expected Doctor, got {:?}", other),
+    }
+}
+
+#[test]
 fn new_desc_flag_parses() {
     let cli = parse(&["kno", "new", "My title", "--desc", "A description"]);
     match cli.command {
