@@ -1,5 +1,13 @@
 # kno
 
+## 0.6.2
+
+### Patch Changes
+
+- b7eaa89: Fix doctor to detect and fix stale/orphaned hooks. check_hooks now warns on
+  outdated hook content and leftover legacy hooks (e.g. post-commit). doctor --fix
+  removes legacy hooks before reinstalling current managed hooks.
+
 ## 0.6.1
 
 ### Patch Changes
