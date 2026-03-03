@@ -38,4 +38,22 @@ mod tests {
         assert!(skill_for_state("shipped").is_none());
         assert!(skill_for_state("abandoned").is_none());
     }
+
+    #[test]
+    fn implementation_skill_instructs_commit_prefix_tag() {
+        let text = skill_for_state("implementation").unwrap();
+        assert!(
+            text.contains(r#"--add-tag "commit:"#),
+            "implementation skill must instruct agents to tag with commit: prefix"
+        );
+    }
+
+    #[test]
+    fn shipment_skill_instructs_commit_prefix_tag() {
+        let text = skill_for_state("shipment").unwrap();
+        assert!(
+            text.contains(r#"--add-tag "commit:"#),
+            "shipment skill must instruct agents to tag with commit: prefix"
+        );
+    }
 }

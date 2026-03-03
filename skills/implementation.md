@@ -12,8 +12,12 @@
 5. Add a handoff_capsule to the knot with `kno update <id> --add-handoff-capsule"<handoff_capsule>"
  --handoff-username <username> --handoff-date <date RFC3339> --handoff-agentname <agentname> --handoff-model <model> --handoff-version <model_version   >`
 5. Commit and push the feature branch
-6. Profile variant: Create a PR if the knot profile expects it
-7. Profile variant: Merge the feature branch into main if the knot profile expects it
+6. Tag the knot with each commit hash using the `commit:` prefix:
+   `kno update <id> --add-tag "commit:<full-40-char-hash>"`
+   Run this for **every** commit created during implementation.
+   Always use the full 40-character hash, not an abbreviated form.
+7. Profile variant: Create a PR if the knot profile expects it
+8. Profile variant: Merge the feature branch into main if the knot profile expects it
 
 ## Output
 - Working implementation on feature branch

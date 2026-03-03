@@ -6,8 +6,12 @@
 
 ## Actions
 1. Profile variant: Merge feature branch to main if the knot profile expects it
-2. Profile variant: Push main to remote if the knot profile expects it
-3. Verify CI passes on remote
+2. Tag the knot with any new commit hashes created during merge using the
+   `commit:` prefix:
+   `kno update <id> --add-tag "commit:<full-40-char-hash>"`
+   Always use the full 40-character hash, not an abbreviated form.
+3. Profile variant: Push main to remote if the knot profile expects it
+4. Verify CI passes on remote
 
 ## Output
 - Code merged and pushed to main
