@@ -5,6 +5,13 @@ use crate::prompt;
 use crate::skills;
 use crate::workflow::{OwnerKind, ProfileRegistry};
 
+const AGENT_COMPLETION_METADATA_FLAGS: &str = concat!(
+    "--actor-kind agent ",
+    "--agent-name <AGENT_NAME> ",
+    "--agent-model <AGENT_MODEL> ",
+    "--agent-version <AGENT_VERSION>"
+);
+
 pub struct PollResult {
     pub knot: KnotView,
     pub skill: &'static str,
@@ -72,7 +79,7 @@ pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
             next_action
         ))
     })?;
-    let completion_cmd = format!("kno next {} --actor-kind agent", knot.id);
+    let completion_cmd = completion_command(&knot.id);
     Ok(PollResult {
         knot,
         skill,
@@ -135,7 +142,7 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
         knot.profile_etag.as_deref(),
         claim_actor,
     )?;
-    let completion_cmd = format!("kno next {} --actor-kind agent", claimed.id);
+    let completion_cmd = completion_command(&claimed.id);
     Ok(PollResult {
         knot: claimed,
         skill,
@@ -223,12 +230,16 @@ fn match_pollable(
         Some(s) => s,
         None => return Ok(None),
     };
-    let completion_cmd = format!("kno next {} --actor-kind agent", knot.id);
+    let completion_cmd = completion_command(&knot.id);
     Ok(Some(PollResult {
         knot: knot.clone(),
         skill,
         completion_cmd,
     }))
+}
+
+fn completion_command(knot_id: &str) -> String {
+    format!("kno next {knot_id} {AGENT_COMPLETION_METADATA_FLAGS}")
 }
 
 fn normalize_ready_type(raw: Option<&str>) -> Option<String> {
@@ -372,6 +383,35 @@ mod tests {
             json: false,
         };
         run_ready(&app, args).expect("run_ready with knot should succeed");
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn completion_command_includes_agent_metadata_flags() {
+        let cmd = completion_command("knots-27ef");
+        assert_eq!(
+            cmd,
+            "kno next knots-27ef --actor-kind agent --agent-name <AGENT_NAME> \
+             --agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>"
+        );
+    }
+
+    #[test]
+    fn peek_knot_completion_command_has_agent_metadata_flags() {
+        let root = unique_workspace();
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app =
+            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+        let created = app
+            .create_knot(
+                "Peek completion command",
+                None,
+                Some("work_item"),
+                Some("default"),
+            )
+            .expect("create should succeed");
+        let result = peek_knot(&app, &created.id).expect("peek_knot should succeed");
+        assert_eq!(result.completion_cmd, completion_command(&created.id));
         let _ = std::fs::remove_dir_all(root);
     }
 }
