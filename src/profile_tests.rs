@@ -70,3 +70,32 @@ fn owner_for_action_state_returns_correct_owner() {
         .is_none());
     assert!(autopilot.owners.for_action_state("shipped").is_none());
 }
+
+#[test]
+fn owner_kind_for_state_maps_queue_and_action_states() {
+    let registry = ProfileRegistry::load().expect("registry should load");
+    let semiauto = registry.require("semiauto").expect("profile should exist");
+
+    // Queue state maps to its corresponding action owner
+    assert_eq!(
+        semiauto
+            .owners
+            .owner_kind_for_state("ready_for_implementation"),
+        Some(&super::OwnerKind::Agent)
+    );
+    // Action state returns its own owner
+    assert_eq!(
+        semiauto.owners.owner_kind_for_state("implementation"),
+        Some(&super::OwnerKind::Agent)
+    );
+    // Review queue state maps to the review action owner
+    assert_eq!(
+        semiauto
+            .owners
+            .owner_kind_for_state("ready_for_plan_review"),
+        Some(&super::OwnerKind::Human)
+    );
+    // Terminal states return None
+    assert!(semiauto.owners.owner_kind_for_state("shipped").is_none());
+    assert!(semiauto.owners.owner_kind_for_state("abandoned").is_none());
+}

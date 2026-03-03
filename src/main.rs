@@ -34,6 +34,8 @@ mod tiering;
 mod ui;
 mod workflow;
 mod workflow_diagram;
+mod write_dispatch;
+mod write_queue;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -53,12 +55,8 @@ fn print_json(val: &impl serde::Serialize) {
 }
 
 fn run() -> Result<(), app::AppError> {
-    use app::UpdateKnotPatch;
     use clap::FromArgMatches;
     use cli::{ColdSubcommands, Commands, EdgeSubcommands};
-    use dispatch::{knot_ref, resolve_next_state};
-    use domain::knot_type::KnotType;
-    use domain::metadata::MetadataEntryInput;
 
     let cli = cli::Cli::from_arg_matches_mut(&mut cli::styled_command().get_matches())
         .expect("arg matches should be valid");
@@ -83,97 +81,22 @@ fn run() -> Result<(), app::AppError> {
     if let Commands::Profile(args) = &cli.command {
         return profile_commands::run_profile_command(args, &cli.repo_root, &cli.db);
     }
+    if let Some(output) = write_dispatch::maybe_run_queued_command(&cli)? {
+        print!("{output}");
+        return Ok(());
+    }
 
     let app = app::App::open(&cli.db, cli.repo_root)?;
 
     match cli.command {
-        Commands::New(args) => {
-            let profile_override = if args.fast {
-                Some(app.default_quick_profile_id()?)
-            } else {
-                None
-            };
-            let profile = profile_override.as_deref().or(args.profile.as_deref());
-            let knot = app.create_knot(
-                &args.title,
-                args.desc.as_deref(),
-                args.state.as_deref(),
-                profile,
-            )?;
-            let palette = ui::Palette::auto();
-            println!(
-                "created {} {} {}",
-                palette.id(&knot_ref(&knot)),
-                palette.state(&knot.state),
-                knot.title
-            );
+        Commands::New(_) => {
+            unreachable!("queued write commands are handled before app initialization")
         }
-        Commands::State(args) => {
-            let knot = app.set_state_with_actor(
-                &args.id,
-                &args.state,
-                args.force,
-                args.if_match.as_deref(),
-                app::StateActorMetadata {
-                    actor_kind: args.actor_kind.clone(),
-                    agent_name: args.agent_name.clone(),
-                    agent_model: args.agent_model.clone(),
-                    agent_version: args.agent_version.clone(),
-                },
-            )?;
-            let palette = ui::Palette::auto();
-            println!(
-                "updated {} -> {}",
-                palette.id(&knot_ref(&knot)),
-                palette.state(&knot.state)
-            );
+        Commands::State(_) => {
+            unreachable!("queued write commands are handled before app initialization")
         }
-        Commands::Update(args) => {
-            let add_note = args.add_note.map(|content| MetadataEntryInput {
-                content,
-                username: args.note_username,
-                datetime: args.note_datetime,
-                agentname: args.note_agentname,
-                model: args.note_model,
-                version: args.note_version,
-            });
-            let add_handoff_capsule = args.add_handoff_capsule.map(|content| MetadataEntryInput {
-                content,
-                username: args.handoff_username,
-                datetime: args.handoff_datetime,
-                agentname: args.handoff_agentname,
-                model: args.handoff_model,
-                version: args.handoff_version,
-            });
-            let patch = UpdateKnotPatch {
-                title: args.title,
-                description: args.description,
-                priority: args.priority,
-                status: args.status,
-                knot_type: args
-                    .knot_type
-                    .map(|raw| raw.parse::<KnotType>().unwrap_or_default()),
-                add_tags: args.add_tags,
-                remove_tags: args.remove_tags,
-                add_note,
-                add_handoff_capsule,
-                expected_profile_etag: args.if_match,
-                force: args.force,
-                state_actor: app::StateActorMetadata {
-                    actor_kind: args.actor_kind,
-                    agent_name: args.agent_name,
-                    agent_model: args.agent_model,
-                    agent_version: args.agent_version,
-                },
-            };
-            let knot = app.update_knot(&args.id, patch)?;
-            let palette = ui::Palette::auto();
-            println!(
-                "updated {} {} {}",
-                palette.id(&knot_ref(&knot)),
-                palette.state(&knot.state),
-                knot.title
-            );
+        Commands::Update(_) => {
+            unreachable!("queued write commands are handled before app initialization")
         }
         Commands::Ls(args) => {
             let filter = listing::KnotListFilter {
@@ -393,7 +316,7 @@ fn run() -> Result<(), app::AppError> {
                 } else {
                     println!(
                         "rehydrated {} [{}] {}",
-                        knot_ref(&knot),
+                        dispatch::knot_ref(&knot),
                         knot.state,
                         knot.title
                     );
@@ -402,13 +325,11 @@ fn run() -> Result<(), app::AppError> {
             None => return Err(app::AppError::NotFound(args.id)),
         },
         Commands::Edge(args) => match args.command {
-            EdgeSubcommands::Add(edge_args) => {
-                let edge = app.add_edge(&edge_args.src, &edge_args.kind, &edge_args.dst)?;
-                println!("edge added: {} -[{}]-> {}", edge.src, edge.kind, edge.dst);
+            EdgeSubcommands::Add(_) => {
+                unreachable!("queued write commands are handled before app initialization")
             }
-            EdgeSubcommands::Remove(edge_args) => {
-                let edge = app.remove_edge(&edge_args.src, &edge_args.kind, &edge_args.dst)?;
-                println!("edge removed: {} -[{}]-> {}", edge.src, edge.kind, edge.dst);
+            EdgeSubcommands::Remove(_) => {
+                unreachable!("queued write commands are handled before app initialization")
             }
             EdgeSubcommands::List(edge_args) => {
                 let edges = app.list_edges(&edge_args.id, &edge_args.direction)?;
@@ -423,30 +344,12 @@ fn run() -> Result<(), app::AppError> {
                 }
             }
         },
-        Commands::Next(args) => {
-            let (knot, next) = resolve_next_state(&app, &args.id)?;
-            let updated = app.set_state_with_actor(
-                &knot.id,
-                &next,
-                false,
-                None,
-                app::StateActorMetadata {
-                    actor_kind: args.actor_kind,
-                    agent_name: args.agent_name,
-                    agent_model: args.agent_model,
-                    agent_version: args.agent_version,
-                },
-            )?;
-            let palette = ui::Palette::auto();
-            println!(
-                "updated {} -> {}",
-                palette.id(&knot_ref(&updated)),
-                palette.state(&updated.state)
-            );
+        Commands::Next(_) => {
+            unreachable!("queued write commands are handled before app initialization")
         }
         Commands::Skill(args) => {
-            let content = match resolve_next_state(&app, &args.id) {
-                Ok((_knot, next)) => skills::skill_for_state(&next),
+            let content = match dispatch::resolve_next_state(&app, &args.id) {
+                Ok((_knot, next, _owner)) => skills::skill_for_state(&next),
                 Err(app::AppError::NotFound(_)) => {
                     let normalized = args.id.trim().to_ascii_lowercase().replace('-', "_");
                     skills::skill_for_state(&normalized)
@@ -461,24 +364,21 @@ fn run() -> Result<(), app::AppError> {
             })?;
             print!("{content}");
         }
-        Commands::Q(args) => {
-            let quick_profile = app.default_quick_profile_id()?;
-            let knot = app.create_knot(
-                &args.title,
-                args.desc.as_deref(),
-                args.state.as_deref(),
-                Some(&quick_profile),
-            )?;
-            let palette = ui::Palette::auto();
-            println!(
-                "created {} {} {}",
-                palette.id(&knot_ref(&knot)),
-                palette.state(&knot.state),
-                knot.title
-            );
+        Commands::Q(_) => {
+            unreachable!("queued write commands are handled before app initialization")
         }
-        Commands::Poll(args) => poll_claim::run_poll(&app, args)?,
-        Commands::Claim(args) => poll_claim::run_claim(&app, args)?,
+        Commands::Poll(args) => {
+            if args.claim {
+                unreachable!("queued write commands are handled before app initialization");
+            }
+            poll_claim::run_poll(&app, args)?;
+        }
+        Commands::Claim(args) => {
+            if !args.peek {
+                unreachable!("queued write commands are handled before app initialization");
+            }
+            poll_claim::run_claim(&app, args)?;
+        }
         Commands::Ready(args) => poll_claim::run_ready(&app, args)?,
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),

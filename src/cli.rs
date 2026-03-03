@@ -421,6 +421,9 @@ pub struct NextArgs {
     #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
     pub id: String,
 
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
+
     #[arg(long = "actor-kind", help = "Actor kind for the step: human or agent.")]
     pub actor_kind: Option<String>,
 

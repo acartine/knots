@@ -1,6 +1,9 @@
+use std::thread;
 use std::time::Duration;
 
-use rusqlite::{params, types::Type, Connection, DatabaseName, OptionalExtension, Result};
+use rusqlite::{
+    params, types::Type, Connection, DatabaseName, ErrorCode, OptionalExtension, Result,
+};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
@@ -8,6 +11,17 @@ use time::OffsetDateTime;
 use crate::domain::metadata::MetadataEntry;
 
 pub const CURRENT_SCHEMA_VERSION: i64 = 6;
+const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
+const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
+const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
+const REQUIRED_META_DEFAULT_KEYS: [&str; 6] = [
+    "hot_window_days",
+    "sync_policy",
+    "sync_auto_budget_ms",
+    "sync_try_lock_ms",
+    "push_retry_budget_ms",
+    "sync_fetch_blob_limit_kb",
+];
 
 struct Migration {
     version: i64,
@@ -156,7 +170,9 @@ END;
 pub fn open_connection(path: &str) -> Result<Connection> {
     let mut conn = Connection::open(path)?;
     configure_for_speed(&conn)?;
-    apply_migrations(&mut conn)?;
+    if needs_schema_bootstrap(&conn)? {
+        with_write_retry(|| apply_migrations(&mut conn))?;
+    }
     Ok(conn)
 }
 
@@ -262,6 +278,79 @@ ON CONFLICT(key) DO NOTHING
     tx.commit()
 }
 
+fn with_write_retry<T, F>(mut operation: F) -> Result<T>
+where
+    F: FnMut() -> Result<T>,
+{
+    let mut retry = 0usize;
+    loop {
+        match operation() {
+            Ok(value) => return Ok(value),
+            Err(err) if is_retryable_lock_error(&err) && retry < SQLITE_LOCK_RETRY_LIMIT => {
+                thread::sleep(lock_retry_delay(retry));
+                retry += 1;
+            }
+            Err(err) => return Err(err),
+        }
+    }
+}
+
+fn is_retryable_lock_error(err: &rusqlite::Error) -> bool {
+    match err {
+        rusqlite::Error::SqliteFailure(sql_err, _) => {
+            matches!(
+                sql_err.code,
+                ErrorCode::DatabaseBusy | ErrorCode::DatabaseLocked
+            )
+        }
+        _ => false,
+    }
+}
+
+fn lock_retry_delay(retry: usize) -> Duration {
+    let exp = 1u64 << retry.min(5);
+    let base = (SQLITE_LOCK_RETRY_BASE_DELAY_MS * exp).min(SQLITE_LOCK_RETRY_MAX_DELAY_MS);
+    let jitter = ((retry as u64 * 13) % 7) + 3;
+    Duration::from_millis(base + jitter)
+}
+
+fn needs_schema_bootstrap(conn: &Connection) -> Result<bool> {
+    if !table_exists(conn, "schema_migrations")? || !table_exists(conn, "meta")? {
+        return Ok(true);
+    }
+
+    let applied_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM schema_migrations", [], |row| {
+            row.get(0)
+        })?;
+    if applied_count < CURRENT_SCHEMA_VERSION {
+        return Ok(true);
+    }
+
+    let expected_schema_version = CURRENT_SCHEMA_VERSION.to_string();
+    let schema_version = get_meta(conn, "schema_version")?;
+    if schema_version.as_deref() != Some(expected_schema_version.as_str()) {
+        return Ok(true);
+    }
+
+    for key in REQUIRED_META_DEFAULT_KEYS {
+        if get_meta(conn, key)?.is_none() {
+            return Ok(true);
+        }
+    }
+
+    Ok(false)
+}
+
+fn table_exists(conn: &Connection, table_name: &str) -> Result<bool> {
+    let exists: i64 = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1)",
+        params![table_name],
+        |row| row.get(0),
+    )?;
+    Ok(exists == 1)
+}
+
 fn now_utc_rfc3339() -> String {
     OffsetDateTime::now_utc()
         .format(&Rfc3339)
@@ -333,8 +422,9 @@ pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()
     let tags_json = to_json_text(args.tags)?;
     let notes_json = to_json_text(args.notes)?;
     let handoff_capsules_json = to_json_text(args.handoff_capsules)?;
-    conn.execute(
-        r#"
+    with_write_retry(|| {
+        conn.execute(
+            r#"
 INSERT INTO knot_hot (
     id, title, state, updated_at, body, description, priority, knot_type,
     tags_json, notes_json, handoff_capsules_json, profile_id, profile_etag, deferred_from_state,
@@ -357,26 +447,31 @@ ON CONFLICT(id) DO UPDATE SET
     deferred_from_state = excluded.deferred_from_state,
     created_at = COALESCE(knot_hot.created_at, excluded.created_at)
 "#,
-        params![
-            args.id,
-            args.title,
-            args.state,
-            args.updated_at,
-            args.body,
-            args.description,
-            args.priority,
-            args.knot_type,
-            tags_json,
-            notes_json,
-            handoff_capsules_json,
-            args.profile_id,
-            args.profile_etag,
-            args.deferred_from_state,
-            args.created_at
-        ],
-    )?;
+            params![
+                args.id,
+                args.title,
+                args.state,
+                args.updated_at,
+                args.body,
+                args.description,
+                args.priority,
+                args.knot_type,
+                tags_json.as_str(),
+                notes_json.as_str(),
+                handoff_capsules_json.as_str(),
+                args.profile_id,
+                args.profile_etag,
+                args.deferred_from_state,
+                args.created_at
+            ],
+        )?;
+        Ok(())
+    })?;
 
-    conn.execute("DELETE FROM knot_warm WHERE id = ?1", params![args.id])?;
+    with_write_retry(|| {
+        conn.execute("DELETE FROM knot_warm WHERE id = ?1", params![args.id])?;
+        Ok(())
+    })?;
     Ok(())
 }
 
@@ -456,24 +551,33 @@ ORDER BY updated_at DESC, id ASC
 }
 
 pub fn delete_knot_hot(conn: &Connection, id: &str) -> Result<()> {
-    conn.execute("DELETE FROM knot_hot WHERE id = ?1", params![id])?;
+    with_write_retry(|| {
+        conn.execute("DELETE FROM knot_hot WHERE id = ?1", params![id])?;
+        Ok(())
+    })?;
     Ok(())
 }
 
 pub fn delete_knot_warm(conn: &Connection, id: &str) -> Result<()> {
-    conn.execute("DELETE FROM knot_warm WHERE id = ?1", params![id])?;
+    with_write_retry(|| {
+        conn.execute("DELETE FROM knot_warm WHERE id = ?1", params![id])?;
+        Ok(())
+    })?;
     Ok(())
 }
 
 pub fn upsert_knot_warm(conn: &Connection, id: &str, title: &str) -> Result<()> {
-    conn.execute(
-        r#"
+    with_write_retry(|| {
+        conn.execute(
+            r#"
 INSERT INTO knot_warm (id, title)
 VALUES (?1, ?2)
 ON CONFLICT(id) DO UPDATE SET title = excluded.title
 "#,
-        params![id, title],
-    )?;
+            params![id, title],
+        )?;
+        Ok(())
+    })?;
     Ok(())
 }
 
@@ -511,8 +615,9 @@ pub fn upsert_cold_catalog(
     state: &str,
     updated_at: &str,
 ) -> Result<()> {
-    conn.execute(
-        r#"
+    with_write_retry(|| {
+        conn.execute(
+            r#"
 INSERT INTO cold_catalog (id, title, state, updated_at)
 VALUES (?1, ?2, ?3, ?4)
 ON CONFLICT(id) DO UPDATE SET
@@ -520,8 +625,10 @@ ON CONFLICT(id) DO UPDATE SET
     state = excluded.state,
     updated_at = excluded.updated_at
 "#,
-        params![id, title, state, updated_at],
-    )?;
+            params![id, title, state, updated_at],
+        )?;
+        Ok(())
+    })?;
     Ok(())
 }
 
@@ -586,7 +693,10 @@ ORDER BY updated_at DESC, id ASC
 }
 
 pub fn delete_cold_catalog(conn: &Connection, id: &str) -> Result<()> {
-    conn.execute("DELETE FROM cold_catalog WHERE id = ?1", params![id])?;
+    with_write_retry(|| {
+        conn.execute("DELETE FROM cold_catalog WHERE id = ?1", params![id])?;
+        Ok(())
+    })?;
     Ok(())
 }
 
@@ -633,14 +743,17 @@ pub fn get_meta(conn: &Connection, key: &str) -> Result<Option<String>> {
 }
 
 pub fn set_meta(conn: &Connection, key: &str, value: &str) -> Result<()> {
-    conn.execute(
-        r#"
+    with_write_retry(|| {
+        conn.execute(
+            r#"
 INSERT INTO meta (key, value)
 VALUES (?1, ?2)
 ON CONFLICT(key) DO UPDATE SET value = excluded.value
 "#,
-        params![key, value],
-    )?;
+            params![key, value],
+        )?;
+        Ok(())
+    })?;
     Ok(())
 }
 
@@ -659,18 +772,24 @@ pub enum EdgeDirection {
 }
 
 pub fn insert_edge(conn: &Connection, src: &str, kind: &str, dst: &str) -> Result<()> {
-    conn.execute(
-        "INSERT OR IGNORE INTO edge (src, kind, dst) VALUES (?1, ?2, ?3)",
-        params![src, kind, dst],
-    )?;
+    with_write_retry(|| {
+        conn.execute(
+            "INSERT OR IGNORE INTO edge (src, kind, dst) VALUES (?1, ?2, ?3)",
+            params![src, kind, dst],
+        )?;
+        Ok(())
+    })?;
     Ok(())
 }
 
 pub fn delete_edge(conn: &Connection, src: &str, kind: &str, dst: &str) -> Result<()> {
-    conn.execute(
-        "DELETE FROM edge WHERE src = ?1 AND kind = ?2 AND dst = ?3",
-        params![src, kind, dst],
-    )?;
+    with_write_retry(|| {
+        conn.execute(
+            "DELETE FROM edge WHERE src = ?1 AND kind = ?2 AND dst = ?3",
+            params![src, kind, dst],
+        )?;
+        Ok(())
+    })?;
     Ok(())
 }
 

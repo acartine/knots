@@ -1,6 +1,6 @@
 use crate::app::{App, AppError, KnotView};
 use crate::knot_id;
-use crate::workflow;
+use crate::workflow::{self, OwnerKind};
 
 pub fn knot_ref(knot: &KnotView) -> String {
     let sid = knot_id::display_id(&knot.id);
@@ -9,7 +9,17 @@ pub fn knot_ref(knot: &KnotView) -> String {
         .map_or(sid.to_string(), |a| format!("{a} ({sid})"))
 }
 
-pub fn resolve_next_state(app: &App, id: &str) -> Result<(KnotView, String), AppError> {
+pub fn owner_kind_label(kind: &OwnerKind) -> &'static str {
+    match kind {
+        OwnerKind::Human => "human",
+        OwnerKind::Agent => "agent",
+    }
+}
+
+pub fn resolve_next_state(
+    app: &App,
+    id: &str,
+) -> Result<(KnotView, String, Option<&'static str>), AppError> {
     let knot = app
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.into()))?;
@@ -18,5 +28,9 @@ pub fn resolve_next_state(app: &App, id: &str) -> Result<(KnotView, String), App
     let next = profile
         .next_happy_path_state(&knot.state)
         .ok_or_else(|| AppError::InvalidArgument(format!("no next state from '{}'", knot.state)))?;
-    Ok((knot, next.to_string()))
+    let owner = profile
+        .owners
+        .owner_kind_for_state(next)
+        .map(owner_kind_label);
+    Ok((knot, next.to_string(), owner))
 }

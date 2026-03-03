@@ -290,6 +290,23 @@ impl ProfileOwners {
             _ => None,
         }
     }
+
+    /// Returns the owner kind for any workflow state (action or queue).
+    ///
+    /// Queue states (`ready_for_*`) map to the owner of their
+    /// corresponding action state. Terminal states return `None`.
+    pub fn owner_kind_for_state(&self, state: &str) -> Option<&OwnerKind> {
+        let action = match state {
+            READY_FOR_PLANNING | PLANNING => PLANNING,
+            READY_FOR_PLAN_REVIEW | PLAN_REVIEW => PLAN_REVIEW,
+            READY_FOR_IMPLEMENTATION | IMPLEMENTATION => IMPLEMENTATION,
+            READY_FOR_IMPLEMENTATION_REVIEW | IMPLEMENTATION_REVIEW => IMPLEMENTATION_REVIEW,
+            READY_FOR_SHIPMENT | SHIPMENT => SHIPMENT,
+            READY_FOR_SHIPMENT_REVIEW | SHIPMENT_REVIEW => SHIPMENT_REVIEW,
+            _ => return None,
+        };
+        self.for_action_state(action).map(|o| &o.kind)
+    }
 }
 
 impl ProfileDefinition {

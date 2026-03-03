@@ -1,5 +1,8 @@
 use super::{get_sync_fetch_blob_limit_kb, open_connection, set_meta, CURRENT_SCHEMA_VERSION};
 use rusqlite::params;
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn unique_db_path() -> String {
@@ -273,6 +276,77 @@ fn reads_optional_fetch_blob_limit_from_meta() {
     set_meta(&conn, "sync_fetch_blob_limit_kb", "4").expect("meta update should succeed");
     let configured = get_sync_fetch_blob_limit_kb(&conn).expect("fetch blob limit should read");
     assert_eq!(configured, Some(4));
+
+    cleanup_db_files(&path);
+}
+
+#[test]
+fn open_connection_stays_readable_when_writer_lock_is_held() {
+    let path = unique_db_path();
+    let initialized = open_connection(&path).expect("initial connection should open");
+    drop(initialized);
+
+    let lock_conn = rusqlite::Connection::open(&path).expect("lock connection should open");
+    lock_conn
+        .execute_batch("BEGIN IMMEDIATE;")
+        .expect("write lock should be acquirable");
+
+    let (tx, rx) = mpsc::channel();
+    let path_clone = path.clone();
+    thread::spawn(move || {
+        let result = open_connection(&path_clone).map(|_| ());
+        tx.send(result)
+            .expect("lock probe channel should accept one message");
+    });
+
+    let result = rx
+        .recv_timeout(Duration::from_millis(750))
+        .expect("open_connection should not block behind an unrelated writer");
+    result.expect("second connection should open while writer lock is held");
+
+    lock_conn
+        .execute_batch("ROLLBACK;")
+        .expect("write lock should release");
+    cleanup_db_files(&path);
+}
+
+#[test]
+fn set_meta_retries_when_database_is_temporarily_locked() {
+    let path = unique_db_path();
+    let seeded = open_connection(&path).expect("seed connection should open");
+    drop(seeded);
+
+    let lock_conn = rusqlite::Connection::open(&path).expect("lock connection should open");
+    lock_conn
+        .execute_batch("BEGIN IMMEDIATE;")
+        .expect("write lock should be acquirable");
+    let unlock_thread = thread::spawn(move || {
+        thread::sleep(Duration::from_millis(25));
+        lock_conn
+            .execute_batch("ROLLBACK;")
+            .expect("write lock should release");
+    });
+
+    let conn = open_connection(&path).expect("test connection should open");
+    conn.pragma_update(None::<rusqlite::DatabaseName>, "busy_timeout", 1i64)
+        .expect("busy_timeout pragma should update");
+    conn.busy_timeout(Duration::from_millis(1))
+        .expect("busy timeout API should update");
+
+    set_meta(&conn, "sync_policy", "always")
+        .expect("set_meta should retry and succeed after lock release");
+    unlock_thread
+        .join()
+        .expect("unlock thread should complete successfully");
+
+    let value: String = conn
+        .query_row(
+            "SELECT value FROM meta WHERE key = 'sync_policy'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("sync_policy row should be readable");
+    assert_eq!(value, "always");
 
     cleanup_db_files(&path);
 }

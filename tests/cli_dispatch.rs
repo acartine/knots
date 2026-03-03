@@ -811,6 +811,39 @@ fn next_accepts_actor_metadata_and_validates_actor_kind() {
 }
 
 #[test]
+fn next_json_flag_emits_structured_output() {
+    let root = unique_workspace("knots-cli-next-json");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Next json test",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_plan_review",
+        ],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    let next_json = run_knots(&root, &db, &["next", &knot_id, "--json"]);
+    assert_success(&next_json);
+    let stdout = String::from_utf8_lossy(&next_json.stdout);
+    let parsed: Value = serde_json::from_str(&stdout).expect("next --json should emit valid JSON");
+    assert_eq!(parsed["previous_state"], "ready_for_plan_review");
+    assert_eq!(parsed["state"], "plan_review");
+    assert!(parsed["id"].is_string(), "id should be present");
+    assert_eq!(parsed["owner_kind"], "agent");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn poll_claim_flag_atomically_grabs() {
     let root = unique_workspace("knots-cli-poll-claim");
     setup_repo(&root);

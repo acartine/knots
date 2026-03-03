@@ -333,8 +333,25 @@ Import supports parity fields when present:
 - `notes` as legacy string or structured array entries
 - `handoff_capsules` structured array entries
 
+# SQLite concurrency requirements
+Knots uses SQLite in WAL mode with a busy timeout, and concurrency must follow these rules:
+
+- Queue and serialize write operations so only one writer mutates the cache at a time.
+- Allow read operations to execute immediately; reads must not be queued behind writes.
+- Keep `PRAGMA journal_mode=WAL` enabled to preserve snapshot reads during writes.
+- Keep `PRAGMA busy_timeout` configured and treat `SQLITE_BUSY`/`SQLITE_LOCKED` as retryable.
+- Add bounded write retries with jittered backoff.
+- Keep write transactions short; avoid long-lived write locks.
+- For commands requiring strict read-after-write freshness, run the read after
+  the queued write commits.
+
+Implementation note:
+- Current cache setup is in [`src/db.rs`](src/db.rs)
+  (`journal_mode=WAL`, `busy_timeout=5000`).
+
 # Developing
-For information on the release process and local development testing, please see [CONTRIBUTING.md](CONTRIBUTING.md).
+For information on the release process and local development testing, see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 
 ## Security and support

@@ -296,8 +296,10 @@ impl App {
                 let Some(_repo_guard) = repo_lock else {
                     return self.mark_sync_pending();
                 };
-                let _cache_guard =
-                    FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5000))?;
+                let cache_lock = FileLock::try_acquire(&self.cache_lock_path())?;
+                let Some(_cache_guard) = cache_lock else {
+                    return self.mark_sync_pending();
+                };
                 let start = Instant::now();
                 if let Err(err) = self.pull_unlocked() {
                     return match err {

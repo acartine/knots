@@ -111,10 +111,35 @@ fn next_parses() {
     match cli.command {
         Commands::Next(args) => {
             assert_eq!(args.id, "abc123");
+            assert!(!args.json);
             assert!(args.actor_kind.is_none());
             assert!(args.agent_name.is_none());
             assert!(args.agent_model.is_none());
             assert!(args.agent_version.is_none());
+        }
+        other => panic!("expected Next, got {:?}", other),
+    }
+}
+
+#[test]
+fn next_parses_json_flag() {
+    let cli = parse(&["kno", "next", "abc123", "--json"]);
+    match cli.command {
+        Commands::Next(args) => {
+            assert_eq!(args.id, "abc123");
+            assert!(args.json);
+        }
+        other => panic!("expected Next, got {:?}", other),
+    }
+}
+
+#[test]
+fn next_parses_json_short_flag() {
+    let cli = parse(&["kno", "next", "abc123", "-j"]);
+    match cli.command {
+        Commands::Next(args) => {
+            assert_eq!(args.id, "abc123");
+            assert!(args.json);
         }
         other => panic!("expected Next, got {:?}", other),
     }
