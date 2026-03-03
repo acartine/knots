@@ -1,0 +1,14 @@
+{
+  "event_id": "019cb446-1219-7090-93f9-70e56a6fc43c",
+  "occurred_at": "2026-03-03T15:16:56.976034Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-4be6",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "update skills with proper directions for tagging knots with commits",
+    "updated_at": "2026-03-03T15:16:56.976034Z"
+  }
+}

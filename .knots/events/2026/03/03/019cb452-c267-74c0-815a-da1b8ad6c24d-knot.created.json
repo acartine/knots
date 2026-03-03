@@ -1,0 +1,12 @@
+{
+  "event_id": "019cb452-c267-74c0-815a-da1b8ad6c24d",
+  "occurred_at": "2026-03-03T15:30:48.551906Z",
+  "knot_id": "knots-56b2",
+  "type": "knot.created",
+  "data": {
+    "body": "change interface to\n\nkno next <id> <currentState> \n\nthis avoids accidental double progression.  if not in currentState, it is not an error, just return the values normally as if it the state had changed.\n\nobviously if in currentState, progress the values.\n\nif the write queue has multiples batched, accept the metadata of the first in line.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno next -> require current state for \"optimistic\"/idempotent progression"
+  }
+}

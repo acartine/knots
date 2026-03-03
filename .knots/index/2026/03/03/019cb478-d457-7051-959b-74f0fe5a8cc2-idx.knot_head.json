@@ -1,0 +1,14 @@
+{
+  "event_id": "019cb478-d457-7051-959b-74f0fe5a8cc2",
+  "occurred_at": "2026-03-03T16:12:23.511321Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-56b2",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "kno next -> require current state for \"optimistic\"/idempotent progression",
+    "updated_at": "2026-03-03T16:12:23.511321Z"
+  }
+}

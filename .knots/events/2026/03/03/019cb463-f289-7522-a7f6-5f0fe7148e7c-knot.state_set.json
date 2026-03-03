@@ -1,0 +1,18 @@
+{
+  "event_id": "019cb463-f289-7522-a7f6-5f0fe7148e7c",
+  "occurred_at": "2026-03-03T15:49:34.985873Z",
+  "knot_id": "knots-56b2",
+  "type": "knot.state_set",
+  "data": {
+    "actor_kind": "agent",
+    "agent_model": "gpt-5.3-codex",
+    "agent_name": "OpenAI Codex",
+    "force": false,
+    "from": "ready_for_implementation",
+    "profile_id": "autopilot",
+    "to": "implementation"
+  },
+  "precondition": {
+    "profile_etag": "019cb463-6ab5-7031-bb1f-69efe11dcd62"
+  }
+}

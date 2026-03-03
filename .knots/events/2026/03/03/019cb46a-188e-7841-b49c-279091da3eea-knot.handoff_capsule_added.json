@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb46a-188e-7841-b49c-279091da3eea",
+  "occurred_at": "2026-03-03T15:56:17.934288Z",
+  "knot_id": "knots-56b2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented optimistic kno next idempotence output fix: stale requests now return the expected current state in previous_state so retries are deterministic. Added integration assertion that repeated next calls return identical JSON payload while preserving first-request metadata. Validation: cargo test --test next_optimistic and make sanity (95.06% coverage). Commit: 6ced7ac.",
+    "datetime": "2026-03-03T15:56:11Z",
+    "entry_id": "019cb46a-188e-7841-b49c-278bd4d9dc6f",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "1"
+  }
+}
