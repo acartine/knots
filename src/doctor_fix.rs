@@ -1,9 +1,12 @@
 use std::path::Path;
 use std::process::Command;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::doctor::{DoctorCheck, DoctorStatus};
 use crate::remote_init::init_remote_knots_branch;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError};
+
+static VERSION_FIX_APPLIED: AtomicBool = AtomicBool::new(false);
 
 pub(crate) fn has_non_pass_checks(checks: &[DoctorCheck]) -> bool {
     checks
@@ -11,7 +14,21 @@ pub(crate) fn has_non_pass_checks(checks: &[DoctorCheck]) -> bool {
         .any(|check| check.status != DoctorStatus::Pass)
 }
 
+pub(crate) fn version_fix_applied() -> bool {
+    VERSION_FIX_APPLIED.load(Ordering::Relaxed)
+}
+
+fn set_version_fix_applied(applied: bool) {
+    VERSION_FIX_APPLIED.store(applied, Ordering::Relaxed);
+}
+
+#[cfg(test)]
+pub(crate) fn set_version_fix_applied_for_tests(applied: bool) {
+    set_version_fix_applied(applied);
+}
+
 pub(crate) fn apply_fixes(repo_root: &Path, checks: &[DoctorCheck]) {
+    set_version_fix_applied(false);
     for check in checks {
         if check.status == DoctorStatus::Pass {
             continue;
@@ -84,11 +101,25 @@ fn fix_version() {}
 
 #[cfg(not(test))]
 fn fix_version() {
-    if let Ok(exe_path) = std::env::current_exe() {
-        let _ = Command::new(exe_path).arg("upgrade").status();
+    if std::env::var_os("KNOTS_SKIP_DOCTOR_UPGRADE").is_some() {
+        set_version_fix_applied(true);
         return;
     }
-    let _ = Command::new("kno").arg("upgrade").status();
+
+    let applied = if let Ok(exe_path) = std::env::current_exe() {
+        Command::new(exe_path)
+            .arg("upgrade")
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false)
+    } else {
+        Command::new("kno")
+            .arg("upgrade")
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false)
+    };
+    set_version_fix_applied(applied);
 }
 
 #[cfg(test)]

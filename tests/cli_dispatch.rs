@@ -60,6 +60,7 @@ fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
         .arg(repo_root)
         .arg("--db")
         .arg(db_path)
+        .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
         .args(args)
         .output()
         .expect("knots command should run")

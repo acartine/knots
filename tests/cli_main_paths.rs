@@ -41,6 +41,7 @@ fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
         .arg(repo_root)
         .arg("--db")
         .arg(db_path)
+        .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
         .args(args)
         .output()
         .expect("knots command should run")
@@ -80,6 +81,7 @@ fn toplevel_help_uses_custom_help_path() {
 
     let output = Command::new(env!("CARGO_BIN_EXE_knots"))
         .current_dir(&root)
+        .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
         .output()
         .expect("knots command should run");
     assert_success(&output);

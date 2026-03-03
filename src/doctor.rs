@@ -221,6 +221,13 @@ const RELEASES_API_URL: &str = "https://api.github.com/repos/acartine/knots/rele
 const VERSION_CHECK_TIMEOUT_SECS: u32 = 5;
 
 pub(crate) fn check_version() -> DoctorCheck {
+    if crate::doctor_fix::version_fix_applied() {
+        return DoctorCheck {
+            name: "version".to_string(),
+            status: DoctorStatus::Pass,
+            detail: "upgrade applied in this run; restart and rerun `kno doctor`".to_string(),
+        };
+    }
     let current = env!("CARGO_PKG_VERSION");
     let tag = fetch_latest_tag(RELEASES_API_URL, VERSION_CHECK_TIMEOUT_SECS);
     build_version_check(current, tag)
@@ -352,7 +359,10 @@ mod tests {
         );
     }
 
-    use super::{build_version_check, fetch_latest_tag, is_outdated, parse_tag, strip_v_prefix};
+    use super::{
+        build_version_check, check_version, fetch_latest_tag, is_outdated, parse_tag,
+        strip_v_prefix,
+    };
 
     #[test]
     fn fetch_latest_tag_returns_none_for_unreachable_url() {
@@ -387,6 +397,15 @@ mod tests {
         let check = build_version_check("0.2.0", None);
         assert_eq!(check.status, DoctorStatus::Warn);
         assert!(check.detail.contains("unable to check"));
+    }
+
+    #[test]
+    fn check_version_passes_when_upgrade_applied_in_process() {
+        crate::doctor_fix::set_version_fix_applied_for_tests(true);
+        let check = check_version();
+        assert_eq!(check.status, DoctorStatus::Pass);
+        assert!(check.detail.contains("upgrade applied in this run"));
+        crate::doctor_fix::set_version_fix_applied_for_tests(false);
     }
 
     #[test]
