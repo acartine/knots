@@ -1,7 +1,7 @@
 use super::{
-    format_doctor_line, format_knot_row, format_show_fields, indentation_prefix, knot_show_fields,
-    print_doctor_report, print_knot_list, print_knot_show, state_color_code, wrap_split_index,
-    wrap_value, Palette, ShowField,
+    format_doctor_line, format_doctor_line_with_width, format_knot_row, format_show_fields,
+    indentation_prefix, knot_show_fields, print_doctor_report, print_knot_list, print_knot_show,
+    state_color_code, wrap_split_index, wrap_value, Palette, ShowField,
 };
 use crate::app::KnotView;
 use crate::doctor::{DoctorCheck, DoctorReport, DoctorStatus};
@@ -199,6 +199,19 @@ fn doctor_no_color_omits_ansi_codes() {
     assert!(line.contains("\u{2713}"));
     assert!(line.contains("remote"));
     assert!(line.contains("origin reachable"));
+}
+
+#[test]
+fn doctor_lines_align_titles_when_label_width_is_provided() {
+    let check = DoctorCheck {
+        name: "remote".to_string(),
+        status: DoctorStatus::Warn,
+        detail: "origin unreachable".to_string(),
+    };
+    let palette = Palette { enabled: false };
+    let line = format_doctor_line_with_width(&check, &palette, 12);
+    assert!(line.starts_with("     remote:"));
+    assert!(line.contains("⚠ origin unreachable"));
 }
 
 #[test]

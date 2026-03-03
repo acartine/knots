@@ -59,7 +59,11 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     }))
     .expect("upgrade command should succeed")
     .expect("upgrade should emit summary");
-    assert_eq!(upgrade_outcome, "updated kno binary");
+    assert!(upgrade_outcome.starts_with("Upgrade"));
+    assert!(upgrade_outcome.contains("status:  updated kno binary"));
+    assert!(upgrade_outcome.contains("version:  v1.2.3"));
+    assert!(upgrade_outcome.contains("repo:  acartine/knots"));
+    assert!(upgrade_outcome.contains("install_dir:  "));
 
     let second_upgrade_outcome = maybe_run_self_command(&Commands::Upgrade(SelfUpdateArgs {
         version: Some("v1.2.4".to_string()),
@@ -69,7 +73,9 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     }))
     .expect("second upgrade command should succeed")
     .expect("second upgrade should emit summary");
-    assert_eq!(second_upgrade_outcome, "updated kno binary");
+    assert!(second_upgrade_outcome.starts_with("Upgrade"));
+    assert!(second_upgrade_outcome.contains("status:  updated kno binary"));
+    assert!(second_upgrade_outcome.contains("version:  v1.2.4"));
 
     let binary = dir.join("knots");
     let previous = dir.join("kno.previous");

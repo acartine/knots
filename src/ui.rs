@@ -34,21 +34,41 @@ pub fn print_knot_show(knot: &KnotView) {
 
 pub fn print_doctor_report(report: &DoctorReport) {
     let palette = Palette::auto();
+    println!("{}", palette.heading("Doctor"));
+    let label_width = report
+        .checks
+        .iter()
+        .map(|check| check.name.len() + 1)
+        .max()
+        .unwrap_or(0);
     for check in &report.checks {
-        println!("{}", format_doctor_line(check, &palette));
+        println!(
+            "{}",
+            format_doctor_line_with_width(check, &palette, label_width)
+        );
     }
 }
 
+#[cfg(test)]
 pub(crate) fn format_doctor_line(check: &DoctorCheck, palette: &Palette) -> String {
+    format_doctor_line_with_width(check, palette, check.name.len() + 1)
+}
+
+pub(crate) fn format_doctor_line_with_width(
+    check: &DoctorCheck,
+    palette: &Palette,
+    label_width: usize,
+) -> String {
     let (icon, color_code) = match check.status {
         DoctorStatus::Pass => ("\u{2713}", "32"),
         DoctorStatus::Warn => ("\u{26a0}", "33"),
         DoctorStatus::Fail => ("\u{2717}", "31"),
     };
+    let label = format!("{}:", check.name);
     format!(
-        "{} {}  {}",
+        "{}  {} {}",
+        palette.paint(color_code, &format!("{label:>label_width$}")),
         palette.paint(color_code, icon),
-        check.name,
         check.detail
     )
 }

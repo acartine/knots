@@ -1,4 +1,5 @@
 use std::io;
+use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -146,7 +147,11 @@ pub fn maybe_run_self_command(
                 install_dir: update_args.install_dir.clone(),
                 script_url: update_args.script_url.clone(),
             })?;
-            Ok(Some("updated kno binary".to_string()))
+            Ok(Some(format_upgrade_summary(
+                update_args.version.as_deref(),
+                update_args.repo.as_deref(),
+                update_args.install_dir.as_deref(),
+            )))
         }
         Commands::Uninstall(uninstall_args) => {
             let result = run_uninstall(&SelfUninstallOptions {
@@ -160,6 +165,51 @@ pub fn maybe_run_self_command(
             Ok(Some(lines.join("\n")))
         }
         _ => Ok(None),
+    }
+}
+
+fn format_upgrade_summary(
+    version: Option<&str>,
+    repo: Option<&str>,
+    install_dir: Option<&Path>,
+) -> String {
+    let mut fields = vec![("status", "updated kno binary".to_string())];
+    if let Some(version) = version {
+        fields.push(("version", version.to_string()));
+    }
+    if let Some(repo) = repo {
+        fields.push(("repo", repo.to_string()));
+    }
+    if let Some(install_dir) = install_dir {
+        fields.push(("install_dir", install_dir.display().to_string()));
+    }
+    format_titled_fields("Upgrade", &fields)
+}
+
+fn format_titled_fields(title: &str, fields: &[(&str, String)]) -> String {
+    let label_width = fields
+        .iter()
+        .map(|(label, _)| label.len() + 1)
+        .max()
+        .unwrap_or(0);
+    let mut lines = Vec::with_capacity(fields.len() + 1);
+    lines.push(paint("1;36", title));
+    for (label, value) in fields {
+        let label = format!("{label}:");
+        lines.push(format!(
+            "{}  {}",
+            paint("36", &format!("{label:>label_width$}")),
+            value
+        ));
+    }
+    lines.join("\n")
+}
+
+fn paint(code: &str, text: &str) -> String {
+    if std::env::var_os("NO_COLOR").is_none() && std::io::stdout().is_terminal() {
+        format!("\x1b[{code}m{text}\x1b[0m")
+    } else {
+        text.to_string()
     }
 }
 
