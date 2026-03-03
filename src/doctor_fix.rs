@@ -311,6 +311,10 @@ mod tests {
             sample_check("version", DoctorStatus::Warn),
         ];
         apply_fixes(&local, &checks);
+        assert!(
+            version_fix_applied(),
+            "expected version fix to be applied when version check is non-pass"
+        );
 
         let status = Command::new("git")
             .arg("-C")
