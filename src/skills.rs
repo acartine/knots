@@ -21,6 +21,19 @@ pub fn skill_for_state(state: &str) -> Option<&'static str> {
 mod tests {
     use super::skill_for_state;
 
+    fn assert_commit_tag_guidance(text: &str, state: &str) {
+        assert!(
+            text.contains(r#"--add-tag "commit:<full-40-char-hash>""#),
+            "{} skill must include commit:<full-40-char-hash> tagging command",
+            state
+        );
+        assert!(
+            text.contains("full 40-character hash"),
+            "{} skill must require full 40-character hashes",
+            state
+        );
+    }
+
     #[test]
     fn returns_content_for_action_states() {
         assert!(skill_for_state("planning").unwrap().contains("# Planning"));
@@ -40,20 +53,22 @@ mod tests {
     }
 
     #[test]
-    fn implementation_skill_instructs_commit_prefix_tag() {
+    fn implementation_skill_instructs_full_commit_tagging() {
         let text = skill_for_state("implementation").unwrap();
+        assert_commit_tag_guidance(text, "implementation");
         assert!(
-            text.contains(r#"--add-tag "commit:"#),
-            "implementation skill must instruct agents to tag with commit: prefix"
+            text.contains("every commit created during implementation"),
+            "implementation skill must require tagging every implementation commit"
         );
     }
 
     #[test]
-    fn shipment_skill_instructs_commit_prefix_tag() {
+    fn shipment_skill_instructs_full_commit_tagging() {
         let text = skill_for_state("shipment").unwrap();
+        assert_commit_tag_guidance(text, "shipment");
         assert!(
-            text.contains(r#"--add-tag "commit:"#),
-            "shipment skill must instruct agents to tag with commit: prefix"
+            text.contains("each new commit created during shipment"),
+            "shipment skill must require tagging each shipment commit"
         );
     }
 }
