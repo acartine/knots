@@ -88,6 +88,7 @@ fn fix_remote(repo_root: &Path) {
 }
 
 fn fix_hooks(repo_root: &Path) {
+    crate::git_hooks::cleanup_legacy_hooks(repo_root);
     let _ = crate::git_hooks::install_hooks(repo_root);
 }
 
@@ -284,6 +285,47 @@ mod tests {
         apply_fixes(&root, &checks);
         assert!(root.exists());
         assert!(!super::run_git(&root.join("missing"), &["status"]));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn apply_fixes_cleans_legacy_and_reinstalls_hooks() {
+        let (root, local) = setup_repo_with_origin();
+        let hooks_dir = local.join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks_dir).unwrap();
+
+        // Write a knots-managed legacy post-commit hook
+        let legacy = "#!/usr/bin/env bash\n\
+                       # knots-managed-post-commit-hook\n\
+                       kno sync >/dev/null 2>&1 &\n";
+        std::fs::write(hooks_dir.join("post-commit"), legacy).unwrap();
+
+        // Write a stale post-merge hook (has marker but old template)
+        let stale = "#!/usr/bin/env bash\n\
+                      # knots-managed-post-merge-hook\n\
+                      kno sync >/dev/null 2>&1 &\n";
+        std::fs::write(hooks_dir.join("post-merge"), stale).unwrap();
+
+        let checks = vec![sample_check("hooks", DoctorStatus::Warn)];
+        apply_fixes(&local, &checks);
+
+        // post-commit should be removed (legacy)
+        assert!(
+            !hooks_dir.join("post-commit").exists(),
+            "legacy post-commit should be removed"
+        );
+
+        // post-merge should have current template
+        let pm = std::fs::read_to_string(hooks_dir.join("post-merge")).unwrap();
+        assert!(
+            pm.contains("kno pull"),
+            "post-merge should have current template with `kno pull`"
+        );
+        assert!(
+            !pm.contains("kno sync"),
+            "post-merge should no longer contain old `kno sync`"
+        );
 
         let _ = std::fs::remove_dir_all(root);
     }

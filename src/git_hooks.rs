@@ -5,6 +5,7 @@ use crate::doctor::{DoctorCheck, DoctorStatus};
 
 pub const MANAGED_HOOKS: &[&str] = &["post-merge"];
 const KNOTS_HOOK_MARKER: &str = "knots-managed";
+const LEGACY_HOOKS: &[&str] = &["post-commit"];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HookInstallOutcome {
@@ -47,6 +48,14 @@ pub fn resolve_hooks_dir(repo_root: &Path) -> PathBuf {
 fn is_knots_managed(path: &Path) -> bool {
     if let Ok(contents) = std::fs::read_to_string(path) {
         contents.contains(KNOTS_HOOK_MARKER)
+    } else {
+        false
+    }
+}
+
+fn is_hook_current(path: &Path, hook_name: &str) -> bool {
+    if let Ok(contents) = std::fs::read_to_string(path) {
+        contents == hook_template(hook_name)
     } else {
         false
     }
@@ -118,13 +127,39 @@ pub fn check_hooks(repo_root: &Path) -> DoctorCheck {
         };
     }
     let hooks_dir = resolve_hooks_dir(repo_root);
+    let mut problems: Vec<String> = Vec::new();
+
     let missing: Vec<&str> = MANAGED_HOOKS
         .iter()
         .filter(|h| !is_knots_managed(&hooks_dir.join(h)))
         .copied()
         .collect();
+    if !missing.is_empty() {
+        problems.push(format!("missing sync hooks: {}", missing.join(", ")));
+    }
 
-    if missing.is_empty() {
+    let stale: Vec<&str> = MANAGED_HOOKS
+        .iter()
+        .filter(|h| {
+            let p = hooks_dir.join(h);
+            is_knots_managed(&p) && !is_hook_current(&p, h)
+        })
+        .copied()
+        .collect();
+    if !stale.is_empty() {
+        problems.push(format!("stale hook content: {}", stale.join(", ")));
+    }
+
+    let legacy: Vec<&str> = LEGACY_HOOKS
+        .iter()
+        .filter(|h| is_knots_managed(&hooks_dir.join(h)))
+        .copied()
+        .collect();
+    if !legacy.is_empty() {
+        problems.push(format!("orphaned legacy hooks: {}", legacy.join(", ")));
+    }
+
+    if problems.is_empty() {
         DoctorCheck {
             name: "hooks".to_string(),
             status: DoctorStatus::Pass,
@@ -134,10 +169,7 @@ pub fn check_hooks(repo_root: &Path) -> DoctorCheck {
         DoctorCheck {
             name: "hooks".to_string(),
             status: DoctorStatus::Warn,
-            detail: format!(
-                "missing sync hooks: {} (run `kno hooks install`)",
-                missing.join(", ")
-            ),
+            detail: format!("{} (run `kno doctor --fix`)", problems.join("; ")),
         }
     }
 }
@@ -165,6 +197,13 @@ pub fn uninstall_hooks(repo_root: &Path) -> std::io::Result<HooksSummary> {
         outcomes.push((hook_name.to_string(), outcome));
     }
     Ok(HooksSummary { outcomes })
+}
+
+pub fn cleanup_legacy_hooks(repo_root: &Path) {
+    let hooks_dir = resolve_hooks_dir(repo_root);
+    for hook_name in LEGACY_HOOKS {
+        let _ = uninstall_hook(&hooks_dir, hook_name);
+    }
 }
 
 pub fn hooks_status(repo_root: &Path) -> HooksStatusReport {
@@ -420,6 +459,79 @@ mod tests {
             })
             .collect();
         assert_eq!(backups.len(), 1);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn check_hooks_warns_on_stale_content() {
+        let root = setup_git_repo();
+        install_hooks(&root).expect("install");
+        let hooks_dir = root.join(".git").join("hooks");
+        let old_template = format!(
+            "#!/usr/bin/env bash\n# {KNOTS_HOOK_MARKER}-post-merge-hook\n\
+             kno sync >/dev/null 2>&1 &\n"
+        );
+        std::fs::write(hooks_dir.join("post-merge"), old_template).unwrap();
+
+        let check = check_hooks(&root);
+        assert_eq!(check.status, DoctorStatus::Warn);
+        assert!(check.detail.contains("stale hook content"));
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn check_hooks_warns_on_legacy_hook() {
+        let root = setup_git_repo();
+        install_hooks(&root).expect("install");
+        let hooks_dir = root.join(".git").join("hooks");
+        let legacy = format!(
+            "#!/usr/bin/env bash\n# {KNOTS_HOOK_MARKER}-post-commit-hook\n\
+             kno sync >/dev/null 2>&1 &\n"
+        );
+        std::fs::write(hooks_dir.join("post-commit"), legacy).unwrap();
+
+        let check = check_hooks(&root);
+        assert_eq!(check.status, DoctorStatus::Warn);
+        assert!(check.detail.contains("orphaned legacy hooks"));
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn cleanup_legacy_hooks_removes_orphaned_hook() {
+        let root = setup_git_repo();
+        let hooks_dir = root.join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks_dir).unwrap();
+        let legacy = format!(
+            "#!/usr/bin/env bash\n# {KNOTS_HOOK_MARKER}-post-commit-hook\n\
+             kno sync >/dev/null 2>&1 &\n"
+        );
+        std::fs::write(hooks_dir.join("post-commit"), legacy).unwrap();
+
+        cleanup_legacy_hooks(&root);
+        assert!(!hooks_dir.join("post-commit").exists());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn cleanup_legacy_hooks_restores_local() {
+        let root = setup_git_repo();
+        let hooks_dir = root.join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks_dir).unwrap();
+        let legacy = format!(
+            "#!/usr/bin/env bash\n# {KNOTS_HOOK_MARKER}-post-commit-hook\n\
+             kno sync >/dev/null 2>&1 &\n"
+        );
+        std::fs::write(hooks_dir.join("post-commit"), legacy).unwrap();
+        std::fs::write(
+            hooks_dir.join("post-commit.local"),
+            "#!/bin/sh\necho original\n",
+        )
+        .unwrap();
+
+        cleanup_legacy_hooks(&root);
+        let restored = std::fs::read_to_string(hooks_dir.join("post-commit")).unwrap();
+        assert!(restored.contains("echo original"));
+        assert!(!hooks_dir.join("post-commit.local").exists());
         let _ = std::fs::remove_dir_all(root);
     }
 }
