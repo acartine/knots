@@ -18,7 +18,7 @@
 ## Output
 - Working implementation on feature branch
 - All tests passing with coverage threshold met
-- Transition: `kno next <id>`
+- Transition: `kno next <id> --actor-kind agent --agent-name <AGENT_NAME> --agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
 
 ## Failure Modes
 - Blocked by dependency: `kno update <id> --status deferred --add-note "<blocker details>"`

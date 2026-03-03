@@ -11,7 +11,7 @@
 4. Final sign-off
 
 ## Output
-- Approved: `kno next <id>`
+- Approved: `kno next <id> --actor-kind agent --agent-name <AGENT_NAME> --agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
 - Needs revision: `kno update <id> --status ready_for_implementation --add-note "<blocker details>"`
 - Critical regression: `kno update <id> --status ready_for_implementation --add-note "<blocker details>"`
 
