@@ -146,7 +146,11 @@ The foo module panics on empty input
 ## Output
 - Detailed implementation plan attached as a knot note
 - Hierarchy of knots created
-- Transition: `kno next <id>`
+- Transition:
+  ```bash
+  kno next <id> --actor-kind agent --agent-name <AGENT_NAME> --agent-model <AGENT_MODEL> \
+    --agent-version <AGENT_VERSION>
+  ```
 
 ## Failure Modes
 - Insufficient context: `kno update <id> --status ready_for_planning --add-note "<note>"`
@@ -162,10 +166,11 @@ command to run when done.
 ### 4. Advance to the next state
 
 When the agent finishes the work, it runs the completion command from the
-prompt (or uses `kno next` for a shorthand advance):
+prompt:
 
 ```bash
-$ kno next abc123
+$ kno next abc123 --actor-kind agent --agent-name my-agent --agent-model my-model \
+  --agent-version 1.0.0
 ```
 ```
 updated abc123 -> ready_for_plan_review
