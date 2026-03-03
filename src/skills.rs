@@ -23,13 +23,18 @@ mod tests {
 
     fn assert_commit_tag_guidance(text: &str, state: &str) {
         assert!(
-            text.contains(r#"--add-tag "commit:<full-40-char-hash>""#),
-            "{} skill must include commit:<full-40-char-hash> tagging command",
+            text.contains(r#"--add-tag "commit:${short_hash}""#),
+            "{} skill must include commit:${{short_hash}} tagging command",
             state
         );
         assert!(
-            text.contains("full 40-character hash"),
-            "{} skill must require full 40-character hashes",
+            text.contains("git rev-parse --short=12 <commit>"),
+            "{} skill must describe generating short hashes",
+            state
+        );
+        assert!(
+            text.contains("short hashes only"),
+            "{} skill must require short hashes",
             state
         );
     }
@@ -53,7 +58,7 @@ mod tests {
     }
 
     #[test]
-    fn implementation_skill_instructs_full_commit_tagging() {
+    fn implementation_skill_instructs_short_commit_tagging() {
         let text = skill_for_state("implementation").unwrap();
         assert_commit_tag_guidance(text, "implementation");
         assert!(
@@ -63,7 +68,7 @@ mod tests {
     }
 
     #[test]
-    fn shipment_skill_instructs_full_commit_tagging() {
+    fn shipment_skill_instructs_short_commit_tagging() {
         let text = skill_for_state("shipment").unwrap();
         assert_commit_tag_guidance(text, "shipment");
         assert!(
@@ -76,6 +81,7 @@ mod tests {
     fn shipment_review_skill_validates_commit_tagging() {
         let text = skill_for_state("shipment_review").unwrap();
         assert!(text.contains("`commit:` prefix"));
-        assert!(text.contains("full 40-character hash"));
+        assert!(text.contains("git rev-parse --short=12 <commit>"));
+        assert!(text.contains("not the full 40-character hash"));
     }
 }

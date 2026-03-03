@@ -15,9 +15,10 @@
    --handoff-version <model_version>`
 6. Commit and push the feature branch
 7. Tag the knot with each commit hash using the `commit:` prefix:
-   `kno update <id> --add-tag "commit:<full-40-char-hash>"`
+   `short_hash=$(git rev-parse --short=12 <commit>)`
+   `kno update <id> --add-tag "commit:${short_hash}"`
    Run this for every commit created during implementation.
-   Always use the full 40-character hash, not an abbreviated form.
+   Use short hashes only; do not use the full 40-character hash.
 8. Profile variant: Create a PR if the knot profile expects it
 9. Profile variant: Merge the feature branch into main if the knot profile expects it
 

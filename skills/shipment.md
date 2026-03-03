@@ -8,9 +8,10 @@
 1. Profile variant: Merge feature branch to main if the knot profile expects it
 2. Tag the knot with any new commit hashes created during merge using the
    `commit:` prefix:
-   `kno update <id> --add-tag "commit:<full-40-char-hash>"`
+   `short_hash=$(git rev-parse --short=12 <commit>)`
+   `kno update <id> --add-tag "commit:${short_hash}"`
    Run this for each new commit created during shipment.
-   Always use the full 40-character hash, not an abbreviated form.
+   Use short hashes only; do not use the full 40-character hash.
 3. Profile variant: Push main to remote if the knot profile expects it
 4. Verify CI passes on remote
 
