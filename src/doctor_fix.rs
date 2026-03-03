@@ -97,7 +97,9 @@ fn run_git(cwd: &Path, args: &[&str]) -> bool {
 }
 
 #[cfg(test)]
-fn fix_version() {}
+fn fix_version() {
+    set_version_fix_applied(true);
+}
 
 #[cfg(not(test))]
 fn fix_version() {
@@ -129,7 +131,9 @@ mod tests {
 
     use uuid::Uuid;
 
-    use super::{apply_fixes, has_non_pass_checks};
+    use super::{
+        apply_fixes, has_non_pass_checks, set_version_fix_applied_for_tests, version_fix_applied,
+    };
     use crate::doctor::{DoctorCheck, DoctorStatus};
     use crate::sync::{GitAdapter, KnotsWorktree};
 
@@ -203,6 +207,17 @@ mod tests {
 
         let fail = vec![sample_check("worktree", DoctorStatus::Fail)];
         assert!(has_non_pass_checks(&fail));
+    }
+
+    #[test]
+    fn apply_fixes_marks_version_fix_applied_for_version_check() {
+        set_version_fix_applied_for_tests(false);
+        let root = unique_workspace();
+        let checks = vec![sample_check("version", DoctorStatus::Warn)];
+        apply_fixes(&root, &checks);
+        assert!(version_fix_applied());
+        set_version_fix_applied_for_tests(false);
+        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
