@@ -1,6 +1,7 @@
 use std::path::PathBuf;
+use std::process::Command;
 
-use crate::cli::{Commands, SelfUninstallArgs, SelfUpdateArgs};
+use crate::cli::{Commands, HooksSubcommands, SelfUninstallArgs, SelfUpdateArgs};
 
 use crate::dispatch::knot_ref;
 use crate::self_manage::maybe_run_self_command;
@@ -9,6 +10,32 @@ fn unique_dir(prefix: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("{}-{}", prefix, uuid::Uuid::now_v7()));
     std::fs::create_dir_all(&dir).expect("temp dir should be creatable");
     dir
+}
+
+fn run_git(root: &std::path::Path, args: &[&str]) {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(args)
+        .output()
+        .expect("git command should run");
+    assert!(
+        output.status.success(),
+        "git {:?} failed: {}",
+        args,
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+fn setup_git_repo(prefix: &str) -> PathBuf {
+    let root = unique_dir(prefix);
+    run_git(&root, &["init"]);
+    run_git(&root, &["config", "user.email", "knots@example.com"]);
+    run_git(&root, &["config", "user.name", "Knots Test"]);
+    std::fs::write(root.join("README.md"), "# test\n").expect("readme should be writable");
+    run_git(&root, &["add", "README.md"]);
+    run_git(&root, &["commit", "-m", "init"]);
+    root
 }
 
 #[test]
@@ -110,4 +137,24 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     assert!(!legacy_previous.exists());
 
     let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn run_hooks_command_handles_install_status_and_uninstall() {
+    let root = setup_git_repo("knots-main-hooks-test");
+
+    super::run_hooks_command(&root, &HooksSubcommands::Install)
+        .expect("hook install command should succeed");
+    let installed = crate::git_hooks::hooks_status(&root);
+    assert!(installed.hooks.iter().all(|(_, managed)| *managed));
+
+    super::run_hooks_command(&root, &HooksSubcommands::Status)
+        .expect("hook status command should succeed");
+
+    super::run_hooks_command(&root, &HooksSubcommands::Uninstall)
+        .expect("hook uninstall command should succeed");
+    let uninstalled = crate::git_hooks::hooks_status(&root);
+    assert!(uninstalled.hooks.iter().all(|(_, managed)| !*managed));
+
+    let _ = std::fs::remove_dir_all(root);
 }

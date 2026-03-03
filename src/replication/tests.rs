@@ -212,6 +212,7 @@ fn push_then_pull_shares_knots_between_clones() {
         .expect("dev2 db parent should be creatable");
     let conn2 =
         db::open_connection(db2_path.to_str().expect("utf8 path")).expect("dev2 db should open");
+    db::set_meta(&conn2, "hot_window_days", "365").expect("hot_window_days should be settable");
     let service2 = ReplicationService::new(&conn2, dev2.clone());
     let pull = service2.pull().expect("pull should succeed");
     assert!(pull.index_files >= 1);

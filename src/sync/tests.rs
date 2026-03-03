@@ -524,6 +524,7 @@ fn sync_ignores_events_with_stale_preconditions() {
     .expect("db parent should be creatable");
     let conn = db::open_connection(db_path.to_str().expect("utf8 path"))
         .expect("sync test database should open");
+    db::set_meta(&conn, "hot_window_days", "365").expect("hot_window_days should be settable");
 
     let service = SyncService::new(&conn, root.clone());
     let _ = service.sync().expect("sync should succeed");
