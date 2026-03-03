@@ -1,10 +1,12 @@
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use crate::app::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::cli::{Cli, Commands, EdgeSubcommands};
-use crate::dispatch::{knot_ref, resolve_next_state};
+use crate::dispatch::{knot_ref, owner_kind_for_state, resolve_next_state};
 use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::MetadataEntryInput;
+use crate::domain::state::KnotState;
 use crate::poll_claim;
 use crate::ui;
 use crate::write_queue::{
@@ -87,6 +89,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
         })),
         Commands::Next(args) => Some(WriteOperation::Next(NextOperation {
             id: args.id.clone(),
+            current_state: args.current_state.clone(),
             json: args.json,
             actor_kind: args.actor_kind.clone(),
             agent_name: args.agent_name.clone(),
@@ -248,7 +251,20 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
             ))
         }
         WriteOperation::Next(args) => {
-            let (knot, next, owner_kind) = resolve_next_state(app, &args.id)?;
+            let knot = app
+                .show_knot(&args.id)?
+                .ok_or_else(|| AppError::NotFound(args.id.clone()))?;
+            let expected_state = normalize_expected_state(&args.current_state);
+            if knot.state != expected_state {
+                let owner_kind = owner_kind_for_state(&knot.profile_id, &knot.state)?;
+                return Ok(format_next_output(
+                    &knot,
+                    &knot.state,
+                    owner_kind,
+                    args.json,
+                ));
+            }
+            let (knot, next, owner_kind) = resolve_next_state(app, &knot.id)?;
             let previous_state = knot.state.clone();
             let updated = app.set_state_with_actor(
                 &knot.id,
@@ -262,26 +278,12 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                     agent_version: args.agent_version.clone(),
                 },
             )?;
-            if args.json {
-                let result = serde_json::json!({
-                    "id": updated.id,
-                    "previous_state": previous_state,
-                    "state": updated.state,
-                    "owner_kind": owner_kind,
-                });
-                Ok(format_json(&result))
-            } else {
-                let palette = ui::Palette::auto();
-                let owner_suffix = owner_kind
-                    .map(|k| format!(" (owner: {k})"))
-                    .unwrap_or_default();
-                Ok(format!(
-                    "updated {} -> {}{}\n",
-                    palette.id(&knot_ref(&updated)),
-                    palette.state(&updated.state),
-                    owner_suffix,
-                ))
-            }
+            Ok(format_next_output(
+                &updated,
+                &previous_state,
+                owner_kind,
+                args.json,
+            ))
         }
         WriteOperation::Claim(args) => {
             let actor = StateActorMetadata {
@@ -340,5 +342,39 @@ fn format_json(value: &serde_json::Value) -> String {
     format!(
         "{}\n",
         serde_json::to_string_pretty(value).expect("queued json serialization should succeed")
+    )
+}
+
+fn normalize_expected_state(raw: &str) -> String {
+    let trimmed = raw.trim();
+    KnotState::from_str(trimmed)
+        .map(|state| state.as_str().to_string())
+        .unwrap_or_else(|_| trimmed.to_ascii_lowercase().replace('-', "_"))
+}
+
+fn format_next_output(
+    knot: &crate::app::KnotView,
+    previous_state: &str,
+    owner_kind: Option<&str>,
+    json: bool,
+) -> String {
+    if json {
+        let result = serde_json::json!({
+            "id": &knot.id,
+            "previous_state": previous_state,
+            "state": &knot.state,
+            "owner_kind": owner_kind,
+        });
+        return format_json(&result);
+    }
+    let palette = ui::Palette::auto();
+    let owner_suffix = owner_kind
+        .map(|kind| format!(" (owner: {kind})"))
+        .unwrap_or_default();
+    format!(
+        "updated {} -> {}{}\n",
+        palette.id(&knot_ref(knot)),
+        palette.state(&knot.state),
+        owner_suffix,
     )
 }

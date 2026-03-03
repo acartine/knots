@@ -230,7 +230,7 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     );
 
     // next advances ready_for_plan_review -> plan_review
-    let next = run_knots(&root, &db, &["next", &first_id]);
+    let next = run_knots(&root, &db, &["next", &first_id, "ready_for_plan_review"]);
     assert_success(&next);
     let next_stdout = String::from_utf8_lossy(&next.stdout);
     assert!(
@@ -238,7 +238,7 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
         "next should print updated: {next_stdout}"
     );
 
-    let next_missing = run_knots(&root, &db, &["next", "missing-id"]);
+    let next_missing = run_knots(&root, &db, &["next", "missing-id", "ready_for_plan_review"]);
     assert_failure(&next_missing);
 
     let skill_missing = run_knots(&root, &db, &["skill", "missing-id"]);
@@ -259,7 +259,7 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     );
     assert_success(&shipped_knot);
     let shipped_id = parse_created_id(&shipped_knot);
-    let next_terminal = run_knots(&root, &db, &["next", &shipped_id]);
+    let next_terminal = run_knots(&root, &db, &["next", &shipped_id, "shipped"]);
     assert_failure(&next_terminal);
     assert!(String::from_utf8_lossy(&next_terminal.stderr).contains("no next state"));
 
@@ -808,6 +808,7 @@ fn next_accepts_actor_metadata_and_validates_actor_kind() {
         &[
             "next",
             &knot_id,
+            "ready_for_plan_review",
             "--actor-kind",
             "agent",
             "--agent-name",
@@ -835,7 +836,17 @@ fn next_accepts_actor_metadata_and_validates_actor_kind() {
     assert_success(&created_bad);
     let knot_bad_id = parse_created_id(&created_bad);
 
-    let next_bad = run_knots(&root, &db, &["next", &knot_bad_id, "--actor-kind", "robot"]);
+    let next_bad = run_knots(
+        &root,
+        &db,
+        &[
+            "next",
+            &knot_bad_id,
+            "ready_for_plan_review",
+            "--actor-kind",
+            "robot",
+        ],
+    );
     assert_failure(&next_bad);
     assert!(
         String::from_utf8_lossy(&next_bad.stderr)
@@ -867,7 +878,11 @@ fn next_json_flag_emits_structured_output() {
     assert_success(&created);
     let knot_id = parse_created_id(&created);
 
-    let next_json = run_knots(&root, &db, &["next", &knot_id, "--json"]);
+    let next_json = run_knots(
+        &root,
+        &db,
+        &["next", &knot_id, "ready_for_plan_review", "--json"],
+    );
     assert_success(&next_json);
     let stdout = String::from_utf8_lossy(&next_json.stdout);
     let parsed: Value = serde_json::from_str(&stdout).expect("next --json should emit valid JSON");

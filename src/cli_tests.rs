@@ -116,10 +116,11 @@ fn q_command_parses() {
 
 #[test]
 fn next_parses() {
-    let cli = parse(&["kno", "next", "abc123"]);
+    let cli = parse(&["kno", "next", "abc123", "planning"]);
     match cli.command {
         Commands::Next(args) => {
             assert_eq!(args.id, "abc123");
+            assert_eq!(args.current_state, "planning");
             assert!(!args.json);
             assert!(args.actor_kind.is_none());
             assert!(args.agent_name.is_none());
@@ -132,10 +133,11 @@ fn next_parses() {
 
 #[test]
 fn next_parses_json_flag() {
-    let cli = parse(&["kno", "next", "abc123", "--json"]);
+    let cli = parse(&["kno", "next", "abc123", "planning", "--json"]);
     match cli.command {
         Commands::Next(args) => {
             assert_eq!(args.id, "abc123");
+            assert_eq!(args.current_state, "planning");
             assert!(args.json);
         }
         other => panic!("expected Next, got {:?}", other),
@@ -144,10 +146,11 @@ fn next_parses_json_flag() {
 
 #[test]
 fn next_parses_json_short_flag() {
-    let cli = parse(&["kno", "next", "abc123", "-j"]);
+    let cli = parse(&["kno", "next", "abc123", "planning", "-j"]);
     match cli.command {
         Commands::Next(args) => {
             assert_eq!(args.id, "abc123");
+            assert_eq!(args.current_state, "planning");
             assert!(args.json);
         }
         other => panic!("expected Next, got {:?}", other),
@@ -160,6 +163,7 @@ fn next_parses_actor_metadata_flags() {
         "kno",
         "next",
         "abc123",
+        "planning",
         "--actor-kind",
         "agent",
         "--agent-name",
@@ -172,6 +176,7 @@ fn next_parses_actor_metadata_flags() {
     match cli.command {
         Commands::Next(args) => {
             assert_eq!(args.id, "abc123");
+            assert_eq!(args.current_state, "planning");
             assert_eq!(args.actor_kind.as_deref(), Some("agent"));
             assert_eq!(args.agent_name.as_deref(), Some("codex"));
             assert_eq!(args.agent_model.as_deref(), Some("gpt-5"));

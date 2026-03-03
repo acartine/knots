@@ -423,6 +423,9 @@ pub struct NextArgs {
     #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
     pub id: String,
 
+    #[arg(help = "Expected current state for optimistic progression.")]
+    pub current_state: String,
+
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
 

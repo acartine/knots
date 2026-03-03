@@ -84,6 +84,7 @@ fn enqueue_and_wait_round_trips_response() {
         ".knots/cache/state.sqlite",
         WriteOperation::Next(NextOperation {
             id: "K-123".to_string(),
+            current_state: "planning".to_string(),
             json: false,
             actor_kind: None,
             agent_name: None,

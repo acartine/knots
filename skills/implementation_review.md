@@ -12,7 +12,9 @@
 5. Approve or request changes
 
 ## Output
-- Approved: `kno next <id> --actor-kind agent --agent-name <AGENT_NAME> --agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
+- Approved:
+  `kno next <id> <current-state> --actor-kind agent --agent-name <AGENT_NAME>`
+  `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
 - Needs changes: `kno update <id> --status ready_for_implementation --add-note "<feedback>"`
 
 ## Failure Modes

@@ -79,7 +79,7 @@ pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
             next_action
         ))
     })?;
-    let completion_cmd = completion_command(&knot.id);
+    let completion_cmd = completion_command(&knot.id, next_action);
     Ok(PollResult {
         knot,
         skill,
@@ -142,7 +142,7 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
         knot.profile_etag.as_deref(),
         claim_actor,
     )?;
-    let completion_cmd = completion_command(&claimed.id);
+    let completion_cmd = completion_command(&claimed.id, &claimed.state);
     Ok(PollResult {
         knot: claimed,
         skill,
@@ -230,7 +230,7 @@ fn match_pollable(
         Some(s) => s,
         None => return Ok(None),
     };
-    let completion_cmd = completion_command(&knot.id);
+    let completion_cmd = completion_command(&knot.id, next_action);
     Ok(Some(PollResult {
         knot: knot.clone(),
         skill,
@@ -238,8 +238,8 @@ fn match_pollable(
     }))
 }
 
-fn completion_command(knot_id: &str) -> String {
-    format!("kno next {knot_id} {AGENT_COMPLETION_METADATA_FLAGS}")
+fn completion_command(knot_id: &str, current_state: &str) -> String {
+    format!("kno next {knot_id} {current_state} {AGENT_COMPLETION_METADATA_FLAGS}")
 }
 
 fn normalize_ready_type(raw: Option<&str>) -> Option<String> {
@@ -388,10 +388,10 @@ mod tests {
 
     #[test]
     fn completion_command_includes_agent_metadata_flags() {
-        let cmd = completion_command("knots-27ef");
+        let cmd = completion_command("knots-27ef", "implementation");
         assert_eq!(
             cmd,
-            "kno next knots-27ef --actor-kind agent --agent-name <AGENT_NAME> \
+            "kno next knots-27ef implementation --actor-kind agent --agent-name <AGENT_NAME> \
              --agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>"
         );
     }
@@ -411,7 +411,10 @@ mod tests {
             )
             .expect("create should succeed");
         let result = peek_knot(&app, &created.id).expect("peek_knot should succeed");
-        assert_eq!(result.completion_cmd, completion_command(&created.id));
+        assert_eq!(
+            result.completion_cmd,
+            completion_command(&created.id, "implementation")
+        );
         let _ = std::fs::remove_dir_all(root);
     }
 }

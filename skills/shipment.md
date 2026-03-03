@@ -18,7 +18,7 @@
 - Code merged and pushed to main
 - CI green on remote
 - Transition:
-  `kno next <id> --actor-kind agent --agent-name <AGENT_NAME>`
+  `kno next <id> <current-state> --actor-kind agent --agent-name <AGENT_NAME>`
   `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
 
 ## Failure Modes

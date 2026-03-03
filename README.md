@@ -148,7 +148,8 @@ The foo module panics on empty input
 - Hierarchy of knots created
 - Transition:
   ```bash
-  kno next <id> --actor-kind agent --agent-name <AGENT_NAME> --agent-model <AGENT_MODEL> \
+  kno next <id> <current-state> --actor-kind agent --agent-name <AGENT_NAME> \
+    --agent-model <AGENT_MODEL> \
     --agent-version <AGENT_VERSION>
   ```
 
@@ -169,7 +170,8 @@ When the agent finishes the work, it runs the completion command from the
 prompt:
 
 ```bash
-$ kno next abc123 --actor-kind agent --agent-name my-agent --agent-model my-model \
+$ kno next abc123 planning --actor-kind agent --agent-name my-agent \
+  --agent-model my-model \
   --agent-version 1.0.0
 ```
 ```
