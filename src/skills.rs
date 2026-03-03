@@ -71,4 +71,11 @@ mod tests {
             "shipment skill must require tagging each shipment commit"
         );
     }
+
+    #[test]
+    fn shipment_review_skill_validates_commit_tagging() {
+        let text = skill_for_state("shipment_review").unwrap();
+        assert!(text.contains("`commit:` prefix"));
+        assert!(text.contains("full 40-character hash"));
+    }
 }
