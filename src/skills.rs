@@ -39,6 +39,34 @@ mod tests {
         );
     }
 
+    fn assert_review_write_constraints(text: &str, state: &str) {
+        assert!(
+            text.contains("read-only for repository code and git state"),
+            "{} skill must declare review as read-only for code/git",
+            state
+        );
+        assert!(
+            text.contains("Do not edit code, tests, docs, configs"),
+            "{} skill must prohibit code edits during review",
+            state
+        );
+        assert!(
+            text.contains("Do not run git write operations"),
+            "{} skill must prohibit git write operations during review",
+            state
+        );
+        assert!(
+            text.contains("knot metadata updates only"),
+            "{} skill must allow only knot metadata writes",
+            state
+        );
+        assert!(
+            text.contains("reject/failure path"),
+            "{} skill must describe fallback when code/git writes are required",
+            state
+        );
+    }
+
     #[test]
     fn returns_content_for_action_states() {
         assert!(skill_for_state("planning").unwrap().contains("# Planning"));
@@ -83,5 +111,13 @@ mod tests {
         assert!(text.contains("`commit:` prefix"));
         assert!(text.contains("git rev-parse --short=12 <commit>"));
         assert!(text.contains("not the full 40-character hash"));
+    }
+
+    #[test]
+    fn review_skills_forbid_code_and_git_writes() {
+        for state in ["plan_review", "implementation_review", "shipment_review"] {
+            let text = skill_for_state(state).unwrap();
+            assert_review_write_constraints(text, state);
+        }
     }
 }

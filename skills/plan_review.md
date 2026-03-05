@@ -4,6 +4,16 @@
 - Knot in `ready_for_plan_review` state
 - Implementation plan from the planning phase (in knot notes)
 
+## Write Constraints
+- Review work is read-only for repository code and git state.
+- Do not edit code, tests, docs, configs, or other repository files.
+- Do not run git write operations (`git add`, `git commit`, `git merge`, `git rebase`,
+  `git push`, `git checkout -b`, etc.).
+- Allowed writes are knot metadata updates only (`kno update`
+  notes/handoff_capsules/tags).
+- If code/git writes are needed to complete review, stop and use the reject/failure path to
+  move the knot back to a prior queue state.
+
 ## Actions
 1. Review the plan for completeness, correctness, and feasibility
 2. Verify test strategy covers requirements
