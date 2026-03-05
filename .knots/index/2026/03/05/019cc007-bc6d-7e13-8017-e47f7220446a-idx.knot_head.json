@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc007-bc6d-7e13-8017-e47f7220446a",
+  "occurred_at": "2026-03-05T22:04:18.413578Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-593b",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_shipment_review",
+    "terminal": false,
+    "title": "Invariant CLI update and tests",
+    "updated_at": "2026-03-05T22:04:18.413578Z"
+  }
+}

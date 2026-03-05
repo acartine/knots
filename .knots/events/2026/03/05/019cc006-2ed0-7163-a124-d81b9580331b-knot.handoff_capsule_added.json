@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc006-2ed0-7163-a124-d81b9580331b",
+  "occurred_at": "2026-03-05T22:02:36.624597Z",
+  "knot_id": "knots-593b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Verified invariant CLI flags and added test coverage for add/remove/clear-invariants operations. Added five new tests: repeatable --add-invariant, repeatable --remove-invariant, --clear-invariants alone, default values when no invariant flags present, and help text verification. All sanity checks pass at 95.25% coverage.",
+    "datetime": "2026-03-05T19:00:00Z",
+    "entry_id": "019cc006-2ed0-7163-a124-d800dbe4230e",
+    "model": "claude-opus-4-6",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}
