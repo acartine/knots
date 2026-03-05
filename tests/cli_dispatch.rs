@@ -55,16 +55,23 @@ fn setup_repo_with_remote(root: &Path) -> PathBuf {
     remote
 }
 
+fn configure_coverage_env(command: &mut Command) {
+    if let Ok(template) = std::env::var("LLVM_PROFILE_FILE") {
+        command.env("LLVM_PROFILE_FILE", format!("{template}.child-%p-%m"));
+    }
+}
+
 fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_knots"))
+    let mut command = Command::new(env!("CARGO_BIN_EXE_knots"));
+    command
         .arg("--repo-root")
         .arg(repo_root)
         .arg("--db")
         .arg(db_path)
         .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
-        .args(args)
-        .output()
-        .expect("knots command should run")
+        .args(args);
+    configure_coverage_env(&mut command);
+    command.output().expect("knots command should run")
 }
 
 fn set_meta_value(db_path: &Path, key: &str, value: &str) {

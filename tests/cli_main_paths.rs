@@ -35,16 +35,23 @@ fn setup_repo(root: &Path) {
     run_git(root, &["branch", "-M", "main"]);
 }
 
+fn configure_coverage_env(command: &mut Command) {
+    if let Ok(template) = std::env::var("LLVM_PROFILE_FILE") {
+        command.env("LLVM_PROFILE_FILE", format!("{template}.child-%p-%m"));
+    }
+}
+
 fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_knots"))
+    let mut command = Command::new(env!("CARGO_BIN_EXE_knots"));
+    command
         .arg("--repo-root")
         .arg(repo_root)
         .arg("--db")
         .arg(db_path)
         .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
-        .args(args)
-        .output()
-        .expect("knots command should run")
+        .args(args);
+    configure_coverage_env(&mut command);
+    command.output().expect("knots command should run")
 }
 
 fn assert_success(output: &Output) {
@@ -79,11 +86,12 @@ fn toplevel_help_uses_custom_help_path() {
     let root = unique_workspace("knots-main-help");
     setup_repo(&root);
 
-    let output = Command::new(env!("CARGO_BIN_EXE_knots"))
+    let mut command = Command::new(env!("CARGO_BIN_EXE_knots"));
+    command
         .current_dir(&root)
-        .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
-        .output()
-        .expect("knots command should run");
+        .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1");
+    configure_coverage_env(&mut command);
+    let output = command.output().expect("knots command should run");
     assert_success(&output);
 
     let stdout = String::from_utf8_lossy(&output.stdout);
