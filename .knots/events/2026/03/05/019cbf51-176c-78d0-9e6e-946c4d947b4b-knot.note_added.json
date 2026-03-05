@@ -1,0 +1,15 @@
+{
+  "event_id": "019cbf51-176c-78d0-9e6e-946c4d947b4b",
+  "occurred_at": "2026-03-05T18:44:48.620814Z",
+  "knot_id": "knots-ace3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: Add Invariant type (Scope,State + condition string), add to KnotView/KnotCacheRecord/UpsertKnotHot/RehydrateProjection, DB migration v7 for invariants_json column, new event kinds KnotInvariantAdded/Removed, CLI --add-invariant/--remove-invariant flags, update show/prompt rendering, update skills for invariant adherence/review, add tests.",
+    "datetime": "2026-03-05T18:44:48.620814Z",
+    "entry_id": "019cbf51-176c-78d0-9e6e-945c6374f2d4",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

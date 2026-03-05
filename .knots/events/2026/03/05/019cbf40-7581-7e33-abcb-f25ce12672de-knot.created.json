@@ -1,0 +1,12 @@
+{
+  "event_id": "019cbf40-7581-7e33-abcb-f25ce12672de",
+  "occurred_at": "2026-03-05T18:26:38.593292Z",
+  "knot_id": "knots-ace3",
+  "type": "knot.created",
+  "data": {
+    "body": "we want knots to have a new field, an array of type Invariant.  an Invariant consists of an Invariant Type (Scope,State) and Invariant Condition (String description).\n\nthis likely means updating the cli commands such as \"update\"",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "New Field: Invariants"
+  }
+}

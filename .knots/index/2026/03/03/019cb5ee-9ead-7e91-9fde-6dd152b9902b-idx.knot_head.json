@@ -1,0 +1,14 @@
+{
+  "event_id": "019cb5ee-9ead-7e91-9fde-6dd152b9902b",
+  "occurred_at": "2026-03-03T23:00:40.237785Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-7012",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_shipment",
+    "terminal": false,
+    "title": "skill prompts: fix short commit hash prompt",
+    "updated_at": "2026-03-03T23:00:40.237785Z"
+  }
+}

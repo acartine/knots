@@ -1,0 +1,14 @@
+{
+  "event_id": "019cb5ed-d982-7d82-a22d-a9e9098b8208",
+  "occurred_at": "2026-03-03T22:59:49.762895Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-f406",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "Add drift threshold warning during post-merge kno pull",
+    "updated_at": "2026-03-03T22:59:49.762895Z"
+  }
+}

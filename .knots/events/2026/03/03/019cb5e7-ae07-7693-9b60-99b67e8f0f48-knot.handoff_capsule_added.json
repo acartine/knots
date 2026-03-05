@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb5e7-ae07-7693-9b60-99b67e8f0f48",
+  "occurred_at": "2026-03-03T22:53:05.415845Z",
+  "knot_id": "knots-7012",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Updated skill prompts to require short commit hash tags using git rev-parse --short=12 and updated skills tests accordingly. Ran make sanity successfully (coverage 95.10%).",
+    "datetime": "2026-03-03T22:53:05Z",
+    "entry_id": "019cb5e7-ae07-7693-9b60-99a2ca6ffabc",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-03"
+  }
+}

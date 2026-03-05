@@ -1,0 +1,12 @@
+{
+  "event_id": "019cbd09-d371-7b40-98e6-2ef68ba79749",
+  "occurred_at": "2026-03-05T08:07:43.729585Z",
+  "knot_id": "knots-8840",
+  "type": "knot.created",
+  "data": {
+    "body": "We should refine the review skills to say that no write operations are permitted on code - writes on knots (notes, handoff_capsules) are expected.  but not on code.  so no code editing or git write operations.  if the agent feels that write operations on code/git are required, the agent should follow the reject/failure path of the workflow profile (move it into a prior queue of some sort)",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Skills: Review skills should have code write constraints."
+  }
+}

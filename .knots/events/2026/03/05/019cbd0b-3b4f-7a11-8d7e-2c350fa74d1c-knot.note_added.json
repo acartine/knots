@@ -1,0 +1,15 @@
+{
+  "event_id": "019cbd0b-3b4f-7a11-8d7e-2c350fa74d1c",
+  "occurred_at": "2026-03-05T08:09:15.855279Z",
+  "knot_id": "knots-8840",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: update review skill docs (skills/plan_review.md, skills/implementation_review.md, skills/shipment_review.md) to enforce read-only review behavior: no code/file edits and no git write operations; only knot metadata writes (notes/handoff_capsules/tags) are allowed. If code/git writes are required, reviewers must use reject/failure path to move knot back to prior queue state. Add unit tests in src/skills.rs to assert these constraints are present for plan_review, implementation_review, and shipment_review skill text. Run make install-hooks and make sanity, then commit and push to origin/main.",
+    "datetime": "2026-03-05T08:09:15.855279Z",
+    "entry_id": "019cbd0b-3b4f-7a11-8d7e-2c24127fcf9b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

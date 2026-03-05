@@ -1,0 +1,15 @@
+{
+  "event_id": "019cbf66-9b0b-72a1-982c-479acc8f431c",
+  "occurred_at": "2026-03-05T19:08:18.57138Z",
+  "knot_id": "knots-ace3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implemented invariants field: added Invariant type (Scope/State) to knot model with event sourcing, SQLite cache v7 migration, CLI flags (--add-invariant, --remove-invariant, --clear-invariants), UI display, prompt rendering, and skill invariant adherence/review sections. All 379 tests pass. Coverage at 95%+ on CI.",
+    "datetime": "2026-03-05T19:10:00Z",
+    "entry_id": "019cbf66-9b0b-72a1-982c-478e2de0b111",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "2025-09-01"
+  }
+}

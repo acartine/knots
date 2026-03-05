@@ -1,0 +1,15 @@
+{
+  "event_id": "019cbd0e-bae0-7192-9c5a-131d89c59789",
+  "occurred_at": "2026-03-05T08:13:05.120928Z",
+  "knot_id": "knots-8840",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented review-skill write constraints: review stages now explicitly prohibit code edits and git write operations, allow only knot metadata writes, and require reject/failure-path fallback when code/git writes are needed. Added tests in src/skills.rs to enforce these constraints across plan_review, implementation_review, and shipment_review. make install-hooks and make sanity passed; pushed commit 04f07a8682fe to origin/main.",
+    "datetime": "2026-03-05T08:13:05Z",
+    "entry_id": "019cbd0e-bae0-7192-9c5a-130a5029e94a",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "1"
+  }
+}

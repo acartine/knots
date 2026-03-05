@@ -1,0 +1,9 @@
+{
+  "event_id": "019cbf4d-275c-7b51-9b8c-c493a1823198",
+  "occurred_at": "2026-03-05T18:40:30.556484Z",
+  "knot_id": "knots-ace3",
+  "type": "knot.description_set",
+  "data": {
+    "description": "we want knots to have a new field, an array of type Invariant.  an Invariant consists of an Invariant Type (Scope,State) and Invariant Condition (String description).\n\nthis likely means updating the cli commands such as \"update\"\n\nit also means updating the planning and implementation skills to adhere to strict adherence of the invariant condition.\n\nthe review skills as well should ensure that athe invariant conditions are not violated."
+  }
+}

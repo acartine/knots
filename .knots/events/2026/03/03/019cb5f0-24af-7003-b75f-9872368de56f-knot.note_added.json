@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb5f0-24af-7003-b75f-9872368de56f",
+  "occurred_at": "2026-03-03T23:02:20.079743Z",
+  "knot_id": "knots-7012",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Close reason: Auto-verification passed",
+    "datetime": "2026-03-03T23:02:20.079743Z",
+    "entry_id": "019cb5f0-24af-7003-b75f-986f84b0b5ad",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

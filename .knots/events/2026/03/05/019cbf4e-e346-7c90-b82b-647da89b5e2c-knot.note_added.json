@@ -1,0 +1,15 @@
+{
+  "event_id": "019cbf4e-e346-7c90-b82b-647da89b5e2c",
+  "occurred_at": "2026-03-05T18:42:24.198527Z",
+  "knot_id": "knots-ace3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan:\n1) Add a first-class Invariant domain model (`type` = Scope|State, `condition` string) with serde support and CLI parsing helpers.\n2) Extend knot storage and views with `invariants: Invariant[]` across DB schema (new migration), cache records, snapshots, sync apply, and rehydrate projections.\n3) Extend `kno update` to support invariant mutations (`--add-invariant`, `--remove-invariant`, `--clear-invariants`) and persist them via a new full event plus index head parity.\n4) Ensure show/json surfaces include invariants and update prompt/json renderers if needed for parity.\n5) Add/adjust tests for CLI parsing, app update behavior, migration coverage, sync/snapshot compatibility, and event-kind mapping.\nRisks:\n- Backward compatibility for old snapshots/index events missing invariants.\n- Update semantics when add/remove/clear are combined; resolve with deterministic order: clear -> add -> remove.\nValidation:\n- Run focused Rust tests for touched modules, then `make sanity` before push.",
+    "datetime": "2026-03-05T18:42:24.198527Z",
+    "entry_id": "019cbf4e-e346-7c90-b82b-646615b75352",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

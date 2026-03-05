@@ -1,0 +1,12 @@
+{
+  "event_id": "019cb5e4-9823-76d1-8ff5-689ada516c6e",
+  "occurred_at": "2026-03-03T22:49:43.20351Z",
+  "knot_id": "knots-7012",
+  "type": "knot.created",
+  "data": {
+    "body": "whatever we are telling agents to do is causing them to use full hashes which is hard to read and maintain.\n\ncorrect the skill so it correctly identifies how to get/use the short hash and tag the knot with \"commit:<short_hash>\" correctly.  the current prompts are causing the full hash to be used.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "skill prompts: fix short commit hash prompt"
+  }
+}

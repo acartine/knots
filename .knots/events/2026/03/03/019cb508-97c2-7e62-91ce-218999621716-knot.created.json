@@ -1,0 +1,12 @@
+{
+  "event_id": "019cb508-97c2-7e62-91ce-218999621716",
+  "occurred_at": "2026-03-03T18:49:25.186838Z",
+  "knot_id": "knots-f406",
+  "type": "knot.created",
+  "data": {
+    "body": "During the post-merge hook that runs kno pull, add a drift threshold check that warns the user when local unpushed knots events are accumulating beyond a reasonable threshold. This gives the user a nudge to run kno push before drift gets out of hand. Implementation: after pull completes, count local event files not yet pushed to remote and compare against a configurable threshold (e.g. stored in meta table). If exceeded, print a warning to stderr.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add drift threshold warning during post-merge kno pull"
+  }
+}

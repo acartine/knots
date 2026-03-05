@@ -1,0 +1,15 @@
+{
+  "event_id": "019cbd10-95ed-7913-a787-76c0586c648d",
+  "occurred_at": "2026-03-05T08:15:06.73344Z",
+  "knot_id": "knots-8840",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Close reason: Auto-verification passed",
+    "datetime": "2026-03-05T08:15:06.73344Z",
+    "entry_id": "019cbd10-95ed-7913-a787-76b37da15ddb",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

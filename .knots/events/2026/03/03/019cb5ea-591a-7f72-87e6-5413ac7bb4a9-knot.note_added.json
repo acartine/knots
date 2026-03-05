@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb5ea-591a-7f72-87e6-5413ac7bb4a9",
+  "occurred_at": "2026-03-03T22:56:00.282613Z",
+  "knot_id": "knots-f406",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: add pull drift warning threshold meta default (25), count unpushed local event files by comparing local .knots JSON files against remote-synced worktree after pull, and print a stderr warning when unpushed count exceeds threshold. Tests: db meta defaults/getter coverage, replication unpushed-count behavior, and CLI integration warning assertion.",
+    "datetime": "2026-03-03T22:56:00.282613Z",
+    "entry_id": "019cb5ea-591a-7f72-87e6-540e82230b7e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

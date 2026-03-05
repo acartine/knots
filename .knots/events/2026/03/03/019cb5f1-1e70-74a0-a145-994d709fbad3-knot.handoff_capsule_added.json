@@ -1,0 +1,15 @@
+{
+  "event_id": "019cb5f1-1e70-74a0-a145-994d709fbad3",
+  "occurred_at": "2026-03-03T23:03:24.016125Z",
+  "knot_id": "knots-f406",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Feature already implemented in commit 4a56172. Pull drift warning checks unpushed event files against configurable threshold (default 25) in meta table. Warning prints to stderr when threshold exceeded. All tests pass including unit tests for db/replication and integration test for CLI. make sanity passes.",
+    "datetime": "2026-03-03T00:00:00Z",
+    "entry_id": "019cb5f1-1e70-74a0-a145-993adf1201a0",
+    "model": "claude-opus-4-6",
+    "username": "claude-code",
+    "version": "1.0"
+  }
+}
