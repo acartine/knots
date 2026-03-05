@@ -34,3 +34,14 @@ pub fn resolve_next_state(
         .map(owner_kind_label);
     Ok((knot, next.to_string(), owner))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn owner_kind_label_covers_human_and_agent() {
+        assert_eq!(owner_kind_label(&OwnerKind::Human), "human");
+        assert_eq!(owner_kind_label(&OwnerKind::Agent), "agent");
+    }
+}

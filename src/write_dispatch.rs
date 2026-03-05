@@ -401,3 +401,104 @@ fn format_next_output(
         owner_suffix,
     )
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::{Path, PathBuf};
+    use std::process::Command;
+    use uuid::Uuid;
+
+    fn unique_workspace(prefix: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
+        std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
+        root
+    }
+    fn run_git(root: &Path, args: &[&str]) {
+        let output = Command::new("git").arg("-C").arg(root).args(args).output();
+        let output = output.expect("git command should run");
+        assert!(
+            output.status.success(),
+            "git {:?} failed: {}",
+            args,
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    fn setup_repo(root: &Path) {
+        run_git(root, &["init"]);
+        run_git(root, &["config", "user.email", "knots@example.com"]);
+        run_git(root, &["config", "user.name", "Knots Test"]);
+        std::fs::write(root.join("README.md"), "# knots\n").expect("readme should be writable");
+        run_git(root, &["add", "README.md"]);
+        run_git(root, &["commit", "-m", "init"]);
+        run_git(root, &["branch", "-M", "main"]);
+    }
+    #[test]
+    fn execute_queued_request_returns_failure_when_app_open_fails() {
+        let root = unique_workspace("knots-write-dispatch-open-fail");
+        setup_repo(&root);
+        let bad_db_dir = root.join("db-directory");
+        std::fs::create_dir_all(&bad_db_dir).expect("bad db directory should be creatable");
+        let request = QueuedWriteRequest {
+            request_id: "req-open-fail".to_string(),
+            repo_root: root.to_string_lossy().into_owned(),
+            db_path: bad_db_dir.to_string_lossy().into_owned(),
+            response_path: String::new(),
+            operation: WriteOperation::New(NewOperation {
+                title: "queued".to_string(),
+                description: None,
+                state: None,
+                profile: None,
+                fast: false,
+            }),
+        };
+        let response = execute_queued_request(&request);
+        assert!(!response.success);
+        assert!(response
+            .error
+            .expect("error should be present")
+            .contains("database"));
+    }
+    #[test]
+    fn execute_operation_poll_claim_covers_empty_and_json_paths() {
+        let root = unique_workspace("knots-write-dispatch-poll-claim");
+        setup_repo(&root);
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app = App::open(
+            db_path.to_str().expect("db path should be utf8"),
+            root.clone(),
+        )
+        .expect("app should open");
+        let empty_poll = WriteOperation::PollClaim(PollClaimOperation {
+            stage: None,
+            owner: None,
+            json: false,
+            agent_name: None,
+            agent_model: None,
+            agent_version: None,
+        });
+        let err = execute_operation(&app, &empty_poll).expect_err("empty poll should fail");
+        match err {
+            AppError::InvalidArgument(message) => {
+                assert!(message.contains("no claimable knots found"))
+            }
+            other => panic!("unexpected poll error: {other}"),
+        }
+        app.create_knot("Claim me", None, None, None)
+            .expect("knot should be created");
+        let json_poll = WriteOperation::PollClaim(PollClaimOperation {
+            stage: None,
+            owner: None,
+            json: true,
+            agent_name: Some("agent".to_string()),
+            agent_model: Some("model".to_string()),
+            agent_version: Some("1.0".to_string()),
+        });
+        let output = execute_operation(&app, &json_poll).expect("poll claim json should succeed");
+        let parsed: serde_json::Value =
+            serde_json::from_str(&output).expect("json poll output should parse");
+        assert!(parsed
+            .get("id")
+            .and_then(serde_json::Value::as_str)
+            .is_some());
+    }
+}

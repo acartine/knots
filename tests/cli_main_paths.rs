@@ -41,7 +41,6 @@ fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
         .arg(repo_root)
         .arg("--db")
         .arg(db_path)
-        .env_remove("LLVM_PROFILE_FILE")
         .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
         .args(args)
         .output()
@@ -82,7 +81,6 @@ fn toplevel_help_uses_custom_help_path() {
 
     let output = Command::new(env!("CARGO_BIN_EXE_knots"))
         .current_dir(&root)
-        .env_remove("LLVM_PROFILE_FILE")
         .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
         .output()
         .expect("knots command should run");
@@ -199,6 +197,20 @@ fn ready_claim_peek_skill_terminal_and_rehydrate_missing_paths() {
         String::from_utf8_lossy(&missing_rehydrate.stderr).contains("not found"),
         "rehydrate missing should return not found"
     );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn hooks_status_command_dispatches_through_main() {
+    let root = unique_workspace("knots-main-hooks-dispatch");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let output = run_knots(&root, &db, &["hooks", "status"]);
+    assert_success(&output);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("missing"), "stdout: {stdout}");
 
     let _ = std::fs::remove_dir_all(root);
 }

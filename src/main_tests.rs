@@ -143,9 +143,20 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
 #[test]
 fn run_hooks_command_handles_install_status_and_uninstall() {
     let root = setup_git_repo("knots-main-hooks-test");
+    let pre_push = root.join(".git/hooks/pre-push");
+    std::fs::create_dir_all(
+        pre_push
+            .parent()
+            .expect("pre-push hook path should include parent directory"),
+    )
+    .expect("hooks directory should be creatable");
+    std::fs::write(&pre_push, "#!/bin/sh\necho local-hook\n")
+        .expect("local hook should be writable");
 
     super::run_hooks_command(&root, &HooksSubcommands::Install)
         .expect("hook install command should succeed");
+    super::run_hooks_command(&root, &HooksSubcommands::Install)
+        .expect("second hook install command should succeed");
     let installed = crate::git_hooks::hooks_status(&root);
     assert!(installed.hooks.iter().all(|(_, managed)| *managed));
 
@@ -154,6 +165,8 @@ fn run_hooks_command_handles_install_status_and_uninstall() {
 
     super::run_hooks_command(&root, &HooksSubcommands::Uninstall)
         .expect("hook uninstall command should succeed");
+    super::run_hooks_command(&root, &HooksSubcommands::Uninstall)
+        .expect("second hook uninstall command should succeed");
     let uninstalled = crate::git_hooks::hooks_status(&root);
     assert!(uninstalled.hooks.iter().all(|(_, managed)| !*managed));
 

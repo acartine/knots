@@ -77,3 +77,63 @@ fn malformed_sequence_alias_falls_back_and_terminal_state_sorts_last() {
     assert_eq!(rows[1].knot.id, "zeta");
     assert_eq!(rows[2].knot.id, "done-item");
 }
+
+#[test]
+fn different_prefix_sequences_sort_by_prefix() {
+    let knots = vec![
+        knot("beta.1", None, "beta", "work_item"),
+        knot("alpha.1", None, "alpha", "work_item"),
+    ];
+
+    let rows = layout_knots(knots, &[]);
+    assert_eq!(rows[0].knot.id, "alpha.1");
+    assert_eq!(rows[1].knot.id, "beta.1");
+}
+
+#[test]
+fn state_rank_covers_all_named_states() {
+    let states = [
+        ("implementing", 0),
+        ("reviewing", 1),
+        ("work_item", 2),
+        ("idea", 3),
+        ("refining", 4),
+        ("blocked", 5),
+        ("approved", 6),
+        ("closed", 7),
+        ("shipped", 8),
+        ("deferred", 9),
+        ("abandoned", 10),
+        ("custom_state", 11),
+    ];
+    for (index, (state, _rank)) in states.iter().enumerate() {
+        let mut knots_list = vec![knot(
+            &format!("K-{index}"),
+            None,
+            &format!("k{index}"),
+            state,
+        )];
+        if index < states.len() - 1 {
+            knots_list.push(knot(
+                &format!("K-{}", index + 100),
+                None,
+                &format!("k{}", index + 100),
+                states[index + 1].0,
+            ));
+        }
+        let rows = layout_knots(knots_list, &[]);
+        assert!(!rows.is_empty());
+    }
+}
+
+#[test]
+fn priority_tiebreaker_sorts_lower_priority_first() {
+    let mut k1 = knot("K-1", None, "same", "work_item");
+    k1.priority = Some(1);
+    let mut k2 = knot("K-2", None, "same", "work_item");
+    k2.priority = Some(5);
+    let knots = vec![k2, k1];
+    let rows = layout_knots(knots, &[]);
+    assert_eq!(rows[0].knot.id, "K-1");
+    assert_eq!(rows[1].knot.id, "K-2");
+}

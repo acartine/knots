@@ -206,4 +206,37 @@ mod tests {
         let parsed: Invariant = serde_json::from_value(json).expect("deserialize should work");
         assert_eq!(parsed, invariant);
     }
+
+    #[test]
+    fn invariant_display_shows_type_and_condition() {
+        let inv = Invariant::new(InvariantType::Scope, "keep idempotent").unwrap();
+        assert_eq!(inv.to_string(), "Scope: keep idempotent");
+    }
+
+    #[test]
+    fn parse_invariant_spec_invalid_type_delegates_display() {
+        let err = parse_invariant_spec("bogus:cond").expect_err("bad type");
+        assert!(err.to_string().contains("invalid invariant type"));
+        assert!(std::error::Error::source(&err).is_some());
+    }
+
+    #[test]
+    fn parse_invariant_spec_missing_separator_has_no_source() {
+        let err = parse_invariant_spec("nocolon").expect_err("no colon");
+        assert!(std::error::Error::source(&err).is_none());
+    }
+
+    #[test]
+    fn deserialize_rejects_unknown_invariant_type() {
+        let json = serde_json::json!({"type": "bogus", "condition": "x"});
+        let result = serde_json::from_value::<Invariant>(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn invariant_type_all_contains_both_variants() {
+        assert_eq!(super::InvariantType::ALL.len(), 2);
+        assert_eq!(super::InvariantType::ALL[0], InvariantType::Scope);
+        assert_eq!(super::InvariantType::ALL[1], InvariantType::State);
+    }
 }
