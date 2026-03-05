@@ -239,4 +239,33 @@ mod tests {
         assert_eq!(super::InvariantType::ALL[0], InvariantType::Scope);
         assert_eq!(super::InvariantType::ALL[1], InvariantType::State);
     }
+
+    #[test]
+    fn deserialize_accepts_invariant_type_alias() {
+        let json = serde_json::json!({
+            "invariant_type": "Scope",
+            "condition": "only db module"
+        });
+        let inv: Invariant = serde_json::from_value(json).expect("alias should parse");
+        assert_eq!(inv.invariant_type, InvariantType::Scope);
+        assert_eq!(inv.condition, "only db module");
+    }
+
+    #[test]
+    fn serde_round_trip_vec_of_invariants() {
+        let invariants = vec![
+            Invariant::new(InvariantType::Scope, "src/ only").unwrap(),
+            Invariant::new(InvariantType::State, "no regressions").unwrap(),
+        ];
+        let json = serde_json::to_string(&invariants).expect("serialize vec should work");
+        let parsed: Vec<Invariant> = serde_json::from_str(&json).expect("deserialize vec");
+        assert_eq!(parsed, invariants);
+    }
+
+    #[test]
+    fn invariant_type_display_matches_as_str() {
+        for kind in InvariantType::ALL {
+            assert_eq!(kind.to_string(), kind.as_str());
+        }
+    }
 }

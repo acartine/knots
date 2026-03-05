@@ -552,3 +552,7 @@ fn is_stale_precondition(
 #[cfg(test)]
 #[path = "apply_tests_ext.rs"]
 mod tests_ext;
+
+#[cfg(test)]
+#[path = "apply_tests_invariant.rs"]
+mod tests_invariant;

@@ -380,3 +380,89 @@ fn set_meta_retries_when_database_is_temporarily_locked() {
 
     cleanup_db_files(&path);
 }
+
+#[test]
+fn upsert_and_get_knot_hot_round_trips_invariants() {
+    use crate::db::{get_knot_hot, upsert_knot_hot, UpsertKnotHot};
+    use crate::domain::invariant::{Invariant, InvariantType};
+
+    let path = unique_db_path();
+    let conn = open_connection(&path).expect("connection should open");
+
+    let invariants = vec![
+        Invariant::new(InvariantType::Scope, "only touch src/db.rs").unwrap(),
+        Invariant::new(InvariantType::State, "coverage >= 95%").unwrap(),
+    ];
+
+    upsert_knot_hot(
+        &conn,
+        &UpsertKnotHot {
+            id: "K-inv",
+            title: "Invariant round-trip",
+            state: "implementation",
+            updated_at: "2026-03-05T10:00:00Z",
+            body: None,
+            description: Some("test invariants"),
+            priority: None,
+            knot_type: Some("work"),
+            tags: &["alpha".to_string()],
+            notes: &[],
+            handoff_capsules: &[],
+            invariants: &invariants,
+            profile_id: "autopilot",
+            profile_etag: Some("etag-inv"),
+            deferred_from_state: None,
+            created_at: Some("2026-03-05T09:00:00Z"),
+        },
+    )
+    .expect("upsert with invariants should succeed");
+
+    let record = get_knot_hot(&conn, "K-inv")
+        .expect("get should succeed")
+        .expect("record should exist");
+    assert_eq!(record.invariants.len(), 2);
+    assert_eq!(record.invariants[0].invariant_type, InvariantType::Scope);
+    assert_eq!(record.invariants[0].condition, "only touch src/db.rs");
+    assert_eq!(record.invariants[1].invariant_type, InvariantType::State);
+    assert_eq!(record.invariants[1].condition, "coverage >= 95%");
+
+    cleanup_db_files(&path);
+}
+
+#[test]
+fn upsert_knot_hot_with_empty_invariants_round_trips() {
+    use crate::db::{get_knot_hot, upsert_knot_hot, UpsertKnotHot};
+
+    let path = unique_db_path();
+    let conn = open_connection(&path).expect("connection should open");
+
+    upsert_knot_hot(
+        &conn,
+        &UpsertKnotHot {
+            id: "K-no-inv",
+            title: "No invariants",
+            state: "ready_for_planning",
+            updated_at: "2026-03-05T10:00:00Z",
+            body: None,
+            description: None,
+            priority: None,
+            knot_type: None,
+            tags: &[],
+            notes: &[],
+            handoff_capsules: &[],
+            invariants: &[],
+            profile_id: "autopilot",
+            profile_etag: None,
+            deferred_from_state: None,
+            created_at: None,
+        },
+    )
+    .expect("upsert with empty invariants should succeed");
+
+    let record = get_knot_hot(&conn, "K-no-inv")
+        .expect("get should succeed")
+        .expect("record should exist");
+    assert!(record.invariants.is_empty());
+
+    cleanup_db_files(&path);
+}
