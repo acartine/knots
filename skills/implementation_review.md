@@ -33,13 +33,32 @@
 
 ## Output
 - Approved:
+  `kno update <id> --add-handoff-capsule "<review summary>"`
+  `--handoff-username <username> --handoff-datetime <date RFC3339>`
+  `--handoff-agentname <agentname> --handoff-model <model>`
+  `--handoff-version <model_version>`
   `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`
   `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
 - Needs changes:
-  `kno update <id> --status ready_for_implementation --add-note "<feedback>"`
+  `kno update <id> --status ready_for_implementation`
+  `--add-note "<feedback>"`
+  `kno update <id> --add-handoff-capsule "<changes requested>"`
+  `--handoff-username <username> --handoff-datetime <date RFC3339>`
+  `--handoff-agentname <agentname> --handoff-model <model>`
+  `--handoff-version <model_version>`
 
 ## Failure Modes
 - Critical issues found:
-  `kno update <id> --status ready_for_implementation --add-note "<feedback>"`
+  `kno update <id> --status ready_for_implementation`
+  `--add-note "<feedback>"`
+  `kno update <id> --add-handoff-capsule "<critical issues>"`
+  `--handoff-username <username> --handoff-datetime <date RFC3339>`
+  `--handoff-agentname <agentname> --handoff-model <model>`
+  `--handoff-version <model_version>`
 - Architecture concern:
-  `kno update <id> --status ready_for_implementation --add-note "<feedback>"`
+  `kno update <id> --status ready_for_implementation`
+  `--add-note "<feedback>"`
+  `kno update <id> --add-handoff-capsule "<architecture concern>"`
+  `--handoff-username <username> --handoff-datetime <date RFC3339>`
+  `--handoff-agentname <agentname> --handoff-model <model>`
+  `--handoff-version <model_version>`

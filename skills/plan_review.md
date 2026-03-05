@@ -28,13 +28,29 @@
 
 ## Output
 - Approved:
+  `kno update <id> --add-handoff-capsule "<review summary>"`
+  `--handoff-username <username> --handoff-datetime <date RFC3339>`
+  `--handoff-agentname <agentname> --handoff-model <model>`
+  `--handoff-version <model_version>`
   `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`
   `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
 - Needs revision:
   `kno update <id> --status ready_for_planning --add-note "<feedback>"`
+  `kno update <id> --add-handoff-capsule "<revision needed>"`
+  `--handoff-username <username> --handoff-datetime <date RFC3339>`
+  `--handoff-agentname <agentname> --handoff-model <model>`
+  `--handoff-version <model_version>`
 
 ## Failure Modes
 - Plan fundamentally flawed:
   `kno update <id> --status ready_for_planning --add-note "<feedback>"`
+  `kno update <id> --add-handoff-capsule "<plan flawed>"`
+  `--handoff-username <username> --handoff-datetime <date RFC3339>`
+  `--handoff-agentname <agentname> --handoff-model <model>`
+  `--handoff-version <model_version>`
 - Requirements changed:
   `kno update <id> --status ready_for_planning --add-note "<feedback>"`
+  `kno update <id> --add-handoff-capsule "<requirements changed>"`
+  `--handoff-username <username> --handoff-datetime <date RFC3339>`
+  `--handoff-agentname <agentname> --handoff-model <model>`
+  `--handoff-version <model_version>`
