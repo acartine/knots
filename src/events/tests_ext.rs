@@ -15,6 +15,10 @@ fn full_event_kind_strings_cover_remaining_variants() {
         "knot.comment_added"
     );
     assert_eq!(
+        FullEventKind::KnotInvariantsSet.as_str(),
+        "knot.invariants_set"
+    );
+    assert_eq!(
         FullEventKind::KnotReviewDecision.as_str(),
         "knot.review_decision"
     );

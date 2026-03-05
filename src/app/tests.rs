@@ -156,6 +156,9 @@ fn stripped_ids_resolve_for_show_state_update_and_edges() {
                 knot_type: None,
                 add_tags: vec![],
                 remove_tags: vec![],
+                add_invariants: vec![],
+                remove_invariants: vec![],
+                clear_invariants: false,
                 add_note: None,
                 add_handoff_capsule: None,
                 expected_profile_etag: None,
@@ -349,6 +352,20 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
                 knot_type: Some(crate::domain::knot_type::KnotType::Work),
                 add_tags: vec!["migration".to_string(), "beads".to_string()],
                 remove_tags: vec![],
+                add_invariants: vec![
+                    crate::domain::invariant::Invariant::new(
+                        crate::domain::invariant::InvariantType::Scope,
+                        "all child knots must have one parent",
+                    )
+                    .expect("scope invariant should build"),
+                    crate::domain::invariant::Invariant::new(
+                        crate::domain::invariant::InvariantType::State,
+                        "deferred knots resume to deferred_from_state",
+                    )
+                    .expect("state invariant should build"),
+                ],
+                remove_invariants: vec![],
+                clear_invariants: false,
                 add_note: Some(MetadataEntryInput {
                     content: "carry context".to_string(),
                     username: Some("acartine".to_string()),
@@ -385,6 +402,15 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
     assert_eq!(updated.notes[0].content, "carry context");
     assert_eq!(updated.handoff_capsules.len(), 1);
     assert_eq!(updated.handoff_capsules[0].content, "next owner details");
+    assert_eq!(updated.invariants.len(), 2);
+    assert_eq!(
+        updated.invariants[0].condition,
+        "all child knots must have one parent"
+    );
+    assert_eq!(
+        updated.invariants[1].condition,
+        "deferred knots resume to deferred_from_state"
+    );
 
     let shown = app
         .show_knot(&created.id)
@@ -393,8 +419,110 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
     assert_eq!(shown.description.as_deref(), Some("full description"));
     assert_eq!(shown.notes.len(), 1);
     assert_eq!(shown.handoff_capsules.len(), 1);
+    assert_eq!(shown.invariants, updated.invariants);
     assert_eq!(count_json_files(&root.join(".knots/index")), 2);
     assert!(count_json_files(&root.join(".knots/events")) >= 8);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn update_knot_can_remove_and_clear_invariants() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let created = app
+        .create_knot(
+            "Invariant mutation",
+            None,
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("knot should be created");
+    let scope = crate::domain::invariant::Invariant::new(
+        crate::domain::invariant::InvariantType::Scope,
+        "scope invariant",
+    )
+    .expect("scope invariant should build");
+    let state = crate::domain::invariant::Invariant::new(
+        crate::domain::invariant::InvariantType::State,
+        "state invariant",
+    )
+    .expect("state invariant should build");
+
+    let seeded = app
+        .update_knot(
+            &created.id,
+            UpdateKnotPatch {
+                title: None,
+                description: None,
+                priority: None,
+                status: None,
+                knot_type: None,
+                add_tags: vec![],
+                remove_tags: vec![],
+                add_invariants: vec![scope.clone(), state.clone()],
+                remove_invariants: vec![],
+                clear_invariants: false,
+                add_note: None,
+                add_handoff_capsule: None,
+                expected_profile_etag: None,
+                force: false,
+                state_actor: StateActorMetadata::default(),
+            },
+        )
+        .expect("seed update should succeed");
+    assert_eq!(seeded.invariants.len(), 2);
+
+    let removed = app
+        .update_knot(
+            &created.id,
+            UpdateKnotPatch {
+                title: None,
+                description: None,
+                priority: None,
+                status: None,
+                knot_type: None,
+                add_tags: vec![],
+                remove_tags: vec![],
+                add_invariants: vec![],
+                remove_invariants: vec![scope],
+                clear_invariants: false,
+                add_note: None,
+                add_handoff_capsule: None,
+                expected_profile_etag: None,
+                force: false,
+                state_actor: StateActorMetadata::default(),
+            },
+        )
+        .expect("remove invariant should succeed");
+    assert_eq!(removed.invariants, vec![state.clone()]);
+
+    let cleared = app
+        .update_knot(
+            &created.id,
+            UpdateKnotPatch {
+                title: None,
+                description: None,
+                priority: None,
+                status: None,
+                knot_type: None,
+                add_tags: vec![],
+                remove_tags: vec![],
+                add_invariants: vec![],
+                remove_invariants: vec![],
+                clear_invariants: true,
+                add_note: None,
+                add_handoff_capsule: None,
+                expected_profile_etag: None,
+                force: false,
+                state_actor: StateActorMetadata::default(),
+            },
+        )
+        .expect("clear invariants should succeed");
+    assert!(cleared.invariants.is_empty());
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -419,6 +547,9 @@ fn update_knot_requires_at_least_one_change() {
             knot_type: None,
             add_tags: vec![],
             remove_tags: vec![],
+            add_invariants: vec![],
+            remove_invariants: vec![],
+            clear_invariants: false,
             add_note: None,
             add_handoff_capsule: None,
             expected_profile_etag: None,
@@ -456,6 +587,9 @@ fn update_knot_rejects_stale_if_match() {
                 knot_type: None,
                 add_tags: vec![],
                 remove_tags: vec![],
+                add_invariants: vec![],
+                remove_invariants: vec![],
+                clear_invariants: false,
                 add_note: None,
                 add_handoff_capsule: None,
                 expected_profile_etag: Some(expected.clone()),
@@ -476,6 +610,9 @@ fn update_knot_rejects_stale_if_match() {
             knot_type: None,
             add_tags: vec![],
             remove_tags: vec![],
+            add_invariants: vec![],
+            remove_invariants: vec![],
+            clear_invariants: false,
             add_note: None,
             add_handoff_capsule: None,
             expected_profile_etag: Some(expected),

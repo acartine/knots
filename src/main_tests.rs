@@ -53,6 +53,7 @@ fn knot_ref_prefers_alias_when_available() {
         tags: Vec::new(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
+        invariants: Vec::new(),
         profile_id: "autopilot".to_string(),
         profile_etag: None,
         deferred_from_state: None,

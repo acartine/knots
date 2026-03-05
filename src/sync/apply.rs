@@ -6,6 +6,7 @@ use serde_json::{Map, Value};
 use time::OffsetDateTime;
 
 use crate::db::{self, UpsertKnotHot};
+use crate::domain::invariant::Invariant;
 use crate::domain::metadata::MetadataEntry;
 use crate::events::{FullEvent, IndexEvent, IndexEventKind, WorkflowPrecondition};
 use crate::snapshots::apply_latest_snapshots;
@@ -201,6 +202,13 @@ impl<'a> IncrementalApplier<'a> {
             .as_ref()
             .map(|record| record.handoff_capsules.clone())
             .unwrap_or_default();
+        let mut invariants = existing
+            .as_ref()
+            .map(|record| record.invariants.clone())
+            .unwrap_or_default();
+        if data.contains_key("invariants") {
+            invariants = parse_invariants(data, &absolute_path)?;
+        }
         let deferred_from_state = existing
             .as_ref()
             .and_then(|record| record.deferred_from_state.clone());
@@ -227,6 +235,7 @@ impl<'a> IncrementalApplier<'a> {
                         tags: &tags,
                         notes: &notes,
                         handoff_capsules: &handoff_capsules,
+                        invariants: &invariants,
                         profile_id: &profile_id,
                         profile_etag: Some(&event.event_id),
                         deferred_from_state: deferred_from_state.as_deref(),
@@ -343,6 +352,13 @@ impl<'a> IncrementalApplier<'a> {
                 })?;
                 Ok(FullApplyOutcome::Ignored)
             }
+            "knot.invariants_set" => {
+                let invariants = parse_invariants(data, &absolute_path)?;
+                self.apply_metadata_update(&event.knot_id, |record| {
+                    record.invariants = invariants;
+                })?;
+                Ok(FullApplyOutcome::Ignored)
+            }
             _ => Ok(FullApplyOutcome::Ignored),
         }
     }
@@ -366,6 +382,7 @@ impl<'a> IncrementalApplier<'a> {
             tags: existing.tags,
             notes: existing.notes,
             handoff_capsules: existing.handoff_capsules,
+            invariants: existing.invariants,
             profile_id: existing.profile_id,
             profile_etag: existing.profile_etag,
             deferred_from_state: existing.deferred_from_state,
@@ -387,6 +404,7 @@ impl<'a> IncrementalApplier<'a> {
                 tags: &projection.tags,
                 notes: &projection.notes,
                 handoff_capsules: &projection.handoff_capsules,
+                invariants: &projection.invariants,
                 profile_id: &projection.profile_id,
                 profile_etag: projection.profile_etag.as_deref(),
                 deferred_from_state: projection.deferred_from_state.as_deref(),
@@ -414,6 +432,7 @@ struct MetadataProjection {
     tags: Vec<String>,
     notes: Vec<MetadataEntry>,
     handoff_capsules: Vec<MetadataEntry>,
+    invariants: Vec<Invariant>,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
@@ -499,6 +518,14 @@ fn parse_metadata_entry(
         model,
         version,
     })
+}
+
+fn parse_invariants(object: &Map<String, Value>, path: &Path) -> Result<Vec<Invariant>, SyncError> {
+    let raw = object
+        .get("invariants")
+        .ok_or_else(|| invalid_event(path, "missing 'invariants' array field"))?;
+    serde_json::from_value(raw.clone())
+        .map_err(|err| invalid_event(path, &format!("invalid 'invariants' payload: {}", err)))
 }
 
 fn invalid_event(path: &Path, message: &str) -> SyncError {

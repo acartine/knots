@@ -4,6 +4,7 @@ use std::str::FromStr;
 use crate::app::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::cli::{Cli, Commands, EdgeSubcommands};
 use crate::dispatch::{knot_ref, resolve_next_state};
+use crate::domain::invariant::parse_invariant_spec;
 use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::MetadataEntryInput;
 use crate::domain::state::KnotState;
@@ -80,6 +81,9 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             handoff_agentname: args.handoff_agentname.clone(),
             handoff_model: args.handoff_model.clone(),
             handoff_version: args.handoff_version.clone(),
+            add_invariants: args.add_invariants.clone(),
+            remove_invariants: args.remove_invariants.clone(),
+            clear_invariants: args.clear_invariants,
             if_match: args.if_match.clone(),
             actor_kind: args.actor_kind.clone(),
             agent_name: args.agent_name.clone(),
@@ -233,6 +237,23 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                     .map(|raw| raw.parse::<KnotType>().unwrap_or_default()),
                 add_tags: args.add_tags.clone(),
                 remove_tags: args.remove_tags.clone(),
+                add_invariants: args
+                    .add_invariants
+                    .iter()
+                    .map(|raw| {
+                        parse_invariant_spec(raw)
+                            .map_err(|err| AppError::InvalidArgument(err.to_string()))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
+                remove_invariants: args
+                    .remove_invariants
+                    .iter()
+                    .map(|raw| {
+                        parse_invariant_spec(raw)
+                            .map_err(|err| AppError::InvalidArgument(err.to_string()))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
+                clear_invariants: args.clear_invariants,
                 add_note,
                 add_handoff_capsule,
                 expected_profile_etag: args.if_match.clone(),

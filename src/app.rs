@@ -12,6 +12,7 @@ use serde_json::{json, Value};
 
 use crate::db::{self, EdgeDirection, EdgeRecord, KnotCacheRecord, UpsertKnotHot};
 use crate::doctor::{run_doctor_with_fix, DoctorError, DoctorReport};
+use crate::domain::invariant::Invariant;
 use crate::domain::knot_type::{parse_knot_type, KnotType};
 use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
 use crate::domain::state::{InvalidStateTransition, ParseKnotStateError};
@@ -55,6 +56,7 @@ pub struct KnotView {
     pub tags: Vec<String>,
     pub notes: Vec<MetadataEntry>,
     pub handoff_capsules: Vec<MetadataEntry>,
+    pub invariants: Vec<Invariant>,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -78,6 +80,9 @@ pub struct UpdateKnotPatch {
     pub knot_type: Option<KnotType>,
     pub add_tags: Vec<String>,
     pub remove_tags: Vec<String>,
+    pub add_invariants: Vec<Invariant>,
+    pub remove_invariants: Vec<Invariant>,
+    pub clear_invariants: bool,
     pub add_note: Option<MetadataEntryInput>,
     pub add_handoff_capsule: Option<MetadataEntryInput>,
     pub expected_profile_etag: Option<String>,
@@ -130,6 +135,9 @@ impl UpdateKnotPatch {
             || self.knot_type.is_some()
             || !self.add_tags.is_empty()
             || !self.remove_tags.is_empty()
+            || !self.add_invariants.is_empty()
+            || !self.remove_invariants.is_empty()
+            || self.clear_invariants
             || self.add_note.is_some()
             || self.add_handoff_capsule.is_some()
     }
@@ -483,6 +491,7 @@ impl App {
                 "updated_at": occurred_at,
                 "terminal": profile.is_terminal_state(&state),
                 "deferred_from_state": Value::Null,
+                "invariants": Vec::<Invariant>::new(),
             }),
         );
 
@@ -503,6 +512,7 @@ impl App {
                 tags: &[],
                 notes: &[],
                 handoff_capsules: &[],
+                invariants: &[],
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: None,
@@ -577,6 +587,7 @@ impl App {
                 "updated_at": occurred_at,
                 "terminal": profile.is_terminal_state(&next_state),
                 "deferred_from_state": deferred_from_state,
+                "invariants": &current.invariants,
             }),
         );
         if let Some(expected) = expected_profile_etag {
@@ -600,6 +611,7 @@ impl App {
                 tags: &current.tags,
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
+                invariants: &current.invariants,
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -702,6 +714,7 @@ impl App {
                 "updated_at": occurred_at,
                 "terminal": profile.is_terminal_state(&next),
                 "deferred_from_state": deferred_from_state,
+                "invariants": &current.invariants,
             }),
         );
         if let Some(expected) = expected_profile_etag {
@@ -725,6 +738,7 @@ impl App {
                 tags: &current.tags,
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
+                invariants: &current.invariants,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -762,6 +776,7 @@ impl App {
         let mut tags = current.tags.clone();
         let mut notes = current.notes.clone();
         let mut handoff_capsules = current.handoff_capsules.clone();
+        let mut invariants = current.invariants.clone();
         let occurred_at = now_utc_rfc3339();
         let mut full_events = Vec::new();
 
@@ -915,6 +930,29 @@ impl App {
             }
         }
 
+        if patch.clear_invariants {
+            invariants.clear();
+        }
+        for invariant in &patch.add_invariants {
+            if !invariants.iter().any(|existing| existing == invariant) {
+                invariants.push(invariant.clone());
+            }
+        }
+        for invariant in &patch.remove_invariants {
+            invariants.retain(|existing| existing != invariant);
+        }
+        if invariants != current.invariants {
+            full_events.push(FullEvent::with_identity(
+                new_event_id(),
+                occurred_at.clone(),
+                id.to_string(),
+                FullEventKind::KnotInvariantsSet.as_str(),
+                json!({
+                    "invariants": &invariants,
+                }),
+            ));
+        }
+
         if let Some(input) = patch.add_note {
             let entry = metadata_entry_from_input(input, &occurred_at)?;
             if !notes
@@ -990,6 +1028,7 @@ impl App {
                 "updated_at": occurred_at,
                 "terminal": terminal,
                 "deferred_from_state": deferred_from_state,
+                "invariants": &invariants,
             }),
         );
         if let Some(expected) = patch.expected_profile_etag.as_deref() {
@@ -1011,6 +1050,7 @@ impl App {
                 tags: &tags,
                 notes: &notes,
                 handoff_capsules: &handoff_capsules,
+                invariants: &invariants,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1192,6 +1232,7 @@ impl App {
                 tags: &record.tags,
                 notes: &record.notes,
                 handoff_capsules: &record.handoff_capsules,
+                invariants: &record.invariants,
                 profile_id: &record.profile_id,
                 profile_etag: record.profile_etag.as_deref(),
                 deferred_from_state: record.deferred_from_state.as_deref(),
@@ -1252,6 +1293,7 @@ impl App {
                 "updated_at": occurred_at,
                 "terminal": terminal,
                 "deferred_from_state": current.deferred_from_state,
+                "invariants": &current.invariants,
             }),
         );
         self.writer.write(&EventRecord::index(idx_event))?;
@@ -1276,6 +1318,7 @@ impl App {
                 tags: &current.tags,
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
+                invariants: &current.invariants,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -1431,6 +1474,7 @@ struct RehydrateProjection {
     tags: Vec<String>,
     notes: Vec<MetadataEntry>,
     handoff_capsules: Vec<MetadataEntry>,
+    invariants: Vec<Invariant>,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
@@ -1455,6 +1499,7 @@ fn rehydrate_from_events(
         tags: Vec::new(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
+        invariants: Vec::new(),
         profile_id: String::new(),
         profile_etag: None,
         deferred_from_state: None,
@@ -1549,6 +1594,9 @@ fn rehydrate_from_events(
             .get("deferred_from_state")
             .and_then(Value::as_str)
             .map(ToString::to_string);
+        if data.contains_key("invariants") {
+            projection.invariants = parse_invariants_value(data.get("invariants"));
+        }
         projection.profile_etag = Some(event.event_id.clone());
     }
 
@@ -1588,6 +1636,9 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
                 .get("deferred_from_state")
                 .and_then(Value::as_str)
                 .map(ToString::to_string);
+            if data.contains_key("invariants") {
+                projection.invariants = parse_invariants_value(data.get("invariants"));
+            }
             projection.created_at = Some(event.occurred_at.clone());
             projection.updated_at = event.occurred_at.clone();
         }
@@ -1688,6 +1739,10 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
                 }
             }
         }
+        "knot.invariants_set" => {
+            projection.invariants = parse_invariants_value(data.get("invariants"));
+            projection.updated_at = event.occurred_at.clone();
+        }
         _ => {}
     }
 }
@@ -1713,6 +1768,13 @@ fn parse_metadata_entry_for_rehydrate(
     })
 }
 
+fn parse_invariants_value(value: Option<&Value>) -> Vec<Invariant> {
+    let Some(value) = value.cloned() else {
+        return Vec::new();
+    };
+    serde_json::from_value(value).unwrap_or_default()
+}
+
 impl From<KnotCacheRecord> for KnotView {
     fn from(value: KnotCacheRecord) -> Self {
         let profile_id = canonical_profile_id(&value.profile_id);
@@ -1729,6 +1791,7 @@ impl From<KnotCacheRecord> for KnotView {
             tags: value.tags,
             notes: value.notes,
             handoff_capsules: value.handoff_capsules,
+            invariants: value.invariants,
             profile_id,
             profile_etag: value.profile_etag,
             deferred_from_state: value.deferred_from_state,

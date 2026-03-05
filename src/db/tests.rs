@@ -245,6 +245,7 @@ CREATE TABLE cold_catalog (
         "tags_json",
         "notes_json",
         "handoff_capsules_json",
+        "invariants_json",
         "profile_id",
         "profile_etag",
         "deferred_from_state",

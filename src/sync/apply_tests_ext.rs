@@ -67,6 +67,7 @@ fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
             tags: &[],
             notes: &[],
             handoff_capsules: &[],
+            invariants: &[],
             profile_id: "automation_granular",
             profile_etag: Some("etag-1"),
             deferred_from_state: None,

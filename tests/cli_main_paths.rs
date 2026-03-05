@@ -41,6 +41,7 @@ fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
         .arg(repo_root)
         .arg("--db")
         .arg(db_path)
+        .env_remove("LLVM_PROFILE_FILE")
         .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
         .args(args)
         .output()
@@ -81,6 +82,7 @@ fn toplevel_help_uses_custom_help_path() {
 
     let output = Command::new(env!("CARGO_BIN_EXE_knots"))
         .current_dir(&root)
+        .env_remove("LLVM_PROFILE_FILE")
         .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
         .output()
         .expect("knots command should run");

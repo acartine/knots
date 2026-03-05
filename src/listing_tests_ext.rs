@@ -22,6 +22,7 @@ fn knot(
         tags: tags.iter().map(|value| (*value).to_string()).collect(),
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
+        invariants: Vec::new(),
         profile_id: "default".to_string(),
         profile_etag: None,
         deferred_from_state: None,

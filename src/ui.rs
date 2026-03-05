@@ -182,6 +182,15 @@ fn knot_show_fields(knot: &KnotView) -> Vec<ShowField> {
             knot.handoff_capsules.len().to_string(),
         ));
     }
+    if !knot.invariants.is_empty() {
+        let formatted = knot
+            .invariants
+            .iter()
+            .map(|inv| inv.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        fields.push(ShowField::new("invariants", formatted));
+    }
     fields
 }
 
@@ -472,6 +481,7 @@ mod tests {
                 model: "gpt-5".to_string(),
                 version: "1".to_string(),
             }],
+            invariants: vec![],
             profile_id: "default".to_string(),
             profile_etag: Some("etag-1".to_string()),
             deferred_from_state: None,

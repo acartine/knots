@@ -8,9 +8,10 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
+use crate::domain::invariant::Invariant;
 use crate::domain::metadata::MetadataEntry;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 6;
+pub const CURRENT_SCHEMA_VERSION: i64 = 7;
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
 const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
@@ -30,7 +31,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 6] = [
+const MIGRATIONS: [Migration; 7] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -164,6 +165,13 @@ SET state = CASE
     WHEN state = 'approved' THEN 'ready_for_shipment'
     ELSE state
 END;
+"#,
+    },
+    Migration {
+        version: 7,
+        name: "knot_invariants_v1",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN invariants_json TEXT NOT NULL DEFAULT '[]';
 "#,
     },
 ];
@@ -389,6 +397,8 @@ pub struct KnotCacheRecord {
     pub tags: Vec<String>,
     pub notes: Vec<MetadataEntry>,
     pub handoff_capsules: Vec<MetadataEntry>,
+    #[serde(default)]
+    pub invariants: Vec<Invariant>,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -421,6 +431,7 @@ pub struct UpsertKnotHot<'a> {
     pub tags: &'a [String],
     pub notes: &'a [MetadataEntry],
     pub handoff_capsules: &'a [MetadataEntry],
+    pub invariants: &'a [Invariant],
     pub profile_id: &'a str,
     pub profile_etag: Option<&'a str>,
     pub deferred_from_state: Option<&'a str>,
@@ -431,15 +442,16 @@ pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()
     let tags_json = to_json_text(args.tags)?;
     let notes_json = to_json_text(args.notes)?;
     let handoff_capsules_json = to_json_text(args.handoff_capsules)?;
+    let invariants_json = to_json_text(args.invariants)?;
     with_write_retry(|| {
         conn.execute(
             r#"
 INSERT INTO knot_hot (
     id, title, state, updated_at, body, description, priority, knot_type,
-    tags_json, notes_json, handoff_capsules_json, profile_id, profile_etag, deferred_from_state,
-    created_at
+    tags_json, notes_json, handoff_capsules_json, invariants_json, profile_id, profile_etag,
+    deferred_from_state, created_at
 )
-VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
     state = excluded.state,
@@ -451,6 +463,7 @@ ON CONFLICT(id) DO UPDATE SET
     tags_json = excluded.tags_json,
     notes_json = excluded.notes_json,
     handoff_capsules_json = excluded.handoff_capsules_json,
+    invariants_json = excluded.invariants_json,
     profile_id = excluded.profile_id,
     profile_etag = excluded.profile_etag,
     deferred_from_state = excluded.deferred_from_state,
@@ -468,6 +481,7 @@ ON CONFLICT(id) DO UPDATE SET
                 tags_json.as_str(),
                 notes_json.as_str(),
                 handoff_capsules_json.as_str(),
+                invariants_json.as_str(),
                 args.profile_id,
                 args.profile_etag,
                 args.deferred_from_state,
@@ -488,7 +502,7 @@ pub fn get_knot_hot(conn: &Connection, id: &str) -> Result<Option<KnotCacheRecor
     conn.query_row(
         r#"
 SELECT id, title, state, updated_at, body, description, priority, knot_type,
-       tags_json, notes_json, handoff_capsules_json, profile_id, profile_etag,
+       tags_json, notes_json, handoff_capsules_json, invariants_json, profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 WHERE id = ?1
@@ -498,6 +512,7 @@ WHERE id = ?1
             let tags_json: String = row.get(8)?;
             let notes_json: String = row.get(9)?;
             let handoff_capsules_json: String = row.get(10)?;
+            let invariants_json: String = row.get(11)?;
             Ok(KnotCacheRecord {
                 id: row.get(0)?,
                 title: row.get(1)?,
@@ -510,10 +525,11 @@ WHERE id = ?1
                 tags: from_json_text(tags_json, 8)?,
                 notes: from_json_text(notes_json, 9)?,
                 handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
-                profile_id: row.get(11)?,
-                profile_etag: row.get(12)?,
-                deferred_from_state: row.get(13)?,
-                created_at: row.get(14)?,
+                invariants: from_json_text(invariants_json, 11)?,
+                profile_id: row.get(12)?,
+                profile_etag: row.get(13)?,
+                deferred_from_state: row.get(14)?,
+                created_at: row.get(15)?,
             })
         },
     )
@@ -524,7 +540,7 @@ pub fn list_knot_hot(conn: &Connection) -> Result<Vec<KnotCacheRecord>> {
     let mut stmt = conn.prepare(
         r#"
 SELECT id, title, state, updated_at, body, description, priority, knot_type,
-       tags_json, notes_json, handoff_capsules_json, profile_id, profile_etag,
+       tags_json, notes_json, handoff_capsules_json, invariants_json, profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 ORDER BY updated_at DESC, id ASC
@@ -537,6 +553,7 @@ ORDER BY updated_at DESC, id ASC
         let tags_json: String = row.get(8)?;
         let notes_json: String = row.get(9)?;
         let handoff_capsules_json: String = row.get(10)?;
+        let invariants_json: String = row.get(11)?;
         result.push(KnotCacheRecord {
             id: row.get(0)?,
             title: row.get(1)?,
@@ -549,10 +566,11 @@ ORDER BY updated_at DESC, id ASC
             tags: from_json_text(tags_json, 8)?,
             notes: from_json_text(notes_json, 9)?,
             handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
-            profile_id: row.get(11)?,
-            profile_etag: row.get(12)?,
-            deferred_from_state: row.get(13)?,
-            created_at: row.get(14)?,
+            invariants: from_json_text(invariants_json, 11)?,
+            profile_id: row.get(12)?,
+            profile_etag: row.get(13)?,
+            deferred_from_state: row.get(14)?,
+            created_at: row.get(15)?,
         });
     }
 

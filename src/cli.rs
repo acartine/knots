@@ -232,6 +232,21 @@ pub struct UpdateArgs {
     #[arg(short = 'r', long = "remove-tag", help = "Remove tag (repeatable).")]
     pub remove_tags: Vec<String>,
 
+    #[arg(
+        long = "add-invariant",
+        help = "Add invariant '<Scope|State>:<condition>' (repeatable)."
+    )]
+    pub add_invariants: Vec<String>,
+
+    #[arg(
+        long = "remove-invariant",
+        help = "Remove invariant '<Scope|State>:<condition>' (repeatable)."
+    )]
+    pub remove_invariants: Vec<String>,
+
+    #[arg(long = "clear-invariants", help = "Clear all invariants.")]
+    pub clear_invariants: bool,
+
     #[arg(short = 'n', long = "add-note", help = "Add note content.")]
     pub add_note: Option<String>,
 

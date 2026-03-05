@@ -16,6 +16,16 @@ pub fn render_prompt(knot: &KnotView, skill: &str, completion_cmd: &str) -> Stri
         out.push_str(desc);
         out.push_str("\n\n");
     }
+    if !knot.invariants.is_empty() {
+        out.push_str("## Invariants\n\n");
+        for inv in &knot.invariants {
+            out.push_str(&format!(
+                "- **[{}]** {}\n",
+                inv.invariant_type, inv.condition
+            ));
+        }
+        out.push('\n');
+    }
     if !knot.notes.is_empty() || !knot.handoff_capsules.is_empty() {
         out.push_str("## Notes\n\n");
         for entry in &knot.notes {
@@ -43,6 +53,7 @@ pub fn render_prompt_json(knot: &KnotView, skill: &str, completion_cmd: &str) ->
         "priority": knot.priority,
         "type": knot.knot_type.as_str(),
         "profile_id": knot.profile_id,
+        "invariants": knot.invariants,
         "prompt": prompt_text,
     })
 }
@@ -105,6 +116,7 @@ mod tests {
                 version: "unknown".to_string(),
             }],
             handoff_capsules: vec![],
+            invariants: vec![],
             profile_id: "autopilot".to_string(),
             profile_etag: None,
             deferred_from_state: None,
@@ -155,6 +167,81 @@ mod tests {
         knot.description = Some("short desc".to_string());
         let output = render_prompt(&knot, "# S\n", "cmd");
         assert!(output.contains("short desc"));
+    }
+
+    #[test]
+    fn render_includes_invariants() {
+        use crate::domain::invariant::{Invariant, InvariantType};
+        let mut knot = sample_knot();
+        knot.invariants = vec![
+            Invariant::new(InvariantType::Scope, "only touch src/prompt.rs").unwrap(),
+            Invariant::new(InvariantType::State, "tests must pass").unwrap(),
+        ];
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(output.contains("## Invariants"));
+        assert!(output.contains("**[Scope]** only touch src/prompt.rs"));
+        assert!(output.contains("**[State]** tests must pass"));
+    }
+
+    #[test]
+    fn render_omits_invariants_section_when_empty() {
+        let knot = sample_knot();
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(!output.contains("## Invariants"));
+    }
+
+    #[test]
+    fn render_no_body_or_description_omits_section() {
+        let mut knot = sample_knot();
+        knot.body = None;
+        knot.description = None;
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(!output.contains("## Description"));
+    }
+
+    #[test]
+    fn render_empty_body_falls_back_to_description() {
+        let mut knot = sample_knot();
+        knot.body = Some(String::new());
+        knot.description = Some("fallback desc".to_string());
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(output.contains("fallback desc"));
+    }
+
+    #[test]
+    fn render_handoff_capsules_appear_in_notes() {
+        let mut knot = sample_knot();
+        knot.handoff_capsules = vec![MetadataEntry {
+            entry_id: "h1".to_string(),
+            content: "handoff content".to_string(),
+            username: "bob".to_string(),
+            datetime: "2026-02-28T09:00:00Z".to_string(),
+            agentname: "agent1".to_string(),
+            model: "m".to_string(),
+            version: "v".to_string(),
+        }];
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(output.contains("handoff content"));
+        assert!(output.contains("agent1"));
+    }
+
+    #[test]
+    fn render_no_priority_shows_none() {
+        let mut knot = sample_knot();
+        knot.priority = None;
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(output.contains("**Priority**: none"));
+    }
+
+    #[test]
+    fn json_output_includes_invariants() {
+        use crate::domain::invariant::{Invariant, InvariantType};
+        let mut knot = sample_knot();
+        knot.invariants = vec![Invariant::new(InvariantType::Scope, "limit scope").unwrap()];
+        let json = render_prompt_json(&knot, "# Skill\n", "kno state x y");
+        let inv_arr = json["invariants"].as_array().unwrap();
+        assert_eq!(inv_arr.len(), 1);
+        assert_eq!(inv_arr[0]["type"], "Scope");
     }
 
     #[test]

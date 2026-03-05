@@ -4,10 +4,19 @@
 - Knot in `ready_for_shipment` state
 - Approved implementation on feature branch
 
+## Invariant Adherence
+- If the knot has invariants, verify they still hold after merge and
+  before pushing to remote.
+- Scope invariants: confirm no out-of-scope changes leaked into the
+  merge.
+- State invariants: confirm the required properties hold in the merged
+  code on main.
+
 ## Actions
-1. Profile variant: Merge feature branch to main if the knot profile expects it
-2. Tag the knot with any new commit hashes created during merge using the
-   `commit:` prefix:
+1. Profile variant: Merge feature branch to main if the knot profile
+   expects it
+2. Tag the knot with any new commit hashes created during merge using
+   the `commit:` prefix:
    `short_hash=$(git rev-parse --short=12 <commit>)`
    `kno update <id> --add-tag "commit:${short_hash}"`
    Run this for each new commit created during shipment.
@@ -24,6 +33,8 @@
 
 ## Failure Modes
 - Merge conflicts:
-  `kno update <id> --status ready_for_implementation --add-note "<blocker details>"`
+  `kno update <id> --status ready_for_implementation
+  --add-note "<blocker details>"`
 - CI failure after merge:
-  `kno update <id> --status ready_for_implementation --add-note "<blocker details>"`
+  `kno update <id> --status ready_for_implementation
+  --add-note "<blocker details>"`

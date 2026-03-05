@@ -104,6 +104,29 @@ fn new_fast_flag_parses() {
 }
 
 #[test]
+fn update_parses_invariant_flags() {
+    let cli = parse(&[
+        "kno",
+        "update",
+        "abc123",
+        "--add-invariant",
+        "Scope:must keep one parent edge",
+        "--remove-invariant",
+        "State:must stay queued",
+        "--clear-invariants",
+    ]);
+    match cli.command {
+        Commands::Update(args) => {
+            assert_eq!(args.id, "abc123");
+            assert_eq!(args.add_invariants.len(), 1);
+            assert_eq!(args.remove_invariants.len(), 1);
+            assert!(args.clear_invariants);
+        }
+        other => panic!("expected Update, got {:?}", other),
+    }
+}
+
+#[test]
 fn q_command_parses() {
     let cli = parse(&["kno", "q", "Fast task"]);
     match cli.command {
