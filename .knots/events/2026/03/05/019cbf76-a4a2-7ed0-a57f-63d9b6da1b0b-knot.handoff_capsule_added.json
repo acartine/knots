@@ -1,0 +1,15 @@
+{
+  "event_id": "019cbf76-a4a2-7ed0-a57f-63d9b6da1b0b",
+  "occurred_at": "2026-03-05T19:25:49.602155Z",
+  "knot_id": "knots-ace3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implemented invariants field with full event sourcing, CLI support, coverage tests, and formatting fixes. All 362+ tests pass with 95.27% coverage.",
+    "datetime": "2026-03-05T19:25:00Z",
+    "entry_id": "019cbf76-a4a2-7ed0-a57f-63c494c19012",
+    "model": "claude-opus-4-6",
+    "username": "claude-code",
+    "version": "4.6"
+  }
+}

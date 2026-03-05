@@ -1,0 +1,15 @@
+{
+  "event_id": "019cbf69-96c8-73e1-9acb-430a995daaac",
+  "occurred_at": "2026-03-05T19:11:34.088445Z",
+  "knot_id": "knots-ace3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation review failed: make sanity does not pass because coverage gate failed (83.93% < 95% from .ci/coverage-threshold.txt). Tarpaulin report shows major uncovered paths including src/write_dispatch.rs (0/271) and low coverage in src/main.rs, preventing approval.",
+    "datetime": "2026-03-05T19:11:34.088445Z",
+    "entry_id": "019cbf69-96c8-73e1-9acb-42fb184ef579",
+    "model": "gpt-5",
+    "username": "unknown",
+    "version": "2026-03-05"
+  }
+}
