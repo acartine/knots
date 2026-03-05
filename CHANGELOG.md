@@ -1,5 +1,14 @@
 # kno
 
+## 0.6.3
+
+### Patch Changes
+
+- 1f8ae4f: - Warn on pull when local event drift exceeds threshold
+  - Enforce read-only constraints in skill review steps
+  - Require short commit hash tagging in skills
+  - Update README to reflect current claim/next CLI flags
+
 ## 0.6.2
 
 ### Patch Changes
