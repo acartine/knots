@@ -1,0 +1,12 @@
+{
+  "event_id": "019cc006-4521-7ae2-94f1-194f3b2f10ee",
+  "occurred_at": "2026-03-05T22:02:42.337997Z",
+  "knot_id": "knots-517c",
+  "type": "knot.created",
+  "data": {
+    "body": "Not all paths (success AND failure) require a --add-handoff-capsule with full agent metadata. planning.md and shipment.md have NO handoff capsule at all. All skills' failure modes use bare --add-note without a handoff capsule. Every state transition path should include --add-handoff-capsule with all agent metadata args.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Audit skill prompts: require handoff capsules with full agent metadata on all paths"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc00b-1762-71e0-a5a9-72b9d81f90ea",
+  "occurred_at": "2026-03-05T22:07:58.30639Z",
+  "knot_id": "knots-517c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Audited all 6 skill prompts in skills/*.md. Added --add-handoff-capsule with full agent metadata args to all success and failure paths. Previously planning.md and shipment.md had no handoff capsule, and failure modes across all skills only used --add-note. Also fixed --handoff-date to --handoff-datetime to match actual CLI.",
+    "datetime": "2026-03-05T22:06:00Z",
+    "entry_id": "019cc00b-1762-71e0-a5a9-72a8f456ce59",
+    "model": "claude-opus-4-6",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}

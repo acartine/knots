@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc006-c2fa-7ce1-a243-f36fc33cb7e3",
+  "occurred_at": "2026-03-05T22:03:14.554135Z",
+  "knot_id": "knots-517c",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: For each of the 6 skill files in skills/*.md, add --add-handoff-capsule with full agent metadata args to: (1) success paths that currently lack it (planning.md, shipment.md), (2) all failure mode paths across all files that currently only use --add-note. The handoff capsule pattern from implementation.md will be used as the template. Each file will get a new step before the final transition for success, and each failure mode will get an --add-handoff-capsule call alongside its --add-note.",
+    "datetime": "2026-03-05T22:03:14.554135Z",
+    "entry_id": "019cc006-c2fa-7ce1-a243-f35be509e28b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
