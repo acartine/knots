@@ -349,3 +349,100 @@ fn claim_without_peek_defaults_false() {
         other => panic!("expected Claim, got {:?}", other),
     }
 }
+
+#[test]
+fn update_add_invariant_repeatable() {
+    let cli = parse(&[
+        "kno",
+        "update",
+        "abc123",
+        "--add-invariant",
+        "Scope:first condition",
+        "--add-invariant",
+        "State:second condition",
+    ]);
+    match cli.command {
+        Commands::Update(args) => {
+            assert_eq!(args.add_invariants.len(), 2);
+            assert_eq!(args.add_invariants[0], "Scope:first condition");
+            assert_eq!(args.add_invariants[1], "State:second condition");
+            assert!(args.remove_invariants.is_empty());
+            assert!(!args.clear_invariants);
+        }
+        other => panic!("expected Update, got {:?}", other),
+    }
+}
+
+#[test]
+fn update_remove_invariant_repeatable() {
+    let cli = parse(&[
+        "kno",
+        "update",
+        "abc123",
+        "--remove-invariant",
+        "Scope:old scope rule",
+        "--remove-invariant",
+        "State:old state rule",
+    ]);
+    match cli.command {
+        Commands::Update(args) => {
+            assert!(args.add_invariants.is_empty());
+            assert_eq!(args.remove_invariants.len(), 2);
+            assert_eq!(args.remove_invariants[0], "Scope:old scope rule");
+            assert_eq!(args.remove_invariants[1], "State:old state rule");
+            assert!(!args.clear_invariants);
+        }
+        other => panic!("expected Update, got {:?}", other),
+    }
+}
+
+#[test]
+fn update_clear_invariants_alone() {
+    let cli = parse(&["kno", "update", "abc123", "--clear-invariants"]);
+    match cli.command {
+        Commands::Update(args) => {
+            assert!(args.add_invariants.is_empty());
+            assert!(args.remove_invariants.is_empty());
+            assert!(args.clear_invariants);
+        }
+        other => panic!("expected Update, got {:?}", other),
+    }
+}
+
+#[test]
+fn update_defaults_no_invariant_flags() {
+    let cli = parse(&["kno", "update", "abc123", "-t", "new title"]);
+    match cli.command {
+        Commands::Update(args) => {
+            assert!(args.add_invariants.is_empty());
+            assert!(args.remove_invariants.is_empty());
+            assert!(!args.clear_invariants);
+        }
+        other => panic!("expected Update, got {:?}", other),
+    }
+}
+
+#[test]
+fn update_help_includes_invariant_flags() {
+    let mut root = Cli::command();
+    let update = root
+        .find_subcommand_mut("update")
+        .expect("update subcommand should exist");
+    let mut buf = Vec::new();
+    update
+        .write_long_help(&mut buf)
+        .expect("update help should render");
+    let help = String::from_utf8(buf).expect("utf-8");
+    assert!(
+        help.contains("--add-invariant"),
+        "update help should mention --add-invariant: {help}"
+    );
+    assert!(
+        help.contains("--remove-invariant"),
+        "update help should mention --remove-invariant: {help}"
+    );
+    assert!(
+        help.contains("--clear-invariants"),
+        "update help should mention --clear-invariants: {help}"
+    );
+}
