@@ -1,6 +1,8 @@
 
 COVERAGE_FILE := .ci/coverage-threshold.txt
 COVERAGE_MIN ?= $(shell tr -d '[:space:]' < $(COVERAGE_FILE))
+SANITY_TARGET_DIR ?= target/sanity
+SANITY_COVERAGE_TARGET_DIR ?= target/sanity-coverage
 
 .PHONY: fmt lint test coverage sanity install-hooks check-threshold
 
@@ -8,10 +10,10 @@ fmt:
 	cargo fmt --all -- --check
 
 lint:
-	cargo clippy --all-targets --all-features -- -D warnings
+	CARGO_TARGET_DIR=$(SANITY_TARGET_DIR) cargo clippy --all-targets --all-features -- -D warnings
 
 test:
-	cargo test --all-targets --all-features
+	CARGO_TARGET_DIR=$(SANITY_TARGET_DIR) cargo test --all-targets --all-features
 
 coverage:
 	@if ! cargo tarpaulin --version >/dev/null 2>&1; then \
@@ -19,7 +21,8 @@ coverage:
 	  exit 1; \
 	fi
 	mkdir -p coverage
-	cargo tarpaulin --engine llvm --all-features --workspace --timeout 120 --out Xml \
+	CARGO_TARGET_DIR=$(SANITY_COVERAGE_TARGET_DIR) cargo tarpaulin --engine llvm --all-features \
+	  --workspace --timeout 120 --out Xml \
 	  --output-dir coverage --fail-under "$(COVERAGE_MIN)"
 
 sanity: fmt lint test coverage

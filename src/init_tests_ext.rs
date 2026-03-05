@@ -99,3 +99,12 @@ fn init_all_installs_sync_hooks() {
     }
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn run_git_panics_with_stderr_when_command_fails() {
+    let root = std::env::temp_dir().join(format!("knots-init-git-panic-{}", uuid::Uuid::now_v7()));
+    std::fs::create_dir_all(&root).expect("workspace should be creatable");
+    let panic = std::panic::catch_unwind(|| run_git(&root, &["status"]));
+    assert!(panic.is_err(), "run_git should panic for non-repo paths");
+    let _ = std::fs::remove_dir_all(root);
+}

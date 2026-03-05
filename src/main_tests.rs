@@ -172,3 +172,11 @@ fn run_hooks_command_handles_install_status_and_uninstall() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn run_git_panics_with_stderr_when_command_fails() {
+    let root = unique_dir("knots-main-git-panic");
+    let panic = std::panic::catch_unwind(|| run_git(&root, &["status"]));
+    assert!(panic.is_err(), "run_git should panic for non-repo paths");
+    let _ = std::fs::remove_dir_all(root);
+}

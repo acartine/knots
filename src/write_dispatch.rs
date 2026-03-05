@@ -501,4 +501,43 @@ mod tests {
             .and_then(serde_json::Value::as_str)
             .is_some());
     }
+
+    #[test]
+    fn execute_operation_next_rejects_mismatched_expected_state() {
+        let root = unique_workspace("knots-write-dispatch-next-mismatch");
+        setup_repo(&root);
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app = App::open(
+            db_path.to_str().expect("db path should be utf8"),
+            root.clone(),
+        )
+        .expect("app should open");
+        let created = app
+            .create_knot(
+                "Mismatch expected state",
+                None,
+                Some("ready_for_implementation"),
+                None,
+            )
+            .expect("knot should be created");
+
+        let operation = WriteOperation::Next(NextOperation {
+            id: created.id.clone(),
+            expected_state: Some("planning".to_string()),
+            json: false,
+            actor_kind: None,
+            agent_name: None,
+            agent_model: None,
+            agent_version: None,
+        });
+
+        let err = execute_operation(&app, &operation).expect_err("state mismatch should fail");
+        match err {
+            AppError::InvalidArgument(message) => {
+                assert!(message.contains("expected state 'planning'"));
+                assert!(message.contains("ready_for_implementation"));
+            }
+            other => panic!("unexpected error: {other}"),
+        }
+    }
 }

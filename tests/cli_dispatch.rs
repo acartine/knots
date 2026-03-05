@@ -55,14 +55,37 @@ fn setup_repo_with_remote(root: &Path) -> PathBuf {
     remote
 }
 
-fn configure_coverage_env(command: &mut Command) {
-    if let Ok(template) = std::env::var("LLVM_PROFILE_FILE") {
-        command.env("LLVM_PROFILE_FILE", format!("{template}.child-%p-%m"));
+fn knots_binary() -> PathBuf {
+    let configured = PathBuf::from(env!("CARGO_BIN_EXE_knots"));
+    if configured.is_absolute() && configured.exists() {
+        return configured;
     }
+    if configured.exists() {
+        return std::fs::canonicalize(&configured).unwrap_or(configured);
+    }
+
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(debug_dir) = current_exe.parent().and_then(|deps| deps.parent()) {
+            let unix_candidate = debug_dir.join("knots");
+            if unix_candidate.exists() {
+                return unix_candidate;
+            }
+            let windows_candidate = debug_dir.join("knots.exe");
+            if windows_candidate.exists() {
+                return windows_candidate;
+            }
+        }
+    }
+
+    configured
+}
+
+fn configure_coverage_env(command: &mut Command) {
+    let _ = command;
 }
 
 fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_knots"));
+    let mut command = Command::new(knots_binary());
     command
         .arg("--repo-root")
         .arg(repo_root)
