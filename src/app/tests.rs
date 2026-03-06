@@ -117,6 +117,85 @@ fn hierarchical_aliases_are_assigned_and_resolve_to_ids() {
 }
 
 #[test]
+fn partial_hierarchical_alias_resolves_to_child() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let parent = app
+        .create_knot("Parent", None, Some("idea"), Some("default"))
+        .expect("parent knot should be created");
+    let child = app
+        .create_knot("Child", None, Some("idea"), Some("default"))
+        .expect("child knot should be created");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("parent edge should be added");
+
+    // Full alias works: "parent-id.1"
+    let full_alias = format!("{}.1", parent.id);
+    let via_full = app
+        .show_knot(&full_alias)
+        .expect("show by full alias should succeed")
+        .expect("child should resolve by full alias");
+    assert_eq!(via_full.id, child.id);
+
+    // Partial alias: "suffix.1" where suffix is the short hex suffix
+    let parent_suffix = stripped_id(&parent.id);
+    let partial_alias = format!("{}.1", parent_suffix);
+    let via_partial = app
+        .show_knot(&partial_alias)
+        .expect("show by partial alias should succeed")
+        .expect("child should resolve by partial alias");
+    assert_eq!(via_partial.id, child.id);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn partial_alias_invalid_child_index_returns_not_found() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let parent = app
+        .create_knot("Parent", None, Some("idea"), Some("default"))
+        .expect("parent knot should be created");
+    let _child = app
+        .create_knot("Child", None, Some("idea"), Some("default"))
+        .expect("child knot should be created");
+    app.add_edge(&parent.id, "parent_of", &_child.id)
+        .expect("parent edge should be added");
+
+    // "suffix.99" has no matching child → NotFound
+    let parent_suffix = stripped_id(&parent.id);
+    let bad_alias = format!("{}.99", parent_suffix);
+    let result = app.show_knot(&bad_alias);
+    assert!(result.is_err(), "non-existent partial alias should error");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn partial_alias_unknown_prefix_returns_passthrough() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    // "zzzz.1" where no knot suffix matches "zzzz" → passthrough
+    let result = app.show_knot("zzzz.1");
+    assert!(
+        result.is_ok(),
+        "unknown partial alias should not hard-error"
+    );
+    assert!(result.unwrap().is_none(), "unknown prefix yields no knot");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn stripped_ids_resolve_for_show_state_update_and_edges() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");

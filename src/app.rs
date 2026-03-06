@@ -379,27 +379,56 @@ impl App {
             return Ok(id.clone());
         }
 
+        // Try suffix-based lookup (e.g. "ba0e" → "knots-ba0e")
+        let suffix_part = token.split('.').next().unwrap_or(token);
         let mut suffix_matches = maps
             .id_to_alias
             .keys()
             .filter_map(|id| {
                 id.rsplit_once('-')
-                    .filter(|(_, suffix)| *suffix == token)
+                    .filter(|(_, s)| *s == suffix_part)
                     .map(|_| id.clone())
             })
             .collect::<Vec<_>>();
 
-        match suffix_matches.len() {
-            0 => Ok(token.to_string()),
-            1 => Ok(suffix_matches.remove(0)),
-            _ => {
-                suffix_matches.sort();
-                Err(AppError::InvalidArgument(format!(
-                    "ambiguous knot id '{}'; matches: {}",
-                    token,
-                    suffix_matches.join(", ")
-                )))
-            }
+        // For a plain suffix with no dots, return the match directly
+        if !token.contains('.') {
+            return match suffix_matches.len() {
+                0 => Ok(token.to_string()),
+                1 => Ok(suffix_matches.remove(0)),
+                _ => {
+                    suffix_matches.sort();
+                    Err(AppError::InvalidArgument(format!(
+                        "ambiguous knot id '{}'; matches: {}",
+                        token,
+                        suffix_matches.join(", ")
+                    )))
+                }
+            };
+        }
+
+        // Partial hierarchical alias (e.g. "ba0e.2" → "knots-ba0e.2")
+        let dot_tail = &token[suffix_part.len()..];
+        if suffix_matches.is_empty() {
+            return Ok(token.to_string());
+        }
+        let mut resolved: Vec<String> = suffix_matches
+            .iter()
+            .filter_map(|pfx| {
+                let full = format!("{}{}", pfx, dot_tail);
+                maps.alias_to_id.get(&full).cloned()
+            })
+            .collect();
+        resolved.sort();
+        resolved.dedup();
+        match resolved.len() {
+            0 => Err(AppError::NotFound(token.to_string())),
+            1 => Ok(resolved.remove(0)),
+            _ => Err(AppError::InvalidArgument(format!(
+                "ambiguous knot alias '{}'; matches: {}",
+                token,
+                resolved.join(", ")
+            ))),
         }
     }
 
