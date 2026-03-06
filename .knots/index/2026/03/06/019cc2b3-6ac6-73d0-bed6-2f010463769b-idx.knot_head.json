@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc2b3-6ac6-73d0-bed6-2f010463769b",
+  "occurred_at": "2026-03-06T10:31:04.13442Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-6b18",
+    "profile_id": "autopilot",
+    "state": "ready_for_shipment_review",
+    "terminal": false,
+    "title": "Step History Model",
+    "updated_at": "2026-03-06T10:31:04.13442Z"
+  }
+}

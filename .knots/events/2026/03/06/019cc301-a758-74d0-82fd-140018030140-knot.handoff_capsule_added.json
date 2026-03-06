@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc301-a758-74d0-82fd-140018030140",
+  "occurred_at": "2026-03-06T11:56:31.448779Z",
+  "knot_id": "knots-fbb5",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review skill now explicitly says to roll status back to Ready For Impl before handoff when review cannot complete due to dirty workspace. Added regression assertion in src/skills.rs and shipped commit b71779a2edee to origin/main after sanity passed (95.13% coverage).",
+    "datetime": "2026-03-06T11:56:24Z",
+    "entry_id": "019cc301-a758-74d0-82fd-13f37f85d64b",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1.0"
+  }
+}

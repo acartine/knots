@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc303-6466-7401-a577-eaa6c4b07bf0",
+  "occurred_at": "2026-03-06T11:58:25.382664Z",
+  "knot_id": "knots-fbb5",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Dirty workspace failure mode correctly implemented in skills/shipment_review.md:74-81 with rollback to ready_for_implementation, add-note, and handoff capsule. Regression test in src/skills.rs:117-124 covers all key assertions. Both commits (f41cdb623625, b71779a2edee) live on main. Sanity passes at 95.13% coverage.",
+    "datetime": "2026-03-06T00:00:00Z",
+    "entry_id": "019cc303-6466-7401-a577-ea968755a675",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

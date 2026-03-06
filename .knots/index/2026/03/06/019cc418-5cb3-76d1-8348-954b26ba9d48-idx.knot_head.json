@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc418-5cb3-76d1-8348-954b26ba9d48",
+  "occurred_at": "2026-03-06T17:00:56.877758Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-ad2b",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "add kno create as an alias to kno new",
+    "updated_at": "2026-03-06T17:00:56.877758Z"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "event_id": "019cc2ff-0b0c-7ff0-81c4-8a7caea580d4",
+  "occurred_at": "2026-03-06T11:53:40.364349Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-fbb5",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Skills: Shipment Review: Add extra failure mode",
+    "updated_at": "2026-03-06T11:53:40.364349Z"
+  },
+  "precondition": {
+    "profile_etag": "019cc2fe-d6d5-7a12-9fae-9b8823279702"
+  }
+}

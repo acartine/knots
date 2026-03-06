@@ -1,0 +1,12 @@
+{
+  "event_id": "019cc2be-93ff-7b80-933a-31580be04874",
+  "occurred_at": "2026-03-06T10:43:15.583754Z",
+  "knot_id": "knots-6b18",
+  "type": "knot.state_set",
+  "data": {
+    "force": false,
+    "from": "shipment_review",
+    "profile_id": "autopilot",
+    "to": "ready_for_implementation"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc2cb-b5d3-7642-b5aa-3deb101e6da5",
+  "occurred_at": "2026-03-06T10:57:36.211693Z",
+  "knot_id": "knots-9ab9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review: verified knot is on main at e3997e7fa9db with origin/main aligned; implementation/shipment commits are now correctly tagged with 12-char hashes (e5189b952b06, a05584b0ebb7, a738be2146d7, e3997e7fa9db); invariants list is empty so no invariant violations; latest recorded sanity gate passed (fmt, clippy, 390 tests, 95.13% coverage); no regressions detected in reviewed scope.",
+    "datetime": "2026-03-06T10:57:36Z",
+    "entry_id": "019cc2cb-b5d3-7642-b5aa-3dd9dc44f889",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-06"
+  }
+}

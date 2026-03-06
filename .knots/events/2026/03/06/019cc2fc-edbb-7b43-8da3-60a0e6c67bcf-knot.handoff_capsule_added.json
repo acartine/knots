@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc2fc-edbb-7b43-8da3-60a0e6c67bcf",
+  "occurred_at": "2026-03-06T11:51:21.787523Z",
+  "knot_id": "knots-fbb5",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented shipment_review skill update with a third failure mode for dirty workspace, requiring add-note, handoff capsule, and rollback to ready_for_implementation. Added regression test to enforce this guidance in skill text. Merged to main and pushed commit f41cdb623625 after sanity pass.",
+    "datetime": "2026-03-06T11:51:14Z",
+    "entry_id": "019cc2fc-edbb-7b43-8da3-6094a8f490ea",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1.0"
+  }
+}

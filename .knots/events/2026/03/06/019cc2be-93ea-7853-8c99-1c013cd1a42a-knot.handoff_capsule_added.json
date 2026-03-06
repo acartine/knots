@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc2be-93ea-7853-8c99-1c013cd1a42a",
+  "occurred_at": "2026-03-06T10:43:15.562876Z",
+  "knot_id": "knots-6b18",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "revision needed: canonical step_history key missing from show --json for this knot; add unconditional field emission and validate with jq has(\"step_history\")",
+    "datetime": "2026-03-06T10:42:05Z",
+    "entry_id": "019cc2be-93ea-7853-8c99-1bff8e8f4836",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5-codex"
+  }
+}

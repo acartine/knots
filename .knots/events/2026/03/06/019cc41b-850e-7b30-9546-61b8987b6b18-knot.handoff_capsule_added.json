@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc41b-850e-7b30-9546-61b8987b6b18",
+  "occurred_at": "2026-03-06T17:04:23.822657Z",
+  "knot_id": "knots-ad2b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Added alias = \"create\" to the New command variant in cli.rs. Added test create_alias_parses_as_new. make sanity passes. Pushed to main.",
+    "datetime": "2026-03-06T00:00:00Z",
+    "entry_id": "019cc41b-850e-7b30-9546-61a7f3f218ea",
+    "model": "claude-opus-4-6",
+    "username": "agent",
+    "version": "4.6"
+  }
+}

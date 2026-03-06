@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc2be-93ff-7b80-933a-317abf7f20be",
+  "occurred_at": "2026-03-06T10:43:15.583754Z",
+  "knot_id": "knots-6b18",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "shipment_review blocker: show --json does not always expose canonical step_history field (jq has(\"step_history\")=false).",
+    "datetime": "2026-03-06T10:43:15.583754Z",
+    "entry_id": "019cc2be-93ff-7b80-933a-3162d7045ca0",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

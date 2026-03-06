@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc2fe-c4fe-7670-820d-730a3328dc57",
+  "occurred_at": "2026-03-06T11:53:22.430258Z",
+  "knot_id": "knots-fbb5",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Dirty workspace failure mode correctly added to shipment_review.md with rollback to ready_for_implementation, add-note, and handoff capsule. Test covers all key assertions. Sanity passes at 95.13% coverage.",
+    "datetime": "2026-03-06T13:00:00+01:00",
+    "entry_id": "019cc2fe-c4fe-7670-820d-72fedecc9b14",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc41b-84f8-7452-85f0-b1c76cbd53ad",
+  "occurred_at": "2026-03-06T17:04:23.800734Z",
+  "knot_id": "knots-ad2b",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: Add clap alias 'create' to the New subcommand variant in cli.rs. Add test in cli_tests.rs verifying 'kno create' parses as Commands::New.",
+    "datetime": "2026-03-06T17:04:23.800734Z",
+    "entry_id": "019cc41b-84f8-7452-85f0-b1b37b608b2a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
