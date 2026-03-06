@@ -181,3 +181,38 @@ fn run_git_panics_with_stderr_when_command_fails() {
     assert!(panic.is_err(), "run_git should panic for non-repo paths");
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn knot_json_serialization_always_includes_step_history_field() {
+    let knot = crate::app::KnotView {
+        id: "K-200".to_string(),
+        alias: None,
+        title: "json field test".to_string(),
+        state: "ready_for_implementation".to_string(),
+        updated_at: "2026-03-06T00:00:00Z".to_string(),
+        body: None,
+        description: None,
+        priority: None,
+        knot_type: crate::domain::knot_type::KnotType::default(),
+        tags: Vec::new(),
+        notes: Vec::new(),
+        handoff_capsules: Vec::new(),
+        invariants: Vec::new(),
+        step_history: Vec::new(),
+        profile_id: "autopilot".to_string(),
+        profile_etag: None,
+        deferred_from_state: None,
+        created_at: None,
+    };
+
+    let json = serde_json::to_value(&knot).expect("serialize knot");
+    assert!(
+        json.get("step_history").is_some(),
+        "step_history must be present in canonical show JSON"
+    );
+    assert_eq!(
+        json["step_history"].as_array().map(std::vec::Vec::len),
+        Some(0),
+        "step_history should serialize as an empty array when no steps exist"
+    );
+}
