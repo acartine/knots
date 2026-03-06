@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc28d-a0d3-7dd0-96a9-a85320cfc5a0",
+  "occurred_at": "2026-03-06T09:49:47.603309Z",
+  "knot_id": "knots-6b18",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Implementation Plan\n\n### 1. Domain Model (src/domain/step_history.rs)\n- Define StepRecord struct with fields: id, step, phase, from_state, to_state, status, actor_kind, agent_id, agent_name, agent_model, agent_version, agent_command, session_id, started_at, ended_at, metadata\n- StepStatus enum: Started, Completed, Aborted, Failed\n\n### 2. DB Migration v8 (src/db.rs)\n- Add step_history_json TEXT column to knot_hot with default '[]'\n\n### 3. Persistence (src/db.rs)\n- Add step_history_json to UpsertKnotHot, get_knot_hot, list_knot_hot\n- Add to KnotCacheRecord\n\n### 4. KnotView (src/app.rs)\n- Add step_history: Vec<StepRecord> field to KnotView\n- Wire From<KnotCacheRecord> for KnotView\n\n### 5. Claim (src/app.rs + src/poll_claim.rs)\n- On claim, create StepRecord(status=Started) with agent metadata and push to step_history\n\n### 6. Next (src/write_dispatch.rs)\n- On next, finalize active step record: set to_state, ended_at, status=Completed\n\n### 7. Step Annotate Command\n- Add kno step annotate <id> for mid-flight agent metadata override\n\n### 8. Tests\n- Fresh claim creates structured step record\n- Transitioning out closes record\n- Repeated cycles produce multiple records\n- show --json returns step_history field",
+    "datetime": "2026-03-06T09:49:47.603309Z",
+    "entry_id": "019cc28d-a0d3-7dd0-96a9-a84347a8440a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

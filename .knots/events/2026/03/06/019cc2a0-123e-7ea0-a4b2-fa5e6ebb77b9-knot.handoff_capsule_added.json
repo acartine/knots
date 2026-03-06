@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc2a0-123e-7ea0-a4b2-fa5e6ebb77b9",
+  "occurred_at": "2026-03-06T10:09:56.286333Z",
+  "knot_id": "knots-9ab9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation complete: fixed formatting drift in src/app.rs step_history import, added step_history field to all UpsertKnotHot call sites (sync/apply.rs, snapshots.rs, db/tests.rs, sync test files), added step_history to KnotView/KnotCacheRecord/MetadataProjection initializers across UI/listing/layout/prompt/test files, fixed clippy redundant closure in db.rs. make sanity passes with 390 tests and 95.14% coverage.",
+    "datetime": "2026-03-06T10:10:00Z",
+    "entry_id": "019cc2a0-123e-7ea0-a4b2-fa469ee25519",
+    "model": "claude-opus-4-6",
+    "username": "claude-code",
+    "version": "0.1.0"
+  }
+}

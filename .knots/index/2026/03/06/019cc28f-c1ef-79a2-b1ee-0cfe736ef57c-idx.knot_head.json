@@ -1,0 +1,18 @@
+{
+  "event_id": "019cc28f-c1ef-79a2-b1ee-0cfe736ef57c",
+  "occurred_at": "2026-03-06T09:52:07.151875Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-b5a9",
+    "profile_id": "autopilot",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Audit skill prompts: require handoff capsules with full agent metadata on all paths",
+    "updated_at": "2026-03-06T09:52:07.151875Z"
+  },
+  "precondition": {
+    "profile_etag": "019cc28f-3023-7a43-bf3f-719310b78ef6"
+  }
+}

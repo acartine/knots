@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc290-28c3-7850-93cc-2e9ecaa0966c",
+  "occurred_at": "2026-03-06T09:52:33.475347Z",
+  "knot_id": "knots-b5a9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment verified: all 6 skill files (planning.md, plan_review.md, implementation.md, implementation_review.md, shipment.md, shipment_review.md) confirmed to have --add-handoff-capsule with full agent metadata on all paths. Work landed in commit b336ace, merged to main via 422638c. Already pushed to origin/main.",
+    "datetime": "2026-03-06T00:00:00Z",
+    "entry_id": "019cc290-28c3-7850-93cc-2e89bb8c4b01",
+    "model": "claude-opus-4-6",
+    "username": "claude-code",
+    "version": "claude-opus-4-6"
+  }
+}

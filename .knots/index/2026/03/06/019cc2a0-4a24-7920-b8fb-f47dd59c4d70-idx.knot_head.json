@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc2a0-4a24-7920-b8fb-f47dd59c4d70",
+  "occurred_at": "2026-03-06T10:10:10.596211Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-9ab9",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation_review",
+    "terminal": false,
+    "title": "Invariant model and persistence wiring",
+    "updated_at": "2026-03-06T10:10:10.596211Z"
+  }
+}

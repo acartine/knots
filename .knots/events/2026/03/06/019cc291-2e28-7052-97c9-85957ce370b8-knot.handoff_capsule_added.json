@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc291-2e28-7052-97c9-85957ce370b8",
+  "occurred_at": "2026-03-06T09:53:40.392843Z",
+  "knot_id": "knots-b5a9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review approved: verified skills/*.md action-state prompts include --add-handoff-capsule with full agent metadata on success/failure/deferral/rejection paths; confirmed commit b336ace4141b merged on main via 422638c3b212 and present on origin/main.",
+    "datetime": "2026-03-06T09:53:35Z",
+    "entry_id": "019cc291-2e28-7052-97c9-8584c892f63e",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

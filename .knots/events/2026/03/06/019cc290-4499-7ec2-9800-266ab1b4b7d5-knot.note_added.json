@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc290-4499-7ec2-9800-266ab1b4b7d5",
+  "occurred_at": "2026-03-06T09:52:40.601486Z",
+  "knot_id": "knots-9ab9",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review failed: make sanity did not pass. cargo fmt --all -- --check reports formatting drift in src/app.rs import list around step_history use.",
+    "datetime": "2026-03-06T09:52:40.601486Z",
+    "entry_id": "019cc290-4499-7ec2-9800-265434d06423",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

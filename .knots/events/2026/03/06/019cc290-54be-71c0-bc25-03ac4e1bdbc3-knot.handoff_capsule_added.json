@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc290-54be-71c0-bc25-03ac4e1bdbc3",
+  "occurred_at": "2026-03-06T09:52:44.734096Z",
+  "knot_id": "knots-9ab9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Requested changes: implementation review blocked because required sanity gate fails. make sanity exits at cargo fmt --all -- --check with formatting diff in src/app.rs (step_history import line wrapping). No code edits were applied during review; rerun formatting and sanity, then return to implementation_review.",
+    "datetime": "2026-03-06T09:52:40Z",
+    "entry_id": "019cc290-54be-71c0-bc25-039f47f2969a",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-06"
+  }
+}

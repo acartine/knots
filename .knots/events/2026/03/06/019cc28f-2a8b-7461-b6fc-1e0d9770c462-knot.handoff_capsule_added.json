@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc28f-2a8b-7461-b6fc-1e0d9770c462",
+  "occurred_at": "2026-03-06T09:51:28.395424Z",
+  "knot_id": "knots-b5a9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation review: audited all action-state skill prompts in skills/*.md and confirmed every success/failure/deferral/rejection path includes --add-handoff-capsule with full agent metadata flags (--handoff-username, --handoff-datetime, --handoff-agentname, --handoff-model, --handoff-version). Existing commit b336ace satisfies the requirement; no additional file edits required.",
+    "datetime": "2026-03-06T12:00:00Z",
+    "entry_id": "019cc28f-2a8b-7461-b6fc-1df97a72384f",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

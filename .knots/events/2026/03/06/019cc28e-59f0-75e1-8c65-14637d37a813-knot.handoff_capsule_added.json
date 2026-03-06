@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc28e-59f0-75e1-8c65-14637d37a813",
+  "occurred_at": "2026-03-06T09:50:34.992708Z",
+  "knot_id": "knots-b5a9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Audit verified: all 6 skill files have --add-handoff-capsule with full agent metadata on every path (success, failure, deferral, rejection). No changes needed - work was completed in commit b336ace.",
+    "datetime": "2026-03-06T00:00:00Z",
+    "entry_id": "019cc28e-59f0-75e1-8c65-145942abd85a",
+    "model": "claude-opus-4-6",
+    "username": "claude-code",
+    "version": "claude-opus-4-6"
+  }
+}
