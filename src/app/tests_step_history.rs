@@ -203,6 +203,33 @@ fn show_json_returns_step_history_field() {
 }
 
 #[test]
+fn show_json_includes_empty_step_history_field() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let created = app
+        .create_knot("Show empty history test", None, None, None)
+        .expect("create");
+
+    let shown = app
+        .show_knot(&created.id)
+        .expect("show")
+        .expect("should exist");
+
+    assert!(shown.step_history.is_empty());
+    let json = serde_json::to_value(&shown).expect("serialize");
+    assert!(json.get("step_history").is_some());
+    assert_eq!(
+        json["step_history"]
+            .as_array()
+            .expect("step_history array")
+            .len(),
+        0
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn step_annotate_changes_agent_on_active_step() {
     let root = unique_workspace();
     let app = open_app(&root);
