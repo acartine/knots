@@ -114,6 +114,15 @@ mod tests {
     }
 
     #[test]
+    fn shipment_review_skill_handles_dirty_workspace_failure_mode() {
+        let text = skill_for_state("shipment_review").unwrap();
+        assert!(text.contains("Unable to complete review due to dirty workspace"));
+        assert!(text.contains("--status ready_for_implementation"));
+        assert!(text.contains("--add-note \"<dirty workspace details>\""));
+        assert!(text.contains("--add-handoff-capsule \"<dirty workspace handoff>\""));
+    }
+
+    #[test]
     fn review_skills_forbid_code_and_git_writes() {
         for state in ["plan_review", "implementation_review", "shipment_review"] {
             let text = skill_for_state(state).unwrap();

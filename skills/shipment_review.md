@@ -71,3 +71,10 @@
   `--handoff-username <username> --handoff-datetime <date RFC3339>`
   `--handoff-agentname <agentname> --handoff-model <model>`
   `--handoff-version <model_version>`
+- Unable to complete review due to dirty workspace:
+  `kno update <id> --status ready_for_implementation`
+  `--add-note "<dirty workspace details>"`
+  `kno update <id> --add-handoff-capsule "<dirty workspace handoff>"`
+  `--handoff-username <username> --handoff-datetime <date RFC3339>`
+  `--handoff-agentname <agentname> --handoff-model <model>`
+  `--handoff-version <model_version>`
