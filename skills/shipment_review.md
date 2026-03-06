@@ -72,6 +72,7 @@
   `--handoff-agentname <agentname> --handoff-model <model>`
   `--handoff-version <model_version>`
 - Unable to complete review due to dirty workspace:
+  Roll status back to Ready For Impl before handoff.
   `kno update <id> --status ready_for_implementation`
   `--add-note "<dirty workspace details>"`
   `kno update <id> --add-handoff-capsule "<dirty workspace handoff>"`

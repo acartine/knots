@@ -117,6 +117,7 @@ mod tests {
     fn shipment_review_skill_handles_dirty_workspace_failure_mode() {
         let text = skill_for_state("shipment_review").unwrap();
         assert!(text.contains("Unable to complete review due to dirty workspace"));
+        assert!(text.contains("Roll status back to Ready For Impl before handoff."));
         assert!(text.contains("--status ready_for_implementation"));
         assert!(text.contains("--add-note \"<dirty workspace details>\""));
         assert!(text.contains("--add-handoff-capsule \"<dirty workspace handoff>\""));
