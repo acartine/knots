@@ -392,6 +392,7 @@ mod tests {
             notes: Vec::new(),
             handoff_capsules: Vec::new(),
             invariants: Vec::new(),
+            step_history: Vec::new(),
             profile_id: "default".to_string(),
             profile_etag: None,
             deferred_from_state: None,

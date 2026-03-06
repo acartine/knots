@@ -108,6 +108,8 @@ pub enum Commands {
     Claim(ClaimArgs),
     #[command(about = "List knots queued for action (ready_for_* states).")]
     Ready(ReadyArgs),
+    #[command(about = "Manage step execution history.")]
+    Step(StepArgs),
     #[command(about = "Manage git sync hooks (post-merge).")]
     Hooks(HooksArgs),
 }
@@ -523,6 +525,41 @@ pub struct ClaimArgs {
 
     #[arg(long, help = "Show claim output without advancing state.")]
     pub peek: bool,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Manage step execution history.")]
+pub struct StepArgs {
+    #[command(subcommand)]
+    pub command: StepSubcommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum StepSubcommands {
+    #[command(about = "Record a new agent on the active step (ownership change).")]
+    Annotate(StepAnnotateArgs),
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Annotate active step with new agent metadata.")]
+pub struct StepAnnotateArgs {
+    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
+    pub id: String,
+
+    #[arg(long = "agent-name", help = "Agent name.")]
+    pub agent_name: Option<String>,
+
+    #[arg(long = "agent-model", help = "Agent model.")]
+    pub agent_model: Option<String>,
+
+    #[arg(long = "agent-version", help = "Agent version.")]
+    pub agent_version: Option<String>,
+
+    #[arg(long = "actor-kind", help = "Actor kind: human or agent.")]
+    pub actor_kind: Option<String>,
+
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
 }
 
 #[cfg(test)]

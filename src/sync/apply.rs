@@ -8,6 +8,7 @@ use time::OffsetDateTime;
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::invariant::Invariant;
 use crate::domain::metadata::MetadataEntry;
+use crate::domain::step_history::StepRecord;
 use crate::events::{FullEvent, IndexEvent, IndexEventKind, WorkflowPrecondition};
 use crate::snapshots::apply_latest_snapshots;
 use crate::tiering::{classify_knot_tier, CacheTier};
@@ -209,6 +210,10 @@ impl<'a> IncrementalApplier<'a> {
         if data.contains_key("invariants") {
             invariants = parse_invariants(data, &absolute_path)?;
         }
+        let step_history = existing
+            .as_ref()
+            .map(|record| record.step_history.clone())
+            .unwrap_or_default();
         let deferred_from_state = existing
             .as_ref()
             .and_then(|record| record.deferred_from_state.clone());
@@ -236,6 +241,7 @@ impl<'a> IncrementalApplier<'a> {
                         notes: &notes,
                         handoff_capsules: &handoff_capsules,
                         invariants: &invariants,
+                        step_history: &step_history,
                         profile_id: &profile_id,
                         profile_etag: Some(&event.event_id),
                         deferred_from_state: deferred_from_state.as_deref(),
@@ -383,6 +389,7 @@ impl<'a> IncrementalApplier<'a> {
             notes: existing.notes,
             handoff_capsules: existing.handoff_capsules,
             invariants: existing.invariants,
+            step_history: existing.step_history,
             profile_id: existing.profile_id,
             profile_etag: existing.profile_etag,
             deferred_from_state: existing.deferred_from_state,
@@ -405,6 +412,7 @@ impl<'a> IncrementalApplier<'a> {
                 notes: &projection.notes,
                 handoff_capsules: &projection.handoff_capsules,
                 invariants: &projection.invariants,
+                step_history: &projection.step_history,
                 profile_id: &projection.profile_id,
                 profile_etag: projection.profile_etag.as_deref(),
                 deferred_from_state: projection.deferred_from_state.as_deref(),
@@ -433,6 +441,7 @@ struct MetadataProjection {
     notes: Vec<MetadataEntry>,
     handoff_capsules: Vec<MetadataEntry>,
     invariants: Vec<Invariant>,
+    step_history: Vec<StepRecord>,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,

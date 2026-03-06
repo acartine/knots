@@ -2,18 +2,19 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use crate::app::{App, AppError, StateActorMetadata, UpdateKnotPatch};
-use crate::cli::{Cli, Commands, EdgeSubcommands};
+use crate::cli::{Cli, Commands, EdgeSubcommands, StepSubcommands};
 use crate::dispatch::{knot_ref, resolve_next_state};
 use crate::domain::invariant::parse_invariant_spec;
 use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::MetadataEntryInput;
 use crate::domain::state::KnotState;
+use crate::domain::step_history::StepActorInfo;
 use crate::poll_claim;
 use crate::ui;
 use crate::write_queue::{
     self, ClaimOperation, EdgeOperation, NewOperation, NextOperation, PollClaimOperation,
-    QueuedWriteRequest, QueuedWriteResponse, QuickNewOperation, StateOperation, UpdateOperation,
-    WriteOperation,
+    QueuedWriteRequest, QueuedWriteResponse, QuickNewOperation, StateOperation,
+    StepAnnotateOperation, UpdateOperation, WriteOperation,
 };
 
 pub fn maybe_run_queued_command(cli: &Cli) -> Result<Option<String>, AppError> {
@@ -130,6 +131,18 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
                 dst: edge.dst.clone(),
             })),
             EdgeSubcommands::List(_) => None,
+        },
+        Commands::Step(args) => match &args.command {
+            StepSubcommands::Annotate(a) => {
+                Some(WriteOperation::StepAnnotate(StepAnnotateOperation {
+                    id: a.id.clone(),
+                    actor_kind: a.actor_kind.clone(),
+                    agent_name: a.agent_name.clone(),
+                    agent_model: a.agent_model.clone(),
+                    agent_version: a.agent_version.clone(),
+                    json: a.json,
+                }))
+            }
         },
         _ => None,
     }
@@ -357,6 +370,27 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 "edge removed: {} -[{}]-> {}\n",
                 edge.src, edge.kind, edge.dst
             ))
+        }
+        WriteOperation::StepAnnotate(args) => {
+            let actor = StepActorInfo {
+                actor_kind: args.actor_kind.clone(),
+                agent_name: args.agent_name.clone(),
+                agent_model: args.agent_model.clone(),
+                agent_version: args.agent_version.clone(),
+                ..Default::default()
+            };
+            let knot = app.step_annotate(&args.id, &actor)?;
+            if args.json {
+                let result = serde_json::json!({
+                    "id": &knot.id,
+                    "state": &knot.state,
+                    "step_history": &knot.step_history,
+                });
+                Ok(format_json(&result))
+            } else {
+                let palette = ui::Palette::auto();
+                Ok(format!("step annotated {}\n", palette.id(&knot_ref(&knot))))
+            }
         }
     }
 }

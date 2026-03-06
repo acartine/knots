@@ -10,8 +10,9 @@ use time::OffsetDateTime;
 
 use crate::domain::invariant::Invariant;
 use crate::domain::metadata::MetadataEntry;
+use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 7;
+pub const CURRENT_SCHEMA_VERSION: i64 = 8;
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
 const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
@@ -31,7 +32,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 7] = [
+const MIGRATIONS: [Migration; 8] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -172,6 +173,13 @@ END;
         name: "knot_invariants_v1",
         sql: r#"
 ALTER TABLE knot_hot ADD COLUMN invariants_json TEXT NOT NULL DEFAULT '[]';
+"#,
+    },
+    Migration {
+        version: 8,
+        name: "knot_step_history_v1",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN step_history_json TEXT NOT NULL DEFAULT '[]';
 "#,
     },
 ];
@@ -399,6 +407,8 @@ pub struct KnotCacheRecord {
     pub handoff_capsules: Vec<MetadataEntry>,
     #[serde(default)]
     pub invariants: Vec<Invariant>,
+    #[serde(default)]
+    pub step_history: Vec<StepRecord>,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -432,6 +442,7 @@ pub struct UpsertKnotHot<'a> {
     pub notes: &'a [MetadataEntry],
     pub handoff_capsules: &'a [MetadataEntry],
     pub invariants: &'a [Invariant],
+    pub step_history: &'a [StepRecord],
     pub profile_id: &'a str,
     pub profile_etag: Option<&'a str>,
     pub deferred_from_state: Option<&'a str>,
@@ -443,15 +454,22 @@ pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()
     let notes_json = to_json_text(args.notes)?;
     let handoff_capsules_json = to_json_text(args.handoff_capsules)?;
     let invariants_json = to_json_text(args.invariants)?;
+    let step_history_json = to_json_text(args.step_history)?;
     with_write_retry(|| {
         conn.execute(
             r#"
 INSERT INTO knot_hot (
-    id, title, state, updated_at, body, description, priority, knot_type,
-    tags_json, notes_json, handoff_capsules_json, invariants_json, profile_id, profile_etag,
+    id, title, state, updated_at, body, description, priority,
+    knot_type, tags_json, notes_json, handoff_capsules_json,
+    invariants_json, step_history_json, profile_id, profile_etag,
     deferred_from_state, created_at
 )
-VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
+VALUES (
+    ?1, ?2, ?3, ?4, ?5, ?6, ?7,
+    ?8, ?9, ?10, ?11,
+    ?12, ?13, ?14, ?15,
+    ?16, ?17
+)
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
     state = excluded.state,
@@ -464,6 +482,7 @@ ON CONFLICT(id) DO UPDATE SET
     notes_json = excluded.notes_json,
     handoff_capsules_json = excluded.handoff_capsules_json,
     invariants_json = excluded.invariants_json,
+    step_history_json = excluded.step_history_json,
     profile_id = excluded.profile_id,
     profile_etag = excluded.profile_etag,
     deferred_from_state = excluded.deferred_from_state,
@@ -482,6 +501,7 @@ ON CONFLICT(id) DO UPDATE SET
                 notes_json.as_str(),
                 handoff_capsules_json.as_str(),
                 invariants_json.as_str(),
+                step_history_json.as_str(),
                 args.profile_id,
                 args.profile_etag,
                 args.deferred_from_state,
@@ -501,37 +521,15 @@ ON CONFLICT(id) DO UPDATE SET
 pub fn get_knot_hot(conn: &Connection, id: &str) -> Result<Option<KnotCacheRecord>> {
     conn.query_row(
         r#"
-SELECT id, title, state, updated_at, body, description, priority, knot_type,
-       tags_json, notes_json, handoff_capsules_json, invariants_json, profile_id, profile_etag,
+SELECT id, title, state, updated_at, body, description, priority,
+       knot_type, tags_json, notes_json, handoff_capsules_json,
+       invariants_json, step_history_json, profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 WHERE id = ?1
 "#,
         params![id],
-        |row| {
-            let tags_json: String = row.get(8)?;
-            let notes_json: String = row.get(9)?;
-            let handoff_capsules_json: String = row.get(10)?;
-            let invariants_json: String = row.get(11)?;
-            Ok(KnotCacheRecord {
-                id: row.get(0)?,
-                title: row.get(1)?,
-                state: row.get(2)?,
-                updated_at: row.get(3)?,
-                body: row.get(4)?,
-                description: row.get(5)?,
-                priority: row.get(6)?,
-                knot_type: row.get(7)?,
-                tags: from_json_text(tags_json, 8)?,
-                notes: from_json_text(notes_json, 9)?,
-                handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
-                invariants: from_json_text(invariants_json, 11)?,
-                profile_id: row.get(12)?,
-                profile_etag: row.get(13)?,
-                deferred_from_state: row.get(14)?,
-                created_at: row.get(15)?,
-            })
-        },
+        row_to_knot_cache_record,
     )
     .optional()
 }
@@ -539,8 +537,9 @@ WHERE id = ?1
 pub fn list_knot_hot(conn: &Connection) -> Result<Vec<KnotCacheRecord>> {
     let mut stmt = conn.prepare(
         r#"
-SELECT id, title, state, updated_at, body, description, priority, knot_type,
-       tags_json, notes_json, handoff_capsules_json, invariants_json, profile_id, profile_etag,
+SELECT id, title, state, updated_at, body, description, priority,
+       knot_type, tags_json, notes_json, handoff_capsules_json,
+       invariants_json, step_history_json, profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 ORDER BY updated_at DESC, id ASC
@@ -550,31 +549,37 @@ ORDER BY updated_at DESC, id ASC
     let mut rows = stmt.query([])?;
     let mut result = Vec::new();
     while let Some(row) = rows.next()? {
-        let tags_json: String = row.get(8)?;
-        let notes_json: String = row.get(9)?;
-        let handoff_capsules_json: String = row.get(10)?;
-        let invariants_json: String = row.get(11)?;
-        result.push(KnotCacheRecord {
-            id: row.get(0)?,
-            title: row.get(1)?,
-            state: row.get(2)?,
-            updated_at: row.get(3)?,
-            body: row.get(4)?,
-            description: row.get(5)?,
-            priority: row.get(6)?,
-            knot_type: row.get(7)?,
-            tags: from_json_text(tags_json, 8)?,
-            notes: from_json_text(notes_json, 9)?,
-            handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
-            invariants: from_json_text(invariants_json, 11)?,
-            profile_id: row.get(12)?,
-            profile_etag: row.get(13)?,
-            deferred_from_state: row.get(14)?,
-            created_at: row.get(15)?,
-        });
+        result.push(row_to_knot_cache_record(row)?);
     }
 
     Ok(result)
+}
+
+fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> {
+    let tags_json: String = row.get(8)?;
+    let notes_json: String = row.get(9)?;
+    let handoff_capsules_json: String = row.get(10)?;
+    let invariants_json: String = row.get(11)?;
+    let step_history_json: String = row.get(12)?;
+    Ok(KnotCacheRecord {
+        id: row.get(0)?,
+        title: row.get(1)?,
+        state: row.get(2)?,
+        updated_at: row.get(3)?,
+        body: row.get(4)?,
+        description: row.get(5)?,
+        priority: row.get(6)?,
+        knot_type: row.get(7)?,
+        tags: from_json_text(tags_json, 8)?,
+        notes: from_json_text(notes_json, 9)?,
+        handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
+        invariants: from_json_text(invariants_json, 11)?,
+        step_history: from_json_text(step_history_json, 12)?,
+        profile_id: row.get(13)?,
+        profile_etag: row.get(14)?,
+        deferred_from_state: row.get(15)?,
+        created_at: row.get(16)?,
+    })
 }
 
 pub fn delete_knot_hot(conn: &Connection, id: &str) -> Result<()> {

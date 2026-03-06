@@ -16,6 +16,7 @@ use crate::domain::invariant::Invariant;
 use crate::domain::knot_type::{parse_knot_type, KnotType};
 use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
 use crate::domain::state::{InvalidStateTransition, ParseKnotStateError};
+use crate::domain::step_history::{derive_phase, StepActorInfo, StepRecord, StepStatus};
 use crate::events::{
     new_event_id, now_utc_rfc3339, EventRecord, EventWriteError, EventWriter, FullEvent,
     FullEventKind, IndexEvent, IndexEventKind,
@@ -57,6 +58,7 @@ pub struct KnotView {
     pub notes: Vec<MetadataEntry>,
     pub handoff_capsules: Vec<MetadataEntry>,
     pub invariants: Vec<Invariant>,
+    pub step_history: Vec<StepRecord>,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -513,6 +515,7 @@ impl App {
                 notes: &[],
                 handoff_capsules: &[],
                 invariants: &[],
+                step_history: &[],
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: None,
@@ -612,6 +615,7 @@ impl App {
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
                 invariants: &current.invariants,
+                step_history: &current.step_history,
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -724,6 +728,14 @@ impl App {
         self.writer.write(&EventRecord::full(full_event))?;
         self.writer.write(&EventRecord::index(idx_event))?;
 
+        let updated_step_history = apply_step_transition(
+            &current.step_history,
+            &current.state,
+            &next,
+            &occurred_at,
+            &state_actor,
+        );
+
         db::upsert_knot_hot(
             &self.conn,
             &UpsertKnotHot {
@@ -739,6 +751,7 @@ impl App {
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
                 invariants: &current.invariants,
+                step_history: &updated_step_history,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1051,6 +1064,13 @@ impl App {
                 notes: &notes,
                 handoff_capsules: &handoff_capsules,
                 invariants: &invariants,
+                step_history: &apply_step_transition(
+                    &current.step_history,
+                    &current.state,
+                    &state,
+                    &occurred_at,
+                    &patch.state_actor,
+                ),
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1078,6 +1098,64 @@ impl App {
             return Ok(Some(self.apply_alias_to_knot(KnotView::from(knot))?));
         }
         self.rehydrate(&id)
+    }
+
+    pub fn step_annotate(&self, id: &str, actor: &StepActorInfo) -> Result<KnotView, AppError> {
+        let id = self.resolve_knot_token(id)?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+        let current =
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        if !current.step_history.iter().any(|r| r.is_active()) {
+            return Err(AppError::InvalidArgument(
+                "no active step to annotate".to_string(),
+            ));
+        }
+        let occurred_at = now_utc_rfc3339();
+        let updated_history = annotate_step_history(&current.step_history, actor, &occurred_at);
+        let profile = self.resolve_profile_for_record(&current)?;
+        let index_event_id = new_event_id();
+        let idx_event = IndexEvent::with_identity(
+            index_event_id.clone(),
+            occurred_at.clone(),
+            IndexEventKind::KnotHead.as_str(),
+            json!({
+                "knot_id": id,
+                "title": current.title,
+                "state": current.state,
+                "profile_id": profile.id,
+                "updated_at": occurred_at,
+                "terminal": profile.is_terminal_state(&current.state),
+                "invariants": &current.invariants,
+            }),
+        );
+        self.writer.write(&EventRecord::index(idx_event))?;
+        db::upsert_knot_hot(
+            &self.conn,
+            &UpsertKnotHot {
+                id: &id,
+                title: &current.title,
+                state: &current.state,
+                updated_at: &occurred_at,
+                body: current.body.as_deref(),
+                description: current.description.as_deref(),
+                priority: current.priority,
+                knot_type: current.knot_type.as_deref(),
+                tags: &current.tags,
+                notes: &current.notes,
+                handoff_capsules: &current.handoff_capsules,
+                invariants: &current.invariants,
+                step_history: &updated_history,
+                profile_id: &profile.id,
+                profile_etag: Some(&index_event_id),
+                deferred_from_state: current.deferred_from_state.as_deref(),
+                created_at: current.created_at.as_deref(),
+            },
+        )?;
+        let updated =
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        self.apply_alias_to_knot(KnotView::from(updated))
     }
 
     pub fn pull(&self) -> Result<SyncSummary, AppError> {
@@ -1233,6 +1311,7 @@ impl App {
                 notes: &record.notes,
                 handoff_capsules: &record.handoff_capsules,
                 invariants: &record.invariants,
+                step_history: &record.step_history,
                 profile_id: &record.profile_id,
                 profile_etag: record.profile_etag.as_deref(),
                 deferred_from_state: record.deferred_from_state.as_deref(),
@@ -1319,6 +1398,7 @@ impl App {
                 notes: &current.notes,
                 handoff_capsules: &current.handoff_capsules,
                 invariants: &current.invariants,
+                step_history: &current.step_history,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -1463,6 +1543,74 @@ fn ensure_profile_etag(
     })
 }
 
+fn is_action_state(state: &str) -> bool {
+    !state.starts_with("ready_for_")
+        && state != "shipped"
+        && state != "abandoned"
+        && state != "deferred"
+}
+
+fn apply_step_transition(
+    existing: &[StepRecord],
+    from_state: &str,
+    to_state: &str,
+    occurred_at: &str,
+    actor: &StateActorMetadata,
+) -> Vec<StepRecord> {
+    let mut history: Vec<StepRecord> = existing.to_vec();
+    if from_state != to_state {
+        for record in &mut history {
+            if record.is_active() {
+                record.to_state = Some(to_state.to_string());
+                record.ended_at = Some(occurred_at.to_string());
+                record.status = StepStatus::Completed;
+            }
+        }
+    }
+    if is_action_state(to_state) && from_state != to_state {
+        let step_actor = StepActorInfo {
+            actor_kind: actor.actor_kind.clone(),
+            agent_name: actor.agent_name.clone(),
+            agent_model: actor.agent_model.clone(),
+            agent_version: actor.agent_version.clone(),
+            ..Default::default()
+        };
+        let phase = derive_phase(to_state);
+        let record = StepRecord::new_started(to_state, phase, from_state, occurred_at, &step_actor);
+        history.push(record);
+    }
+    history
+}
+
+pub fn annotate_step_history(
+    existing: &[StepRecord],
+    actor: &StepActorInfo,
+    occurred_at: &str,
+) -> Vec<StepRecord> {
+    let mut history: Vec<StepRecord> = existing.to_vec();
+    let has_active = history.iter().any(|r| r.is_active());
+    if has_active {
+        let mut new_record: Option<StepRecord> = None;
+        for record in &mut history {
+            if record.is_active() {
+                record.ended_at = Some(occurred_at.to_string());
+                record.status = StepStatus::Completed;
+                new_record = Some(StepRecord::new_started(
+                    &record.step,
+                    &record.phase,
+                    &record.from_state,
+                    occurred_at,
+                    actor,
+                ));
+            }
+        }
+        if let Some(new) = new_record {
+            history.push(new);
+        }
+    }
+    history
+}
+
 struct RehydrateProjection {
     title: String,
     state: String,
@@ -1475,6 +1623,7 @@ struct RehydrateProjection {
     notes: Vec<MetadataEntry>,
     handoff_capsules: Vec<MetadataEntry>,
     invariants: Vec<Invariant>,
+    step_history: Vec<StepRecord>,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
@@ -1500,6 +1649,7 @@ fn rehydrate_from_events(
         notes: Vec::new(),
         handoff_capsules: Vec::new(),
         invariants: Vec::new(),
+        step_history: Vec::new(),
         profile_id: String::new(),
         profile_etag: None,
         deferred_from_state: None,
@@ -1792,6 +1942,7 @@ impl From<KnotCacheRecord> for KnotView {
             notes: value.notes,
             handoff_capsules: value.handoff_capsules,
             invariants: value.invariants,
+            step_history: value.step_history,
             profile_id,
             profile_etag: value.profile_etag,
             deferred_from_state: value.deferred_from_state,
@@ -1972,3 +2123,6 @@ mod tests_coverage_ext;
 #[cfg(test)]
 #[path = "app/tests_error_paths.rs"]
 mod tests_error_paths;
+#[cfg(test)]
+#[path = "app/tests_step_history.rs"]
+mod tests_step_history;

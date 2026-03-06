@@ -396,6 +396,9 @@ fn run() -> Result<(), app::AppError> {
             poll_claim::run_claim(&app, args)?;
         }
         Commands::Ready(args) => poll_claim::run_ready(&app, args)?,
+        Commands::Step(_) => {
+            unreachable!("queued write commands are handled before app initialization")
+        }
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
         Commands::Completions(_) => unreachable!("completions handled before app init"),

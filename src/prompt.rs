@@ -117,6 +117,7 @@ mod tests {
             }],
             handoff_capsules: vec![],
             invariants: vec![],
+            step_history: vec![],
             profile_id: "autopilot".to_string(),
             profile_etag: None,
             deferred_from_state: None,

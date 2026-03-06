@@ -40,6 +40,7 @@ fn sample_knot() -> KnotView {
             version: "v".to_string(),
         }],
         invariants: vec![],
+        step_history: vec![],
         profile_id: "default".to_string(),
         profile_etag: Some("etag".to_string()),
         deferred_from_state: None,

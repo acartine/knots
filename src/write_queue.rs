@@ -113,6 +113,16 @@ pub struct EdgeOperation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct StepAnnotateOperation {
+    pub id: String,
+    pub actor_kind: Option<String>,
+    pub agent_name: Option<String>,
+    pub agent_model: Option<String>,
+    pub agent_version: Option<String>,
+    pub json: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[allow(clippy::large_enum_variant)]
 pub enum WriteOperation {
     New(NewOperation),
@@ -124,6 +134,7 @@ pub enum WriteOperation {
     PollClaim(PollClaimOperation),
     EdgeAdd(EdgeOperation),
     EdgeRemove(EdgeOperation),
+    StepAnnotate(StepAnnotateOperation),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
