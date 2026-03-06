@@ -1,0 +1,14 @@
+{
+  "event_id": "019cbf8a-de22-76d2-a01f-83565befc738",
+  "occurred_at": "2026-03-05T19:47:55.04266Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "knot_id": "knots-ace3",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "New Field: Invariants",
+    "updated_at": "2026-03-05T19:47:55.04266Z"
+  }
+}

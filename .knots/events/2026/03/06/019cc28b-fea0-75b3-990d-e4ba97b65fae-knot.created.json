@@ -1,0 +1,12 @@
+{
+  "event_id": "019cc28b-fea0-75b3-990d-e4ba97b65fae",
+  "occurred_at": "2026-03-06T09:48:00.544916Z",
+  "knot_id": "knots-6b18",
+  "type": "knot.created",
+  "data": {
+    "body": "Knots should add a stable native step execution record and expose it consistently via show --json.\n\nNative Knots schema\nDefine a canonical step record shape, for example:\n\nid\nstep\nphase\nfrom_state\nto_state\nstatus (started, completed, aborted, failed)\nactor_kind\nagent_id\nagent_name\nagent_model\nagent_version\nagent_command\nsession_id\nstarted_at\nended_at\nmetadata for extensibility\nNative Knots behavior\nKnots should write one of these records whenever a step is claimed or advanced, not just freeform notes:\n\nOn claim, create or update a step record for the step being entered, with agent identity from the CLI flags.\nOn next, finalize the active step record with the resulting state transition and end timestamp.\nIf the same step is retried, create a new record rather than mutating history away.\nIf the active step changes ownership or agent mid-flight, record that as a new step execution entry, not just an overwrite.\nKnots CLI/API surface\nAdd explicit native support rather than relying on implicit side effects:\n\nkno show <id> --json should always expose a single canonical field, preferably step_history.\nkno claim and kno poll --claim should continue accepting --agent-name, --agent-model, --agent-version, and should persist those onto the new step record.\nkno next should attach completion data to the active step record.\nIf needed, add an explicit command such as kno step record or kno step annotate for cases where the executing agent differs inside one orchestration session and Knots needs an explicit override from Foolery.\nKnots acceptance criteria\nBefore Foolery work starts, Knots should satisfy:\n\nA fresh claim creates a structured step record with agent/model/version.\nTransitioning out of the step closes that record with to_state and ended_at.\nRepeated action/review cycles produce multiple ordered records.\nshow --json returns the same canonical field every time.\nThe data is sufficient to answer “who executed implementation_review for this knot, and with which model?”",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Step History Model"
+  }
+}

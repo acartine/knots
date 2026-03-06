@@ -1,0 +1,12 @@
+{
+  "event_id": "019cc004-eb49-74d0-a4df-cc386ef816ed",
+  "occurred_at": "2026-03-05T22:01:13.80143Z",
+  "knot_id": "knots-b5a9",
+  "type": "knot.created",
+  "data": {
+    "body": "Evaluate each action state skill prompt in skills/*.md and ensure that ALL paths (success AND failure modes) specify --add-handoff-capsule with all agent metadata arguments (--handoff-agentname, --handoff-model, --handoff-version, --handoff-date, --handoff-username). Currently some skills (planning.md, shipment.md) have no handoff capsule at all, and failure modes across all skills only use --add-note without recording a handoff capsule. Every state transition (including deferrals and rejections) should record a handoff capsule so agent provenance is always captured.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Audit skill prompts: require handoff capsules with full agent metadata on all paths"
+  }
+}

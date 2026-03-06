@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc28c-d8df-78a3-a095-ac49163b8f83",
+  "occurred_at": "2026-03-06T09:48:56.415963Z",
+  "knot_id": "knots-b5a9",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Audit complete: all 6 skill files (planning.md, plan_review.md, implementation.md, implementation_review.md, shipment.md, shipment_review.md) already have --add-handoff-capsule with full agent metadata (--handoff-agentname, --handoff-model, --handoff-version, --handoff-datetime, --handoff-username) on every path (success, failure, deferral, rejection). This was addressed in commit b336ace. 22 handoff capsule instances across all files confirmed.",
+    "datetime": "2026-03-06T09:48:56.415963Z",
+    "entry_id": "019cc28c-d8df-78a3-a095-ac301eee7418",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
