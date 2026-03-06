@@ -52,7 +52,7 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum Commands {
-    #[command(about = "Create a new knot.")]
+    #[command(about = "Create a new knot.", alias = "create")]
     New(NewArgs),
     #[command(about = "Set a knot state with transition validation.")]
     State(StateArgs),

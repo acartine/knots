@@ -69,6 +69,18 @@ fn doctor_fix_flag_parses() {
 }
 
 #[test]
+fn create_alias_parses_as_new() {
+    let cli = parse(&["kno", "create", "My title", "-d", "A desc"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert_eq!(args.title, "My title");
+            assert_eq!(args.desc.as_deref(), Some("A desc"));
+        }
+        other => panic!("expected New via create alias, got {:?}", other),
+    }
+}
+
+#[test]
 fn new_desc_flag_parses() {
     let cli = parse(&["kno", "new", "My title", "--desc", "A description"]);
     match cli.command {
