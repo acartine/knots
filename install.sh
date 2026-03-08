@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# Re-exec under bash when sh != bash (e.g. dash on Debian/Ubuntu)
+if [ -z "${BASH_VERSION:-}" ]; then
+  if [ -f "$0" ]; then exec bash "$0" "$@"; fi
+  echo "error: this installer requires bash. Use: curl -fsSL <url> | bash" >&2
+  exit 1
+fi
 set -euo pipefail
 
 DEFAULT_REPO="acartine/knots"
