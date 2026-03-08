@@ -130,4 +130,40 @@ mod tests {
             assert_review_write_constraints(text, state);
         }
     }
+
+    #[test]
+    fn implementation_review_skill_uses_only_code_and_spec_for_approval() {
+        let text = skill_for_state("implementation_review").unwrap();
+        assert!(
+            text.contains("Base approval strictly on the code under review and the knot"),
+            "implementation_review must scope approval to code and knot spec"
+        );
+        assert!(
+            text.contains("acceptance criteria as the source of truth"),
+            "implementation_review must prioritize acceptance criteria when present"
+        );
+        assert!(
+            text.contains("Do not use knot notes or prior handoff_capsules"),
+            "implementation_review must exclude notes and handoff_capsules from approval"
+        );
+        assert!(
+            text.contains("specification and code drift"),
+            "implementation_review must frame review around spec and code drift"
+        );
+    }
+
+    #[test]
+    fn implementation_review_rejections_require_enumerated_spec_violations() {
+        let text = skill_for_state("implementation_review").unwrap();
+        let required = "<enumerated violations of the";
+        assert_eq!(
+            text.matches(required).count(),
+            3,
+            "implementation_review must require enumerated violations in every rejection path"
+        );
+        assert!(
+            text.contains("knot description and/or acceptance criteria"),
+            "implementation_review rejection handoff must cite description and acceptance criteria"
+        );
+    }
 }
