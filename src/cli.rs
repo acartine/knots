@@ -360,6 +360,9 @@ pub struct ShowArgs {
 
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
+
+    #[arg(short = 'v', long, help = "Show all notes and handoff capsules.")]
+    pub verbose: bool,
 }
 
 #[derive(Debug, Args)]
@@ -525,6 +528,9 @@ pub struct ClaimArgs {
 
     #[arg(long, help = "Show claim output without advancing state.")]
     pub peek: bool,
+
+    #[arg(short = 'v', long, help = "Show all notes and handoff capsules.")]
+    pub verbose: bool,
 }
 
 #[derive(Debug, Args)]

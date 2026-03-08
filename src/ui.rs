@@ -7,6 +7,31 @@ use crate::listing::KnotListFilter;
 
 const SHOW_VALUE_WIDTH: usize = 80;
 
+pub fn trim_json_metadata(value: &mut serde_json::Value, knot: &KnotView) {
+    if let Some(obj) = value.as_object_mut() {
+        if let Some(notes) = obj.get_mut("notes") {
+            if let Some(arr) = notes.as_array() {
+                if arr.len() > 1 {
+                    let latest = arr.last().cloned().unwrap();
+                    *notes = serde_json::Value::Array(vec![latest]);
+                }
+            }
+        }
+        if let Some(caps) = obj.get_mut("handoff_capsules") {
+            if let Some(arr) = caps.as_array() {
+                if arr.len() > 1 {
+                    let latest = arr.last().cloned().unwrap();
+                    *caps = serde_json::Value::Array(vec![latest]);
+                }
+            }
+        }
+        let hint = hidden_metadata_hint(knot);
+        if !hint.is_empty() {
+            obj.insert("other".to_string(), serde_json::Value::String(hint));
+        }
+    }
+}
+
 pub fn print_knot_list(knots: &[DisplayKnot], filter: &KnotListFilter) {
     let palette = Palette::auto();
     println!("{}", palette.heading("Knots"));
@@ -25,9 +50,9 @@ pub fn print_knot_list(knots: &[DisplayKnot], filter: &KnotListFilter) {
     println!("{}", palette.dim(&format!("{} knot(s)", knots.len())));
 }
 
-pub fn print_knot_show(knot: &KnotView) {
+pub fn print_knot_show(knot: &KnotView, verbose: bool) {
     let palette = Palette::auto();
-    for line in format_knot_show(knot, &palette, SHOW_VALUE_WIDTH) {
+    for line in format_knot_show(knot, &palette, SHOW_VALUE_WIDTH, verbose) {
         println!("{line}");
     }
 }
@@ -143,12 +168,54 @@ fn filter_summary(filter: &KnotListFilter) -> Option<String> {
     }
 }
 
-fn format_knot_show(knot: &KnotView, palette: &Palette, value_width: usize) -> Vec<String> {
-    let fields = knot_show_fields(knot);
-    format_show_fields(&fields, palette, value_width)
+fn format_knot_show(
+    knot: &KnotView,
+    palette: &Palette,
+    value_width: usize,
+    verbose: bool,
+) -> Vec<String> {
+    let fields = knot_show_fields(knot, verbose);
+    let mut lines = format_show_fields(&fields, palette, value_width);
+    if !verbose {
+        let hint = hidden_metadata_hint(knot);
+        if !hint.is_empty() {
+            lines.push(String::new());
+            lines.push(palette.dim(&hint));
+        }
+    }
+    lines
 }
 
-fn knot_show_fields(knot: &KnotView) -> Vec<ShowField> {
+fn format_entry_inline(entry: &crate::domain::metadata::MetadataEntry) -> String {
+    let who = if entry.agentname != "unknown" {
+        &entry.agentname
+    } else {
+        &entry.username
+    };
+    let date = &entry.datetime[..10.min(entry.datetime.len())];
+    format!("[{who} {date}] {}", entry.content)
+}
+
+pub fn hidden_metadata_hint(knot: &KnotView) -> String {
+    let mut parts = Vec::new();
+    if knot.notes.len() > 1 {
+        let n = knot.notes.len() - 1;
+        parts.push(format!("{n} older note(s)"));
+    }
+    if knot.handoff_capsules.len() > 1 {
+        let n = knot.handoff_capsules.len() - 1;
+        parts.push(format!("{n} older handoff capsule(s)"));
+    }
+    if parts.is_empty() {
+        return String::new();
+    }
+    format!(
+        "{} not shown. Use -v/--verbose to see all.",
+        parts.join(" and ")
+    )
+}
+
+fn knot_show_fields(knot: &KnotView, verbose: bool) -> Vec<ShowField> {
     let mut fields = vec![ShowField::new("id", crate::knot_id::display_id(&knot.id))];
     if let Some(alias) = knot.alias.as_deref() {
         fields.push(ShowField::new("alias", alias));
@@ -174,13 +241,28 @@ fn knot_show_fields(knot: &KnotView) -> Vec<ShowField> {
         fields.push(ShowField::new("tags", knot.tags.join(", ")));
     }
     if !knot.notes.is_empty() {
-        fields.push(ShowField::new("notes", knot.notes.len().to_string()));
+        if verbose {
+            for entry in &knot.notes {
+                fields.push(ShowField::new("note", format_entry_inline(entry)));
+            }
+        } else if let Some(latest) = knot.notes.last() {
+            fields.push(ShowField::new("note", format_entry_inline(latest)));
+        }
     }
     if !knot.handoff_capsules.is_empty() {
-        fields.push(ShowField::new(
-            "handoff_capsules",
-            knot.handoff_capsules.len().to_string(),
-        ));
+        if verbose {
+            for entry in &knot.handoff_capsules {
+                fields.push(ShowField::new(
+                    "handoff_capsule",
+                    format_entry_inline(entry),
+                ));
+            }
+        } else if let Some(latest) = knot.handoff_capsules.last() {
+            fields.push(ShowField::new(
+                "handoff_capsule",
+                format_entry_inline(latest),
+            ));
+        }
     }
     if !knot.invariants.is_empty() {
         let formatted = knot
@@ -489,7 +571,7 @@ mod tests {
             created_at: Some("2026-02-25T14:00:00Z".to_string()),
         };
 
-        let fields = knot_show_fields(&knot);
+        let fields = knot_show_fields(&knot, false);
         let labels = fields
             .iter()
             .map(|field| field.label.as_str())
@@ -500,8 +582,150 @@ mod tests {
         assert!(labels.contains(&"priority"));
         assert!(labels.contains(&"type"));
         assert!(labels.contains(&"tags"));
-        assert!(labels.contains(&"notes"));
-        assert!(labels.contains(&"handoff_capsules"));
+        assert!(labels.contains(&"note"));
+        assert!(labels.contains(&"handoff_capsule"));
+    }
+
+    fn make_entry(id: &str, content: &str) -> MetadataEntry {
+        MetadataEntry {
+            entry_id: id.to_string(),
+            content: content.to_string(),
+            username: "u".to_string(),
+            datetime: "2026-02-25T10:00:00Z".to_string(),
+            agentname: "a".to_string(),
+            model: "m".to_string(),
+            version: "v".to_string(),
+        }
+    }
+
+    fn minimal_knot() -> KnotView {
+        KnotView {
+            id: "K-1".to_string(),
+            alias: None,
+            title: "T".to_string(),
+            state: "implementing".to_string(),
+            updated_at: "2026-02-25T10:00:00Z".to_string(),
+            body: None,
+            description: None,
+            priority: None,
+            knot_type: crate::domain::knot_type::KnotType::default(),
+            tags: vec![],
+            notes: vec![],
+            handoff_capsules: vec![],
+            invariants: vec![],
+            step_history: vec![],
+            profile_id: "default".to_string(),
+            profile_etag: None,
+            deferred_from_state: None,
+            created_at: None,
+        }
+    }
+
+    #[test]
+    fn hidden_metadata_hint_empty_when_single_entries() {
+        let mut knot = minimal_knot();
+        knot.notes = vec![make_entry("n1", "only note")];
+        knot.handoff_capsules = vec![make_entry("h1", "only capsule")];
+        assert_eq!(super::hidden_metadata_hint(&knot), "");
+    }
+
+    #[test]
+    fn hidden_metadata_hint_shows_counts_when_multiple() {
+        let mut knot = minimal_knot();
+        knot.notes = vec![
+            make_entry("n1", "old"),
+            make_entry("n2", "new"),
+            make_entry("n3", "newest"),
+        ];
+        knot.handoff_capsules = vec![make_entry("h1", "old"), make_entry("h2", "new")];
+        let hint = super::hidden_metadata_hint(&knot);
+        assert!(hint.contains("2 older note(s)"));
+        assert!(hint.contains("1 older handoff capsule(s)"));
+        assert!(hint.contains("-v/--verbose"));
+    }
+
+    #[test]
+    fn show_fields_verbose_shows_all_entries() {
+        let mut knot = minimal_knot();
+        knot.notes = vec![
+            make_entry("n1", "first note"),
+            make_entry("n2", "second note"),
+        ];
+        let fields = knot_show_fields(&knot, true);
+        let note_fields: Vec<_> = fields.iter().filter(|f| f.label == "note").collect();
+        assert_eq!(note_fields.len(), 2);
+    }
+
+    #[test]
+    fn show_fields_non_verbose_shows_only_latest() {
+        let mut knot = minimal_knot();
+        knot.notes = vec![
+            make_entry("n1", "first note"),
+            make_entry("n2", "second note"),
+        ];
+        let fields = knot_show_fields(&knot, false);
+        let note_fields: Vec<_> = fields.iter().filter(|f| f.label == "note").collect();
+        assert_eq!(note_fields.len(), 1);
+        assert!(note_fields[0].value.contains("second note"));
+    }
+
+    #[test]
+    fn format_entry_inline_uses_agentname_over_username() {
+        let entry = make_entry("e1", "content");
+        let formatted = super::format_entry_inline(&entry);
+        assert!(formatted.contains("[a 2026-02-25]"));
+        assert!(formatted.contains("content"));
+    }
+
+    #[test]
+    fn format_entry_inline_falls_back_to_username() {
+        let mut entry = make_entry("e1", "content");
+        entry.agentname = "unknown".to_string();
+        let formatted = super::format_entry_inline(&entry);
+        assert!(formatted.contains("[u 2026-02-25]"));
+    }
+
+    #[test]
+    fn trim_json_metadata_adds_other_field() {
+        let mut knot = minimal_knot();
+        knot.notes = vec![make_entry("n1", "old"), make_entry("n2", "new")];
+        let mut value = serde_json::to_value(&knot).unwrap();
+        super::trim_json_metadata(&mut value, &knot);
+        let notes = value["notes"].as_array().unwrap();
+        assert_eq!(notes.len(), 1);
+        assert!(value["other"].as_str().unwrap().contains("1 older note(s)"));
+    }
+
+    #[test]
+    fn trim_json_no_other_when_single_entries() {
+        let mut knot = minimal_knot();
+        knot.notes = vec![make_entry("n1", "only")];
+        let mut value = serde_json::to_value(&knot).unwrap();
+        super::trim_json_metadata(&mut value, &knot);
+        assert!(value.get("other").is_none());
+    }
+
+    #[test]
+    fn format_knot_show_includes_hint_when_hidden() {
+        let mut knot = minimal_knot();
+        knot.notes = vec![make_entry("n1", "old"), make_entry("n2", "new")];
+        let palette = Palette { enabled: false };
+        let lines = super::format_knot_show(&knot, &palette, 80, false);
+        let joined = lines.join("\n");
+        assert!(joined.contains("1 older note(s)"));
+        assert!(joined.contains("-v/--verbose"));
+    }
+
+    #[test]
+    fn format_knot_show_verbose_omits_hint() {
+        let mut knot = minimal_knot();
+        knot.notes = vec![make_entry("n1", "old"), make_entry("n2", "new")];
+        let palette = Palette { enabled: false };
+        let lines = super::format_knot_show(&knot, &palette, 80, true);
+        let joined = lines.join("\n");
+        assert!(!joined.contains("not shown"));
+        let note_count = lines.iter().filter(|l| l.contains("note:")).count();
+        assert_eq!(note_count, 2);
     }
 }
 

@@ -107,6 +107,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
         Commands::Claim(args) if !args.peek => Some(WriteOperation::Claim(ClaimOperation {
             id: args.id.clone(),
             json: args.json,
+            verbose: args.verbose,
             agent_name: args.agent_name.clone(),
             agent_model: args.agent_model.clone(),
             agent_version: args.agent_version.clone(),
@@ -330,10 +331,10 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
             };
             let claimed = poll_claim::claim_knot(app, &args.id, actor)?;
             if args.json {
-                let value = poll_claim::render_json(&claimed);
+                let value = poll_claim::render_json_verbose(&claimed, args.verbose);
                 Ok(format_json(&value))
             } else {
-                Ok(poll_claim::render_text(&claimed))
+                Ok(poll_claim::render_text_verbose(&claimed, args.verbose))
             }
         }
         WriteOperation::PollClaim(args) => {

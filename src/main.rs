@@ -124,9 +124,13 @@ fn run() -> Result<(), app::AppError> {
         Commands::Show(args) => match app.show_knot(&args.id)? {
             Some(knot) => {
                 if args.json {
-                    print_json(&knot);
+                    let mut value = serde_json::to_value(&knot).expect("json serialize");
+                    if !args.verbose {
+                        ui::trim_json_metadata(&mut value, &knot);
+                    }
+                    print_json(&value);
                 } else {
-                    ui::print_knot_show(&knot);
+                    ui::print_knot_show(&knot, args.verbose);
                 }
             }
             None => return Err(app::AppError::NotFound(args.id)),

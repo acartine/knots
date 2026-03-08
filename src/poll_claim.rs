@@ -57,7 +57,7 @@ pub fn run_claim(app: &App, args: ClaimArgs) -> Result<(), AppError> {
         };
         claim_knot(app, &args.id, actor)?
     };
-    print_result(&result, args.json);
+    print_result_verbose(&result, args.json, args.verbose);
     Ok(())
 }
 
@@ -88,12 +88,16 @@ pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
 }
 
 fn print_result(result: &PollResult, json: bool) {
+    print_result_verbose(result, json, false);
+}
+
+fn print_result_verbose(result: &PollResult, json: bool, verbose: bool) {
     if json {
-        let val = render_json(result);
+        let val = render_json_verbose(result, verbose);
         let s = serde_json::to_string_pretty(&val).expect("json serialize");
         println!("{s}");
     } else {
-        print!("{}", render_text(result));
+        print!("{}", render_text_verbose(result, verbose));
     }
 }
 
@@ -154,8 +158,16 @@ pub fn render_text(result: &PollResult) -> String {
     prompt::render_prompt(&result.knot, result.skill, &result.completion_cmd)
 }
 
+pub fn render_text_verbose(result: &PollResult, verbose: bool) -> String {
+    prompt::render_prompt_verbose(&result.knot, result.skill, &result.completion_cmd, verbose)
+}
+
 pub fn render_json(result: &PollResult) -> serde_json::Value {
     prompt::render_prompt_json(&result.knot, result.skill, &result.completion_cmd)
+}
+
+pub fn render_json_verbose(result: &PollResult, verbose: bool) -> serde_json::Value {
+    prompt::render_prompt_json_verbose(&result.knot, result.skill, &result.completion_cmd, verbose)
 }
 
 pub fn run_ready(app: &App, args: ReadyArgs) -> Result<(), AppError> {

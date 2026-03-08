@@ -90,6 +90,7 @@ pub struct NextOperation {
 pub struct ClaimOperation {
     pub id: String,
     pub json: bool,
+    pub verbose: bool,
     pub agent_name: Option<String>,
     pub agent_model: Option<String>,
     pub agent_version: Option<String>,

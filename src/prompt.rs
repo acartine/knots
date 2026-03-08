@@ -3,6 +3,24 @@ use crate::domain::metadata::MetadataEntry;
 use crate::knot_id::display_id;
 
 pub fn render_prompt(knot: &KnotView, skill: &str, completion_cmd: &str) -> String {
+    render_prompt_inner(knot, skill, completion_cmd, false)
+}
+
+pub fn render_prompt_verbose(
+    knot: &KnotView,
+    skill: &str,
+    completion_cmd: &str,
+    verbose: bool,
+) -> String {
+    render_prompt_inner(knot, skill, completion_cmd, verbose)
+}
+
+fn render_prompt_inner(
+    knot: &KnotView,
+    skill: &str,
+    completion_cmd: &str,
+    verbose: bool,
+) -> String {
     let mut out = String::new();
     out.push_str(&format!("# {}\n\n", knot.title));
     out.push_str(&render_header(knot));
@@ -28,11 +46,28 @@ pub fn render_prompt(knot: &KnotView, skill: &str, completion_cmd: &str) -> Stri
     }
     if !knot.notes.is_empty() || !knot.handoff_capsules.is_empty() {
         out.push_str("## Notes\n\n");
-        for entry in &knot.notes {
-            out.push_str(&format_entry(entry));
+        if verbose {
+            for entry in &knot.notes {
+                out.push_str(&format_entry(entry));
+            }
+            for entry in &knot.handoff_capsules {
+                out.push_str(&format_entry(entry));
+            }
+        } else {
+            if let Some(latest) = knot.notes.last() {
+                out.push_str(&format_entry(latest));
+            }
+            if let Some(latest) = knot.handoff_capsules.last() {
+                out.push_str(&format_entry(latest));
+            }
         }
-        for entry in &knot.handoff_capsules {
-            out.push_str(&format_entry(entry));
+        if !verbose {
+            let hint = crate::ui::hidden_metadata_hint(knot);
+            if !hint.is_empty() {
+                out.push('\n');
+                out.push_str(&hint);
+                out.push('\n');
+            }
         }
         out.push('\n');
     }
@@ -45,8 +80,17 @@ pub fn render_prompt(knot: &KnotView, skill: &str, completion_cmd: &str) -> Stri
 }
 
 pub fn render_prompt_json(knot: &KnotView, skill: &str, completion_cmd: &str) -> serde_json::Value {
-    let prompt_text = render_prompt(knot, skill, completion_cmd);
-    serde_json::json!({
+    render_prompt_json_verbose(knot, skill, completion_cmd, false)
+}
+
+pub fn render_prompt_json_verbose(
+    knot: &KnotView,
+    skill: &str,
+    completion_cmd: &str,
+    verbose: bool,
+) -> serde_json::Value {
+    let prompt_text = render_prompt_inner(knot, skill, completion_cmd, verbose);
+    let mut json = serde_json::json!({
         "id": knot.id,
         "title": knot.title,
         "state": knot.state,
@@ -55,7 +99,16 @@ pub fn render_prompt_json(knot: &KnotView, skill: &str, completion_cmd: &str) ->
         "profile_id": knot.profile_id,
         "invariants": knot.invariants,
         "prompt": prompt_text,
-    })
+    });
+    if !verbose {
+        let hint = crate::ui::hidden_metadata_hint(knot);
+        if !hint.is_empty() {
+            json.as_object_mut()
+                .unwrap()
+                .insert("other".to_string(), serde_json::Value::String(hint));
+        }
+    }
+    json
 }
 
 fn render_header(knot: &KnotView) -> String {
@@ -255,5 +308,79 @@ mod tests {
             .as_str()
             .unwrap()
             .contains("# Add poll command"));
+    }
+
+    fn make_entry(id: &str, content: &str, agent: &str) -> MetadataEntry {
+        MetadataEntry {
+            entry_id: id.to_string(),
+            content: content.to_string(),
+            username: "user".to_string(),
+            datetime: "2026-03-01T10:00:00Z".to_string(),
+            agentname: agent.to_string(),
+            model: "m".to_string(),
+            version: "v".to_string(),
+        }
+    }
+
+    #[test]
+    fn render_non_verbose_shows_only_latest_note() {
+        let mut knot = sample_knot();
+        knot.notes = vec![
+            make_entry("n1", "old note", "agent1"),
+            make_entry("n2", "new note", "agent2"),
+        ];
+        let output = render_prompt_verbose(&knot, "# S\n", "cmd", false);
+        assert!(!output.contains("old note"));
+        assert!(output.contains("new note"));
+        assert!(output.contains("1 older note(s)"));
+    }
+
+    #[test]
+    fn render_verbose_shows_all_notes() {
+        let mut knot = sample_knot();
+        knot.notes = vec![
+            make_entry("n1", "old note", "agent1"),
+            make_entry("n2", "new note", "agent2"),
+        ];
+        let output = render_prompt_verbose(&knot, "# S\n", "cmd", true);
+        assert!(output.contains("old note"));
+        assert!(output.contains("new note"));
+        assert!(!output.contains("not shown"));
+    }
+
+    #[test]
+    fn render_non_verbose_shows_latest_handoff() {
+        let mut knot = sample_knot();
+        knot.handoff_capsules = vec![
+            make_entry("h1", "old handoff", "a1"),
+            make_entry("h2", "new handoff", "a2"),
+        ];
+        let output = render_prompt_verbose(&knot, "# S\n", "cmd", false);
+        assert!(!output.contains("old handoff"));
+        assert!(output.contains("new handoff"));
+    }
+
+    #[test]
+    fn json_verbose_omits_other_field() {
+        let mut knot = sample_knot();
+        knot.notes = vec![make_entry("n1", "old", "a"), make_entry("n2", "new", "a")];
+        let json = render_prompt_json_verbose(&knot, "# S\n", "cmd", true);
+        assert!(json.get("other").is_none());
+    }
+
+    #[test]
+    fn json_non_verbose_includes_other_field() {
+        let mut knot = sample_knot();
+        knot.notes = vec![make_entry("n1", "old", "a"), make_entry("n2", "new", "a")];
+        let json = render_prompt_json_verbose(&knot, "# S\n", "cmd", false);
+        let other = json["other"].as_str().unwrap();
+        assert!(other.contains("1 older note(s)"));
+    }
+
+    #[test]
+    fn json_no_other_when_single_entries() {
+        let knot = sample_knot();
+        let json = render_prompt_json_verbose(&knot, "# S\n", "cmd", false);
+        assert!(json.get("other").is_none());
     }
 }

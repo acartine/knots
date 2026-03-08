@@ -162,6 +162,7 @@ fn enqueue_and_wait_spins_until_worker_lock_is_released() {
         WriteOperation::Claim(ClaimOperation {
             id: "K-1".to_string(),
             json: false,
+            verbose: false,
             agent_name: None,
             agent_model: None,
             agent_version: None,

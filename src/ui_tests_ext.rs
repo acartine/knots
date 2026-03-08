@@ -127,7 +127,7 @@ fn show_and_print_paths_cover_empty_field_and_public_print_functions() {
     let palette = Palette { enabled: false };
     assert!(format_show_fields(&[], &palette, 20).is_empty());
 
-    let fields = knot_show_fields(&sample_knot());
+    let fields = knot_show_fields(&sample_knot(), false);
     let lines = format_show_fields(&fields, &palette, 16);
     assert!(!lines.is_empty());
     let label_only = vec![ShowField::new("id", "K-1")];
@@ -144,7 +144,8 @@ fn show_and_print_paths_cover_empty_field_and_public_print_functions() {
 
     print_knot_list(&[], &filter);
     print_knot_list(&[row], &filter);
-    print_knot_show(&sample_knot());
+    print_knot_show(&sample_knot(), false);
+    print_knot_show(&sample_knot(), true);
 }
 
 #[test]
