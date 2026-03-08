@@ -139,8 +139,29 @@ ensure_path() {
     *":${INSTALL_DIR}:"*) return ;;
   esac
 
-  # Detect the user's login shell and pick the right rc file + syntax.
-  login_shell="$(basename "${SHELL:-}")"
+  # Detect the shell whose rc file we should patch.
+  #
+  # 1. Check the parent process — covers the common case where the user
+  #    runs `curl … | sh` from an interactive shell that differs from
+  #    their login shell (or when $SHELL is unset).
+  # 2. Fall back to $SHELL.
+  # 3. If $SHELL is also empty (some minimal images / containers),
+  #    query the passwd database for the login shell.
+  _parent=""
+  if [ -n "${PPID:-}" ]; then
+    _parent="$(ps -p "${PPID}" -o comm= 2>/dev/null || true)"
+  fi
+  case "${_parent}" in
+    bash|zsh|fish) login_shell="${_parent}" ;;
+    *)
+      _shell="${SHELL:-}"
+      if [ -z "${_shell}" ]; then
+        _shell="$(getent passwd "$(id -un)" 2>/dev/null \
+                  | cut -d: -f7 || true)"
+      fi
+      login_shell="$(basename "${_shell:-sh}")"
+      ;;
+  esac
   case "${login_shell}" in
     zsh)  rc="${HOME}/.zshrc" ;;
     bash)
