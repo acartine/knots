@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::ErrorKind;
+use std::io::{ErrorKind, Read, Write};
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -64,13 +64,76 @@ fn try_acquire(path: &Path) -> Result<Option<FileLock>, LockError> {
     }
 
     match OpenOptions::new().write(true).create_new(true).open(path) {
-        Ok(file) => Ok(Some(FileLock {
-            path: path.to_path_buf(),
-            _file: file,
-        })),
-        Err(err) if err.kind() == ErrorKind::AlreadyExists => Ok(None),
+        Ok(mut file) => {
+            let _ = write!(file, "{}", std::process::id());
+            Ok(Some(FileLock {
+                path: path.to_path_buf(),
+                _file: file,
+            }))
+        }
+        Err(err) if err.kind() == ErrorKind::AlreadyExists => {
+            if reclaim_stale(path)? {
+                return try_acquire(path);
+            }
+            Ok(None)
+        }
         Err(err) => Err(LockError::Io(err)),
     }
+}
+
+/// Read the PID from the lock file and check if that process is alive.
+/// If the process is gone, remove the stale lock and return `true`.
+fn reclaim_stale(path: &Path) -> Result<bool, LockError> {
+    let mut contents = String::new();
+    match File::open(path).and_then(|mut f| f.read_to_string(&mut contents)) {
+        Ok(_) => {}
+        Err(err) if err.kind() == ErrorKind::NotFound => return Ok(true),
+        Err(_) => return Ok(false),
+    }
+
+    let pid: u32 = match contents.trim().parse() {
+        Ok(pid) => pid,
+        // No valid PID — could be empty or corrupt. Treat as stale.
+        Err(_) => {
+            let _ = std::fs::remove_file(path);
+            return Ok(true);
+        }
+    };
+
+    if process_alive(pid) {
+        Ok(false)
+    } else {
+        let _ = std::fs::remove_file(path);
+        Ok(true)
+    }
+}
+
+fn process_alive(pid: u32) -> bool {
+    #[cfg(unix)]
+    {
+        let Ok(pid) = i32::try_from(pid) else {
+            return false;
+        };
+        if pid <= 0 {
+            return false;
+        }
+        // signal 0 checks if the process exists without sending a signal.
+        let ret = unsafe { libc_kill(pid, 0) };
+        ret == 0
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = pid;
+        true // Assume alive on non-unix; timeout will handle it.
+    }
+}
+
+#[cfg(unix)]
+unsafe fn libc_kill(pid: i32, sig: i32) -> i32 {
+    extern "C" {
+        fn kill(pid: i32, sig: i32) -> i32;
+    }
+    unsafe { kill(pid, sig) }
 }
 
 #[cfg(test)]
@@ -79,7 +142,7 @@ mod tests {
     use std::time::Duration;
     use uuid::Uuid;
 
-    use super::FileLock;
+    use super::{process_alive, reclaim_stale, FileLock};
 
     fn lock_path() -> PathBuf {
         std::env::temp_dir().join(format!("knots-lock-test-{}.lock", Uuid::now_v7()))
@@ -108,5 +171,84 @@ mod tests {
         assert!(err.to_string().contains("lock busy"));
         drop(first);
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn lock_file_contains_pid() {
+        let path = lock_path();
+        let _guard = FileLock::try_acquire(&path)
+            .expect("lock should not fail")
+            .expect("lock should succeed");
+        let contents = std::fs::read_to_string(&path).expect("lock file should be readable");
+        let pid: u32 = contents
+            .trim()
+            .parse()
+            .expect("lock file should contain a PID");
+        assert_eq!(pid, std::process::id());
+    }
+
+    #[test]
+    fn stale_lock_is_reclaimed() {
+        let path = lock_path();
+        // Write a PID that doesn't exist (PID 1 is init, use a very
+        // high number that almost certainly isn't running).
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("parent dir should be creatable");
+        }
+        std::fs::write(&path, "4294967295").expect("stale lock fixture should be writable");
+        let reclaimed = reclaim_stale(&path).expect("reclaim should not fail");
+        assert!(reclaimed);
+        assert!(!path.exists());
+    }
+
+    #[test]
+    fn corrupt_lock_is_reclaimed() {
+        let path = lock_path();
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("parent dir should be creatable");
+        }
+        std::fs::write(&path, "not-a-pid").expect("corrupt lock fixture should be writable");
+        let reclaimed = reclaim_stale(&path).expect("reclaim should not fail");
+        assert!(reclaimed);
+        assert!(!path.exists());
+    }
+
+    #[test]
+    fn live_process_is_not_reclaimed() {
+        assert!(process_alive(std::process::id()));
+    }
+
+    #[test]
+    fn dead_process_is_detected() {
+        // PID 4294967295 overflows i32 and should be treated as dead.
+        assert!(!process_alive(4294967295));
+    }
+
+    #[test]
+    fn zero_pid_is_not_alive() {
+        assert!(!process_alive(0));
+    }
+
+    #[test]
+    fn stale_lock_is_reclaimed_via_try_acquire() {
+        let path = lock_path();
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("parent dir should be creatable");
+        }
+        // Plant a stale lock with a dead PID.
+        std::fs::write(&path, "99999").expect("stale lock fixture should be writable");
+        // try_acquire should reclaim the stale lock and succeed.
+        let guard = FileLock::try_acquire(&path)
+            .expect("try_acquire should not fail")
+            .expect("stale lock should be reclaimed");
+        drop(guard);
+    }
+
+    #[test]
+    fn reclaim_stale_returns_true_for_missing_file() {
+        let path = lock_path();
+        // File doesn't exist — reclaim should return true.
+        let reclaimed = reclaim_stale(&path).expect("reclaim should not fail");
+        assert!(reclaimed);
     }
 }

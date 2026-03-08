@@ -476,9 +476,9 @@ impl App {
         initial_state: Option<&str>,
         profile_id: Option<&str>,
     ) -> Result<KnotView, AppError> {
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let default_profile = if profile_id.is_none() {
             Some(self.default_profile_id()?)
         } else {
@@ -564,9 +564,9 @@ impl App {
         expected_profile_etag: Option<&str>,
     ) -> Result<KnotView, AppError> {
         let id = self.resolve_knot_token(id)?;
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let current =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.clone()))?;
         ensure_profile_etag(&current, expected_profile_etag)?;
@@ -682,9 +682,9 @@ impl App {
         state_actor: StateActorMetadata,
     ) -> Result<KnotView, AppError> {
         let id = self.resolve_knot_token(id)?;
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let current =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         ensure_profile_etag(&current, expected_profile_etag)?;
@@ -794,9 +794,9 @@ impl App {
 
     pub fn update_knot(&self, id: &str, patch: UpdateKnotPatch) -> Result<KnotView, AppError> {
         let id = self.resolve_knot_token(id)?;
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         if !patch.has_changes() {
             return Err(AppError::InvalidArgument(
                 "update requires at least one field change".to_string(),
@@ -1131,9 +1131,9 @@ impl App {
 
     pub fn step_annotate(&self, id: &str, actor: &StepActorInfo) -> Result<KnotView, AppError> {
         let id = self.resolve_knot_token(id)?;
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let current =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         if !current.step_history.iter().any(|r| r.is_active()) {
@@ -1188,15 +1188,15 @@ impl App {
     }
 
     pub fn pull(&self) -> Result<SyncSummary, AppError> {
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         self.pull_unlocked()
     }
 
     pub fn pull_drift_warning(&self) -> Result<Option<PullDriftWarning>, AppError> {
         let threshold = self.read_pull_drift_warn_threshold()?;
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let service = ReplicationService::new(&self.conn, self.repo_root.clone());
         let unpushed_event_files = service.count_unpushed_event_files()?;
         if unpushed_event_files > threshold {
@@ -1210,21 +1210,21 @@ impl App {
     }
 
     pub fn push(&self) -> Result<PushSummary, AppError> {
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let service = ReplicationService::new(&self.conn, self.repo_root.clone());
         Ok(service.push()?)
     }
 
     pub fn sync(&self) -> Result<ReplicationSummary, AppError> {
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let service = ReplicationService::new(&self.conn, self.repo_root.clone());
         Ok(service.sync()?)
     }
 
     pub fn init_remote(&self) -> Result<(), AppError> {
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         crate::init::ensure_knots_gitignore(&self.repo_root)?;
         init_remote_knots_branch(&self.repo_root)?;
         Ok(())
@@ -1239,9 +1239,9 @@ impl App {
     }
 
     pub fn compact_write_snapshots(&self) -> Result<SnapshotWriteSummary, AppError> {
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         Ok(write_snapshots(&self.conn, &self.repo_root)?)
     }
 
@@ -1253,18 +1253,18 @@ impl App {
     pub fn add_edge(&self, src: &str, kind: &str, dst: &str) -> Result<EdgeView, AppError> {
         let src = self.resolve_knot_token(src)?;
         let dst = self.resolve_knot_token(dst)?;
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         self.apply_edge_change(&src, kind, &dst, true)
     }
 
     pub fn remove_edge(&self, src: &str, kind: &str, dst: &str) -> Result<EdgeView, AppError> {
         let src = self.resolve_knot_token(src)?;
         let dst = self.resolve_knot_token(dst)?;
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         self.apply_edge_change(&src, kind, &dst, false)
     }
 
@@ -1301,9 +1301,9 @@ impl App {
 
     pub fn rehydrate(&self, id: &str) -> Result<Option<KnotView>, AppError> {
         let id = self.resolve_knot_token(id)?;
-        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(30_000))?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(30_000))?;
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         if let Some(knot) = db::get_knot_hot(&self.conn, &id)? {
             return Ok(Some(self.apply_alias_to_knot(KnotView::from(knot))?));
         }
