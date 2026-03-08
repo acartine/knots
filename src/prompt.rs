@@ -332,7 +332,7 @@ mod tests {
         let output = render_prompt_verbose(&knot, "# S\n", "cmd", false);
         assert!(!output.contains("old note"));
         assert!(output.contains("new note"));
-        assert!(output.contains("1 older note(s)"));
+        assert!(output.contains("1 older note"));
     }
 
     #[test]
@@ -374,7 +374,7 @@ mod tests {
         knot.notes = vec![make_entry("n1", "old", "a"), make_entry("n2", "new", "a")];
         let json = render_prompt_json_verbose(&knot, "# S\n", "cmd", false);
         let other = json["other"].as_str().unwrap();
-        assert!(other.contains("1 older note(s)"));
+        assert!(other.contains("1 older note"));
     }
 
     #[test]

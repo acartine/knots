@@ -863,6 +863,312 @@ fn claim_json_output() {
 }
 
 #[test]
+fn show_hides_older_metadata_unless_verbose() {
+    let root = unique_workspace("knots-cli-show-metadata");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &["new", "Show metadata", "--profile", "autopilot"],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--add-note",
+            "old note",
+            "--note-agentname",
+            "agent-1",
+        ],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--add-note",
+            "new note",
+            "--note-agentname",
+            "agent-2",
+        ],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--add-handoff-capsule",
+            "old handoff",
+            "--handoff-agentname",
+            "agent-3",
+        ],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--add-handoff-capsule",
+            "new handoff",
+            "--handoff-agentname",
+            "agent-4",
+        ],
+    ));
+
+    let show = run_knots(&root, &db, &["show", &knot_id]);
+    assert_success(&show);
+    let stdout = String::from_utf8_lossy(&show.stdout);
+    assert!(!stdout.contains("old note"), "show text: {stdout}");
+    assert!(stdout.contains("new note"), "show text: {stdout}");
+    assert!(!stdout.contains("old handoff"), "show text: {stdout}");
+    assert!(stdout.contains("new handoff"), "show text: {stdout}");
+    assert!(stdout.contains("1 older note"), "show text: {stdout}");
+    assert!(
+        stdout.contains("1 older handoff capsule"),
+        "show text: {stdout}"
+    );
+
+    let show_json = run_knots(&root, &db, &["show", &knot_id, "--json"]);
+    assert_success(&show_json);
+    let json: Value = serde_json::from_slice(&show_json.stdout).expect("show json should parse");
+    assert_eq!(json["notes"].as_array().unwrap().len(), 1);
+    assert_eq!(json["notes"][0]["content"], "new note");
+    assert_eq!(json["handoff_capsules"].as_array().unwrap().len(), 1);
+    assert_eq!(json["handoff_capsules"][0]["content"], "new handoff");
+    let other = json["other"].as_str().expect("other hint should exist");
+    assert!(other.contains("1 older note"));
+    assert!(other.contains("1 older handoff capsule"));
+
+    let show_verbose = run_knots(&root, &db, &["show", &knot_id, "--verbose"]);
+    assert_success(&show_verbose);
+    let verbose_stdout = String::from_utf8_lossy(&show_verbose.stdout);
+    assert!(
+        verbose_stdout.contains("old note"),
+        "show verbose: {verbose_stdout}"
+    );
+    assert!(
+        verbose_stdout.contains("new note"),
+        "show verbose: {verbose_stdout}"
+    );
+    assert!(
+        verbose_stdout.contains("old handoff"),
+        "show verbose: {verbose_stdout}"
+    );
+    assert!(
+        verbose_stdout.contains("new handoff"),
+        "show verbose: {verbose_stdout}"
+    );
+    assert!(
+        !verbose_stdout.contains("not shown"),
+        "show verbose: {verbose_stdout}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn claim_hides_older_metadata_unless_verbose() {
+    let root = unique_workspace("knots-cli-claim-metadata");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Claim metadata",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--add-note",
+            "old note",
+            "--note-agentname",
+            "agent-1",
+        ],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--add-note",
+            "new note",
+            "--note-agentname",
+            "agent-2",
+        ],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--add-handoff-capsule",
+            "old handoff",
+            "--handoff-agentname",
+            "agent-3",
+        ],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--add-handoff-capsule",
+            "new handoff",
+            "--handoff-agentname",
+            "agent-4",
+        ],
+    ));
+
+    let claim = run_knots(&root, &db, &["claim", &knot_id]);
+    assert_success(&claim);
+    let stdout = String::from_utf8_lossy(&claim.stdout);
+    assert!(!stdout.contains("old note"), "claim text: {stdout}");
+    assert!(stdout.contains("new note"), "claim text: {stdout}");
+    assert!(!stdout.contains("old handoff"), "claim text: {stdout}");
+    assert!(stdout.contains("new handoff"), "claim text: {stdout}");
+    assert!(stdout.contains("1 older note"), "claim text: {stdout}");
+    assert!(
+        stdout.contains("1 older handoff capsule"),
+        "claim text: {stdout}"
+    );
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Claim metadata json",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &knot_id, "--add-note", "old note"],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &knot_id, "--add-note", "new note"],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &knot_id, "--add-handoff-capsule", "old handoff"],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &knot_id, "--add-handoff-capsule", "new handoff"],
+    ));
+
+    let claim_json = run_knots(&root, &db, &["claim", &knot_id, "--json"]);
+    assert_success(&claim_json);
+    let json: Value = serde_json::from_slice(&claim_json.stdout).expect("claim json should parse");
+    let prompt = json["prompt"].as_str().expect("claim prompt should exist");
+    assert!(!prompt.contains("old note"));
+    assert!(prompt.contains("new note"));
+    assert!(!prompt.contains("old handoff"));
+    assert!(prompt.contains("new handoff"));
+    let other = json["other"].as_str().expect("other hint should exist");
+    assert!(other.contains("1 older note"));
+    assert!(other.contains("1 older handoff capsule"));
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Claim metadata verbose",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &knot_id, "--add-note", "old note"],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &knot_id, "--add-note", "new note"],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &knot_id, "--add-handoff-capsule", "old handoff"],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["update", &knot_id, "--add-handoff-capsule", "new handoff"],
+    ));
+
+    let claim_verbose = run_knots(&root, &db, &["claim", &knot_id, "--verbose"]);
+    assert_success(&claim_verbose);
+    let verbose_stdout = String::from_utf8_lossy(&claim_verbose.stdout);
+    assert!(
+        verbose_stdout.contains("old note"),
+        "claim verbose: {verbose_stdout}"
+    );
+    assert!(
+        verbose_stdout.contains("new note"),
+        "claim verbose: {verbose_stdout}"
+    );
+    assert!(
+        verbose_stdout.contains("old handoff"),
+        "claim verbose: {verbose_stdout}"
+    );
+    assert!(
+        verbose_stdout.contains("new handoff"),
+        "claim verbose: {verbose_stdout}"
+    );
+    assert!(
+        !verbose_stdout.contains("not shown"),
+        "claim verbose: {verbose_stdout}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn next_accepts_actor_metadata_and_validates_actor_kind() {
     let root = unique_workspace("knots-cli-next-actor");
     setup_repo(&root);

@@ -200,11 +200,11 @@ pub fn hidden_metadata_hint(knot: &KnotView) -> String {
     let mut parts = Vec::new();
     if knot.notes.len() > 1 {
         let n = knot.notes.len() - 1;
-        parts.push(format!("{n} older note(s)"));
+        parts.push(older_item_hint(n, "note", "notes"));
     }
     if knot.handoff_capsules.len() > 1 {
         let n = knot.handoff_capsules.len() - 1;
-        parts.push(format!("{n} older handoff capsule(s)"));
+        parts.push(older_item_hint(n, "handoff capsule", "handoff capsules"));
     }
     if parts.is_empty() {
         return String::new();
@@ -213,6 +213,11 @@ pub fn hidden_metadata_hint(knot: &KnotView) -> String {
         "{} not shown. Use -v/--verbose to see all.",
         parts.join(" and ")
     )
+}
+
+fn older_item_hint(count: usize, singular: &str, plural: &str) -> String {
+    let label = if count == 1 { singular } else { plural };
+    format!("{count} older {label}")
 }
 
 fn knot_show_fields(knot: &KnotView, verbose: bool) -> Vec<ShowField> {
@@ -639,8 +644,8 @@ mod tests {
         ];
         knot.handoff_capsules = vec![make_entry("h1", "old"), make_entry("h2", "new")];
         let hint = super::hidden_metadata_hint(&knot);
-        assert!(hint.contains("2 older note(s)"));
-        assert!(hint.contains("1 older handoff capsule(s)"));
+        assert!(hint.contains("2 older notes"));
+        assert!(hint.contains("1 older handoff capsule"));
         assert!(hint.contains("-v/--verbose"));
     }
 
@@ -693,7 +698,7 @@ mod tests {
         super::trim_json_metadata(&mut value, &knot);
         let notes = value["notes"].as_array().unwrap();
         assert_eq!(notes.len(), 1);
-        assert!(value["other"].as_str().unwrap().contains("1 older note(s)"));
+        assert!(value["other"].as_str().unwrap().contains("1 older note"));
     }
 
     #[test]
@@ -712,7 +717,7 @@ mod tests {
         let palette = Palette { enabled: false };
         let lines = super::format_knot_show(&knot, &palette, 80, false);
         let joined = lines.join("\n");
-        assert!(joined.contains("1 older note(s)"));
+        assert!(joined.contains("1 older note"));
         assert!(joined.contains("-v/--verbose"));
     }
 
