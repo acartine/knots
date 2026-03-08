@@ -1,5 +1,12 @@
 # kno
 
+## 0.7.2
+
+### Patch Changes
+
+- 65fdc2b: - Make install.sh POSIX-compatible so `curl | sh` works on Debian/Ubuntu (dash)
+  - Add linux-aarch64 release build and installer support
+
 ## 0.7.1
 
 ### Patch Changes
