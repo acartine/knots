@@ -1,11 +1,5 @@
-#!/usr/bin/env bash
-# Re-exec under bash when sh != bash (e.g. dash on Debian/Ubuntu)
-if [ -z "${BASH_VERSION:-}" ]; then
-  if [ -f "$0" ]; then exec bash "$0" "$@"; fi
-  echo "error: this installer requires bash. Use: curl -fsSL <url> | bash" >&2
-  exit 1
-fi
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 DEFAULT_REPO="acartine/knots"
 REPO="${KNOTS_GITHUB_REPO:-${DEFAULT_REPO}}"
@@ -34,11 +28,11 @@ require_cmd() {
   fi
 }
 
-detect_sha_tool() {
+sha256_of() {
   if command -v sha256sum >/dev/null 2>&1; then
-    SHA_CMD=(sha256sum)
+    sha256sum "$1" | awk '{print $1}'
   elif command -v shasum >/dev/null 2>&1; then
-    SHA_CMD=(shasum -a 256)
+    shasum -a 256 "$1" | awk '{print $1}'
   else
     echo "error: no SHA256 tool found (need sha256sum or shasum)" >&2
     exit 1
@@ -46,7 +40,6 @@ detect_sha_tool() {
 }
 
 detect_target() {
-  local os arch
   os="$(uname -s | tr '[:upper:]' '[:lower:]')"
   arch="$(uname -m | tr '[:upper:]' '[:lower:]')"
 
@@ -65,29 +58,27 @@ detect_target() {
 }
 
 resolve_version() {
-  if [[ -n "${REQUESTED_VERSION}" ]]; then
+  if [ -n "${REQUESTED_VERSION}" ]; then
     RESOLVED_TAG="${REQUESTED_VERSION}"
   else
-    local latest_url
     latest_url="${API_BASE%/}/${REPO}/releases/latest"
-    local latest_json
     latest_json="$(curl -fsSL "${latest_url}")"
     RESOLVED_TAG="$(printf '%s' "${latest_json}" | \
       sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
 
-    if [[ -z "${RESOLVED_TAG}" ]]; then
+    if [ -z "${RESOLVED_TAG}" ]; then
       echo "error: failed to resolve latest release tag from ${latest_url}" >&2
       exit 1
     fi
   fi
 
-  if [[ "${RESOLVED_TAG}" != v* ]]; then
-    RESOLVED_TAG="v${RESOLVED_TAG}"
-  fi
+  case "${RESOLVED_TAG}" in
+    v*) ;;
+    *)  RESOLVED_TAG="v${RESOLVED_TAG}" ;;
+  esac
 }
 
 download_release_assets() {
-  local asset_file checksums_file asset_url checksums_url
   asset_file="knots-${RESOLVED_TAG}-${TARGET_SUFFIX}.tar.gz"
   checksums_file="knots-${RESOLVED_TAG}-checksums.txt"
 
@@ -102,16 +93,16 @@ download_release_assets() {
 }
 
 verify_checksum() {
-  local expected actual
-  expected="$(awk -v name="${ASSET_FILE}" '$2==name {print $1}' "${TMP_DIR}/${CHECKSUMS_FILE}")"
+  expected="$(awk -v name="${ASSET_FILE}" '$2==name {print $1}' \
+    "${TMP_DIR}/${CHECKSUMS_FILE}")"
 
-  if [[ -z "${expected}" ]]; then
+  if [ -z "${expected}" ]; then
     echo "error: checksum entry for ${ASSET_FILE} was not found" >&2
     exit 1
   fi
 
-  actual="$(${SHA_CMD[@]} "${TMP_DIR}/${ASSET_FILE}" | awk '{print $1}')"
-  if [[ "${actual}" != "${expected}" ]]; then
+  actual="$(sha256_of "${TMP_DIR}/${ASSET_FILE}")"
+  if [ "${actual}" != "${expected}" ]; then
     echo "error: checksum verification failed for ${ASSET_FILE}" >&2
     exit 1
   fi
@@ -121,17 +112,17 @@ install_binary() {
   mkdir -p "${INSTALL_DIR}"
   tar -xzf "${TMP_DIR}/${ASSET_FILE}" -C "${TMP_DIR}"
 
-  local extracted="${TMP_DIR}/knots"
-  if [[ ! -f "${extracted}" ]]; then
+  extracted="${TMP_DIR}/knots"
+  if [ ! -f "${extracted}" ]; then
     echo "error: expected 'knots' binary in ${ASSET_FILE}" >&2
     exit 1
   fi
 
-  local legacy_destination="${INSTALL_DIR}/knots"
-  local preferred_destination="${INSTALL_DIR}/kno"
-  local staging="${legacy_destination}.new"
+  legacy_destination="${INSTALL_DIR}/knots"
+  preferred_destination="${INSTALL_DIR}/kno"
+  staging="${legacy_destination}.new"
 
-  if [[ -f "${legacy_destination}" ]]; then
+  if [ -f "${legacy_destination}" ]; then
     cp "${legacy_destination}" "${INSTALL_DIR}/kno.previous"
     cp "${legacy_destination}" "${INSTALL_DIR}/knots.previous"
   fi
@@ -142,7 +133,6 @@ install_binary() {
 }
 
 print_result() {
-  local ver comp_out comp_path
   ver="$("${INSTALL_DIR}/kno" --version)"
   comp_out="$("${INSTALL_DIR}/kno" completions --install 2>/dev/null || true)"
   comp_path="${comp_out#completions installed to }"
@@ -150,19 +140,17 @@ print_result() {
   printf "%13s  %s\n" "kno" "${INSTALL_DIR}/kno"
   printf "%13s  %s\n" "compat" "${INSTALL_DIR}/knots"
   printf "%13s  %s\n" "version" "${ver}"
-  if [[ -n "${comp_path}" && "${comp_path}" != "${comp_out}" ]]; then
+  if [ -n "${comp_path}" ] && [ "${comp_path}" != "${comp_out}" ]; then
     printf "%13s  %s\n" "completions" "${comp_path}"
   fi
 }
 
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  usage
-  exit 0
-fi
+case "${1:-}" in
+  --help|-h) usage; exit 0 ;;
+esac
 
 require_cmd curl
 require_cmd tar
-detect_sha_tool
 detect_target
 resolve_version
 
