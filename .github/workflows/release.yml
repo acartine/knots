@@ -92,6 +92,37 @@ jobs:
           name: release-linux
           path: knots-v${{ needs.detect-release.outputs.version }}-linux-x86_64.tar.gz
 
+  build-linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    needs: detect-release
+    if: needs.detect-release.outputs.should_release == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Build Linux ARM64 binary
+        run: cargo build --release --target aarch64-unknown-linux-gnu
+
+      - name: Package Linux ARM64 artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.detect-release.outputs.version }}"
+          mkdir -p dist
+          cp target/aarch64-unknown-linux-gnu/release/knots dist/knots
+          tar -C dist -czf "knots-v${version}-linux-aarch64.tar.gz" knots
+
+      - name: Upload Linux ARM64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux-arm64
+          path: knots-v${{ needs.detect-release.outputs.version }}-linux-aarch64.tar.gz
+
   build-darwin:
     runs-on: macos-14
     needs: detect-release
@@ -125,13 +156,19 @@ jobs:
 
   publish-release:
     runs-on: ubuntu-latest
-    needs: [detect-release, build-linux, build-darwin]
+    needs: [detect-release, build-linux, build-linux-arm64, build-darwin]
     if: needs.detect-release.outputs.should_release == 'true'
     steps:
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
           name: release-linux
+          path: dist
+
+      - name: Download Linux ARM64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-linux-arm64
           path: dist
 
       - name: Download Darwin artifact
@@ -148,6 +185,7 @@ jobs:
           cd dist
           sha256sum knots-v"${version}"-darwin-arm64.tar.gz \
             knots-v"${version}"-linux-x86_64.tar.gz \
+            knots-v"${version}"-linux-aarch64.tar.gz \
             > knots-v"${version}"-checksums.txt
 
       - name: Publish GitHub release
@@ -159,4 +197,5 @@ jobs:
           files: |
             dist/knots-v${{ needs.detect-release.outputs.version }}-darwin-arm64.tar.gz
             dist/knots-v${{ needs.detect-release.outputs.version }}-linux-x86_64.tar.gz
+            dist/knots-v${{ needs.detect-release.outputs.version }}-linux-aarch64.tar.gz
             dist/knots-v${{ needs.detect-release.outputs.version }}-checksums.txt

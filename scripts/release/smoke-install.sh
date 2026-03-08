@@ -20,8 +20,12 @@ case "$(uname -s | tr '[:upper:]' '[:lower:]')/$(uname -m | tr '[:upper:]' '[:lo
     target_suffix="linux-x86_64"
     binary_path="${ROOT_DIR}/target/release/knots"
     ;;
+  linux/aarch64|linux/arm64)
+    target_suffix="linux-aarch64"
+    binary_path="${ROOT_DIR}/target/release/knots"
+    ;;
   *)
-    echo "error: smoke installer script supports only darwin arm64 and linux x86_64" >&2
+    echo "error: smoke installer script supports only darwin arm64, linux x86_64, and linux aarch64" >&2
     exit 1
     ;;
 esac

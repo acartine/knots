@@ -50,6 +50,9 @@ detect_target() {
     linux/x86_64|linux/amd64)
       TARGET_SUFFIX="linux-x86_64"
       ;;
+    linux/aarch64|linux/arm64)
+      TARGET_SUFFIX="linux-aarch64"
+      ;;
     *)
       echo "error: unsupported platform '${os}/${arch}'" >&2
       exit 1

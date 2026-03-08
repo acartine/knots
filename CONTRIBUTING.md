@@ -12,6 +12,7 @@ Knots uses Changesets to manage release metadata.
 Published assets:
 - `knots-v<semver>-darwin-arm64.tar.gz`
 - `knots-v<semver>-linux-x86_64.tar.gz`
+- `knots-v<semver>-linux-aarch64.tar.gz`
 - `knots-v<semver>-checksums.txt`
 
 ### Local release/install smoke test
