@@ -67,7 +67,6 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "${tmp}/local/knots/releases/download/${VERSION}"
-mkdir -p "${tmp}/repos/local/knots/releases"
 
 asset="knots-${VERSION}-${target_suffix}.tar.gz"
 checksum_file="knots-${VERSION}-checksums.txt"
@@ -88,14 +87,36 @@ cp "${binary_path}" "${tmp}/knots"
   fi
 )
 
-cat > "${tmp}/repos/local/knots/releases/latest" <<JSON
-{
-  "tag_name": "${VERSION}"
-}
-JSON
-
 port=18765
-python3 -m http.server "${port}" --directory "${tmp}" >/dev/null 2>&1 &
+python3 -c "
+import http.server, functools, os, sys
+
+root = '${tmp}'
+version = '${VERSION}'
+redirect = '/local/knots/releases/tag/' + version
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *a, **kw):
+        super().__init__(*a, directory=root, **kw)
+    def do_HEAD(self):
+        if self.path.rstrip('/') == '/local/knots/releases/latest':
+            self.send_response(302)
+            self.send_header('Location', redirect)
+            self.end_headers()
+        else:
+            super().do_HEAD()
+    def do_GET(self):
+        if self.path.rstrip('/') == '/local/knots/releases/latest':
+            self.send_response(302)
+            self.send_header('Location', redirect)
+            self.end_headers()
+        else:
+            super().do_GET()
+    def log_message(self, *a):
+        pass
+
+http.server.HTTPServer(('127.0.0.1', ${port}), Handler).serve_forever()
+" &
 server_pid=$!
 sleep 1
 
@@ -107,13 +128,11 @@ mkdir -p "${install_dir}"
 
 KNOTS_GITHUB_REPO="local/knots" \
 KNOTS_INSTALL_DIR="${install_dir}" \
-KNOTS_RELEASE_API_BASE="http://127.0.0.1:${port}/repos" \
 KNOTS_RELEASE_DOWNLOAD_BASE="http://127.0.0.1:${port}" \
 "${INSTALLER}"
 
 KNOTS_GITHUB_REPO="local/knots" \
 KNOTS_INSTALL_DIR="${install_dir}" \
-KNOTS_RELEASE_API_BASE="http://127.0.0.1:${port}/repos" \
 KNOTS_RELEASE_DOWNLOAD_BASE="http://127.0.0.1:${port}" \
 KNOTS_VERSION="${VERSION}" \
 "${INSTALLER}"

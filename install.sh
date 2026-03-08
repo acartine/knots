@@ -4,7 +4,6 @@ set -eu
 DEFAULT_REPO="acartine/knots"
 REPO="${KNOTS_GITHUB_REPO:-${DEFAULT_REPO}}"
 INSTALL_DIR="${KNOTS_INSTALL_DIR:-${HOME}/.local/bin}"
-API_BASE="${KNOTS_RELEASE_API_BASE:-https://api.github.com/repos}"
 DOWNLOAD_BASE="${KNOTS_RELEASE_DOWNLOAD_BASE:-https://github.com}"
 REQUESTED_VERSION="${KNOTS_VERSION:-}"
 
@@ -16,7 +15,6 @@ Environment variables:
   KNOTS_GITHUB_REPO         owner/repo source (default: acartine/knots)
   KNOTS_VERSION             release tag (example: v0.1.0). default: latest
   KNOTS_INSTALL_DIR         target dir for kno/knots binaries (default: ~/.local/bin)
-  KNOTS_RELEASE_API_BASE    override API base for latest-release lookup
   KNOTS_RELEASE_DOWNLOAD_BASE  override download base for release assets
 USAGE
 }
@@ -64,10 +62,11 @@ resolve_version() {
   if [ -n "${REQUESTED_VERSION}" ]; then
     RESOLVED_TAG="${REQUESTED_VERSION}"
   else
-    latest_url="${API_BASE%/}/${REPO}/releases/latest"
-    latest_json="$(curl -fsSL "${latest_url}")"
-    RESOLVED_TAG="$(printf '%s' "${latest_json}" | \
-      sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+    # Resolve latest tag via the redirect on /releases/latest (no API quota).
+    latest_url="${DOWNLOAD_BASE%/}/${REPO}/releases/latest"
+    redirect="$(curl -fsSI "${latest_url}" | \
+      tr -d '\r' | awk 'tolower($1)=="location:" {print $2}' | head -n 1)"
+    RESOLVED_TAG="${redirect##*/}"
 
     if [ -z "${RESOLVED_TAG}" ]; then
       echo "error: failed to resolve latest release tag from ${latest_url}" >&2
