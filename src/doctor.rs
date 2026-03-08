@@ -218,7 +218,7 @@ fn check_remote(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
     })
 }
 
-const RELEASES_API_URL: &str = "https://api.github.com/repos/acartine/knots/releases/latest";
+const RELEASES_LATEST_URL: &str = "https://github.com/acartine/knots/releases/latest";
 const VERSION_CHECK_TIMEOUT_SECS: u32 = 5;
 
 pub(crate) fn check_version() -> DoctorCheck {
@@ -230,7 +230,7 @@ pub(crate) fn check_version() -> DoctorCheck {
         };
     }
     let current = env!("CARGO_PKG_VERSION");
-    let tag = fetch_latest_tag(RELEASES_API_URL, VERSION_CHECK_TIMEOUT_SECS);
+    let tag = fetch_latest_tag(RELEASES_LATEST_URL, VERSION_CHECK_TIMEOUT_SECS);
     build_version_check(current, tag)
 }
 
@@ -267,29 +267,31 @@ fn build_version_check(current: &str, tag: Option<String>) -> DoctorCheck {
     }
 }
 
-fn fetch_latest_tag(api_url: &str, timeout_secs: u32) -> Option<String> {
+fn fetch_latest_tag(url: &str, timeout_secs: u32) -> Option<String> {
+    // Use HEAD + redirect to avoid GitHub API rate limits.
     let output = Command::new("curl")
-        .args(["--max-time", &timeout_secs.to_string(), "-fsSL", api_url])
+        .args(["--max-time", &timeout_secs.to_string(), "-fsS", "-I", url])
         .output()
         .ok()?;
     if !output.status.success() {
         return None;
     }
-    let body = String::from_utf8_lossy(&output.stdout);
-    parse_tag(&body)
+    let headers = String::from_utf8_lossy(&output.stdout);
+    parse_location_tag(&headers)
 }
 
-fn parse_tag(json: &str) -> Option<String> {
-    let tag_start = json.find("\"tag_name\"")?;
-    let rest = &json[tag_start..];
-    let colon = rest.find(':')?;
-    let after_colon = rest[colon + 1..].trim_start();
-    if !after_colon.starts_with('"') {
-        return None;
+fn parse_location_tag(headers: &str) -> Option<String> {
+    for line in headers.lines() {
+        let lower = line.to_ascii_lowercase();
+        if lower.starts_with("location:") {
+            let url = line.split_once(':')?.1.trim();
+            let tag = url.rsplit('/').next()?;
+            if !tag.is_empty() {
+                return Some(tag.to_string());
+            }
+        }
     }
-    let value_start = 1;
-    let value_end = after_colon[value_start..].find('"')?;
-    Some(after_colon[value_start..value_start + value_end].to_string())
+    None
 }
 
 fn strip_v_prefix(tag: &str) -> &str {
@@ -361,7 +363,7 @@ mod tests {
     }
 
     use super::{
-        build_version_check, check_version, fetch_latest_tag, is_outdated, parse_tag,
+        build_version_check, check_version, fetch_latest_tag, is_outdated, parse_location_tag,
         strip_v_prefix,
     };
 
@@ -410,30 +412,22 @@ mod tests {
     }
 
     #[test]
-    fn parse_tag_handles_whitespace_and_nested_json() {
-        let json = r#"{
-            "tag_name" :  "v1.0.0" ,
-            "other": "data"
-        }"#;
-        assert_eq!(parse_tag(json), Some("v1.0.0".to_string()));
+    fn parse_location_tag_extracts_tag_from_redirect() {
+        let headers =
+            "HTTP/2 302\r\nlocation: https://github.com/acartine/knots/releases/tag/v1.0.0\r\n\r\n";
+        assert_eq!(parse_location_tag(headers), Some("v1.0.0".to_string()));
     }
 
     #[test]
-    fn parse_tag_returns_none_for_non_string_value() {
-        assert_eq!(parse_tag(r#"{"tag_name": 123}"#), None);
+    fn parse_location_tag_handles_lowercase_header() {
+        let headers = "HTTP/2 302\r\nLocation: https://example.com/releases/tag/v0.2.2\r\n";
+        assert_eq!(parse_location_tag(headers), Some("v0.2.2".to_string()));
     }
 
     #[test]
-    fn parse_tag_extracts_tag_name_from_json() {
-        let json = r#"{"tag_name": "v0.2.2", "name": "v0.2.2"}"#;
-        assert_eq!(parse_tag(json), Some("v0.2.2".to_string()));
-    }
-
-    #[test]
-    fn parse_tag_returns_none_for_missing_field() {
-        assert_eq!(parse_tag(r#"{"name": "v0.2.2"}"#), None);
-        assert_eq!(parse_tag("not json"), None);
-        assert_eq!(parse_tag(""), None);
+    fn parse_location_tag_returns_none_when_missing() {
+        assert_eq!(parse_location_tag("HTTP/2 200\r\n"), None);
+        assert_eq!(parse_location_tag(""), None);
     }
 
     #[test]
