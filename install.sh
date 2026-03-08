@@ -134,6 +134,43 @@ install_binary() {
   ln -sfn "knots" "${preferred_destination}"
 }
 
+ensure_path() {
+  case ":${PATH}:" in
+    *":${INSTALL_DIR}:"*) return ;;
+  esac
+
+  # Detect the user's login shell and pick the right rc file + syntax.
+  login_shell="$(basename "${SHELL:-}")"
+  case "${login_shell}" in
+    zsh)  rc="${HOME}/.zshrc" ;;
+    bash)
+      # Prefer .bashrc; fall back to .bash_profile on macOS where
+      # Terminal.app opens login shells by default.
+      if [ -f "${HOME}/.bashrc" ]; then
+        rc="${HOME}/.bashrc"
+      else
+        rc="${HOME}/.bash_profile"
+      fi
+      ;;
+    fish) rc="${HOME}/.config/fish/config.fish" ;;
+    *)    rc="${HOME}/.profile" ;;
+  esac
+
+  # Only append if the file doesn't already contain the line.
+  if [ -f "${rc}" ] && grep -qF "${INSTALL_DIR}" "${rc}" 2>/dev/null; then
+    return
+  fi
+
+  if [ "${login_shell}" = "fish" ]; then
+    line="fish_add_path ${INSTALL_DIR}"
+  else
+    line="export PATH=\"${INSTALL_DIR}:\$PATH\""
+  fi
+
+  printf '\n# Added by kno installer\n%s\n' "${line}" >> "${rc}"
+  PATCHED_RC="${rc}"
+}
+
 print_result() {
   ver="$("${INSTALL_DIR}/kno" --version)"
   comp_out="$("${INSTALL_DIR}/kno" completions --install 2>/dev/null || true)"
@@ -144,6 +181,10 @@ print_result() {
   printf "%13s  %s\n" "version" "${ver}"
   if [ -n "${comp_path}" ] && [ "${comp_path}" != "${comp_out}" ]; then
     printf "%13s  %s\n" "completions" "${comp_path}"
+  fi
+  if [ -n "${PATCHED_RC}" ]; then
+    printf "\n%s added to %s\n" "${INSTALL_DIR}" "${PATCHED_RC}"
+    printf "Run: source %s   (or open a new terminal)\n" "${PATCHED_RC}"
   fi
 }
 
@@ -159,7 +200,10 @@ resolve_version
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
+PATCHED_RC=""
+
 download_release_assets
 verify_checksum
 install_binary
+ensure_path
 print_result
