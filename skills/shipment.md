@@ -12,6 +12,15 @@
 - State invariants: confirm the required properties hold in the merged
   code on main.
 
+## Step Boundary
+- This session is authorized only for `shipment`.
+- Complete exactly one shipment action, then stop.
+- Allowed resting states after this session: `ready_for_shipment_review`
+  or `ready_for_implementation`.
+- Do not perform shipment review or final sign-off in this step.
+- After the merge, push, handoff, and transition commands for shipment
+  succeed, stop immediately.
+
 ## Actions
 1. Profile variant: Merge feature branch to main if the knot profile
    expects it

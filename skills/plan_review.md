@@ -19,6 +19,15 @@
 - For each invariant, confirm the planned steps respect the condition.
 - Reject the plan if any step would breach a scope or state invariant.
 
+## Step Boundary
+- This session is authorized only for `plan_review`.
+- Complete exactly one review action, then stop.
+- Allowed resting states after this session: `ready_for_implementation` or
+  `ready_for_planning`.
+- Do not start implementation work after approving the plan.
+- After the review decision, handoff, and transition commands succeed, stop
+  immediately.
+
 ## Actions
 1. Review the plan for completeness, correctness, and feasibility
 2. Verify the plan respects all knot invariants

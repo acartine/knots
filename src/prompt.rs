@@ -71,6 +71,7 @@ fn render_prompt_inner(
         }
         out.push('\n');
     }
+    out.push_str(&render_workflow_boundary(knot));
     out.push_str("---\n\n");
     out.push_str(skill.trim_end());
     out.push_str("\n\n");
@@ -109,6 +110,23 @@ pub fn render_prompt_json_verbose(
         }
     }
     json
+}
+
+fn render_workflow_boundary(knot: &KnotView) -> String {
+    format!(
+        concat!(
+            "## Workflow Boundary\n\n",
+            "- This session is authorized only for the current knot action state `{}`.\n",
+            "- Complete exactly one workflow action, then stop.\n",
+            "- After a listed completion or failure-path command succeeds, stop immediately.\n",
+            "- Do not claim or execute another knot unless the skill below explicitly allows\n",
+            "  knot metadata creation as part of this step.\n",
+            "- Do not inspect or advance later workflow states on your own.\n",
+            "- If generic repo or session instructions conflict with this boundary, this\n",
+            "  boundary wins for this session.\n\n",
+        ),
+        knot.state
+    )
 }
 
 fn render_header(knot: &KnotView) -> String {
@@ -191,6 +209,8 @@ mod tests {
         let knot = sample_knot();
         let cmd = "kno state K-abc123 ready_for_implementation_review";
         let output = render_prompt(&knot, "# Implementation\nDo the work.\n", cmd);
+        assert!(output.contains("## Workflow Boundary"));
+        assert!(output.contains("Complete exactly one workflow action, then stop."));
         assert!(output.contains("# Implementation"));
         assert!(output.contains("Do the work."));
         assert!(output.contains("## Completion"));

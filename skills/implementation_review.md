@@ -35,6 +35,16 @@
 - Use notes or handoff_capsules only as supplemental context when
   locating the implementation or understanding prior workflow history.
 
+## Step Boundary
+- This session is authorized only for `implementation_review`.
+- Complete exactly one review action, then stop.
+- Allowed resting states after this session: `ready_for_shipment` or
+  `ready_for_implementation`.
+- Do not patch code, amend commits, or continue into shipment after a
+  review decision.
+- After the review decision, handoff, and transition commands succeed,
+  stop immediately.
+
 ## Actions
 1. Review code changes against the knot description and acceptance
    criteria

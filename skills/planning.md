@@ -12,6 +12,18 @@
 - If any planned step would violate an invariant, redesign the approach or
   flag the conflict in the plan note.
 
+## Step Boundary
+- This session is authorized only for `planning`.
+- Complete exactly one planning action, then stop.
+- Allowed resting states after this session: `ready_for_plan_review` on
+  success or `ready_for_planning` when deferred.
+- Creating child knots is planning output only. Do not claim, start, or
+  execute those child knots in this session.
+- Do not edit repository code or perform git write operations during
+  planning.
+- After the note, handoff, and transition commands for this step succeed,
+  stop immediately.
+
 ## Actions
 1. Analyze the knot requirements and constraints
 2. Review knot invariants and ensure the plan respects them
