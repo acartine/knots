@@ -1,6 +1,6 @@
 {
   "name": "knots",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "private": true,
   "description": "Release tooling for the Knots CLI",
   "license": "MIT",

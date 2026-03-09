@@ -1,5 +1,13 @@
 # kno
 
+## 0.7.6
+
+### Patch Changes
+
+- 3ae6571: Tighten agent skill prompts so each workflow step has a clear
+  single-step boundary, explicit stop condition, and fewer
+  cross-stage instructions.
+
 ## 0.7.5
 
 ### Patch Changes
