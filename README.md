@@ -15,7 +15,7 @@ curl -fsSL https://raw.githubusercontent.com/acartine/knots/main/install.sh | sh
 ```
 
 # Why Knot
-Yet another home-rolled agent memory thing when we already have Beads.  :-)
+Yet another home-rolled agent memory thing when we already have [Beads](https://github.com/steveyegge/beads?tab=readme-ov-file).  :-)
 
 Its purpose is to provide a fast, opinionated workflow and responsibility enforcer.  Each knot allows for human-gating or agentic-delegation at each step of the workflow.  You decide what you need to see and what you don't.
 
@@ -99,6 +99,11 @@ $ kno init
 
 This creates the `.knots/` directory, initializes the SQLite cache, adds
 `.knots/` to `.gitignore`, and sets up the `origin/knots` tracking branch.
+
+`kno init` is also how you onboard to a repo that already uses Knots. If a
+project's README says it uses Knots, just run `kno init` in your clone.
+Instead of creating a new remote tracking branch, it will detect the existing
+`origin/knots` branch and sync you with the latest knots data.
 
 ### 2. Create a knot
 
