@@ -278,7 +278,35 @@ fn knot_show_fields(knot: &KnotView, verbose: bool) -> Vec<ShowField> {
             .join(", ");
         fields.push(ShowField::new("invariants", formatted));
     }
+    if !knot.edges.is_empty() {
+        let grouped = group_edges_by_kind(&knot.edges, &knot.id);
+        for (kind, targets) in &grouped {
+            let value = targets.join(", ");
+            fields.push(ShowField::new(kind, value));
+        }
+    }
     fields
+}
+
+fn group_edges_by_kind(
+    edges: &[crate::app::EdgeView],
+    knot_id: &str,
+) -> Vec<(String, Vec<String>)> {
+    use std::collections::BTreeMap;
+    let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for edge in edges {
+        let (label, target) = if edge.src == knot_id {
+            (
+                edge.kind.clone(),
+                crate::knot_id::display_id(&edge.dst).to_string(),
+            )
+        } else {
+            let label = format!("{} (incoming)", edge.kind);
+            (label, crate::knot_id::display_id(&edge.src).to_string())
+        };
+        groups.entry(label).or_default().push(target);
+    }
+    groups.into_iter().collect()
 }
 
 fn format_show_fields(fields: &[ShowField], palette: &Palette, value_width: usize) -> Vec<String> {
@@ -574,6 +602,7 @@ mod tests {
             profile_etag: Some("etag-1".to_string()),
             deferred_from_state: None,
             created_at: Some("2026-02-25T14:00:00Z".to_string()),
+            edges: vec![],
         };
 
         let fields = knot_show_fields(&knot, false);
@@ -623,6 +652,7 @@ mod tests {
             profile_etag: None,
             deferred_from_state: None,
             created_at: None,
+            edges: vec![],
         }
     }
 
@@ -731,6 +761,59 @@ mod tests {
         assert!(!joined.contains("not shown"));
         let note_count = lines.iter().filter(|l| l.contains("note:")).count();
         assert_eq!(note_count, 2);
+    }
+
+    #[test]
+    fn knot_show_fields_include_edges_grouped_by_kind() {
+        use crate::app::EdgeView;
+        let mut knot = minimal_knot();
+        knot.edges = vec![
+            EdgeView {
+                src: "K-1".to_string(),
+                kind: "parent_of".to_string(),
+                dst: "knots-abc1".to_string(),
+            },
+            EdgeView {
+                src: "K-1".to_string(),
+                kind: "parent_of".to_string(),
+                dst: "knots-abc2".to_string(),
+            },
+            EdgeView {
+                src: "K-1".to_string(),
+                kind: "blocked_by".to_string(),
+                dst: "knots-xyz1".to_string(),
+            },
+            EdgeView {
+                src: "knots-other".to_string(),
+                kind: "blocks".to_string(),
+                dst: "K-1".to_string(),
+            },
+        ];
+        let fields = knot_show_fields(&knot, false);
+        let labels: Vec<&str> = fields.iter().map(|f| f.label.as_str()).collect();
+        assert!(labels.contains(&"blocked_by"));
+        assert!(labels.contains(&"parent_of"));
+        assert!(labels.contains(&"blocks (incoming)"));
+
+        let parent_field = fields.iter().find(|f| f.label == "parent_of").unwrap();
+        assert!(parent_field.value.contains("abc1"));
+        assert!(parent_field.value.contains("abc2"));
+
+        let incoming_field = fields
+            .iter()
+            .find(|f| f.label == "blocks (incoming)")
+            .unwrap();
+        assert!(incoming_field.value.contains("other"));
+    }
+
+    #[test]
+    fn knot_show_fields_no_edges_when_empty() {
+        let knot = minimal_knot();
+        let fields = knot_show_fields(&knot, false);
+        let has_edge_label = fields
+            .iter()
+            .any(|f| f.label == "parent_of" || f.label == "blocked_by" || f.label == "blocks");
+        assert!(!has_edge_label);
     }
 }
 

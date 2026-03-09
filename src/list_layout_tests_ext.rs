@@ -21,6 +21,7 @@ fn knot(id: &str, alias: Option<&str>, title: &str, state: &str) -> KnotView {
         profile_etag: None,
         deferred_from_state: None,
         created_at: None,
+        edges: Vec::new(),
     }
 }
 

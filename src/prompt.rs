@@ -193,6 +193,7 @@ mod tests {
             profile_etag: None,
             deferred_from_state: None,
             created_at: None,
+            edges: vec![],
         }
     }
 
