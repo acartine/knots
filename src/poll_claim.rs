@@ -66,6 +66,7 @@ pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
     let knot = app
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.to_string()))?;
+    require_queue_state(&knot)?;
     let profile = registry.require(&knot.profile_id)?;
     let next_action = profile.next_happy_path_state(&knot.state).ok_or_else(|| {
         AppError::InvalidArgument(format!(
@@ -122,6 +123,7 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
     let knot = app
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.to_string()))?;
+    require_queue_state(&knot)?;
     let profile = registry.require(&knot.profile_id)?;
     let next_action = profile.next_happy_path_state(&knot.state).ok_or_else(|| {
         AppError::InvalidArgument(format!(
@@ -248,6 +250,17 @@ fn match_pollable(
         skill,
         completion_cmd,
     }))
+}
+
+fn require_queue_state(knot: &KnotView) -> Result<(), AppError> {
+    if !knot.state.starts_with("ready_for_") {
+        return Err(AppError::InvalidArgument(format!(
+            "knot '{}' is in state '{}', which is not a claimable queue state \
+             (expected ready_for_*)",
+            knot.id, knot.state
+        )));
+    }
+    Ok(())
 }
 
 fn completion_command(knot_id: &str, current_state: &str) -> String {
@@ -427,6 +440,70 @@ mod tests {
         assert_eq!(
             result.completion_cmd,
             completion_command(&created.id, "implementation")
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn claim_rejects_knot_in_action_state() {
+        let root = unique_workspace();
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app =
+            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+        let created = app
+            .create_knot(
+                "Action guard test",
+                None,
+                Some("work_item"),
+                Some("default"),
+            )
+            .expect("create should succeed");
+        // Advance to action state (planning)
+        let actor = StateActorMetadata {
+            actor_kind: Some("agent".to_string()),
+            agent_name: None,
+            agent_model: None,
+            agent_version: None,
+        };
+        app.set_state_with_actor(&created.id, "implementation", false, None, actor.clone())
+            .expect("advance should succeed");
+        let result = claim_knot(&app, &created.id, actor);
+        let err = match result {
+            Err(e) => e.to_string(),
+            Ok(_) => panic!("claim should reject action state"),
+        };
+        assert!(
+            err.contains("not a claimable queue state"),
+            "error should mention queue state: {err}"
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn peek_rejects_knot_in_action_state() {
+        let root = unique_workspace();
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app =
+            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+        let created = app
+            .create_knot("Peek guard test", None, Some("work_item"), Some("default"))
+            .expect("create should succeed");
+        let actor = StateActorMetadata {
+            actor_kind: Some("agent".to_string()),
+            agent_name: None,
+            agent_model: None,
+            agent_version: None,
+        };
+        app.set_state_with_actor(&created.id, "implementation", false, None, actor)
+            .expect("advance should succeed");
+        let result = peek_knot(&app, &created.id);
+        let err = match result {
+            Err(e) => e.to_string(),
+            Ok(_) => panic!("peek should reject action state"),
+        };
+        assert!(
+            err.contains("not a claimable queue state"),
+            "error should mention queue state: {err}"
         );
         let _ = std::fs::remove_dir_all(root);
     }
