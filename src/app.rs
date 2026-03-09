@@ -63,6 +63,8 @@ pub struct KnotView {
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
     pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub edges: Vec<EdgeView>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1124,7 +1126,10 @@ impl App {
         let id = self.resolve_knot_token(id)?;
         self.maybe_auto_sync_for_read()?;
         if let Some(knot) = db::get_knot_hot(&self.conn, &id)? {
-            return Ok(Some(self.apply_alias_to_knot(KnotView::from(knot))?));
+            let mut view = self.apply_alias_to_knot(KnotView::from(knot))?;
+            let edges = db::list_edges(&self.conn, &id, db::EdgeDirection::Both)?;
+            view.edges = edges.into_iter().map(EdgeView::from).collect();
+            return Ok(Some(view));
         }
         self.rehydrate(&id)
     }
@@ -1976,6 +1981,7 @@ impl From<KnotCacheRecord> for KnotView {
             profile_etag: value.profile_etag,
             deferred_from_state: value.deferred_from_state,
             created_at: value.created_at,
+            edges: Vec::new(),
         }
     }
 }
