@@ -21,6 +21,16 @@
 - For each state invariant, confirm the property still holds on main.
 - Reject if any invariant condition is breached.
 
+## Step Boundary
+- This session is authorized only for `shipment_review`.
+- Complete exactly one review action, then stop.
+- Allowed resting states after this session: `shipped`,
+  `ready_for_shipment`, or `ready_for_implementation`.
+- Do not fix code, re-run shipment, or continue into other workflow
+  stages in this session.
+- After the review decision, handoff, and transition commands succeed,
+  stop immediately.
+
 ## Actions
 1. Verify the change is live on main branch
 2. Confirm every commit from implementation/shipment is tagged on the

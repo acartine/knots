@@ -12,6 +12,18 @@
 - If an implementation step would violate an invariant, stop and redesign
   the approach rather than proceeding.
 
+## Step Boundary
+- This session is authorized only for `implementation`.
+- Complete exactly one implementation action, then stop.
+- Allowed resting states after this session:
+  `ready_for_implementation_review`, `deferred`, or `ready_for_planning`.
+- Do not merge the feature branch to main, perform shipment work, or
+  continue into later workflow stages in this session.
+- Opening or updating a review artifact for the implementation branch is
+  allowed only if the profile explicitly requires it.
+- After the implementation handoff and transition commands succeed, stop
+  immediately.
+
 ## Actions
 1. Create a feature branch from main in a worktree
 2. Implement changes following the plan while respecting all invariants
@@ -28,9 +40,8 @@
    `kno update <id> --add-tag "commit:${short_hash}"`
    Run this for every commit created during implementation.
    Use short hashes only; do not use the full 40-character hash.
-8. Profile variant: Create a PR if the knot profile expects it
-9. Profile variant: Merge the feature branch into main if the knot
-   profile expects it
+8. Profile variant: Open or update a PR for the feature branch if the
+   knot profile expects it
 
 ## Output
 - Working implementation on feature branch

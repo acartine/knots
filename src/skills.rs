@@ -67,6 +67,30 @@ mod tests {
         );
     }
 
+    fn assert_step_boundary(text: &str, state: &str) {
+        let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            text.contains("## Step Boundary"),
+            "{} skill must declare a step boundary section",
+            state
+        );
+        assert!(
+            text.contains(&format!("This session is authorized only for `{state}`.")),
+            "{} skill must declare its single-step authority",
+            state
+        );
+        assert!(
+            text.contains("Complete exactly one"),
+            "{} skill must require a single workflow action",
+            state
+        );
+        assert!(
+            normalized.contains("stop immediately"),
+            "{} skill must include an immediate stop condition",
+            state
+        );
+    }
+
     #[test]
     fn returns_content_for_action_states() {
         assert!(skill_for_state("planning").unwrap().contains("# Planning"));
@@ -129,6 +153,37 @@ mod tests {
             let text = skill_for_state(state).unwrap();
             assert_review_write_constraints(text, state);
         }
+    }
+
+    #[test]
+    fn all_skills_define_single_step_boundaries() {
+        for state in [
+            "planning",
+            "plan_review",
+            "implementation",
+            "implementation_review",
+            "shipment",
+            "shipment_review",
+        ] {
+            let text = skill_for_state(state).unwrap();
+            assert_step_boundary(text, state);
+        }
+    }
+
+    #[test]
+    fn planning_skill_forbids_executing_child_knots() {
+        let text = skill_for_state("planning").unwrap();
+        assert!(text.contains("Creating child knots is planning output only."));
+        assert!(text.contains("Do not claim, start, or"));
+        assert!(text.contains("execute those child knots in this session."));
+    }
+
+    #[test]
+    fn implementation_skill_does_not_include_shipment_work() {
+        let text = skill_for_state("implementation").unwrap();
+        assert!(text.contains("Do not merge the feature branch to main"));
+        assert!(text.contains("Open or update a PR for the feature branch"));
+        assert!(!text.contains("Merge the feature branch into main if the knot"));
     }
 
     #[test]
