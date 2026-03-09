@@ -1,10 +1,11 @@
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::app::AppError;
 use crate::db;
 use crate::remote_init::{
-    detect_beads_hooks, init_remote_knots_branch, uninit_remote_knots_branch, RemoteInitError,
+    detect_beads_hooks, init_remote_knots_branch, remote_branch_exists, uninit_remote_knots_branch,
+    RemoteInitError,
 };
 
 const ANSI_RESET: &str = "\x1b[0m";
@@ -22,10 +23,17 @@ pub(crate) fn init_all(repo_root: &Path, db_path: &str) -> Result<(), AppError> 
     init_local_store(repo_root, db_path)?;
     progress_ok("local store initialized")?;
     warn_if_beads_hooks_present(repo_root)?;
-    progress("initializing remote branch origin/knots")?;
-    progress_note("this can take a bit...")?;
-    init_remote_knots_branch(repo_root)?;
-    progress_ok("remote branch origin/knots initialized")?;
+    if remote_branch_exists(repo_root, "origin", "knots")? {
+        progress("found existing remote branch origin/knots")?;
+        progress("pulling knots from remote")?;
+        pull_knots_from_remote(repo_root.to_path_buf(), db_path)?;
+        progress_ok("knots pulled from remote")?;
+    } else {
+        progress("initializing remote branch origin/knots")?;
+        progress_note("this can take a bit...")?;
+        init_remote_knots_branch(repo_root)?;
+        progress_ok("remote branch origin/knots initialized")?;
+    }
     progress("installing sync hooks (post-merge)")?;
     match crate::git_hooks::install_hooks(repo_root) {
         Ok(_) => progress_ok("sync hooks installed")?,
@@ -64,6 +72,12 @@ pub(crate) fn init_local_store(repo_root: &Path, db_path: &str) -> Result<(), Ap
     progress("ensuring gitignore includes .knots rule")?;
     ensure_knots_gitignore(repo_root)?;
     progress_ok("local store ready")?;
+    Ok(())
+}
+
+fn pull_knots_from_remote(repo_root: PathBuf, db_path: &str) -> Result<(), AppError> {
+    let app = crate::app::App::open(db_path, repo_root)?;
+    let _ = app.pull()?;
     Ok(())
 }
 
@@ -221,6 +235,8 @@ mod tests {
     use std::process::Command;
     use uuid::Uuid;
 
+    use crate::db;
+
     use super::{init_all, init_local_store, uninit_all, uninit_local_store, KNOTS_IGNORE_RULE};
 
     fn unique_dir() -> PathBuf {
@@ -266,6 +282,7 @@ mod tests {
         std::fs::write(local.join("README.md"), "# knots\n").expect("readme should be writable");
         run_git(&local, &["add", "README.md"]);
         run_git(&local, &["commit", "-m", "init"]);
+        run_git(&local, &["branch", "-M", "main"]);
         run_git(
             &local,
             &[
@@ -274,6 +291,18 @@ mod tests {
                 "origin",
                 remote.to_str().expect("utf8 path"),
             ],
+        );
+        run_git(&local, &["push", "-u", "origin", "main"]);
+        let output = Command::new("git")
+            .arg("--git-dir")
+            .arg(&remote)
+            .args(["symbolic-ref", "HEAD", "refs/heads/main"])
+            .output()
+            .expect("git symbolic-ref should run");
+        assert!(
+            output.status.success(),
+            "git symbolic-ref failed: {}",
+            String::from_utf8_lossy(&output.stderr)
         );
 
         (root, local)
@@ -335,6 +364,52 @@ mod tests {
         let gitignore = std::fs::read_to_string(local.join(".gitignore"))
             .expect("gitignore should be readable");
         assert!(gitignore.lines().any(|line| line == KNOTS_IGNORE_RULE));
+        remove_dir_if_exists(&root);
+    }
+
+    #[test]
+    fn init_all_pulls_knots_when_remote_branch_already_exists() {
+        let (root, local) = setup_repo_with_remote();
+        let local_db_path = local.join(".knots/cache/state.sqlite");
+        init_all(&local, local_db_path.to_str().expect("utf8 path"))
+            .expect("first init should succeed");
+
+        let app = crate::app::App::open(local_db_path.to_str().expect("utf8 path"), local.clone())
+            .expect("app should open");
+        let created = app
+            .create_knot(
+                "Bootstrap knot",
+                Some("pulled from remote"),
+                Some("ready_for_planning"),
+                Some("autopilot"),
+            )
+            .expect("knot should be creatable");
+        app.push().expect("push should succeed");
+
+        let clone = root.join("clone");
+        run_git(
+            &root,
+            &[
+                "clone",
+                root.join("remote.git").to_str().expect("utf8 path"),
+                clone.to_str().expect("utf8 path"),
+            ],
+        );
+        run_git(&clone, &["config", "user.email", "knots@example.com"]);
+        run_git(&clone, &["config", "user.name", "Knots Test"]);
+
+        let clone_db_path = clone.join(".knots/cache/state.sqlite");
+        init_all(&clone, clone_db_path.to_str().expect("utf8 path"))
+            .expect("clone init should succeed");
+
+        let clone_conn = db::open_connection(clone_db_path.to_str().expect("utf8 path"))
+            .expect("clone db should open");
+        let knot = db::get_knot_hot(&clone_conn, &created.id)
+            .expect("knot query should succeed")
+            .expect("knot should be pulled into clone");
+        assert_eq!(knot.title, "Bootstrap knot");
+        assert_eq!(knot.state, "ready_for_planning");
+
         remove_dir_if_exists(&root);
     }
 

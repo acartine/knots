@@ -52,6 +52,18 @@ fn setup_repo_with_remote(root: &Path) -> PathBuf {
             remote.to_str().expect("utf8 path"),
         ],
     );
+    run_git(root, &["push", "-u", "origin", "main"]);
+    let output = Command::new("git")
+        .arg("--git-dir")
+        .arg(&remote)
+        .args(["symbolic-ref", "HEAD", "refs/heads/main"])
+        .output()
+        .expect("git symbolic-ref should run");
+    assert!(
+        output.status.success(),
+        "git symbolic-ref failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     remote
 }
 
@@ -369,6 +381,58 @@ fn init_and_uninit_commands_work_with_remote_origin() {
     assert!(!root.join(".knots").exists());
 
     let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn init_command_bootstraps_from_existing_remote_branch() {
+    let root = unique_workspace("knots-cli-init-existing");
+    let remote = setup_repo_with_remote(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    assert_success(&run_knots(&root, &db, &["init"]));
+    let created = run_knots(
+        &root,
+        &db,
+        &["new", "Shared knot", "--desc", "available in clone"],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+    assert_success(&run_knots(&root, &db, &["sync"]));
+
+    let clone = unique_workspace("knots-cli-init-existing-clone");
+    let clone_output = Command::new("git")
+        .arg("clone")
+        .arg(&remote)
+        .arg(&clone)
+        .output()
+        .expect("git clone should run");
+    assert!(
+        clone_output.status.success(),
+        "git clone failed: {}",
+        String::from_utf8_lossy(&clone_output.stderr)
+    );
+    run_git(&clone, &["config", "user.email", "knots@example.com"]);
+    run_git(&clone, &["config", "user.name", "Knots Test"]);
+
+    let clone_db = clone.join(".knots/cache/state.sqlite");
+    let init = run_knots(&clone, &clone_db, &["init"]);
+    assert_success(&init);
+    let init_stdout = String::from_utf8_lossy(&init.stdout);
+    assert!(
+        init_stdout.contains("pulling knots from remote"),
+        "expected clone init to pull from remote: {init_stdout}"
+    );
+
+    let show = run_knots(&clone, &clone_db, &["show", &knot_id]);
+    assert_success(&show);
+    let show_stdout = String::from_utf8_lossy(&show.stdout);
+    assert!(
+        show_stdout.contains("Shared knot"),
+        "expected pulled knot in clone output: {show_stdout}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+    let _ = std::fs::remove_dir_all(clone);
 }
 
 #[test]

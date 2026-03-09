@@ -1,5 +1,16 @@
 # kno
 
+## 0.7.5
+
+### Patch Changes
+
+- Improve clone bootstrap and release version syncing
+
+  - Make `kno init` detect an existing `origin/knots` branch, pull knots from the
+    remote into a fresh clone, and continue installing managed hooks
+  - Refresh and verify `Cargo.lock` during release version sync so version bumps do
+    not leave the lockfile dirty for the next Cargo command
+
 ## 0.7.4
 
 ### Patch Changes
