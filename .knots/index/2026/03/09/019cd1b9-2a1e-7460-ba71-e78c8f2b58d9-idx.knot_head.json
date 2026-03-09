@@ -1,0 +1,18 @@
+{
+  "event_id": "019cd1b9-2a1e-7460-ba71-e78c8f2b58d9",
+  "occurred_at": "2026-03-09T08:31:39.038119Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-b8f3",
+    "profile_id": "autopilot",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "claim should guard on queue state, not rely on happy-path traversal",
+    "updated_at": "2026-03-09T08:31:39.038119Z"
+  },
+  "precondition": {
+    "profile_etag": "019cd1b8-08f6-7962-a09b-5550f5f9a866"
+  }
+}

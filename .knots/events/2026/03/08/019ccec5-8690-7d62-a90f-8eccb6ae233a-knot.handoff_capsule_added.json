@@ -1,0 +1,15 @@
+{
+  "event_id": "019ccec5-8690-7d62-a90f-8eccb6ae233a",
+  "occurred_at": "2026-03-08T18:46:17.488178Z",
+  "knot_id": "knots-49a0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipped on main at commit 7532cc98f6ae. The implementation review skill now bases approval solely on code under review plus knot description/acceptance criteria, explicitly excludes notes and prior handoff_capsules from approval decisions, and requires enumerated spec violations in rejection handoffs. Verified with cargo test implementation_review -- --nocapture. make sanity in the current dirty workspace fails at 94.65% coverage due unrelated local modifications, but remote CI for main commit 7532cc98f6ae succeeded (CI, Release, Repo Hygiene, Changesets Version PR).",
+    "datetime": "2026-03-08T18:46:07Z",
+    "entry_id": "019ccec5-8690-7d62-a90f-8eb1ae44ecd9",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "codex-cli"
+  }
+}

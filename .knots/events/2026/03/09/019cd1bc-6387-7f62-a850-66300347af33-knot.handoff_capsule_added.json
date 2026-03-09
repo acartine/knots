@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd1bc-6387-7f62-a850-66300347af33",
+  "occurred_at": "2026-03-09T08:35:10.343921Z",
+  "knot_id": "knots-b8f3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete: implementation already merged to main (fb9d12b2d593) and pushed to origin. make sanity passes. The fix adds explicit queue-state guards in claim_knot/peek_knot to reject non-ready_for_* states before happy-path traversal.",
+    "datetime": "2026-03-09T12:00:00Z",
+    "entry_id": "019cd1bc-6387-7f62-a850-6623111c4d82",
+    "model": "claude-opus-4-6",
+    "username": "agent",
+    "version": "claude-opus-4-6"
+  }
+}

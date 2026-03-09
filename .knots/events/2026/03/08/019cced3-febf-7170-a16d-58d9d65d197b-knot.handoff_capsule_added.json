@@ -1,0 +1,15 @@
+{
+  "event_id": "019cced3-febf-7170-a16d-58d9d65d197b",
+  "occurred_at": "2026-03-08T19:02:05.759855Z",
+  "knot_id": "knots-c18f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Adjusted show/claim hidden-metadata hint wording to use proper singular/plural labels, added end-to-end CLI coverage for show and claim default/verbose/json behavior, and verified with make sanity (95.10% coverage).",
+    "datetime": "2026-03-08T19:02:05.759855Z",
+    "entry_id": "019cced3-febf-7170-a16d-58c686fc3c3c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

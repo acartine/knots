@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc421-ea14-7491-aa63-4dcfc7077937",
+  "occurred_at": "2026-03-06T17:11:22.900856Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-402f",
+    "profile_id": "autopilot",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "kno commands on aliases like ba0e.2 should work.  currently it says knot not found.  it should resolve to 28b0",
+    "updated_at": "2026-03-06T17:11:22.900856Z"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "event_id": "019cced5-ea22-7463-9b4c-b6121a8e69da",
+  "occurred_at": "2026-03-08T19:04:11.554871Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-c18f",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "`show`/ claim  should show the latest note and latest handoff-capsule",
+    "updated_at": "2026-03-08T19:04:11.554871Z"
+  },
+  "precondition": {
+    "profile_etag": "019cced5-a6ed-7663-8363-6d97d1e84a8a"
+  }
+}

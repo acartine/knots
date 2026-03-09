@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd303-ac05-7b30-9b11-1a68fb793f72",
+  "occurred_at": "2026-03-09T14:32:39.173608Z",
+  "knot_id": "knots-bf5b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. README changes on main (019c14b22124). Beads linked to GitHub URL, kno init onboarding docs added to quickstart. CI green, commit tags present.",
+    "datetime": "2026-03-09T14:45:00Z",
+    "entry_id": "019cd303-ac05-7b30-9b11-1a54311671be",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019ccebd-e3de-7883-b112-6e2b3aa91411",
+  "occurred_at": "2026-03-08T18:37:57.086763Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-49a0",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "Skills: Implementation Review:  Enhance agent guidance to focus on code and specification drift",
+    "updated_at": "2026-03-08T18:37:57.086763Z"
+  }
+}

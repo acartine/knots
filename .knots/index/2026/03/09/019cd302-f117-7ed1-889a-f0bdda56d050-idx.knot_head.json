@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd302-f117-7ed1-889a-f0bdda56d050",
+  "occurred_at": "2026-03-09T14:31:51.308182Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-bf5b",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Update README.md with some small changes",
+    "updated_at": "2026-03-09T14:31:51.308182Z"
+  }
+}

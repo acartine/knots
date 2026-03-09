@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd1bd-5c42-7263-b314-e53c50648f58",
+  "occurred_at": "2026-03-09T08:36:14.018681Z",
+  "knot_id": "knots-b8f3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review approved on main at fb9d12b2d593. Verified src/poll_claim.rs now rejects non-ready_for_* states via require_queue_state before next_happy_path_state, tags include commit:fb9d12b2d593, and targeted regression tests for claim/peek action-state rejection pass locally via cargo test action_state.",
+    "datetime": "2026-03-09T08:35:58Z",
+    "entry_id": "019cd1bd-5c42-7263-b314-e521bd17faa9",
+    "model": "gpt-5",
+    "username": "agent",
+    "version": "gpt-5"
+  }
+}

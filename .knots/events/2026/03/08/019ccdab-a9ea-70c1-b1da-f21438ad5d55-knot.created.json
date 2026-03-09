@@ -1,0 +1,12 @@
+{
+  "event_id": "019ccdab-a9ea-70c1-b1da-f21438ad5d55",
+  "occurred_at": "2026-03-08T13:38:25.386477Z",
+  "knot_id": "knots-57f1",
+  "type": "knot.created",
+  "data": {
+    "body": "Lock files (repo.lock, cache.lock, write_queue_worker.lock) are being left behind with 0 bytes, suggesting the kno process is being killed before Drop runs. v0.7.3 adds PID-based stale lock detection which handles the symptom, but the root cause of why processes are dying ungracefully needs investigation. Likely an editor plugin or hook with a short timeout force-killing kno.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Investigate orphaned lock files on macOS"
+  }
+}

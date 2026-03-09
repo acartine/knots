@@ -1,0 +1,12 @@
+{
+  "event_id": "019cd2a6-7d55-70b3-ac70-1ba67c4acdb4",
+  "occurred_at": "2026-03-09T12:50:52.373202Z",
+  "knot_id": "knots-5985",
+  "type": "knot.created",
+  "data": {
+    "body": "Harden agent-facing skill prompts so each workflow step is explicitly single-step and stop-bounded, reducing blast-through behavior.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Tighten Knots skill prompt boundaries"
+  }
+}

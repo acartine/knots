@@ -1,0 +1,12 @@
+{
+  "event_id": "019ccee6-2d57-7e83-941c-18a7a3fab2d4",
+  "occurred_at": "2026-03-08T19:21:57.335889Z",
+  "knot_id": "knots-b8f3",
+  "type": "knot.created",
+  "data": {
+    "body": "The claim command works today only because workflow profiles alternate queue (ready_for_X) and action (X) states, so next_happy_path_state from an action state never lands on another action state. But this is accidental — the guard should explicitly check that the knot is in a claimable queue state (ready_for_*) before advancing, rather than relying on the shape of the workflow graph. If a profile ever defined adjacent action states, claim would incorrectly advance through them.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "claim should guard on queue state, not rely on happy-path traversal"
+  }
+}

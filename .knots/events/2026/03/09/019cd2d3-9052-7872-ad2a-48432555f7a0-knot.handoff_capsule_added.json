@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd2d3-9052-7872-ad2a-48432555f7a0",
+  "occurred_at": "2026-03-09T13:40:06.354477Z",
+  "knot_id": "knots-5985",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Rebased the skill-boundary prompt changes onto origin/main, passed make sanity including coverage (95.08%), and pushed branch codex/knots-5985-skill-boundaries at commit 2488d6d.",
+    "datetime": "2026-03-09T13:40:06.354477Z",
+    "entry_id": "019cd2d3-9052-7872-ad2a-483c4ce66144",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

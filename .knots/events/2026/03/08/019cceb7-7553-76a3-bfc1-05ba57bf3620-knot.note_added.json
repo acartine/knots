@@ -1,0 +1,15 @@
+{
+  "event_id": "019cceb7-7553-76a3-bfc1-05ba57bf3620",
+  "occurred_at": "2026-03-08T18:30:55.5712Z",
+  "knot_id": "knots-c18f",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "foolery",
+    "content": "Acceptance Criteria:\nshow and claim show the latest handoff_capsule and the latest note - both the json and stdout response types should behave this way.\n\nif more/older notes and/or handoff_capsules exist, there should be a suggestion text to run -v/--verbose to see all of them - the json should show the suggestion as part of the properly formatted json (an \"other\" field is suggested here).\n\nfor both show and claim, -v/--verbose should be add/supported to show all the notes and handoff_capsules.",
+    "datetime": "2026-03-08T18:30:55.5712Z",
+    "entry_id": "019cceb7-7553-76a3-bfc1-05afcb0dec0b",
+    "model": "unknown",
+    "username": "foolery",
+    "version": "unknown"
+  }
+}

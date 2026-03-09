@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc421-7846-7562-8920-cd1cf0793134",
+  "occurred_at": "2026-03-06T17:10:53.766565Z",
+  "knot_id": "knots-402f",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Implementation Plan\n\n1. Modified `resolve_knot_token()` in `src/app.rs` to handle partial hierarchical aliases\n2. When a token contains dots (e.g., \"ba0e.2\"), the prefix before the first dot is matched against knot suffixes\n3. The matching full ID is combined with the dot-tail to form a full alias, which is then looked up\n4. Added 3 tests: happy path, invalid child index (NotFound), unknown prefix (passthrough)\n5. Coverage: 95.08%",
+    "datetime": "2026-03-06T17:10:53.766565Z",
+    "entry_id": "019cc421-7846-7562-8920-cd0887ef5a68",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

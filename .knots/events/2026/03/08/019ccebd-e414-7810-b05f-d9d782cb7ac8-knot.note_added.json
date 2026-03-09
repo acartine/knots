@@ -1,0 +1,15 @@
+{
+  "event_id": "019ccebd-e414-7810-b05f-d9d782cb7ac8",
+  "occurred_at": "2026-03-08T18:37:57.140862Z",
+  "knot_id": "knots-49a0",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "foolery",
+    "content": "Acceptance Criteria:\nThe implementation review skill makes it clear that the judgement must be based on the knot description, knot acceptance criteria (if supplied, else description), and the code implementation.  The judgement should not be based on prior notes or handoff_capsules.\nThe implementation review skill makes it clear that rejection of the implementation requires the owning agent to document clearly enumerated violations of the knot's description (and acceptance criteria, of provided) as part of the handoff_capsule.",
+    "datetime": "2026-03-08T18:37:57.140862Z",
+    "entry_id": "019ccebd-e414-7810-b05f-d9c1ddb4e212",
+    "model": "unknown",
+    "username": "foolery",
+    "version": "unknown"
+  }
+}

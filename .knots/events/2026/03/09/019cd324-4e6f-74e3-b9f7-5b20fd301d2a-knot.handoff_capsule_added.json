@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd324-4e6f-74e3-b9f7-5b20fd301d2a",
+  "occurred_at": "2026-03-09T15:08:17.903113Z",
+  "knot_id": "knots-2b62",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Code correctly groups edges by kind in kno show output: outgoing edges labeled by kind, incoming edges labeled with '(incoming)' suffix. BTreeMap ensures deterministic ordering. Tests cover grouped display and empty-edges case. make sanity green (428 tests). No security issues or regressions.",
+    "datetime": "2026-03-09T15:10:00Z",
+    "entry_id": "019cd324-4e6f-74e3-b9f7-5b1ae720b9b7",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

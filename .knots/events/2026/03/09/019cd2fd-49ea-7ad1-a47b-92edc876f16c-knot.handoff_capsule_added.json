@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd2fd-49ea-7ad1-a47b-92edc876f16c",
+  "occurred_at": "2026-03-09T14:25:40.842207Z",
+  "knot_id": "knots-bf5b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implemented README changes: (1) replaced plain 'Beads' text with markdown link to beads repo, (2) added paragraph explaining kno init as onboarding mechanism for repos already using Knots. All sanity checks passed. Branch knots-bf5b/update-readme pushed.",
+    "datetime": "2026-03-09T12:00:00Z",
+    "entry_id": "019cd2fd-49ea-7ad1-a47b-92deb73a7928",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

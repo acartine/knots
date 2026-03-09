@@ -1,0 +1,18 @@
+{
+  "event_id": "019cd2a6-9dda-72f1-b256-f2e6b949f18b",
+  "occurred_at": "2026-03-09T12:51:00.69819Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-5985",
+    "profile_id": "autopilot",
+    "state": "planning",
+    "terminal": false,
+    "title": "Tighten Knots skill prompt boundaries",
+    "updated_at": "2026-03-09T12:51:00.69819Z"
+  },
+  "precondition": {
+    "profile_etag": "019cd2a6-7d55-70b3-ac70-1bb2f8d1e9a9"
+  }
+}

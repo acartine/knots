@@ -1,0 +1,15 @@
+{
+  "event_id": "019cced6-bf4d-7c53-9b3c-01d54b9e4c9a",
+  "occurred_at": "2026-03-08T19:05:06.125933Z",
+  "knot_id": "knots-c18f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review approved on main. Verified commits 8c2c61555c26 and c73b69f2eef2 are tagged on the knot and present on origin/main. Confirmed show/claim default output only includes the latest note and handoff capsule with hidden-item hint, --verbose shows all entries, and JSON includes the other field when older metadata is hidden. Targeted regressions passed.",
+    "datetime": "2026-03-08T19:04:58Z",
+    "entry_id": "019cced6-bf4d-7c53-9b3c-01c5695da00b",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-08"
+  }
+}

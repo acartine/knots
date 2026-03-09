@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd1b4-c10a-74c1-996e-459bee569799",
+  "occurred_at": "2026-03-09T08:26:49.994945Z",
+  "knot_id": "knots-b8f3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Implementation Plan\n\n1. Add an explicit queue-state guard in `claim_knot()` and `peek_knot()` in `src/poll_claim.rs`\n2. Both functions should check `knot.state.starts_with(\"ready_for_\")` before calling `next_happy_path_state`\n3. Return `AppError::InvalidArgument` if the knot is not in a claimable queue state\n4. Add tests: attempt to claim/peek a knot in an action state and verify it fails\n5. Run `make sanity` to verify",
+    "datetime": "2026-03-09T08:26:49.994945Z",
+    "entry_id": "019cd1b4-c10a-74c1-996e-458abe1546cb",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

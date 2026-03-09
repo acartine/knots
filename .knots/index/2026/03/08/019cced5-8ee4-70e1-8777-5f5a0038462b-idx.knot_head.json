@@ -1,0 +1,15 @@
+{
+  "event_id": "019cced5-8ee4-70e1-8777-5f5a0038462b",
+  "occurred_at": "2026-03-08T19:03:48.191122Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-c18f",
+    "profile_id": "autopilot",
+    "state": "shipment",
+    "terminal": false,
+    "title": "`show`/ claim  should show the latest note and latest handoff-capsule",
+    "updated_at": "2026-03-08T19:03:48.191122Z"
+  }
+}

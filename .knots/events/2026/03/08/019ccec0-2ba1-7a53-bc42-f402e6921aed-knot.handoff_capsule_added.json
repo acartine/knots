@@ -1,0 +1,15 @@
+{
+  "event_id": "019ccec0-2ba1-7a53-bc42-f402e6921aed",
+  "occurred_at": "2026-03-08T18:40:26.529652Z",
+  "knot_id": "knots-49a0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Updated the implementation review skill to base approval solely on the implementation code and the knot description plus acceptance criteria, explicitly excluding notes and prior handoff_capsules from approval decisions. Rejection paths now require clearly enumerated violations of the knot description and/or acceptance criteria in the handoff capsule. Verified with cargo test implementation_review -- --nocapture and make sanity.",
+    "datetime": "2026-03-08T18:40:17Z",
+    "entry_id": "019ccec0-2ba1-7a53-bc42-f3ff766f9af0",
+    "model": "gpt-5-codex",
+    "username": "cartine",
+    "version": "2026-03-08"
+  }
+}

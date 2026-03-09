@@ -1,0 +1,12 @@
+{
+  "event_id": "019cceb7-7523-7031-be2b-3773ea7d82ab",
+  "occurred_at": "2026-03-08T18:30:55.523793Z",
+  "knot_id": "knots-c18f",
+  "type": "knot.created",
+  "data": {
+    "body": "currently, `show` only shows the number of notes and handoff_capsules, unless you specifiy - json.\n`claim` shows all of them.\n\ninstead, they should show the latest note and the latest handoff_capsule.  at the end of the output, if notes or handoff_capsules were hidden, the output should say 'n' older notes (and/or) 'o' older handoff_capsules not shown.  Use -v/--verbose to see all.\n\nthe --json options should work the same, except the suggestion should be json formatted like:\n\n\"other\": \"'n' older notes....\"\n\n",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "`show`/ claim  should show the latest note and latest handoff-capsule"
+  }
+}

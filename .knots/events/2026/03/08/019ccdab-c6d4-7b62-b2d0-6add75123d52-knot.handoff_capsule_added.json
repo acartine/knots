@@ -1,0 +1,15 @@
+{
+  "event_id": "019ccdab-c6d4-7b62-b2d0-6add75123d52",
+  "occurred_at": "2026-03-08T13:38:32.788125Z",
+  "knot_id": "knots-57f1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "v0.7.3 ships PID-based stale lock detection and reduces lock timeout from 30s to 5s. Empty/corrupt lock files are reclaimed immediately. The symptom is fixed but the root cause (why kno processes die without running Drop) is unknown. Suspect an editor plugin or git hook force-killing the process. Reproduces in the foolery repo — locks at .knots/locks/repo.lock, .knots/locks/write_queue_worker.lock, and .knots/cache/cache.lock all show 0 bytes (no PID written, pre-v0.7.3). Next step: add logging to kno to capture signal/exit context, or check if an editor integration is setting a short execution timeout.",
+    "datetime": "2026-03-08T13:38:32.788125Z",
+    "entry_id": "019ccdab-c6d4-7b62-b2d0-6ac645f037aa",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd2ab-aac6-7f22-8e56-b7170012cca5",
+  "occurred_at": "2026-03-09T12:56:31.686337Z",
+  "knot_id": "knots-5985",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Tightened agent-facing skill prompts to enforce single-step boundaries, explicit stop conditions, and stage-specific prohibitions; added shared prompt workflow-boundary text plus tests covering planning child-knot limits and implementation no-shipment guidance.",
+    "datetime": "2026-03-09T12:56:31.686337Z",
+    "entry_id": "019cd2ab-aac6-7f22-8e56-b704287895be",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

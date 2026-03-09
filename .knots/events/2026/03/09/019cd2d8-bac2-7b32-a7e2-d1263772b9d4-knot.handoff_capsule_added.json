@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd2d8-bac2-7b32-a7e2-d1263772b9d4",
+  "occurred_at": "2026-03-09T13:45:44.898899Z",
+  "knot_id": "knots-5985",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Merged PR #23 into main via squash. Remote merge commit is 3ae6571; branch codex/knots-5985-skill-boundaries can be cleaned up locally.",
+    "datetime": "2026-03-09T13:45:44.898899Z",
+    "entry_id": "019cd2d8-bac2-7b32-a7e2-d11498ac7429",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

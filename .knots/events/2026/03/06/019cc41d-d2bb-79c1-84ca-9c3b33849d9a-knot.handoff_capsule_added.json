@@ -1,0 +1,15 @@
+{
+  "event_id": "019cc41d-d2bb-79c1-84ca-9c3b33849d9a",
+  "occurred_at": "2026-03-06T17:06:54.779269Z",
+  "knot_id": "knots-ad2b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review approved on main. Verified New subcommand has alias \"create\", parser test create_alias_parses_as_new passes locally, head commit 94ba05c344ce is on origin/main, and GitHub Actions workflows (CI, Repo Hygiene, Release, Changesets Version PR) completed successfully for this head.",
+    "datetime": "2026-03-06T17:06:47Z",
+    "entry_id": "019cc41d-d2bb-79c1-84ca-9c2b54c8ef33",
+    "model": "gpt-5",
+    "username": "agent",
+    "version": "gpt-5-codex"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd322-6f1d-7970-bbf3-58e88d2d5ab3",
+  "occurred_at": "2026-03-09T15:06:15.197423Z",
+  "knot_id": "knots-2b62",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implemented show relationships feature: kno show now displays edges grouped by kind (outgoing labeled by kind, incoming labeled with '(incoming)' suffix). Added edges field to KnotView, populated in show_knot via db::list_edges(Both). All 430 tests pass, make sanity green. Branch: knots-2b62/show-relationships",
+    "datetime": "2026-03-09T15:00:00Z",
+    "entry_id": "019cd322-6f1d-7970-bbf3-58d29a279168",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

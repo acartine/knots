@@ -1,0 +1,18 @@
+{
+  "event_id": "019cd2fd-b57f-7d71-a930-ea5fe502c031",
+  "occurred_at": "2026-03-09T14:26:08.383304Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-bf5b",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "Update README.md with some small changes",
+    "updated_at": "2026-03-09T14:26:08.383304Z"
+  },
+  "precondition": {
+    "profile_etag": "019cd2fd-7550-7331-8d9b-4131447a6e82"
+  }
+}

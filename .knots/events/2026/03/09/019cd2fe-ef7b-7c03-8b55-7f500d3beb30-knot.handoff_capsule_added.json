@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd2fe-ef7b-7c03-8b55-7f500d3beb30",
+  "occurred_at": "2026-03-09T14:27:28.763239Z",
+  "knot_id": "knots-bf5b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Both requirements met: (1) Beads text replaced with markdown link to https://github.com/steveyegge/beads?tab=readme-ov-file, (2) kno init onboarding paragraph added explaining how it detects existing origin/knots branch and syncs. README-only change, no code/test impact. All 428 tests pass, make sanity green.",
+    "datetime": "2026-03-09T00:00:00Z",
+    "entry_id": "019cd2fe-ef7b-7c03-8b55-7f40d90e1ecf",
+    "model": "claude-opus-4-6",
+    "username": "claude-code",
+    "version": "claude-opus-4-6"
+  }
+}

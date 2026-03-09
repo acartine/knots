@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd1b5-1a4b-7ab3-9bc8-e3d76b837f42",
+  "occurred_at": "2026-03-09T08:27:12.843709Z",
+  "knot_id": "knots-715a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Planned README screenshot refresh: capture new beat UI images from the localhost route, generate large and thumbnail variants, add them to the repo, and wire them into README with minimal documentation edits.",
+    "datetime": "2026-03-09T08:26:41Z",
+    "entry_id": "019cd1b5-1a4b-7ab3-9bc8-e3c627b39328",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1.0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019ccecc-b3c7-7843-abd4-22eeaf090f32",
+  "occurred_at": "2026-03-08T18:54:07.815345Z",
+  "knot_id": "knots-c18f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implemented show/claim verbose feature: both commands now display the latest note and handoff capsule content with attribution instead of just counts. Added -v/--verbose flag to show all entries. JSON output includes 'other' field with suggestion text when items are hidden. All tests pass, coverage at 95.07%.",
+    "datetime": "2026-03-08T18:50:00Z",
+    "entry_id": "019ccecc-b3c7-7843-abd4-22d44f2fe074",
+    "model": "claude-opus-4-6",
+    "username": "autopilot",
+    "version": "2025-03-08"
+  }
+}

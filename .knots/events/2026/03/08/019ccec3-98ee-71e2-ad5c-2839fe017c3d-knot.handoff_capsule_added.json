@@ -1,0 +1,15 @@
+{
+  "event_id": "019ccec3-98ee-71e2-ad5c-2839fe017c3d",
+  "occurred_at": "2026-03-08T18:44:11.118323Z",
+  "knot_id": "knots-49a0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. The skill file correctly addresses all three requirements: (1) Review Basis section scopes approval to code + knot description + acceptance criteria, (2) explicitly excludes notes and handoff_capsules from approval decisions, (3) all rejection paths require enumerated violations of the knot description and/or acceptance criteria. Tests in src/skills.rs verify these properties.",
+    "datetime": "2026-03-08T00:00:00Z",
+    "entry_id": "019ccec3-98ee-71e2-ad5c-2823cb790579",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

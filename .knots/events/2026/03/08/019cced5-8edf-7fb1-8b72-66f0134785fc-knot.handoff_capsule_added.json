@@ -1,0 +1,15 @@
+{
+  "event_id": "019cced5-8edf-7fb1-8b72-66f0134785fc",
+  "occurred_at": "2026-03-08T19:03:48.191122Z",
+  "knot_id": "knots-c18f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete: feature merged on main, pushed to origin, CI green. Commits 8c2c615 (feat) and c73b69f (fix) implement show/claim latest note and handoff capsule display with -v/--verbose flag. Coverage at 95.12%.",
+    "datetime": "2026-03-08T19:10:00Z",
+    "entry_id": "019cced5-8edf-7fb1-8b72-66e9549ed4c9",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "opus-4-6"
+  }
+}

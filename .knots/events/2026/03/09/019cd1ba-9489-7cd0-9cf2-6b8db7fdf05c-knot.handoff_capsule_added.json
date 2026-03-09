@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd1ba-9489-7cd0-9cf2-6b8db7fdf05c",
+  "occurred_at": "2026-03-09T08:33:11.81705Z",
+  "knot_id": "knots-b8f3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Approved: src/poll_claim.rs now explicitly rejects claim/peek from non-ready_for_* states via require_queue_state() before happy-path traversal, with regression tests for both action-state claim and peek failures. Verification passed with cargo test poll_claim and make sanity (95.06% coverage).",
+    "datetime": "2026-03-09T08:33:04Z",
+    "entry_id": "019cd1ba-9489-7cd0-9cf2-6b7659d9926d",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5"
+  }
+}

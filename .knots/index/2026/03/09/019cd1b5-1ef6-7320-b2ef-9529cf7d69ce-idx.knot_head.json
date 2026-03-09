@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd1b5-1ef6-7320-b2ef-9529cf7d69ce",
+  "occurred_at": "2026-03-09T08:27:14.038673Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-715a",
+    "profile_id": "autopilot",
+    "state": "ready_for_plan_review",
+    "terminal": false,
+    "title": "README.md images",
+    "updated_at": "2026-03-09T08:27:14.038673Z"
+  }
+}

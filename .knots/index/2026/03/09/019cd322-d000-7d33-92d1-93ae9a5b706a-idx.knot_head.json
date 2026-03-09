@@ -1,0 +1,18 @@
+{
+  "event_id": "019cd322-d000-7d33-92d1-93ae9a5b706a",
+  "occurred_at": "2026-03-09T15:06:40.00031Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-2b62",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "kno show should list relationships, grouping them by type",
+    "updated_at": "2026-03-09T15:06:40.00031Z"
+  },
+  "precondition": {
+    "profile_etag": "019cd322-8526-70e0-8429-51e2b7980d0d"
+  }
+}

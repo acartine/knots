@@ -1,0 +1,12 @@
+{
+  "event_id": "019cd2fa-2357-76b3-b813-27f055731fbd",
+  "occurred_at": "2026-03-09T14:22:14.359288Z",
+  "knot_id": "knots-bf5b",
+  "type": "knot.created",
+  "data": {
+    "body": "- replace Beads with a markdown link to https://github.com/steveyegge/beads?tab=readme-ov-file\n- in the quickstart, add that `kno init` is also how you share a repo that is already using Knots.  describe how instead of creating the remote tracking branch, it will simply sync you with the latest Knots.  So if a repo owner/readme says it uses Knots, `kno init` is how you onboard.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Update README.md with some small changes"
+  }
+}

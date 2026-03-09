@@ -1,0 +1,15 @@
+{
+  "event_id": "019ccec6-6f01-7721-ae00-f52bca09d067",
+  "occurred_at": "2026-03-08T18:47:16.993225Z",
+  "knot_id": "knots-49a0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Commit 7532cc98f6ae is on main with all CI workflows green (CI, Release, Repo Hygiene, Changesets Version PR). Verified: (1) Review Basis section scopes approval to code + knot description + acceptance criteria, (2) notes and handoff_capsules explicitly excluded from approval decisions, (3) all three rejection paths require enumerated violations of knot description and/or acceptance criteria in handoff capsule. Tests in src/skills.rs verify all properties.",
+    "datetime": "2026-03-08T20:00:00Z",
+    "entry_id": "019ccec6-6f01-7721-ae00-f513c7ca1056",
+    "model": "claude-opus-4-6",
+    "username": "claude-code",
+    "version": "claude-opus-4-6"
+  }
+}
