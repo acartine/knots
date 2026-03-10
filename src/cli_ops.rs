@@ -9,6 +9,46 @@ pub struct HooksArgs {
     pub command: HooksSubcommands,
 }
 
+#[derive(Debug, Args)]
+#[command(about = "Gate commands.")]
+pub struct GateArgs {
+    #[command(subcommand)]
+    pub command: GateSubcommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum GateSubcommands {
+    #[command(about = "Record a yes/no gate decision.")]
+    Evaluate(GateEvaluateArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct GateEvaluateArgs {
+    #[arg(help = "Gate knot full id, stripped id, or hierarchical alias.")]
+    pub id: String,
+
+    #[arg(long, help = "Gate decision: yes or no.")]
+    pub decision: String,
+
+    #[arg(long, help = "Violated invariant when --decision no is used.")]
+    pub invariant: Option<String>,
+
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
+
+    #[arg(long = "actor-kind", help = "Actor kind for the step: human or agent.")]
+    pub actor_kind: Option<String>,
+
+    #[arg(long = "agent-name", help = "Agent name for step metadata.")]
+    pub agent_name: Option<String>,
+
+    #[arg(long = "agent-model", help = "Agent model for step metadata.")]
+    pub agent_model: Option<String>,
+
+    #[arg(long = "agent-version", help = "Agent version for step metadata.")]
+    pub agent_version: Option<String>,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum HooksSubcommands {
     #[command(about = "Install knots-managed sync hooks.")]

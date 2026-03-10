@@ -34,6 +34,7 @@ fn sample_record(id: &str, state: &str, deferred_from_state: Option<&str>) -> Kn
         handoff_capsules: Vec::new(),
         invariants: Vec::new(),
         step_history: Vec::new(),
+        gate_data: crate::domain::gate::GateData::default(),
         profile_id: "default".to_string(),
         profile_etag: None,
         deferred_from_state: deferred_from_state.map(ToString::to_string),

@@ -21,6 +21,9 @@ pub struct NewOperation {
     pub state: Option<String>,
     pub profile: Option<String>,
     pub fast: bool,
+    pub knot_type: Option<String>,
+    pub gate_owner_kind: Option<String>,
+    pub gate_failure_modes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -56,6 +59,9 @@ pub struct UpdateOperation {
     pub add_invariants: Vec<String>,
     pub remove_invariants: Vec<String>,
     pub clear_invariants: bool,
+    pub gate_owner_kind: Option<String>,
+    pub gate_failure_modes: Vec<String>,
+    pub clear_gate_failure_modes: bool,
     pub add_note: Option<String>,
     pub note_username: Option<String>,
     pub note_datetime: Option<String>,
@@ -120,6 +126,18 @@ pub struct PollClaimOperation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GateEvaluateOperation {
+    pub id: String,
+    pub decision: String,
+    pub invariant: Option<String>,
+    pub json: bool,
+    pub actor_kind: Option<String>,
+    pub agent_name: Option<String>,
+    pub agent_model: Option<String>,
+    pub agent_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EdgeOperation {
     pub src: String,
     pub kind: String,
@@ -147,6 +165,7 @@ pub enum WriteOperation {
     Rollback(RollbackOperation),
     Claim(ClaimOperation),
     PollClaim(PollClaimOperation),
+    GateEvaluate(GateEvaluateOperation),
     EdgeAdd(EdgeOperation),
     EdgeRemove(EdgeOperation),
     StepAnnotate(StepAnnotateOperation),

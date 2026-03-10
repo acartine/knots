@@ -1,0 +1,291 @@
+use crate::domain::gate::GateData;
+use crate::domain::knot_type::KnotType;
+use crate::workflow::{OwnerKind, ProfileDefinition, ProfileError, ProfileRegistry};
+
+pub const READY_TO_EVALUATE: &str = "ready_to_evaluate";
+pub const EVALUATING: &str = "evaluating";
+
+pub fn initial_state(knot_type: KnotType, profile: &ProfileDefinition) -> String {
+    match knot_type {
+        KnotType::Work => profile.initial_state.clone(),
+        KnotType::Gate => READY_TO_EVALUATE.to_string(),
+    }
+}
+
+pub fn is_queue_state(state: &str) -> bool {
+    matches!(
+        state,
+        "ready_for_planning"
+            | "ready_for_plan_review"
+            | "ready_for_implementation"
+            | "ready_for_implementation_review"
+            | "ready_for_shipment"
+            | "ready_for_shipment_review"
+            | READY_TO_EVALUATE
+    )
+}
+
+pub fn is_action_state(state: &str) -> bool {
+    matches!(
+        state,
+        "planning"
+            | "plan_review"
+            | "implementation"
+            | "implementation_review"
+            | "shipment"
+            | "shipment_review"
+            | EVALUATING
+    )
+}
+
+pub fn queue_state_for_stage(raw: &str) -> Option<&'static str> {
+    match raw.trim().to_ascii_lowercase().replace('-', "_").as_str() {
+        "planning" | "plan" => Some("ready_for_planning"),
+        "plan_review" => Some("ready_for_plan_review"),
+        "implementation" | "implement" => Some("ready_for_implementation"),
+        "implementation_review" => Some("ready_for_implementation_review"),
+        "shipment" | "ship" => Some("ready_for_shipment"),
+        "shipment_review" => Some("ready_for_shipment_review"),
+        "evaluate" | "evaluation" | "evaluating" | READY_TO_EVALUATE => Some(READY_TO_EVALUATE),
+        _ => None,
+    }
+}
+
+pub fn is_terminal_state(
+    registry: &ProfileRegistry,
+    profile_id: &str,
+    knot_type: KnotType,
+    state: &str,
+) -> Result<bool, ProfileError> {
+    match knot_type {
+        KnotType::Work => Ok(registry.require(profile_id)?.is_terminal_state(state)),
+        KnotType::Gate => Ok(matches!(state, "shipped" | "abandoned")),
+    }
+}
+
+pub fn validate_transition(
+    registry: &ProfileRegistry,
+    profile_id: &str,
+    knot_type: KnotType,
+    from: &str,
+    to: &str,
+    force: bool,
+) -> Result<(), ProfileError> {
+    match knot_type {
+        KnotType::Work => registry
+            .require(profile_id)?
+            .validate_transition(from, to, force),
+        KnotType::Gate => validate_gate_transition(from, to, force),
+    }
+}
+
+pub fn next_happy_path_state(
+    registry: &ProfileRegistry,
+    profile_id: &str,
+    knot_type: KnotType,
+    current: &str,
+) -> Result<Option<String>, ProfileError> {
+    match knot_type {
+        KnotType::Work => Ok(registry
+            .require(profile_id)?
+            .next_happy_path_state(current)
+            .map(ToString::to_string)),
+        KnotType::Gate => Ok(match current {
+            READY_TO_EVALUATE => Some(EVALUATING.to_string()),
+            EVALUATING => Some("shipped".to_string()),
+            _ => None,
+        }),
+    }
+}
+
+pub fn owner_kind_for_state(
+    registry: &ProfileRegistry,
+    profile_id: &str,
+    knot_type: KnotType,
+    gate: &GateData,
+    state: &str,
+) -> Result<Option<OwnerKind>, ProfileError> {
+    match knot_type {
+        KnotType::Work => Ok(registry
+            .require(profile_id)?
+            .owners
+            .owner_kind_for_state(state)
+            .cloned()),
+        KnotType::Gate => Ok(match state {
+            READY_TO_EVALUATE | EVALUATING => Some(match gate.owner_kind {
+                crate::domain::gate::GateOwnerKind::Human => OwnerKind::Human,
+                crate::domain::gate::GateOwnerKind::Agent => OwnerKind::Agent,
+            }),
+            _ => None,
+        }),
+    }
+}
+
+fn validate_gate_transition(from: &str, to: &str, force: bool) -> Result<(), ProfileError> {
+    if force || from == to {
+        return Ok(());
+    }
+    if matches!(to, "deferred" | "abandoned") {
+        return Ok(());
+    }
+    let allowed = matches!(
+        (from, to),
+        (READY_TO_EVALUATE, EVALUATING) | (EVALUATING, "shipped")
+    );
+    if allowed {
+        return Ok(());
+    }
+    Err(ProfileError::InvalidDefinition(format!(
+        "invalid gate transition: {} -> {}",
+        from, to
+    )))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        initial_state, is_action_state, is_queue_state, is_terminal_state, next_happy_path_state,
+        owner_kind_for_state, queue_state_for_stage, validate_transition, EVALUATING,
+        READY_TO_EVALUATE,
+    };
+    use crate::domain::gate::{GateData, GateOwnerKind};
+    use crate::domain::knot_type::KnotType;
+    use crate::workflow::{OwnerKind, ProfileRegistry};
+
+    #[test]
+    fn gate_states_have_explicit_queue_and_action_classification() {
+        assert!(is_queue_state(READY_TO_EVALUATE));
+        assert!(is_action_state(EVALUATING));
+        assert!(!is_action_state(READY_TO_EVALUATE));
+    }
+
+    #[test]
+    fn queue_state_for_stage_maps_gate_aliases() {
+        assert_eq!(queue_state_for_stage("evaluate"), Some(READY_TO_EVALUATE));
+        assert_eq!(queue_state_for_stage("evaluating"), Some(READY_TO_EVALUATE));
+    }
+
+    #[test]
+    fn gate_next_happy_path_is_fixed() {
+        let registry = ProfileRegistry::load().unwrap();
+        assert_eq!(
+            next_happy_path_state(&registry, "autopilot", KnotType::Gate, READY_TO_EVALUATE)
+                .unwrap(),
+            Some(EVALUATING.to_string())
+        );
+        assert_eq!(
+            next_happy_path_state(&registry, "autopilot", KnotType::Gate, EVALUATING).unwrap(),
+            Some("shipped".to_string())
+        );
+    }
+
+    #[test]
+    fn gate_owner_kind_comes_from_gate_data() {
+        let registry = ProfileRegistry::load().unwrap();
+        let gate = GateData {
+            owner_kind: GateOwnerKind::Human,
+            ..Default::default()
+        };
+        assert_eq!(
+            owner_kind_for_state(
+                &registry,
+                "autopilot",
+                KnotType::Gate,
+                &gate,
+                READY_TO_EVALUATE
+            )
+            .unwrap(),
+            Some(OwnerKind::Human)
+        );
+    }
+
+    #[test]
+    fn initial_state_uses_gate_queue_for_gate_knots() {
+        let registry = ProfileRegistry::load().unwrap();
+        let profile = registry.require("autopilot").unwrap();
+        assert_eq!(initial_state(KnotType::Gate, profile), READY_TO_EVALUATE);
+    }
+
+    #[test]
+    fn gate_terminal_state_and_transition_rules_are_fixed() {
+        let registry = ProfileRegistry::load().unwrap();
+        assert!(
+            !is_terminal_state(&registry, "autopilot", KnotType::Gate, READY_TO_EVALUATE).unwrap()
+        );
+        assert!(is_terminal_state(&registry, "autopilot", KnotType::Gate, "shipped").unwrap());
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Gate,
+            READY_TO_EVALUATE,
+            EVALUATING,
+            false
+        )
+        .is_ok());
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Gate,
+            EVALUATING,
+            "shipped",
+            false
+        )
+        .is_ok());
+        let err = validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Gate,
+            READY_TO_EVALUATE,
+            "shipped",
+            false,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("invalid gate transition"));
+    }
+
+    #[test]
+    fn gate_owner_and_next_state_return_none_for_terminal_states() {
+        let registry = ProfileRegistry::load().unwrap();
+        let gate = GateData::default();
+        assert_eq!(
+            owner_kind_for_state(&registry, "autopilot", KnotType::Gate, &gate, "shipped").unwrap(),
+            None
+        );
+        assert_eq!(
+            next_happy_path_state(&registry, "autopilot", KnotType::Gate, "abandoned").unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn gate_transition_allows_noop_force_and_abandon() {
+        let registry = ProfileRegistry::load().unwrap();
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Gate,
+            READY_TO_EVALUATE,
+            READY_TO_EVALUATE,
+            false
+        )
+        .is_ok());
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Gate,
+            READY_TO_EVALUATE,
+            "abandoned",
+            false
+        )
+        .is_ok());
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Gate,
+            READY_TO_EVALUATE,
+            "shipped",
+            true
+        )
+        .is_ok());
+    }
+}

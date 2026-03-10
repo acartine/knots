@@ -1,3 +1,4 @@
+pub mod gate;
 pub mod invariant;
 pub mod knot_type;
 pub mod metadata;

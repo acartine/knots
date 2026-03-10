@@ -4,6 +4,7 @@ use crate::listing::{apply_filters, KnotListFilter};
 use crate::prompt;
 use crate::skills;
 use crate::workflow::{OwnerKind, ProfileRegistry};
+use crate::workflow_runtime;
 
 const AGENT_COMPLETION_METADATA_FLAGS: &str = concat!(
     "--actor-kind agent ",
@@ -67,20 +68,25 @@ pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.to_string()))?;
     require_queue_state(&knot)?;
-    let profile = registry.require(&knot.profile_id)?;
-    let next_action = profile.next_happy_path_state(&knot.state).ok_or_else(|| {
+    let next_action = workflow_runtime::next_happy_path_state(
+        &registry,
+        &knot.profile_id,
+        knot.knot_type,
+        &knot.state,
+    )?
+    .ok_or_else(|| {
         AppError::InvalidArgument(format!(
             "knot '{}' in state '{}' has no next action state",
             knot.id, knot.state
         ))
     })?;
-    let skill = skills::skill_for_state(next_action).ok_or_else(|| {
+    let skill = skills::skill_for_state(&next_action).ok_or_else(|| {
         AppError::InvalidArgument(format!(
             "next state '{}' is not an action state with a skill",
             next_action
         ))
     })?;
-    let completion_cmd = completion_command(&knot.id, next_action);
+    let completion_cmd = completion_command(&knot.id, &next_action);
     Ok(PollResult {
         knot,
         skill,
@@ -124,14 +130,19 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.to_string()))?;
     require_queue_state(&knot)?;
-    let profile = registry.require(&knot.profile_id)?;
-    let next_action = profile.next_happy_path_state(&knot.state).ok_or_else(|| {
+    let next_action = workflow_runtime::next_happy_path_state(
+        &registry,
+        &knot.profile_id,
+        knot.knot_type,
+        &knot.state,
+    )?
+    .ok_or_else(|| {
         AppError::InvalidArgument(format!(
             "knot '{}' in state '{}' has no next action state",
             knot.id, knot.state
         ))
     })?;
-    let skill = skills::skill_for_state(next_action).ok_or_else(|| {
+    let skill = skills::skill_for_state(&next_action).ok_or_else(|| {
         AppError::InvalidArgument(format!(
             "next state '{}' is not an action state with a skill",
             next_action
@@ -143,7 +154,7 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
     };
     let claimed = app.set_state_with_actor(
         &knot.id,
-        next_action,
+        &next_action,
         false,
         knot.profile_etag.as_deref(),
         claim_actor,
@@ -201,17 +212,17 @@ pub fn run_ready(app: &App, args: ReadyArgs) -> Result<(), AppError> {
 }
 
 pub fn list_queue_candidates(app: &App, stage: Option<&str>) -> Result<Vec<KnotView>, AppError> {
-    let state_filter = stage.map(|s| format!("ready_for_{}", s));
+    let state_filter = stage.and_then(workflow_runtime::queue_state_for_stage);
     let filter = KnotListFilter {
         include_all: false,
-        state: state_filter,
+        state: state_filter.map(ToString::to_string),
         knot_type: None,
         profile_id: None,
         tags: Vec::new(),
         query: None,
     };
     let mut knots = apply_filters(app.list_knots()?, &filter);
-    knots.retain(|k| k.state.starts_with("ready_for_"));
+    knots.retain(|k| workflow_runtime::is_queue_state(&k.state));
     knots.sort_by(|a, b| {
         let pa = a.priority.unwrap_or(i64::MAX);
         let pb = b.priority.unwrap_or(i64::MAX);
@@ -225,26 +236,34 @@ fn match_pollable(
     registry: &ProfileRegistry,
     owner_kind: &OwnerKind,
 ) -> Result<Option<PollResult>, AppError> {
-    let profile = match registry.require(&knot.profile_id) {
-        Ok(p) => p,
-        Err(_) => return Ok(None),
-    };
-    let next_action = match profile.next_happy_path_state(&knot.state) {
+    let gate = knot.gate.clone().unwrap_or_default();
+    let next_action = match workflow_runtime::next_happy_path_state(
+        registry,
+        &knot.profile_id,
+        knot.knot_type,
+        &knot.state,
+    )? {
         Some(s) => s,
         None => return Ok(None),
     };
-    let step_owner = match profile.owners.for_action_state(next_action) {
+    let step_owner = match workflow_runtime::owner_kind_for_state(
+        registry,
+        &knot.profile_id,
+        knot.knot_type,
+        &gate,
+        &next_action,
+    )? {
         Some(o) => o,
         None => return Ok(None),
     };
-    if step_owner.kind != *owner_kind {
+    if step_owner != *owner_kind {
         return Ok(None);
     }
-    let skill = match skills::skill_for_state(next_action) {
+    let skill = match skills::skill_for_state(&next_action) {
         Some(s) => s,
         None => return Ok(None),
     };
-    let completion_cmd = completion_command(&knot.id, next_action);
+    let completion_cmd = completion_command(&knot.id, &next_action);
     Ok(Some(PollResult {
         knot: knot.clone(),
         skill,
@@ -253,10 +272,9 @@ fn match_pollable(
 }
 
 fn require_queue_state(knot: &KnotView) -> Result<(), AppError> {
-    if !knot.state.starts_with("ready_for_") {
+    if !workflow_runtime::is_queue_state(&knot.state) {
         return Err(AppError::InvalidArgument(format!(
-            "knot '{}' is in state '{}', which is not a claimable queue state \
-             (expected ready_for_*)",
+            "knot '{}' is in state '{}', which is not a claimable queue state",
             knot.id, knot.state
         )));
     }
@@ -273,7 +291,9 @@ fn normalize_ready_type(raw: Option<&str>) -> Option<String> {
         return None;
     }
     let lowered = trimmed.to_ascii_lowercase().replace('-', "_");
-    if lowered.starts_with("ready_for_") {
+    if lowered == workflow_runtime::READY_TO_EVALUATE {
+        Some("evaluate".to_string())
+    } else if lowered.starts_with("ready_for_") {
         Some(lowered.trim_start_matches("ready_for_").to_string())
     } else {
         Some(lowered)
@@ -508,3 +528,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(root);
     }
 }
+
+#[cfg(test)]
+#[path = "poll_claim/tests_gate_ext.rs"]
+mod tests_gate_ext;

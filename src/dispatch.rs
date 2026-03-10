@@ -1,6 +1,8 @@
 use crate::app::{App, AppError, KnotView};
+use crate::domain::gate::GateData;
 use crate::knot_id;
 use crate::workflow::{self, OwnerKind};
+use crate::workflow_runtime;
 
 pub fn knot_ref(knot: &KnotView) -> String {
     let sid = knot_id::display_id(&knot.id);
@@ -24,15 +26,24 @@ pub fn resolve_next_state(
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.into()))?;
     let registry = workflow::ProfileRegistry::load()?;
-    let profile = registry.require(&knot.profile_id)?;
-    let next = profile
-        .next_happy_path_state(&knot.state)
-        .ok_or_else(|| AppError::InvalidArgument(format!("no next state from '{}'", knot.state)))?;
-    let owner = profile
-        .owners
-        .owner_kind_for_state(next)
-        .map(owner_kind_label);
-    Ok((knot, next.to_string(), owner))
+    let gate = knot.gate.clone().unwrap_or_else(GateData::default);
+    let next = workflow_runtime::next_happy_path_state(
+        &registry,
+        &knot.profile_id,
+        knot.knot_type,
+        &knot.state,
+    )?
+    .ok_or_else(|| AppError::InvalidArgument(format!("no next state from '{}'", knot.state)))?;
+    let owner = workflow_runtime::owner_kind_for_state(
+        &registry,
+        &knot.profile_id,
+        knot.knot_type,
+        &gate,
+        &next,
+    )?
+    .as_ref()
+    .map(owner_kind_label);
+    Ok((knot, next, owner))
 }
 
 #[cfg(test)]

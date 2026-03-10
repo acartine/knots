@@ -94,6 +94,8 @@ pub enum Commands {
     Rehydrate(RehydrateArgs),
     #[command(about = "Manage knot edges.")]
     Edge(EdgeArgs),
+    #[command(about = "Manage gate decisions and metadata.")]
+    Gate(GateArgs),
     #[command(about = "Advance a knot to its next happy-path state.")]
     Next(NextArgs),
     #[command(
@@ -172,6 +174,18 @@ pub struct NewArgs {
         help = "Profile id (defaults to the user default profile)."
     )]
     pub profile: Option<String>,
+
+    #[arg(short = 'k', long = "type", help = "Knot type (work or gate).")]
+    pub knot_type: Option<String>,
+
+    #[arg(long = "gate-owner-kind", help = "Gate owner kind: human or agent.")]
+    pub gate_owner_kind: Option<String>,
+
+    #[arg(
+        long = "gate-failure-mode",
+        help = "Gate failure mapping '<invariant>=<knot-id[,knot-id...]>' (repeatable)."
+    )]
+    pub gate_failure_modes: Vec<String>,
 
     #[arg(
         short = 'f',
@@ -259,6 +273,21 @@ pub struct UpdateArgs {
 
     #[arg(long = "clear-invariants", help = "Clear all invariants.")]
     pub clear_invariants: bool,
+
+    #[arg(long = "gate-owner-kind", help = "Gate owner kind: human or agent.")]
+    pub gate_owner_kind: Option<String>,
+
+    #[arg(
+        long = "gate-failure-mode",
+        help = "Replace gate failure mappings with '<invariant>=<knot-id[,knot-id...]>' (repeatable)."
+    )]
+    pub gate_failure_modes: Vec<String>,
+
+    #[arg(
+        long = "clear-gate-failure-modes",
+        help = "Clear all gate failure-mode mappings."
+    )]
+    pub clear_gate_failure_modes: bool,
 
     #[arg(short = 'n', long = "add-note", help = "Add note content.")]
     pub add_note: Option<String>,

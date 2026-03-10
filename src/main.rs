@@ -38,6 +38,7 @@ mod tiering;
 mod ui;
 mod workflow;
 mod workflow_diagram;
+mod workflow_runtime;
 mod write_dispatch;
 mod write_queue;
 
@@ -369,6 +370,9 @@ fn run() -> Result<(), app::AppError> {
                 }
             }
         },
+        Commands::Gate(_) => {
+            unreachable!("queued write commands are handled before app initialization")
+        }
         Commands::Next(_) => {
             unreachable!("queued write commands are handled before app initialization")
         }

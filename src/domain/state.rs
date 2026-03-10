@@ -8,6 +8,8 @@ pub enum KnotState {
     Planning,
     ReadyForPlanReview,
     PlanReview,
+    ReadyToEvaluate,
+    Evaluating,
     ReadyForImplementation,
     Implementation,
     ReadyForImplementationReview,
@@ -22,11 +24,13 @@ pub enum KnotState {
 }
 
 impl KnotState {
-    pub const ALL: [KnotState; 15] = [
+    pub const ALL: [KnotState; 17] = [
         KnotState::ReadyForPlanning,
         KnotState::Planning,
         KnotState::ReadyForPlanReview,
         KnotState::PlanReview,
+        KnotState::ReadyToEvaluate,
+        KnotState::Evaluating,
         KnotState::ReadyForImplementation,
         KnotState::Implementation,
         KnotState::ReadyForImplementationReview,
@@ -46,6 +50,8 @@ impl KnotState {
             KnotState::Planning => "planning",
             KnotState::ReadyForPlanReview => "ready_for_plan_review",
             KnotState::PlanReview => "plan_review",
+            KnotState::ReadyToEvaluate => "ready_to_evaluate",
+            KnotState::Evaluating => "evaluating",
             KnotState::ReadyForImplementation => "ready_for_implementation",
             KnotState::Implementation => "implementation",
             KnotState::ReadyForImplementationReview => "ready_for_implementation_review",
@@ -81,6 +87,8 @@ impl KnotState {
                 | (KnotState::ReadyForPlanReview, KnotState::PlanReview)
                 | (KnotState::PlanReview, KnotState::ReadyForImplementation)
                 | (KnotState::PlanReview, KnotState::ReadyForPlanning)
+                | (KnotState::ReadyToEvaluate, KnotState::Evaluating)
+                | (KnotState::Evaluating, KnotState::Shipped)
                 | (KnotState::ReadyForImplementation, KnotState::Implementation)
                 | (
                     KnotState::Implementation,
@@ -137,6 +145,8 @@ impl FromStr for KnotState {
             "planning" => KnotState::Planning,
             "ready_for_plan_review" => KnotState::ReadyForPlanReview,
             "plan_review" => KnotState::PlanReview,
+            "ready_to_evaluate" => KnotState::ReadyToEvaluate,
+            "evaluating" | "evaluate" => KnotState::Evaluating,
             "ready_for_implementation" | "work_item" | "rejected" | "refining" => {
                 KnotState::ReadyForImplementation
             }
@@ -218,6 +228,10 @@ mod tests {
             KnotState::from_str("work_item").unwrap(),
             KnotState::ReadyForImplementation
         );
+        assert_eq!(
+            KnotState::from_str("ready_to_evaluate").unwrap(),
+            KnotState::ReadyToEvaluate
+        );
     }
 
     #[test]
@@ -227,6 +241,8 @@ mod tests {
             (KnotState::Planning, KnotState::ReadyForPlanReview),
             (KnotState::ReadyForPlanReview, KnotState::PlanReview),
             (KnotState::PlanReview, KnotState::ReadyForImplementation),
+            (KnotState::ReadyToEvaluate, KnotState::Evaluating),
+            (KnotState::Evaluating, KnotState::Shipped),
             (KnotState::ReadyForImplementation, KnotState::Implementation),
             (
                 KnotState::Implementation,

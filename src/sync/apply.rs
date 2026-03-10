@@ -6,6 +6,7 @@ use serde_json::{Map, Value};
 use time::OffsetDateTime;
 
 use crate::db::{self, UpsertKnotHot};
+use crate::domain::gate::GateData;
 use crate::domain::invariant::Invariant;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
@@ -214,6 +215,13 @@ impl<'a> IncrementalApplier<'a> {
             .as_ref()
             .map(|record| record.step_history.clone())
             .unwrap_or_default();
+        let mut gate_data = existing
+            .as_ref()
+            .map(|record| record.gate_data.clone())
+            .unwrap_or_default();
+        if data.contains_key("gate") {
+            gate_data = parse_gate_data(data, &absolute_path)?;
+        }
         let deferred_from_state = existing
             .as_ref()
             .and_then(|record| record.deferred_from_state.clone());
@@ -242,6 +250,7 @@ impl<'a> IncrementalApplier<'a> {
                         handoff_capsules: &handoff_capsules,
                         invariants: &invariants,
                         step_history: &step_history,
+                        gate_data: &gate_data,
                         profile_id: &profile_id,
                         profile_etag: Some(&event.event_id),
                         deferred_from_state: deferred_from_state.as_deref(),
@@ -365,6 +374,13 @@ impl<'a> IncrementalApplier<'a> {
                 })?;
                 Ok(FullApplyOutcome::Ignored)
             }
+            "knot.gate_data_set" => {
+                let gate_data = parse_gate_data(data, &absolute_path)?;
+                self.apply_metadata_update(&event.knot_id, |record| {
+                    record.gate_data = gate_data;
+                })?;
+                Ok(FullApplyOutcome::Ignored)
+            }
             _ => Ok(FullApplyOutcome::Ignored),
         }
     }
@@ -390,6 +406,7 @@ impl<'a> IncrementalApplier<'a> {
             handoff_capsules: existing.handoff_capsules,
             invariants: existing.invariants,
             step_history: existing.step_history,
+            gate_data: existing.gate_data,
             profile_id: existing.profile_id,
             profile_etag: existing.profile_etag,
             deferred_from_state: existing.deferred_from_state,
@@ -413,6 +430,7 @@ impl<'a> IncrementalApplier<'a> {
                 handoff_capsules: &projection.handoff_capsules,
                 invariants: &projection.invariants,
                 step_history: &projection.step_history,
+                gate_data: &projection.gate_data,
                 profile_id: &projection.profile_id,
                 profile_etag: projection.profile_etag.as_deref(),
                 deferred_from_state: projection.deferred_from_state.as_deref(),
@@ -442,6 +460,7 @@ struct MetadataProjection {
     handoff_capsules: Vec<MetadataEntry>,
     invariants: Vec<Invariant>,
     step_history: Vec<StepRecord>,
+    gate_data: GateData,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
@@ -535,6 +554,14 @@ fn parse_invariants(object: &Map<String, Value>, path: &Path) -> Result<Vec<Inva
         .ok_or_else(|| invalid_event(path, "missing 'invariants' array field"))?;
     serde_json::from_value(raw.clone())
         .map_err(|err| invalid_event(path, &format!("invalid 'invariants' payload: {}", err)))
+}
+
+fn parse_gate_data(object: &Map<String, Value>, path: &Path) -> Result<GateData, SyncError> {
+    let raw = object
+        .get("gate")
+        .ok_or_else(|| invalid_event(path, "missing 'gate' object field"))?;
+    serde_json::from_value(raw.clone())
+        .map_err(|err| invalid_event(path, &format!("invalid 'gate' payload: {}", err)))
 }
 
 fn invalid_event(path: &Path, message: &str) -> SyncError {

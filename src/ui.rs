@@ -278,6 +278,21 @@ fn knot_show_fields(knot: &KnotView, verbose: bool) -> Vec<ShowField> {
             .join(", ");
         fields.push(ShowField::new("invariants", formatted));
     }
+    if let Some(gate) = knot.gate.as_ref() {
+        fields.push(ShowField::new(
+            "gate_owner_kind",
+            gate.owner_kind.to_string(),
+        ));
+        if !gate.failure_modes.is_empty() {
+            let formatted = gate
+                .failure_modes
+                .iter()
+                .map(|(invariant, targets)| format!("{invariant} => {}", targets.join(", ")))
+                .collect::<Vec<_>>()
+                .join("\n");
+            fields.push(ShowField::new("gate_failure_modes", formatted));
+        }
+    }
     if !knot.edges.is_empty() {
         let grouped = group_edges_by_kind(&knot.edges, &knot.id);
         for (kind, targets) in &grouped {
@@ -458,6 +473,7 @@ fn state_color_code(state: &str) -> &'static str {
         // Action states: green
         "planning"
         | "plan_review"
+        | "evaluating"
         | "implementation"
         | "implementation_review"
         | "shipment"
@@ -465,6 +481,7 @@ fn state_color_code(state: &str) -> &'static str {
         // Queue states: yellow
         "ready_for_planning"
         | "ready_for_plan_review"
+        | "ready_to_evaluate"
         | "ready_for_implementation"
         | "ready_for_implementation_review"
         | "ready_for_shipment"
@@ -598,6 +615,7 @@ mod tests {
             }],
             invariants: vec![],
             step_history: vec![],
+            gate: None,
             profile_id: "default".to_string(),
             profile_etag: Some("etag-1".to_string()),
             deferred_from_state: None,
@@ -648,6 +666,7 @@ mod tests {
             handoff_capsules: vec![],
             invariants: vec![],
             step_history: vec![],
+            gate: None,
             profile_id: "default".to_string(),
             profile_etag: None,
             deferred_from_state: None,
