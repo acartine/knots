@@ -299,6 +299,16 @@ Update state:
 kno state <knot-id> implementation
 ```
 
+Advance or rewind workflow state:
+```bash
+kno next <knot-id> implementation
+kno rollback <knot-id>
+kno rb <knot-id> --dry-run
+```
+
+`rollback` moves action states back to the prior ready state; for example,
+`implementation_review` rewinds to `ready_for_implementation`.
+
 Patch fields with one command:
 ```bash
 kno update <knot-id> \

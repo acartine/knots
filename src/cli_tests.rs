@@ -260,6 +260,57 @@ fn next_parses_actor_metadata_flags() {
 }
 
 #[test]
+fn rollback_parses() {
+    let cli = parse(&["kno", "rollback", "abc123"]);
+    match cli.command {
+        Commands::Rollback(args) => {
+            assert_eq!(args.id, "abc123");
+            assert!(!args.dry_run);
+            assert!(args.actor_kind.is_none());
+        }
+        other => panic!("expected Rollback, got {:?}", other),
+    }
+}
+
+#[test]
+fn rollback_alias_parses() {
+    let cli = parse(&["kno", "rb", "abc123", "--dry-run"]);
+    match cli.command {
+        Commands::Rollback(args) => {
+            assert_eq!(args.id, "abc123");
+            assert!(args.dry_run);
+        }
+        other => panic!("expected Rollback alias, got {:?}", other),
+    }
+}
+
+#[test]
+fn rollback_parses_actor_metadata_flags() {
+    let cli = parse(&[
+        "kno",
+        "rollback",
+        "abc123",
+        "--actor-kind",
+        "agent",
+        "--agent-name",
+        "codex",
+        "--agent-model",
+        "gpt-5",
+        "--agent-version",
+        "1.0",
+    ]);
+    match cli.command {
+        Commands::Rollback(args) => {
+            assert_eq!(args.actor_kind.as_deref(), Some("agent"));
+            assert_eq!(args.agent_name.as_deref(), Some("codex"));
+            assert_eq!(args.agent_model.as_deref(), Some("gpt-5"));
+            assert_eq!(args.agent_version.as_deref(), Some("1.0"));
+        }
+        other => panic!("expected Rollback, got {:?}", other),
+    }
+}
+
+#[test]
 fn completions_parses_with_shell() {
     let cli = parse(&["kno", "completions", "bash"]);
     match cli.command {
