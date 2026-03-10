@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6be-408b-7b63-b1d9-a3e13278fcf6",
+  "occurred_at": "2026-03-10T07:55:18.539893Z",
+  "knot_id": "knots-575f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review: PR #26 not yet merged to main. CI failures on enforce-changeset (missing changeset file) and codecov/patch. Sanity and repo hygiene checks pass. Next steps: add changeset file, fix codecov/patch, get CI green, merge PR, then re-enter shipment review.",
+    "datetime": "2026-03-10T12:00:00Z",
+    "entry_id": "019cd6be-408b-7b63-b1d9-a3d04380cb94",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

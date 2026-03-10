@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6dd-8c05-79e2-829f-935a71c01839",
+  "occurred_at": "2026-03-10T08:29:29.47773Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-aa2c",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "Add Gate knot type and persisted metadata",
+    "updated_at": "2026-03-10T08:29:29.47773Z"
+  }
+}

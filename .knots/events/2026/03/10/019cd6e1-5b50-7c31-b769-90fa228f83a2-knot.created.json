@@ -1,0 +1,12 @@
+{
+  "event_id": "019cd6e1-5b50-7c31-b769-90fa228f83a2",
+  "occurred_at": "2026-03-10T08:33:39.152268Z",
+  "knot_id": "knots-d5ef",
+  "type": "knot.created",
+  "data": {
+    "body": "we need a clean way to go from a state to a prior state as a part of normal failure mode handling.\n\n- if in review state, should roll back 3 states.  for example if we have state Qnr (queue for non-review state) -> nr -> Qr (queue for review state) -> r - and we are in state r, then rollback to Qnr.  this is what would happen if the reviewing owner rejected a prior action.\n- if we are in state nr, we rollback 1 state, to Qnr.  \n- also support `rollback/rb --dry-run` to preview what the state would be and why.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "add `kno rollback` and `kno rb` (as alias) to rollback from action to ready state."
+  }
+}

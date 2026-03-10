@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6c4-11c1-7bd2-8405-23f56c061e8a",
+  "occurred_at": "2026-03-10T08:01:39.777416Z",
+  "knot_id": "knots-575f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete: added changeset file to fix enforce-changeset CI check, pushed to PR branch, all CI checks passed (Sanity, enforce-changeset, required-public-files). Squash-merged PR #26 to main. CI green on main (run 22892732921). Merge commit tagged as commit:2129bcfbf938.",
+    "datetime": "2026-03-10T08:05:00Z",
+    "entry_id": "019cd6c4-11c1-7bd2-8405-23e7bc6afcac",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "opus-4.6"
+  }
+}

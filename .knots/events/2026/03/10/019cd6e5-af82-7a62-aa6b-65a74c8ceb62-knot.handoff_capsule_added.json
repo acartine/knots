@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6e5-af82-7a62-aa6b-65a74c8ceb62",
+  "occurred_at": "2026-03-10T08:38:22.850517Z",
+  "knot_id": "knots-d5ef",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Plan reviewed and approved. State ordering in profile.rs confirms rollback targets are correct for both review (3-step) and non-review (1-step) action states. Profile-aware resolution from states vec handles skipped planning/review modes. Architecture follows existing next/claim patterns. Shipment review rollback to ready_for_shipment is consistent with 3-step rule. Test strategy covers parsing, aliases, dry-run, profile variants, and e2e.",
+    "datetime": "2026-03-10T00:00:00Z",
+    "entry_id": "019cd6e5-af82-7a62-aa6b-659cc83dcc35",
+    "model": "claude-opus-4-6",
+    "username": "unknown",
+    "version": "claude-opus-4-6"
+  }
+}

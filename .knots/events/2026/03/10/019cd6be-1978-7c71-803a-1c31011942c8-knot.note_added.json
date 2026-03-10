@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6be-1978-7c71-803a-1c31011942c8",
+  "occurred_at": "2026-03-10T07:55:08.536436Z",
+  "knot_id": "knots-575f",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review blocked: PR #26 is still open (not merged to main). CI has failures: enforce-changeset (missing changeset) and codecov/patch. Code must be merged to main with green CI before shipment review can approve.",
+    "datetime": "2026-03-10T07:55:08.536436Z",
+    "entry_id": "019cd6be-1978-7c71-803a-1c2c50ab5556",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6b8-e1ac-7950-a1e3-b5a785cf5a61",
+  "occurred_at": "2026-03-10T07:49:26.572747Z",
+  "knot_id": "knots-575f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation complete: extracted test module from state_hierarchy.rs (502 lines → 216 lines + 284 lines test file) to comply with 500-line limit. All tests pass, coverage at 95.10%. Two commits on branch: 9ca782d (core implementation) and 4c623c7 (test extraction). Branch pushed.",
+    "datetime": "2026-03-10T00:00:00Z",
+    "entry_id": "019cd6b8-e1ac-7950-a1e3-b59112c2fc4c",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

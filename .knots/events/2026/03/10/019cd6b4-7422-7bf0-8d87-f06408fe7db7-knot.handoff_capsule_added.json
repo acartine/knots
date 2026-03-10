@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6b4-7422-7bf0-8d87-f06408fe7db7",
+  "occurred_at": "2026-03-10T07:44:36.386435Z",
+  "knot_id": "knots-575f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review rejected: src/state_hierarchy.rs is 502 lines, 2 over the 500-line style guide maximum. The test module (~290 lines) should be extracted into a separate file. Implementation logic, test coverage, error reporting, cascade behavior, deferred handling, and CLI integration are all correct and complete.",
+    "datetime": "2026-03-10T07:45:00Z",
+    "entry_id": "019cd6b4-7422-7bf0-8d87-f052891f51d7",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

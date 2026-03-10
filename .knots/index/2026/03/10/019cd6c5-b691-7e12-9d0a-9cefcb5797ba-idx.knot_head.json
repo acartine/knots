@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6c5-b691-7e12-9d0a-9cefcb5797ba",
+  "occurred_at": "2026-03-10T08:03:27.495343Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-575f",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "knots with children should not be allowed to move to terminated state",
+    "updated_at": "2026-03-10T08:03:27.495343Z"
+  }
+}

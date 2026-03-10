@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6c5-b687-7872-8272-9845c7d64527",
+  "occurred_at": "2026-03-10T08:03:27.495343Z",
+  "knot_id": "knots-575f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Verified: commit 2129bcfbf938 is on main, all CI workflows green (Repo Hygiene, Release, Changesets), make sanity passes locally (95.12% coverage). state_hierarchy.rs has 100% line coverage (105/105). Implementation correctly blocks parent state advancement past children, requires approval for terminal cascades, and cascades all descendants on approval. Error codes (hierarchy_progress_blocked, terminal_cascade_approval_required) are distinct and informative. 10 unit tests + 5 CLI integration tests cover all cases including cycles and deferred states. No invariants to check. No regressions detected.",
+    "datetime": "2026-03-10T12:00:00Z",
+    "entry_id": "019cd6c5-b687-7872-8272-983beb0c5ed5",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

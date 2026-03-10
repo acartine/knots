@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6af-ede7-7210-8373-aeaa64098dde",
+  "occurred_at": "2026-03-10T07:39:39.879672Z",
+  "knot_id": "knots-575f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented hierarchy state enforcement so a parent cannot move past any direct child, and terminal parent moves require explicit descendant cascade approval. Added app, CLI, queue, and dispatch support for terminal cascades plus unit and CLI coverage for blocking and cascade behavior. Verified with make sanity (95.10% coverage).",
+    "datetime": "2026-03-10T07:39:39.879672Z",
+    "entry_id": "019cd6af-ede7-7210-8373-ae9bdc2b3593",
+    "model": "gpt-5",
+    "username": "unknown",
+    "version": "1.0"
+  }
+}

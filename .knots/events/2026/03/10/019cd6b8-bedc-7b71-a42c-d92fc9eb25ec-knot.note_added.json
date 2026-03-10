@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6b8-bedc-7b71-a42c-d92fc9eb25ec",
+  "occurred_at": "2026-03-10T07:49:17.660018Z",
+  "knot_id": "knots-5fa0",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "foolery",
+    "content": "Close reason: Moved to foolery as d08e",
+    "datetime": "2026-03-10T07:49:17.660018Z",
+    "entry_id": "019cd6b8-bedc-7b71-a42c-d913553d50e9",
+    "model": "unknown",
+    "username": "foolery",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd68f-0e96-72d0-9411-fe80e4a0cc9a",
+  "occurred_at": "2026-03-10T07:03:45.558273Z",
+  "knot_id": "knots-575f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan recorded. Enforce direct-child progress checks in the shared app transition path so next/state/update behave consistently, compare deferred children by deferred_from_state, require explicit approval for terminal cascades, and cascade approved terminal moves through all descendants in deepest-first order. Child knots created: knots-8a97, knots-642d, knots-142d.",
+    "datetime": "2026-03-10T07:03:40Z",
+    "entry_id": "019cd68f-0e96-72d0-9411-fe7aeb360c4a",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-10"
+  }
+}

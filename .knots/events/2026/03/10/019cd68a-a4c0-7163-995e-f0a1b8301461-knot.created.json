@@ -1,0 +1,12 @@
+{
+  "event_id": "019cd68a-a4c0-7163-995e-f0a1b8301461",
+  "occurred_at": "2026-03-10T06:58:56.3204Z",
+  "knot_id": "knots-575f",
+  "type": "knot.created",
+  "data": {
+    "body": "as title says, but even more strictly -\n\na parent knot should not be allowed to move past the state of ANY of it's children.\n\nattempts to do so should return an error code, an error explanation, and the list of direct descendant knots that are blocking the move.\n\nan exception is as follows - a knot can be moved to a terminal state under the following conditions:\n- the caller is prompted for approval with an explanation that all children (direct or indirect) will also be moved to terminal state\n- upon approval, all children (direct or indirect) will be moved to terminal state",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "knots with children should not be allowed to move to terminated state"
+  }
+}

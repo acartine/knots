@@ -1,0 +1,12 @@
+{
+  "event_id": "019cd68d-e605-7b83-ad27-489773ed6132",
+  "occurred_at": "2026-03-10T07:02:29.637849Z",
+  "knot_id": "knots-8a97",
+  "type": "knot.created",
+  "data": {
+    "body": "Add hierarchy-aware transition guards so a knot cannot move past any direct child. Compare effective progress states, handle deferred children correctly, and return blocking child identifiers and states when a move is rejected.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Enforce parent-child state ordering on transitions"
+  }
+}

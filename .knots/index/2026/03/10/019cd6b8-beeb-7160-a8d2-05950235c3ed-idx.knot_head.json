@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6b8-beeb-7160-a8d2-05950235c3ed",
+  "occurred_at": "2026-03-10T07:49:17.660018Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-5fa0",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Search should work on every screen",
+    "updated_at": "2026-03-10T07:49:17.660018Z"
+  }
+}

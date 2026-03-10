@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6e4-a570-7e51-b75f-a667077fcf96",
+  "occurred_at": "2026-03-10T08:37:14.736552Z",
+  "knot_id": "knots-d5ef",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning complete.\n\nRecommended implementation:\n- add `rollback`/`rb` as a queued write command\n- compute rollback target from profile state order, not hardcoded counts\n- for review states, rewind to the ready queue before the reviewed action\n- keep `--dry-run` side-effect free and include the target plus reason\n\nPrimary touchpoints:\n- `src/cli.rs`\n- `src/write_queue.rs`\n- `src/write_dispatch.rs`\n- `src/dispatch.rs` (or a small new helper)\n- `src/profile.rs`\n- `src/cli_tests.rs`\n- `tests/cli_dispatch.rs`\n\nKey risk to resolve during implementation:\n- `shipment_review` has multiple legal rejection targets today; rollback should default to deterministic 3-step rewind (`ready_for_shipment`), not the deeper root-cause jump.\n\nNo child knots were created; scope is small enough for a single implementation knot.",
+    "datetime": "2026-03-10T08:35:55Z",
+    "entry_id": "019cd6e4-a570-7e51-b75f-a65c700a8dd2",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5-codex"
+  }
+}

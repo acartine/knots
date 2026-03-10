@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6df-c4ef-7a03-90ae-f0abb2c66631",
+  "occurred_at": "2026-03-10T08:31:55.11942Z",
+  "knot_id": "knots-e892",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Plan review approved. Plan is well-structured with good decomposition into 3 child knots. Key findings: (1) DB already supports arbitrary knot_type, no schema migration needed for type field. (2) Gate states (ready_to_evaluate, evaluating) fit existing is_action_state() naming convention. (3) Workflow generalization in d7dd is highest risk due to hardcoded Work-type assumptions across state.rs, state_hierarchy.rs, profile.rs, skills.rs, and poll_claim.rs. (4) profiles.toml needs new Gate profiles and skills.rs needs evaluating skill doc. (5) Open question resolved: abandoned is correct terminal state after gate failure reopens linked knots. No invariants to check.",
+    "datetime": "2026-03-10T00:00:00Z",
+    "entry_id": "019cd6df-c4ef-7a03-90ae-f0903692692d",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

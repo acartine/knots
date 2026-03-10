@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6b4-55a2-73c2-a668-0731d4656678",
+  "occurred_at": "2026-03-10T07:44:28.578411Z",
+  "knot_id": "knots-575f",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "state_hierarchy.rs is 502 lines, exceeding the 500-line style guide maximum. Extract the #[cfg(test)] module into a separate test file (e.g., src/state_hierarchy/tests.rs or src/state_hierarchy_tests.rs) to bring the main module under the limit. All other aspects of the implementation are solid.",
+    "datetime": "2026-03-10T07:44:28.578411Z",
+    "entry_id": "019cd6b4-55a2-73c2-a668-0720e482e46a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

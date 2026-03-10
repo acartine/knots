@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6f0-b9e3-7441-8214-beef46ad1447",
+  "occurred_at": "2026-03-10T08:50:26.403475Z",
+  "knot_id": "knots-d5ef",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented kno rollback/rb with profile-aware action/review rewind resolution, dry-run preview support, queued write-path integration, README updates, and regression coverage. Branch: codex/knots-d5ef-rollback. Commit: cc3a142350bd. Validation: make sanity passed with 95.16% coverage.",
+    "datetime": "2026-03-10T08:50:16Z",
+    "entry_id": "019cd6f0-b9e3-7441-8214-bedeb18b5cff",
+    "model": "gpt-5",
+    "username": "acartine",
+    "version": "2026-03-10"
+  }
+}

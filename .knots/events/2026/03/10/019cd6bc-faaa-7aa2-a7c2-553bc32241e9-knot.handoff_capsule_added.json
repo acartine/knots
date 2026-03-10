@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6bc-faaa-7aa2-a7c2-553bc32241e9",
+  "occurred_at": "2026-03-10T07:53:55.114102Z",
+  "knot_id": "knots-575f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review APPROVED. Verified against knot description:\n1. Parent knots cannot advance past any direct child's state - enforced via rank comparison in state_hierarchy::plan_state_transition(), returns error code hierarchy_progress_blocked with blocker list.\n2. Terminal state cascade requires explicit approval (--cascade-terminal-descendants flag or TTY prompt) - returns terminal_cascade_approval_required error with descendant list when unapproved.\n3. Upon approval, all descendants (direct+indirect) cascade to terminal state depth-first; already-terminal descendants skipped.\n4. CLI flags added to state/update/next commands. Interactive prompt for TTY sessions, hard error for non-interactive.\n5. Cascade events audited with cascade_approved and cascade_root_id fields.\n6. Comprehensive tests: unit (state_hierarchy_tests.rs, tests_hierarchy.rs), write_dispatch, CLI integration (cli_state_hierarchy.rs).\n7. make sanity passes: format, lint, all 456 tests, 95.10% coverage.\n8. New files under 500-line limit. write_dispatch.rs and app.rs growth is on pre-existing over-limit files.",
+    "datetime": "2026-03-10T07:55:00Z",
+    "entry_id": "019cd6bc-faaa-7aa2-a7c2-55288e1f62f8",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

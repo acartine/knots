@@ -1,0 +1,12 @@
+{
+  "event_id": "019cd6b8-8a43-7f80-84bb-a264df27f315",
+  "occurred_at": "2026-03-10T07:49:04.195784Z",
+  "knot_id": "knots-5fa0",
+  "type": "knot.created",
+  "data": {
+    "body": "if user hits enter after search term, should open a Search view",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Search should work on every screen"
+  }
+}

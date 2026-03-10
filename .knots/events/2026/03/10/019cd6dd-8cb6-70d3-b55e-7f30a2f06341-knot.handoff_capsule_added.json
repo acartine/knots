@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6dd-8cb6-70d3-b55e-7f30a2f06341",
+  "occurred_at": "2026-03-10T08:29:29.654504Z",
+  "knot_id": "knots-e892",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan attached. Main implementation split is: aa2c for gate type/persistence, d7dd for workflow generalization around /, and 8c0d for gate  handling that reopens mapped knots with note/handoff metadata. Main unresolved product question: whether a  outcome should immediately end the gate in .",
+    "datetime": "2026-03-10T08:29:29Z",
+    "entry_id": "019cd6dd-8cb6-70d3-b55e-7f24ed13935f",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-10"
+  }
+}

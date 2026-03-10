@@ -1,0 +1,10 @@
+{
+  "event_id": "019cd68e-30aa-7493-b1e1-c75ef8f31f1a",
+  "occurred_at": "2026-03-10T07:02:48.746995Z",
+  "knot_id": "knots-575f",
+  "type": "knot.edge_add",
+  "data": {
+    "dst": "knots-8a97",
+    "kind": "parent_of"
+  }
+}

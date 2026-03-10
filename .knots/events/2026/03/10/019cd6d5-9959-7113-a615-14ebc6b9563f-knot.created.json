@@ -1,0 +1,12 @@
+{
+  "event_id": "019cd6d5-9959-7113-a615-14ebc6b9563f",
+  "occurred_at": "2026-03-10T08:20:48.60102Z",
+  "knot_id": "knots-e892",
+  "type": "knot.created",
+  "data": {
+    "body": "Gate has\n\ntitle\ndescription\nedges\nowner type\ntags\ninvariants\nfailure modes (mapping of invariant violation to knots)\nworkflow is\n\nready to evaluate\nevaluating\nshipped\nabandoned\n\nthe idea is that a gate is a yes or no\n\nif it's a no, we have to find the knot based on the invariant violation, and mark it is \"ready for planning\", and add a note/handoff_capsule that the gate failure reopened it.",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add \"Gate\" knot type with basic schema and workflow"
+  }
+}

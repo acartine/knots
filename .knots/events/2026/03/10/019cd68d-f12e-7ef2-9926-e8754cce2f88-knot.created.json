@@ -1,0 +1,12 @@
+{
+  "event_id": "019cd68d-f12e-7ef2-9926-e8754cce2f88",
+  "occurred_at": "2026-03-10T07:02:32.494563Z",
+  "knot_id": "knots-642d",
+  "type": "knot.created",
+  "data": {
+    "body": "Allow terminal transitions with explicit approval, explain that all descendants will also be moved to the terminal state, and cascade the state change through direct and indirect children in a safe order with audit metadata.",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Add terminal cascade approval and descendant termination"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6f3-1a4b-70c1-97bf-c3202b5b7531",
+  "occurred_at": "2026-03-10T08:53:02.15544Z",
+  "knot_id": "knots-d5ef",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Rollback command correctly implements spec: review states rewind 3 states to prior ready queue, non-review action states rewind 1 state. Dry-run previews without mutation. CLI alias rb works. Resolution is profile-aware via ordered state list. Tests cover unit, integration, and E2E paths. make sanity passes.",
+    "datetime": "2026-03-10T00:00:00Z",
+    "entry_id": "019cd6f3-1a4b-70c1-97bf-c31b8d04b62d",
+    "model": "claude-opus-4-6",
+    "username": "unknown",
+    "version": "claude-opus-4-6"
+  }
+}
