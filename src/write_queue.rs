@@ -90,6 +90,16 @@ pub struct NextOperation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RollbackOperation {
+    pub id: String,
+    pub dry_run: bool,
+    pub actor_kind: Option<String>,
+    pub agent_name: Option<String>,
+    pub agent_model: Option<String>,
+    pub agent_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ClaimOperation {
     pub id: String,
     pub json: bool,
@@ -134,6 +144,7 @@ pub enum WriteOperation {
     State(StateOperation),
     Update(UpdateOperation),
     Next(NextOperation),
+    Rollback(RollbackOperation),
     Claim(ClaimOperation),
     PollClaim(PollClaimOperation),
     EdgeAdd(EdgeOperation),

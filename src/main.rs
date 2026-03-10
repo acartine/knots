@@ -28,6 +28,7 @@ mod profile_commands;
 mod prompt;
 mod remote_init;
 mod replication;
+mod rollback;
 mod self_manage;
 mod skills;
 mod snapshots;
@@ -138,6 +139,9 @@ fn run() -> Result<(), app::AppError> {
         },
         Commands::Profile(_) => {
             unreachable!("profile commands are handled before app initialization")
+        }
+        Commands::Rollback(_) => {
+            unreachable!("queued write commands are handled before app initialization")
         }
         Commands::Pull(args) => {
             let summary = app.pull()?;

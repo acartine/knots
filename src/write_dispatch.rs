@@ -11,10 +11,11 @@ use crate::domain::metadata::MetadataEntryInput;
 use crate::domain::state::KnotState;
 use crate::domain::step_history::StepActorInfo;
 use crate::poll_claim;
+use crate::rollback::resolve_rollback_state;
 use crate::ui;
 use crate::write_queue::{
     self, ClaimOperation, EdgeOperation, NewOperation, NextOperation, PollClaimOperation,
-    QueuedWriteRequest, QueuedWriteResponse, QuickNewOperation, StateOperation,
+    QueuedWriteRequest, QueuedWriteResponse, QuickNewOperation, RollbackOperation, StateOperation,
     StepAnnotateOperation, UpdateOperation, WriteOperation,
 };
 
@@ -103,6 +104,14 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
                 .or_else(|| args.current_state.clone()),
             json: args.json,
             approve_terminal_cascade: args.cascade_terminal_descendants,
+            actor_kind: args.actor_kind.clone(),
+            agent_name: args.agent_name.clone(),
+            agent_model: args.agent_model.clone(),
+            agent_version: args.agent_version.clone(),
+        })),
+        Commands::Rollback(args) => Some(WriteOperation::Rollback(RollbackOperation {
+            id: args.id.clone(),
+            dry_run: args.dry_run,
             actor_kind: args.actor_kind.clone(),
             agent_name: args.agent_name.clone(),
             agent_model: args.agent_model.clone(),
@@ -343,6 +352,38 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 args.json,
             ))
         }
+        WriteOperation::Rollback(args) => {
+            let resolution = resolve_rollback_state(app, &args.id)?;
+            if args.dry_run {
+                return Ok(format_rollback_output(
+                    &resolution.knot,
+                    &resolution.target_state,
+                    resolution.owner_kind,
+                    &resolution.reason,
+                    true,
+                ));
+            }
+            let updated = app.set_state_with_actor_and_options(
+                &resolution.knot.id,
+                &resolution.target_state,
+                resolution.requires_force,
+                None,
+                StateActorMetadata {
+                    actor_kind: args.actor_kind.clone(),
+                    agent_name: args.agent_name.clone(),
+                    agent_model: args.agent_model.clone(),
+                    agent_version: args.agent_version.clone(),
+                },
+                false,
+            )?;
+            Ok(format_rollback_output(
+                &updated,
+                &resolution.target_state,
+                resolution.owner_kind,
+                &resolution.reason,
+                false,
+            ))
+        }
         WriteOperation::Claim(args) => {
             let actor = StateActorMetadata {
                 actor_kind: Some("agent".to_string()),
@@ -532,6 +573,31 @@ fn format_next_output(
         owner_suffix,
     )
 }
+
+fn format_rollback_output(
+    knot: &crate::app::KnotView,
+    target_state: &str,
+    owner_kind: Option<&str>,
+    reason: &str,
+    dry_run: bool,
+) -> String {
+    let palette = ui::Palette::auto();
+    let owner_suffix = owner_kind
+        .map(|kind| format!(" (owner: {kind})"))
+        .unwrap_or_default();
+    let verb = if dry_run {
+        "would roll back"
+    } else {
+        "rolled back"
+    };
+    format!(
+        "{verb} {} -> {}{} ({reason})\n",
+        palette.id(&knot_ref(knot)),
+        palette.state(target_state),
+        owner_suffix,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -796,6 +862,27 @@ mod tests {
     }
 
     #[test]
+    fn operation_from_command_maps_rollback() {
+        let cli = crate::cli::Cli::parse_from([
+            "kno",
+            "rb",
+            "knots-1",
+            "--dry-run",
+            "--actor-kind",
+            "agent",
+        ]);
+
+        match operation_from_command(&cli.command).expect("rollback should queue") {
+            WriteOperation::Rollback(operation) => {
+                assert_eq!(operation.id, "knots-1");
+                assert!(operation.dry_run);
+                assert_eq!(operation.actor_kind.as_deref(), Some("agent"));
+            }
+            other => panic!("unexpected rollback operation: {other:?}"),
+        }
+    }
+
+    #[test]
     fn operation_from_command_maps_step_annotate() {
         let cli = crate::cli::Cli::parse_from([
             "kno",
@@ -825,6 +912,121 @@ mod tests {
         let cli = crate::cli::Cli::parse_from(["kno", "show", "knots-1"]);
         let result = maybe_run_queued_command(&cli).expect("read-only commands should skip queue");
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn execute_operation_rollback_covers_dry_run_real_and_rejection_paths() {
+        let root = unique_workspace("knots-write-dispatch-rollback");
+        setup_repo(&root);
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app = App::open(
+            db_path.to_str().expect("db path should be utf8"),
+            root.clone(),
+        )
+        .expect("app should open");
+        let created = app
+            .create_knot("Rollback", None, Some("ready_for_implementation"), None)
+            .expect("knot should be created");
+
+        let queue_err = execute_operation(
+            &app,
+            &WriteOperation::Rollback(RollbackOperation {
+                id: created.id.clone(),
+                dry_run: false,
+                actor_kind: None,
+                agent_name: None,
+                agent_model: None,
+                agent_version: None,
+            }),
+        )
+        .expect_err("queue-state rollback should fail");
+        match queue_err {
+            AppError::InvalidArgument(message) => assert!(message.contains("queue state")),
+            other => panic!("unexpected rollback rejection: {other}"),
+        }
+
+        let implementation = app
+            .set_state_with_actor(
+                &created.id,
+                "implementation",
+                false,
+                created.profile_etag.as_deref(),
+                StateActorMetadata {
+                    actor_kind: Some("agent".to_string()),
+                    agent_name: Some("claimer".to_string()),
+                    agent_model: Some("model".to_string()),
+                    agent_version: Some("1.0".to_string()),
+                },
+            )
+            .expect("implementation claim should succeed");
+        let dry_run = execute_operation(
+            &app,
+            &WriteOperation::Rollback(RollbackOperation {
+                id: implementation.id.clone(),
+                dry_run: true,
+                actor_kind: None,
+                agent_name: None,
+                agent_model: None,
+                agent_version: None,
+            }),
+        )
+        .expect("dry-run rollback should succeed");
+        assert!(dry_run.contains("would roll back"));
+        assert!(dry_run.contains("ready_for_implementation"));
+
+        let after_dry_run = app
+            .show_knot(&implementation.id)
+            .expect("knot should load")
+            .expect("knot should exist");
+        assert_eq!(after_dry_run.state, "implementation");
+        assert_eq!(
+            after_dry_run.step_history.len(),
+            implementation.step_history.len()
+        );
+
+        app.set_state_with_actor(
+            &implementation.id,
+            "ready_for_implementation_review",
+            false,
+            implementation.profile_etag.as_deref(),
+            StateActorMetadata::default(),
+        )
+        .expect("queue review transition should succeed");
+        let in_review = app
+            .set_state_with_actor(
+                &implementation.id,
+                "implementation_review",
+                false,
+                None,
+                StateActorMetadata {
+                    actor_kind: Some("agent".to_string()),
+                    agent_name: Some("reviewer".to_string()),
+                    agent_model: Some("model".to_string()),
+                    agent_version: Some("2.0".to_string()),
+                },
+            )
+            .expect("review claim should succeed");
+
+        let output = execute_operation(
+            &app,
+            &WriteOperation::Rollback(RollbackOperation {
+                id: in_review.id.clone(),
+                dry_run: false,
+                actor_kind: Some("agent".to_string()),
+                agent_name: Some("rollbacker".to_string()),
+                agent_model: Some("model".to_string()),
+                agent_version: Some("3.0".to_string()),
+            }),
+        )
+        .expect("rollback should succeed");
+        assert!(output.contains("rolled back"));
+        assert!(output.contains("ready_for_implementation"));
+
+        let after_rollback = app
+            .show_knot(&in_review.id)
+            .expect("knot should load")
+            .expect("knot should exist");
+        assert_eq!(after_rollback.state, "ready_for_implementation");
     }
 
     #[test]
@@ -866,6 +1068,16 @@ mod tests {
             serde_json::from_str(&json).expect("json next output should parse");
         assert_eq!(parsed["previous_state"], "idea");
         assert_eq!(parsed["state"], "planning");
+
+        let rollback = format_rollback_output(
+            &knot,
+            "ready_for_implementation",
+            Some("agent"),
+            "implementation is an action state",
+            true,
+        );
+        assert!(rollback.contains("would roll back"));
+        assert!(rollback.contains("owner: agent"));
     }
 
     #[test]

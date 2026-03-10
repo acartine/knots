@@ -96,6 +96,11 @@ pub enum Commands {
     Edge(EdgeArgs),
     #[command(about = "Advance a knot to its next happy-path state.")]
     Next(NextArgs),
+    #[command(
+        about = "Roll back a knot from an action state to its prior ready state.",
+        alias = "rb"
+    )]
+    Rollback(RollbackArgs),
     #[command(about = "Print the skill prompt for a knot's next action state.")]
     Skill(SkillArgs),
     #[command(about = "Quick-create a knot using the default quick profile.")]
@@ -488,6 +493,31 @@ pub struct NextArgs {
         help = "Approve cascading a terminal state to all descendants."
     )]
     pub cascade_terminal_descendants: bool,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Roll back a knot from an action state to its prior ready state.")]
+pub struct RollbackArgs {
+    #[arg(help = "Knot full id, stripped id, or hierarchical alias.")]
+    pub id: String,
+
+    #[arg(
+        long = "dry-run",
+        help = "Preview the rollback target without mutating state."
+    )]
+    pub dry_run: bool,
+
+    #[arg(long = "actor-kind", help = "Actor kind for the step: human or agent.")]
+    pub actor_kind: Option<String>,
+
+    #[arg(long = "agent-name", help = "Agent name for step metadata.")]
+    pub agent_name: Option<String>,
+
+    #[arg(long = "agent-model", help = "Agent model for step metadata.")]
+    pub agent_model: Option<String>,
+
+    #[arg(long = "agent-version", help = "Agent version for step metadata.")]
+    pub agent_version: Option<String>,
 }
 
 #[derive(Debug, Args)]
