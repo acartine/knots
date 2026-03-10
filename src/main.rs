@@ -31,6 +31,7 @@ mod replication;
 mod self_manage;
 mod skills;
 mod snapshots;
+mod state_hierarchy;
 mod sync;
 mod tiering;
 mod ui;
