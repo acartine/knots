@@ -19,8 +19,7 @@ use crate::ui;
 use crate::write_queue::{
     self, ClaimOperation, EdgeOperation, GateEvaluateOperation, NewOperation, NextOperation,
     PollClaimOperation, QueuedWriteRequest, QueuedWriteResponse, QuickNewOperation,
-    RollbackOperation, StateOperation,
-    StepAnnotateOperation, UpdateOperation, WriteOperation,
+    RollbackOperation, StateOperation, StepAnnotateOperation, UpdateOperation, WriteOperation,
 };
 
 pub fn maybe_run_queued_command(cli: &Cli) -> Result<Option<String>, AppError> {
