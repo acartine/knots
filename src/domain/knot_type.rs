@@ -8,14 +8,16 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub enum KnotType {
     #[default]
     Work,
+    Gate,
 }
 
 impl KnotType {
-    pub const ALL: [KnotType; 1] = [KnotType::Work];
+    pub const ALL: [KnotType; 2] = [KnotType::Work, KnotType::Gate];
 
     pub fn as_str(self) -> &'static str {
         match self {
             KnotType::Work => "work",
+            KnotType::Gate => "gate",
         }
     }
 }
@@ -33,6 +35,7 @@ impl FromStr for KnotType {
         let normalized = value.trim().to_ascii_lowercase();
         match normalized.as_str() {
             "work" | "task" | "" => Ok(KnotType::Work),
+            "gate" => Ok(KnotType::Gate),
             _ => Err(ParseKnotTypeError {
                 value: value.to_string(),
             }),
@@ -127,6 +130,11 @@ mod tests {
     #[test]
     fn default_is_work() {
         assert_eq!(KnotType::default(), KnotType::Work);
+    }
+
+    #[test]
+    fn parses_gate_type() {
+        assert_eq!(KnotType::from_str("gate").unwrap(), KnotType::Gate);
     }
 
     #[test]

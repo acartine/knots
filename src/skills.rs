@@ -1,5 +1,6 @@
 const PLANNING: &str = include_str!("../skills/planning.md");
 const PLAN_REVIEW: &str = include_str!("../skills/plan_review.md");
+const EVALUATING: &str = include_str!("../skills/evaluating.md");
 const IMPLEMENTATION: &str = include_str!("../skills/implementation.md");
 const IMPLEMENTATION_REVIEW: &str = include_str!("../skills/implementation_review.md");
 const SHIPMENT: &str = include_str!("../skills/shipment.md");
@@ -9,6 +10,7 @@ pub fn skill_for_state(state: &str) -> Option<&'static str> {
     match state {
         "planning" => Some(PLANNING),
         "plan_review" => Some(PLAN_REVIEW),
+        "evaluating" => Some(EVALUATING),
         "implementation" => Some(IMPLEMENTATION),
         "implementation_review" => Some(IMPLEMENTATION_REVIEW),
         "shipment" => Some(SHIPMENT),
@@ -97,6 +99,9 @@ mod tests {
         assert!(skill_for_state("implementation")
             .unwrap()
             .contains("# Implementation"));
+        assert!(skill_for_state("evaluating")
+            .unwrap()
+            .contains("# Evaluating"));
         assert!(skill_for_state("shipment_review")
             .unwrap()
             .contains("# Shipment Review"));

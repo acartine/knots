@@ -44,6 +44,18 @@ fn render_prompt_inner(
         }
         out.push('\n');
     }
+    if let Some(gate) = knot.gate.as_ref() {
+        out.push_str("## Gate\n\n");
+        out.push_str(&format!("- owner: {}\n", gate.owner_kind));
+        if gate.failure_modes.is_empty() {
+            out.push_str("- failure modes: none\n");
+        } else {
+            for (invariant, targets) in &gate.failure_modes {
+                out.push_str(&format!("- {} => {}\n", invariant, targets.join(", ")));
+            }
+        }
+        out.push('\n');
+    }
     if !knot.notes.is_empty() || !knot.handoff_capsules.is_empty() {
         out.push_str("## Notes\n\n");
         if verbose {
@@ -99,6 +111,7 @@ pub fn render_prompt_json_verbose(
         "type": knot.knot_type.as_str(),
         "profile_id": knot.profile_id,
         "invariants": knot.invariants,
+        "gate": knot.gate,
         "prompt": prompt_text,
     });
     if !verbose {
@@ -189,6 +202,7 @@ mod tests {
             handoff_capsules: vec![],
             invariants: vec![],
             step_history: vec![],
+            gate: None,
             profile_id: "autopilot".to_string(),
             profile_etag: None,
             deferred_from_state: None,

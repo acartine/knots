@@ -193,6 +193,8 @@ fn effective_state_rank(state: &str) -> Result<u8, AppError> {
         KnotState::Planning => 1,
         KnotState::ReadyForPlanReview => 2,
         KnotState::PlanReview => 3,
+        KnotState::ReadyToEvaluate => 10,
+        KnotState::Evaluating => 11,
         KnotState::ReadyForImplementation => 4,
         KnotState::Implementation => 5,
         KnotState::ReadyForImplementationReview => 6,

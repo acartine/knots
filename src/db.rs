@@ -8,11 +8,12 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
+use crate::domain::gate::GateData;
 use crate::domain::invariant::Invariant;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 8;
+pub const CURRENT_SCHEMA_VERSION: i64 = 9;
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
 const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
@@ -32,7 +33,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 8] = [
+const MIGRATIONS: [Migration; 9] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -180,6 +181,13 @@ ALTER TABLE knot_hot ADD COLUMN invariants_json TEXT NOT NULL DEFAULT '[]';
         name: "knot_step_history_v1",
         sql: r#"
 ALTER TABLE knot_hot ADD COLUMN step_history_json TEXT NOT NULL DEFAULT '[]';
+"#,
+    },
+    Migration {
+        version: 9,
+        name: "knot_gate_data_v1",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN gate_data_json TEXT NOT NULL DEFAULT '{}';
 "#,
     },
 ];
@@ -409,6 +417,8 @@ pub struct KnotCacheRecord {
     pub invariants: Vec<Invariant>,
     #[serde(default)]
     pub step_history: Vec<StepRecord>,
+    #[serde(default)]
+    pub gate_data: GateData,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -443,6 +453,7 @@ pub struct UpsertKnotHot<'a> {
     pub handoff_capsules: &'a [MetadataEntry],
     pub invariants: &'a [Invariant],
     pub step_history: &'a [StepRecord],
+    pub gate_data: &'a GateData,
     pub profile_id: &'a str,
     pub profile_etag: Option<&'a str>,
     pub deferred_from_state: Option<&'a str>,
@@ -455,20 +466,21 @@ pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()
     let handoff_capsules_json = to_json_text(args.handoff_capsules)?;
     let invariants_json = to_json_text(args.invariants)?;
     let step_history_json = to_json_text(args.step_history)?;
+    let gate_data_json = to_json_text(args.gate_data)?;
     with_write_retry(|| {
         conn.execute(
             r#"
 INSERT INTO knot_hot (
     id, title, state, updated_at, body, description, priority,
     knot_type, tags_json, notes_json, handoff_capsules_json,
-    invariants_json, step_history_json, profile_id, profile_etag,
+    invariants_json, step_history_json, gate_data_json, profile_id, profile_etag,
     deferred_from_state, created_at
 )
 VALUES (
     ?1, ?2, ?3, ?4, ?5, ?6, ?7,
     ?8, ?9, ?10, ?11,
-    ?12, ?13, ?14, ?15,
-    ?16, ?17
+    ?12, ?13, ?14, ?15, ?16,
+    ?17, ?18
 )
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
@@ -483,6 +495,7 @@ ON CONFLICT(id) DO UPDATE SET
     handoff_capsules_json = excluded.handoff_capsules_json,
     invariants_json = excluded.invariants_json,
     step_history_json = excluded.step_history_json,
+    gate_data_json = excluded.gate_data_json,
     profile_id = excluded.profile_id,
     profile_etag = excluded.profile_etag,
     deferred_from_state = excluded.deferred_from_state,
@@ -502,6 +515,7 @@ ON CONFLICT(id) DO UPDATE SET
                 handoff_capsules_json.as_str(),
                 invariants_json.as_str(),
                 step_history_json.as_str(),
+                gate_data_json.as_str(),
                 args.profile_id,
                 args.profile_etag,
                 args.deferred_from_state,
@@ -523,7 +537,7 @@ pub fn get_knot_hot(conn: &Connection, id: &str) -> Result<Option<KnotCacheRecor
         r#"
 SELECT id, title, state, updated_at, body, description, priority,
        knot_type, tags_json, notes_json, handoff_capsules_json,
-       invariants_json, step_history_json, profile_id, profile_etag,
+       invariants_json, step_history_json, gate_data_json, profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 WHERE id = ?1
@@ -539,7 +553,7 @@ pub fn list_knot_hot(conn: &Connection) -> Result<Vec<KnotCacheRecord>> {
         r#"
 SELECT id, title, state, updated_at, body, description, priority,
        knot_type, tags_json, notes_json, handoff_capsules_json,
-       invariants_json, step_history_json, profile_id, profile_etag,
+       invariants_json, step_history_json, gate_data_json, profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 ORDER BY updated_at DESC, id ASC
@@ -561,6 +575,7 @@ fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> 
     let handoff_capsules_json: String = row.get(10)?;
     let invariants_json: String = row.get(11)?;
     let step_history_json: String = row.get(12)?;
+    let gate_data_json: String = row.get(13)?;
     Ok(KnotCacheRecord {
         id: row.get(0)?,
         title: row.get(1)?,
@@ -575,10 +590,11 @@ fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> 
         handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
         invariants: from_json_text(invariants_json, 11)?,
         step_history: from_json_text(step_history_json, 12)?,
-        profile_id: row.get(13)?,
-        profile_etag: row.get(14)?,
-        deferred_from_state: row.get(15)?,
-        created_at: row.get(16)?,
+        gate_data: from_json_text(gate_data_json, 13)?,
+        profile_id: row.get(14)?,
+        profile_etag: row.get(15)?,
+        deferred_from_state: row.get(16)?,
+        created_at: row.get(17)?,
     })
 }
 

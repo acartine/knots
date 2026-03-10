@@ -1,12 +1,15 @@
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 use uuid::Uuid;
 
-use super::{App, AppError, StateActorMetadata, UpdateKnotPatch};
+use super::{App, AppError, CreateKnotOptions, GateDecision, StateActorMetadata, UpdateKnotPatch};
 use crate::db::{self, EdgeDirection};
 use crate::doctor::DoctorError;
+use crate::domain::gate::{GateData, GateOwnerKind};
+use crate::domain::invariant::{Invariant, InvariantType};
 use crate::domain::state::{InvalidStateTransition, KnotState};
 use crate::fsck::FsckError;
 use crate::locks::LockError;
@@ -76,6 +79,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
             add_invariants: vec![],
             remove_invariants: vec![],
             clear_invariants: false,
+            gate_owner_kind: None,
+            gate_failure_modes: None,
+            clear_gate_failure_modes: false,
             add_note: None,
             add_handoff_capsule: None,
             expected_profile_etag: None,
@@ -98,6 +104,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
             add_invariants: vec![],
             remove_invariants: vec![],
             clear_invariants: false,
+            gate_owner_kind: None,
+            gate_failure_modes: None,
+            clear_gate_failure_modes: false,
             add_note: None,
             add_handoff_capsule: None,
             expected_profile_etag: None,
@@ -121,6 +130,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
                 add_invariants: vec![],
                 remove_invariants: vec![],
                 clear_invariants: false,
+                gate_owner_kind: None,
+                gate_failure_modes: None,
+                clear_gate_failure_modes: false,
                 add_note: None,
                 add_handoff_capsule: None,
                 expected_profile_etag: None,
@@ -145,6 +157,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
                 add_invariants: vec![],
                 remove_invariants: vec![],
                 clear_invariants: false,
+                gate_owner_kind: None,
+                gate_failure_modes: None,
+                clear_gate_failure_modes: false,
                 add_note: None,
                 add_handoff_capsule: None,
                 expected_profile_etag: None,
@@ -169,6 +184,9 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
                 add_invariants: vec![],
                 remove_invariants: vec![],
                 clear_invariants: false,
+                gate_owner_kind: None,
+                gate_failure_modes: None,
+                clear_gate_failure_modes: false,
                 add_note: None,
                 add_handoff_capsule: None,
                 expected_profile_etag: None,
@@ -551,6 +569,9 @@ fn update_knot_state_change_writes_actor_metadata() {
                 add_invariants: vec![],
                 remove_invariants: vec![],
                 clear_invariants: false,
+                gate_owner_kind: None,
+                gate_failure_modes: None,
+                clear_gate_failure_modes: false,
                 add_note: None,
                 add_handoff_capsule: None,
                 expected_profile_etag: created.profile_etag.clone(),
@@ -625,6 +646,100 @@ fn default_profile_resolution_covers_config_and_fallback_paths() {
     let no_home_app = app.with_home_override(None);
     let missing_home = no_home_app.set_default_profile_id("autopilot");
     assert!(matches!(missing_home, Err(AppError::InvalidArgument(_))));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn evaluate_gate_failure_reopens_linked_knots_and_adds_metadata() {
+    let root = unique_workspace();
+    let (app, _) = open_app(&root);
+    let target = app
+        .create_knot("Target work", None, Some("shipped"), Some("default"))
+        .expect("target knot should be created");
+
+    let mut failure_modes = BTreeMap::new();
+    failure_modes.insert("release blocked".to_string(), vec![target.id.clone()]);
+    let gate = app
+        .create_knot_with_options(
+            "Release gate",
+            Some("Gate must pass before shipment"),
+            None,
+            Some("default"),
+            CreateKnotOptions {
+                knot_type: crate::domain::knot_type::KnotType::Gate,
+                gate_data: GateData {
+                    owner_kind: GateOwnerKind::Human,
+                    failure_modes,
+                },
+            },
+        )
+        .expect("gate should be created");
+    let gate = app
+        .update_knot(
+            &gate.id,
+            UpdateKnotPatch {
+                title: None,
+                description: None,
+                priority: None,
+                status: None,
+                knot_type: None,
+                add_tags: vec![],
+                remove_tags: vec![],
+                add_invariants: vec![Invariant::new(InvariantType::State, "release blocked")
+                    .expect("invariant should build")],
+                remove_invariants: vec![],
+                clear_invariants: false,
+                gate_owner_kind: None,
+                gate_failure_modes: None,
+                clear_gate_failure_modes: false,
+                add_note: None,
+                add_handoff_capsule: None,
+                expected_profile_etag: gate.profile_etag.clone(),
+                force: false,
+                state_actor: StateActorMetadata::default(),
+            },
+        )
+        .expect("gate invariants should update");
+    let gate = app
+        .set_state(
+            &gate.id,
+            crate::workflow_runtime::EVALUATING,
+            false,
+            gate.profile_etag.as_deref(),
+        )
+        .expect("gate should enter evaluating");
+
+    let result = app
+        .evaluate_gate(
+            &gate.id,
+            GateDecision::No,
+            Some("release blocked"),
+            StateActorMetadata::default(),
+        )
+        .expect("gate evaluation should succeed");
+
+    assert_eq!(result.decision, "no");
+    assert_eq!(result.gate.state, "abandoned");
+    assert_eq!(result.reopened, vec![target.id.clone()]);
+
+    let reopened = app
+        .show_knot(&target.id)
+        .expect("show should succeed")
+        .expect("target knot should exist");
+    assert_eq!(reopened.state, "ready_for_planning");
+    assert!(reopened
+        .notes
+        .last()
+        .expect("note should be added")
+        .content
+        .contains("reopened this knot for planning"));
+    assert!(reopened
+        .handoff_capsules
+        .last()
+        .expect("handoff should be added")
+        .content
+        .contains("reopened this knot for planning"));
 
     let _ = std::fs::remove_dir_all(root);
 }

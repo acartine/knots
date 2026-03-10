@@ -1454,3 +1454,117 @@ fn skill_command_accepts_state_name_as_fallback() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn gate_knots_support_human_evaluation_and_reopen_flow() {
+    let root = unique_workspace("knots-cli-gate");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let target = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Blocked work",
+            "--state",
+            "shipped",
+            "--profile",
+            "autopilot",
+        ],
+    );
+    assert_success(&target);
+    let target_id = parse_created_id(&target);
+
+    let gate = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Release gate",
+            "--type",
+            "gate",
+            "--gate-owner-kind",
+            "human",
+            "--gate-failure-mode",
+            &format!("release blocked={target_id}"),
+        ],
+    );
+    assert_success(&gate);
+    let gate_id = parse_created_id(&gate);
+
+    let gate_update = run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &gate_id,
+            "--add-invariant",
+            "State:release blocked",
+        ],
+    );
+    assert_success(&gate_update);
+
+    let shown_gate = run_knots(&root, &db, &["show", &gate_id, "--json"]);
+    assert_success(&shown_gate);
+    let shown_json: Value = serde_json::from_slice(&shown_gate.stdout).expect("show json");
+    assert_eq!(shown_json["type"], "gate");
+    assert_eq!(shown_json["gate"]["owner_kind"], "human");
+
+    let poll = run_knots(
+        &root,
+        &db,
+        &["poll", "evaluate", "--owner", "human", "--json"],
+    );
+    assert_success(&poll);
+    let poll_json: Value = serde_json::from_slice(&poll.stdout).expect("poll json");
+    assert_eq!(poll_json["title"], "Release gate");
+
+    let claim = run_knots(&root, &db, &["claim", &gate_id, "--json"]);
+    assert_success(&claim);
+    let claim_json: Value = serde_json::from_slice(&claim.stdout).expect("claim json");
+    assert_eq!(claim_json["state"], "evaluating");
+    assert!(claim_json["prompt"]
+        .as_str()
+        .expect("prompt should exist")
+        .contains("# Evaluating"));
+
+    let evaluate = run_knots(
+        &root,
+        &db,
+        &[
+            "gate",
+            "evaluate",
+            &gate_id,
+            "--decision",
+            "no",
+            "--invariant",
+            "release blocked",
+            "--json",
+        ],
+    );
+    assert_success(&evaluate);
+    let evaluate_json: Value = serde_json::from_slice(&evaluate.stdout).expect("evaluate json");
+    assert_eq!(evaluate_json["decision"], "no");
+    assert_eq!(evaluate_json["gate"]["state"], "abandoned");
+    let reopened_id = evaluate_json["reopened"][0]
+        .as_str()
+        .expect("reopened id should be a string");
+    assert!(
+        reopened_id.ends_with(&target_id),
+        "full id '{reopened_id}' should end with display id '{target_id}'"
+    );
+
+    let reopened = run_knots(&root, &db, &["show", &target_id, "--json"]);
+    assert_success(&reopened);
+    let reopened_json: Value = serde_json::from_slice(&reopened.stdout).expect("show json");
+    assert_eq!(reopened_json["state"], "ready_for_planning");
+    assert!(reopened_json["notes"][0]
+        .as_object()
+        .and_then(|obj| obj.get("content"))
+        .and_then(Value::as_str)
+        .expect("note content")
+        .contains("reopened this knot for planning"));
+
+    let _ = std::fs::remove_dir_all(root);
+}

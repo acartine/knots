@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::error::Error;
 use std::fmt;
 use std::fs;
@@ -12,6 +12,7 @@ use serde_json::{json, Value};
 
 use crate::db::{self, EdgeDirection, EdgeRecord, KnotCacheRecord, UpsertKnotHot};
 use crate::doctor::{run_doctor_with_fix, DoctorError, DoctorReport};
+use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::invariant::Invariant;
 use crate::domain::knot_type::{parse_knot_type, KnotType};
 use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
@@ -32,6 +33,7 @@ use crate::snapshots::{write_snapshots, SnapshotError, SnapshotWriteSummary};
 use crate::state_hierarchy::{self, HierarchyKnot, TransitionPlan};
 use crate::sync::{SyncError, SyncSummary};
 use crate::workflow::{normalize_profile_id, ProfileDefinition, ProfileError, ProfileRegistry};
+use crate::workflow_runtime;
 
 const DEFAULT_PROFILE_ID: &str = "autopilot";
 
@@ -60,6 +62,8 @@ pub struct KnotView {
     pub handoff_capsules: Vec<MetadataEntry>,
     pub invariants: Vec<Invariant>,
     pub step_history: Vec<StepRecord>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gate: Option<GateData>,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -93,6 +97,9 @@ pub struct UpdateKnotPatch {
     pub add_invariants: Vec<Invariant>,
     pub remove_invariants: Vec<Invariant>,
     pub clear_invariants: bool,
+    pub gate_owner_kind: Option<GateOwnerKind>,
+    pub gate_failure_modes: Option<BTreeMap<String, Vec<String>>>,
+    pub clear_gate_failure_modes: bool,
     pub add_note: Option<MetadataEntryInput>,
     pub add_handoff_capsule: Option<MetadataEntryInput>,
     pub expected_profile_etag: Option<String>,
@@ -100,11 +107,33 @@ pub struct UpdateKnotPatch {
     pub state_actor: StateActorMetadata,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct CreateKnotOptions {
+    pub knot_type: KnotType,
+    pub gate_data: GateData,
+}
+
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct EdgeView {
     pub src: String,
     pub kind: String,
     pub dst: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct GateEvaluationResult {
+    pub gate: KnotView,
+    pub decision: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub invariant: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub reopened: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GateDecision {
+    Yes,
+    No,
 }
 
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
@@ -148,6 +177,9 @@ impl UpdateKnotPatch {
             || !self.add_invariants.is_empty()
             || !self.remove_invariants.is_empty()
             || self.clear_invariants
+            || self.gate_owner_kind.is_some()
+            || self.gate_failure_modes.is_some()
+            || self.clear_gate_failure_modes
             || self.add_note.is_some()
             || self.add_handoff_capsule.is_some()
     }
@@ -484,6 +516,23 @@ impl App {
         initial_state: Option<&str>,
         profile_id: Option<&str>,
     ) -> Result<KnotView, AppError> {
+        self.create_knot_with_options(
+            title,
+            body,
+            initial_state,
+            profile_id,
+            CreateKnotOptions::default(),
+        )
+    }
+
+    pub fn create_knot_with_options(
+        &self,
+        title: &str,
+        body: Option<&str>,
+        initial_state: Option<&str>,
+        profile_id: Option<&str>,
+        options: CreateKnotOptions,
+    ) -> Result<KnotView, AppError> {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
@@ -498,11 +547,17 @@ impl App {
         let state = if let Some(requested) = non_empty(initial_state.unwrap_or("")) {
             normalize_state_input(&requested)?
         } else {
-            profile.initial_state.clone()
+            workflow_runtime::initial_state(options.knot_type, profile)
         };
-        profile.require_state(&state)?;
+        require_state_for_knot_type(options.knot_type, profile, &state)?;
         let knot_id = self.next_knot_id()?;
         let occurred_at = now_utc_rfc3339();
+        let terminal = workflow_runtime::is_terminal_state(
+            &self.profile_registry,
+            profile.id.as_str(),
+            options.knot_type,
+            &state,
+        )?;
 
         let full_event = FullEvent::with_identity(
             new_event_id(),
@@ -514,6 +569,8 @@ impl App {
                 "state": state.as_str(),
                 "profile_id": profile.id.as_str(),
                 "body": body,
+                "type": options.knot_type.as_str(),
+                "gate": &options.gate_data,
             }),
         );
 
@@ -522,15 +579,17 @@ impl App {
             index_event_id.clone(),
             occurred_at.clone(),
             IndexEventKind::KnotHead.as_str(),
-            json!({
-                "knot_id": knot_id,
-                "title": title,
-                "state": state.as_str(),
-                "profile_id": profile.id.as_str(),
-                "updated_at": occurred_at,
-                "terminal": profile.is_terminal_state(&state),
-                "deferred_from_state": Value::Null,
-                "invariants": Vec::<Invariant>::new(),
+            build_knot_head_data(KnotHeadData {
+                knot_id: &knot_id,
+                title,
+                state: state.as_str(),
+                profile_id: profile.id.as_str(),
+                updated_at: &occurred_at,
+                terminal,
+                deferred_from_state: None,
+                invariants: &[],
+                knot_type: options.knot_type,
+                gate_data: &options.gate_data,
             }),
         );
 
@@ -547,12 +606,13 @@ impl App {
                 body,
                 description: body,
                 priority: None,
-                knot_type: Some(KnotType::default().as_str()),
+                knot_type: Some(options.knot_type.as_str()),
                 tags: &[],
                 notes: &[],
                 handoff_capsules: &[],
                 invariants: &[],
                 step_history: &[],
+                gate_data: &options.gate_data,
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: None,
@@ -581,7 +641,11 @@ impl App {
 
         let profile = self.profile_registry.require(profile_id)?;
         let next_state = normalize_state_input(state)?;
-        profile.require_state(&next_state)?;
+        require_state_for_knot_type(
+            parse_knot_type(current.knot_type.as_deref()),
+            profile,
+            &next_state,
+        )?;
 
         let current_profile_id = canonical_profile_id(&current.profile_id);
         if current_profile_id == profile.id && current.state == next_state {
@@ -615,19 +679,28 @@ impl App {
         }
 
         let index_event_id = new_event_id();
+        let knot_type = parse_knot_type(current.knot_type.as_deref());
+        let terminal = workflow_runtime::is_terminal_state(
+            &self.profile_registry,
+            profile.id.as_str(),
+            knot_type,
+            &next_state,
+        )?;
         let mut idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
             occurred_at.clone(),
             IndexEventKind::KnotHead.as_str(),
-            json!({
-                "knot_id": id,
-                "title": current.title,
-                "state": next_state,
-                "profile_id": profile.id,
-                "updated_at": occurred_at,
-                "terminal": profile.is_terminal_state(&next_state),
-                "deferred_from_state": deferred_from_state,
-                "invariants": &current.invariants,
+            build_knot_head_data(KnotHeadData {
+                knot_id: &id,
+                title: &current.title,
+                state: &next_state,
+                profile_id: profile.id.as_str(),
+                updated_at: &occurred_at,
+                terminal,
+                deferred_from_state: deferred_from_state.as_deref(),
+                invariants: &current.invariants,
+                knot_type,
+                gate_data: &current.gate_data,
             }),
         );
         if let Some(expected) = expected_profile_etag {
@@ -653,6 +726,7 @@ impl App {
                 handoff_capsules: &current.handoff_capsules,
                 invariants: &current.invariants,
                 step_history: &current.step_history,
+                gate_data: &current.gate_data,
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -764,6 +838,7 @@ impl App {
         let mut notes = current.notes.clone();
         let mut handoff_capsules = current.handoff_capsules.clone();
         let mut invariants = current.invariants.clone();
+        let mut gate_data = current.gate_data.clone();
         let occurred_at = now_utc_rfc3339();
         let mut full_events = Vec::new();
 
@@ -782,13 +857,25 @@ impl App {
                     )));
                 }
             } else {
-                profile.validate_transition(&state, &next_state, patch.force)?;
+                workflow_runtime::validate_transition(
+                    &self.profile_registry,
+                    &profile_id,
+                    knot_type,
+                    &state,
+                    &next_state,
+                    patch.force,
+                )?;
             }
             match state_hierarchy::plan_state_transition(
                 &self.conn,
                 &current,
                 &next_state,
-                profile.is_terminal_state(&next_state),
+                workflow_runtime::is_terminal_state(
+                    &self.profile_registry,
+                    &profile_id,
+                    knot_type,
+                    &next_state,
+                )?,
                 approve_terminal_cascade,
             )? {
                 TransitionPlan::Allowed if state != next_state => {
@@ -837,6 +924,7 @@ impl App {
                     notes = current.notes.clone();
                     handoff_capsules = current.handoff_capsules.clone();
                     invariants = current.invariants.clone();
+                    gate_data = current.gate_data.clone();
                 }
             }
         }
@@ -913,6 +1001,29 @@ impl App {
                 ));
                 knot_type = next_type;
             }
+        }
+
+        if let Some(owner_kind) = patch.gate_owner_kind {
+            gate_data.owner_kind = owner_kind;
+        }
+        if patch.clear_gate_failure_modes {
+            gate_data.failure_modes.clear();
+        }
+        if let Some(failure_modes) = patch.gate_failure_modes.clone() {
+            gate_data.failure_modes = failure_modes;
+        }
+        if patch.gate_owner_kind.is_some()
+            || patch.clear_gate_failure_modes
+            || patch.gate_failure_modes.is_some()
+        {
+            require_gate_metadata_scope(knot_type)?;
+            full_events.push(FullEvent::with_identity(
+                new_event_id(),
+                occurred_at.clone(),
+                id.to_string(),
+                FullEventKind::KnotGateDataSet.as_str(),
+                json!({ "gate": &gate_data }),
+            ));
         }
 
         for tag in &patch.add_tags {
@@ -1033,21 +1144,28 @@ impl App {
             self.writer.write(&EventRecord::full(event))?;
         }
 
-        let terminal = profile.is_terminal_state(&state);
+        let terminal = workflow_runtime::is_terminal_state(
+            &self.profile_registry,
+            &profile_id,
+            knot_type,
+            &state,
+        )?;
         let index_event_id = new_event_id();
         let mut idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
             occurred_at.clone(),
             IndexEventKind::KnotHead.as_str(),
-            json!({
-                "knot_id": id,
-                "title": &title,
-                "state": &state,
-                "profile_id": &profile_id,
-                "updated_at": occurred_at,
-                "terminal": terminal,
-                "deferred_from_state": deferred_from_state,
-                "invariants": &invariants,
+            build_knot_head_data(KnotHeadData {
+                knot_id: &id,
+                title: &title,
+                state: &state,
+                profile_id: &profile_id,
+                updated_at: &occurred_at,
+                terminal,
+                deferred_from_state: deferred_from_state.as_deref(),
+                invariants: &invariants,
+                knot_type,
+                gate_data: &gate_data,
             }),
         );
         if let Some(expected) = current_precondition.as_deref() {
@@ -1077,6 +1195,7 @@ impl App {
                     &occurred_at,
                     &patch.state_actor,
                 ),
+                gate_data: &gate_data,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1098,6 +1217,7 @@ impl App {
         approve_terminal_cascade: bool,
     ) -> Result<KnotCacheRecord, AppError> {
         let profile = self.resolve_profile_for_record(current)?;
+        let knot_type = parse_knot_type(current.knot_type.as_deref());
         if current.state == "deferred" && next_state != "deferred" && !force {
             let expected = current.deferred_from_state.as_deref().ok_or_else(|| {
                 AppError::InvalidArgument(
@@ -1111,14 +1231,26 @@ impl App {
                 )));
             }
         } else {
-            profile.validate_transition(&current.state, next_state, force)?;
+            workflow_runtime::validate_transition(
+                &self.profile_registry,
+                &profile.id,
+                knot_type,
+                &current.state,
+                next_state,
+                force,
+            )?;
         }
 
         match state_hierarchy::plan_state_transition(
             &self.conn,
             current,
             next_state,
-            profile.is_terminal_state(next_state),
+            workflow_runtime::is_terminal_state(
+                &self.profile_registry,
+                &profile.id,
+                knot_type,
+                next_state,
+            )?,
             approve_terminal_cascade,
         )? {
             TransitionPlan::Allowed => self.write_state_change_locked(
@@ -1190,6 +1322,7 @@ impl App {
     ) -> Result<KnotCacheRecord, AppError> {
         let profile = self.resolve_profile_for_record(current)?;
         let profile_id = profile.id.clone();
+        let knot_type = parse_knot_type(current.knot_type.as_deref());
         let deferred_from_state = next_deferred_from_state(current, next_state);
         let occurred_at = now_utc_rfc3339();
         let state_event_data = build_state_event_data(
@@ -1213,19 +1346,27 @@ impl App {
         }
 
         let index_event_id = new_event_id();
+        let terminal = workflow_runtime::is_terminal_state(
+            &self.profile_registry,
+            &profile_id,
+            knot_type,
+            next_state,
+        )?;
         let mut idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
             occurred_at.clone(),
             IndexEventKind::KnotHead.as_str(),
-            json!({
-                "knot_id": &current.id,
-                "title": &current.title,
-                "state": next_state,
-                "profile_id": &profile_id,
-                "updated_at": occurred_at,
-                "terminal": profile.is_terminal_state(next_state),
-                "deferred_from_state": deferred_from_state,
-                "invariants": &current.invariants,
+            build_knot_head_data(KnotHeadData {
+                knot_id: &current.id,
+                title: &current.title,
+                state: next_state,
+                profile_id: &profile_id,
+                updated_at: &occurred_at,
+                terminal,
+                deferred_from_state: deferred_from_state.as_deref(),
+                invariants: &current.invariants,
+                knot_type,
+                gate_data: &current.gate_data,
             }),
         );
         if let Some(expected) = expected_profile_etag {
@@ -1259,6 +1400,7 @@ impl App {
                 handoff_capsules: &current.handoff_capsules,
                 invariants: &current.invariants,
                 step_history: &updated_step_history,
+                gate_data: &current.gate_data,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1266,6 +1408,136 @@ impl App {
             },
         )?;
 
+        db::get_knot_hot(&self.conn, &current.id)?
+            .ok_or_else(|| AppError::NotFound(current.id.clone()))
+    }
+
+    fn append_gate_failure_metadata_locked(
+        &self,
+        current: &KnotCacheRecord,
+        gate_id: &str,
+        invariant: &str,
+        state_actor: &StateActorMetadata,
+    ) -> Result<KnotCacheRecord, AppError> {
+        let occurred_at = now_utc_rfc3339();
+        let message = format!(
+            "Gate {} failed invariant '{}' and reopened this knot for planning.",
+            gate_id, invariant
+        );
+        let note = metadata_entry_from_input(
+            MetadataEntryInput {
+                content: message.clone(),
+                agentname: state_actor.agent_name.clone(),
+                model: state_actor.agent_model.clone(),
+                version: state_actor.agent_version.clone(),
+                ..Default::default()
+            },
+            &occurred_at,
+        )?;
+        let handoff = metadata_entry_from_input(
+            MetadataEntryInput {
+                content: message,
+                agentname: state_actor.agent_name.clone(),
+                model: state_actor.agent_model.clone(),
+                version: state_actor.agent_version.clone(),
+                ..Default::default()
+            },
+            &occurred_at,
+        )?;
+        let mut note_event = FullEvent::with_identity(
+            new_event_id(),
+            occurred_at.clone(),
+            current.id.clone(),
+            FullEventKind::KnotNoteAdded.as_str(),
+            json!({
+                "entry_id": note.entry_id,
+                "content": note.content,
+                "username": note.username,
+                "datetime": note.datetime,
+                "agentname": note.agentname,
+                "model": note.model,
+                "version": note.version,
+            }),
+        );
+        let mut handoff_event = FullEvent::with_identity(
+            new_event_id(),
+            occurred_at.clone(),
+            current.id.clone(),
+            FullEventKind::KnotHandoffCapsuleAdded.as_str(),
+            json!({
+                "entry_id": handoff.entry_id,
+                "content": handoff.content,
+                "username": handoff.username,
+                "datetime": handoff.datetime,
+                "agentname": handoff.agentname,
+                "model": handoff.model,
+                "version": handoff.version,
+            }),
+        );
+        if let Some(expected) = current.profile_etag.as_deref() {
+            note_event = note_event.with_precondition(expected);
+            handoff_event = handoff_event.with_precondition(expected);
+        }
+        self.writer.write(&EventRecord::full(note_event))?;
+        self.writer.write(&EventRecord::full(handoff_event))?;
+
+        let mut notes = current.notes.clone();
+        notes.push(note);
+        let mut handoff_capsules = current.handoff_capsules.clone();
+        handoff_capsules.push(handoff);
+        let profile = self.resolve_profile_for_record(current)?;
+        let knot_type = parse_knot_type(current.knot_type.as_deref());
+        let terminal = workflow_runtime::is_terminal_state(
+            &self.profile_registry,
+            profile.id.as_str(),
+            knot_type,
+            &current.state,
+        )?;
+        let index_event_id = new_event_id();
+        let mut idx_event = IndexEvent::with_identity(
+            index_event_id.clone(),
+            occurred_at.clone(),
+            IndexEventKind::KnotHead.as_str(),
+            build_knot_head_data(KnotHeadData {
+                knot_id: &current.id,
+                title: &current.title,
+                state: &current.state,
+                profile_id: profile.id.as_str(),
+                updated_at: &occurred_at,
+                terminal,
+                deferred_from_state: current.deferred_from_state.as_deref(),
+                invariants: &current.invariants,
+                knot_type,
+                gate_data: &current.gate_data,
+            }),
+        );
+        if let Some(expected) = current.profile_etag.as_deref() {
+            idx_event = idx_event.with_precondition(expected);
+        }
+        self.writer.write(&EventRecord::index(idx_event))?;
+        db::upsert_knot_hot(
+            &self.conn,
+            &UpsertKnotHot {
+                id: &current.id,
+                title: &current.title,
+                state: &current.state,
+                updated_at: &occurred_at,
+                body: current.body.as_deref(),
+                description: current.description.as_deref(),
+                priority: current.priority,
+                knot_type: current.knot_type.as_deref(),
+                tags: &current.tags,
+                notes: &notes,
+                handoff_capsules: &handoff_capsules,
+                invariants: &current.invariants,
+                step_history: &current.step_history,
+                gate_data: &current.gate_data,
+                profile_id: profile.id.as_str(),
+                profile_etag: Some(&index_event_id),
+                deferred_from_state: current.deferred_from_state.as_deref(),
+                created_at: current.created_at.as_deref(),
+            },
+        )?;
         db::get_knot_hot(&self.conn, &current.id)?
             .ok_or_else(|| AppError::NotFound(current.id.clone()))
     }
@@ -1306,19 +1578,29 @@ impl App {
         let occurred_at = now_utc_rfc3339();
         let updated_history = annotate_step_history(&current.step_history, actor, &occurred_at);
         let profile = self.resolve_profile_for_record(&current)?;
+        let knot_type = parse_knot_type(current.knot_type.as_deref());
+        let terminal = workflow_runtime::is_terminal_state(
+            &self.profile_registry,
+            profile.id.as_str(),
+            knot_type,
+            &current.state,
+        )?;
         let index_event_id = new_event_id();
         let idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
             occurred_at.clone(),
             IndexEventKind::KnotHead.as_str(),
-            json!({
-                "knot_id": id,
-                "title": current.title,
-                "state": current.state,
-                "profile_id": profile.id,
-                "updated_at": occurred_at,
-                "terminal": profile.is_terminal_state(&current.state),
-                "invariants": &current.invariants,
+            build_knot_head_data(KnotHeadData {
+                knot_id: &id,
+                title: &current.title,
+                state: &current.state,
+                profile_id: profile.id.as_str(),
+                updated_at: &occurred_at,
+                terminal,
+                deferred_from_state: current.deferred_from_state.as_deref(),
+                invariants: &current.invariants,
+                knot_type,
+                gate_data: &current.gate_data,
             }),
         );
         self.writer.write(&EventRecord::index(idx_event))?;
@@ -1338,6 +1620,7 @@ impl App {
                 handoff_capsules: &current.handoff_capsules,
                 invariants: &current.invariants,
                 step_history: &updated_history,
+                gate_data: &current.gate_data,
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -1347,6 +1630,119 @@ impl App {
         let updated =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         self.apply_alias_to_knot(KnotView::from(updated))
+    }
+
+    pub fn evaluate_gate(
+        &self,
+        id: &str,
+        decision: GateDecision,
+        invariant: Option<&str>,
+        state_actor: StateActorMetadata,
+    ) -> Result<GateEvaluationResult, AppError> {
+        let id = self.resolve_knot_token(id)?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        let current =
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.clone()))?;
+        if parse_knot_type(current.knot_type.as_deref()) != KnotType::Gate {
+            return Err(AppError::InvalidArgument(format!(
+                "knot '{}' is not a gate",
+                current.id
+            )));
+        }
+        if current.state != workflow_runtime::EVALUATING {
+            return Err(AppError::InvalidArgument(format!(
+                "gate '{}' must be in '{}' to evaluate",
+                current.id,
+                workflow_runtime::EVALUATING
+            )));
+        }
+
+        match decision {
+            GateDecision::Yes => {
+                let updated = self.write_state_change_locked(
+                    &current,
+                    "shipped",
+                    false,
+                    current.profile_etag.as_deref(),
+                    &state_actor,
+                    None,
+                )?;
+                Ok(GateEvaluationResult {
+                    gate: self.apply_alias_to_knot(KnotView::from(updated))?,
+                    decision: "yes".to_string(),
+                    invariant: None,
+                    reopened: Vec::new(),
+                })
+            }
+            GateDecision::No => {
+                let violated = non_empty(invariant.unwrap_or("")).ok_or_else(|| {
+                    AppError::InvalidArgument(
+                        "--invariant is required when gate decision is 'no'".to_string(),
+                    )
+                })?;
+                let matches_invariant = current.invariants.iter().any(|item| {
+                    crate::domain::gate::normalize_invariant_key(&item.condition)
+                        == crate::domain::gate::normalize_invariant_key(&violated)
+                });
+                if !matches_invariant {
+                    return Err(AppError::InvalidArgument(format!(
+                        "gate '{}' does not define invariant '{}'",
+                        current.id, violated
+                    )));
+                }
+                let reopen_targets = current
+                    .gate_data
+                    .find_reopen_targets(&violated)
+                    .cloned()
+                    .ok_or_else(|| {
+                        AppError::InvalidArgument(format!(
+                            "gate '{}' has no failure mode for invariant '{}'",
+                            current.id, violated
+                        ))
+                    })?;
+                let mut reopened = Vec::new();
+                for target in reopen_targets {
+                    let target_id = self.resolve_knot_token(&target)?;
+                    let target_record = db::get_knot_hot(&self.conn, &target_id)?
+                        .ok_or_else(|| AppError::NotFound(target_id.clone()))?;
+                    let reopened_record = if target_record.state == "ready_for_planning" {
+                        target_record
+                    } else {
+                        self.write_state_change_locked(
+                            &target_record,
+                            "ready_for_planning",
+                            true,
+                            target_record.profile_etag.as_deref(),
+                            &state_actor,
+                            None,
+                        )?
+                    };
+                    self.append_gate_failure_metadata_locked(
+                        &reopened_record,
+                        &current.id,
+                        &violated,
+                        &state_actor,
+                    )?;
+                    reopened.push(target_id);
+                }
+                let updated = self.write_state_change_locked(
+                    &current,
+                    "abandoned",
+                    true,
+                    current.profile_etag.as_deref(),
+                    &state_actor,
+                    None,
+                )?;
+                Ok(GateEvaluationResult {
+                    gate: self.apply_alias_to_knot(KnotView::from(updated))?,
+                    decision: "no".to_string(),
+                    invariant: Some(violated),
+                    reopened,
+                })
+            }
+        }
     }
 
     pub fn pull(&self) -> Result<SyncSummary, AppError> {
@@ -1503,6 +1899,7 @@ impl App {
                 handoff_capsules: &record.handoff_capsules,
                 invariants: &record.invariants,
                 step_history: &record.step_history,
+                gate_data: &record.gate_data,
                 profile_id: &record.profile_id,
                 profile_etag: record.profile_etag.as_deref(),
                 deferred_from_state: record.deferred_from_state.as_deref(),
@@ -1549,21 +1946,29 @@ impl App {
 
         let profile = self.resolve_profile_for_record(&current)?;
         let profile_id = profile.id.clone();
-        let terminal = profile.is_terminal_state(&current.state);
+        let knot_type = parse_knot_type(current.knot_type.as_deref());
+        let terminal = workflow_runtime::is_terminal_state(
+            &self.profile_registry,
+            &profile_id,
+            knot_type,
+            &current.state,
+        )?;
         let index_event_id = new_event_id();
         let idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
             occurred_at.clone(),
             IndexEventKind::KnotHead.as_str(),
-            json!({
-                "knot_id": src,
-                "title": current.title,
-                "state": current.state,
-                "profile_id": &profile_id,
-                "updated_at": occurred_at,
-                "terminal": terminal,
-                "deferred_from_state": current.deferred_from_state,
-                "invariants": &current.invariants,
+            build_knot_head_data(KnotHeadData {
+                knot_id: src,
+                title: &current.title,
+                state: &current.state,
+                profile_id: &profile_id,
+                updated_at: &occurred_at,
+                terminal,
+                deferred_from_state: current.deferred_from_state.as_deref(),
+                invariants: &current.invariants,
+                knot_type,
+                gate_data: &current.gate_data,
             }),
         );
         self.writer.write(&EventRecord::index(idx_event))?;
@@ -1590,6 +1995,7 @@ impl App {
                 handoff_capsules: &current.handoff_capsules,
                 invariants: &current.invariants,
                 step_history: &current.step_history,
+                gate_data: &current.gate_data,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -1653,6 +2059,95 @@ fn next_deferred_from_state(current: &KnotCacheRecord, next_state: &str) -> Opti
     } else {
         current.deferred_from_state.clone()
     }
+}
+
+fn require_state_for_knot_type(
+    knot_type: KnotType,
+    profile: &ProfileDefinition,
+    state: &str,
+) -> Result<(), AppError> {
+    match knot_type {
+        KnotType::Work => Ok(profile.require_state(state)?),
+        KnotType::Gate => {
+            if matches!(
+                state,
+                workflow_runtime::READY_TO_EVALUATE
+                    | workflow_runtime::EVALUATING
+                    | "shipped"
+                    | "abandoned"
+            ) {
+                Ok(())
+            } else {
+                Err(AppError::InvalidArgument(format!(
+                    "state '{}' is not valid for gate knots",
+                    state
+                )))
+            }
+        }
+    }
+}
+
+fn require_gate_metadata_scope(knot_type: KnotType) -> Result<(), AppError> {
+    if knot_type == KnotType::Gate {
+        Ok(())
+    } else {
+        Err(AppError::InvalidArgument(
+            "gate owner/failure mode fields require knot type 'gate'".to_string(),
+        ))
+    }
+}
+
+struct KnotHeadData<'a> {
+    knot_id: &'a str,
+    title: &'a str,
+    state: &'a str,
+    profile_id: &'a str,
+    updated_at: &'a str,
+    terminal: bool,
+    deferred_from_state: Option<&'a str>,
+    invariants: &'a [Invariant],
+    knot_type: KnotType,
+    gate_data: &'a GateData,
+}
+
+fn build_knot_head_data(head: KnotHeadData<'_>) -> Value {
+    let mut payload = serde_json::Map::new();
+    payload.insert(
+        "knot_id".to_string(),
+        Value::String(head.knot_id.to_string()),
+    );
+    payload.insert("title".to_string(), Value::String(head.title.to_string()));
+    payload.insert("state".to_string(), Value::String(head.state.to_string()));
+    payload.insert(
+        "profile_id".to_string(),
+        Value::String(head.profile_id.to_string()),
+    );
+    payload.insert(
+        "updated_at".to_string(),
+        Value::String(head.updated_at.to_string()),
+    );
+    payload.insert("terminal".to_string(), Value::Bool(head.terminal));
+    payload.insert(
+        "type".to_string(),
+        Value::String(head.knot_type.as_str().to_string()),
+    );
+    payload.insert(
+        "invariants".to_string(),
+        serde_json::to_value(head.invariants).expect("invariants should serialize"),
+    );
+    payload.insert(
+        "gate".to_string(),
+        serde_json::to_value(head.gate_data).expect("gate data should serialize"),
+    );
+    if let Some(value) = head.deferred_from_state {
+        payload.insert(
+            "deferred_from_state".to_string(),
+            Value::String(value.to_string()),
+        );
+    } else {
+        payload.insert("deferred_from_state".to_string(), Value::Null);
+    }
+    Value::Object(payload)
 }
 
 fn build_state_event_data(
@@ -1753,10 +2248,7 @@ fn ensure_profile_etag(
 }
 
 fn is_action_state(state: &str) -> bool {
-    !state.starts_with("ready_for_")
-        && state != "shipped"
-        && state != "abandoned"
-        && state != "deferred"
+    workflow_runtime::is_action_state(state)
 }
 
 fn apply_step_transition(
@@ -1833,6 +2325,7 @@ struct RehydrateProjection {
     handoff_capsules: Vec<MetadataEntry>,
     invariants: Vec<Invariant>,
     step_history: Vec<StepRecord>,
+    gate_data: GateData,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
@@ -1859,6 +2352,7 @@ fn rehydrate_from_events(
         handoff_capsules: Vec::new(),
         invariants: Vec::new(),
         step_history: Vec::new(),
+        gate_data: GateData::default(),
         profile_id: String::new(),
         profile_etag: None,
         deferred_from_state: None,
@@ -1940,6 +2434,9 @@ fn rehydrate_from_events(
         if let Some(updated_at) = data.get("updated_at").and_then(Value::as_str) {
             projection.updated_at = updated_at.to_string();
         }
+        if let Some(raw_type) = data.get("type").and_then(Value::as_str) {
+            projection.knot_type = parse_knot_type(Some(raw_type));
+        }
         let raw_profile_id = data
             .get("profile_id")
             .and_then(Value::as_str)
@@ -1955,6 +2452,9 @@ fn rehydrate_from_events(
             .map(ToString::to_string);
         if data.contains_key("invariants") {
             projection.invariants = parse_invariants_value(data.get("invariants"));
+        }
+        if data.contains_key("gate") {
+            projection.gate_data = parse_gate_data_value(data.get("gate"));
         }
         projection.profile_etag = Some(event.event_id.clone());
     }
@@ -1997,6 +2497,12 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
                 .map(ToString::to_string);
             if data.contains_key("invariants") {
                 projection.invariants = parse_invariants_value(data.get("invariants"));
+            }
+            if let Some(raw_type) = data.get("type").and_then(Value::as_str) {
+                projection.knot_type = parse_knot_type(Some(raw_type));
+            }
+            if data.contains_key("gate") {
+                projection.gate_data = parse_gate_data_value(data.get("gate"));
             }
             projection.created_at = Some(event.occurred_at.clone());
             projection.updated_at = event.occurred_at.clone();
@@ -2055,6 +2561,10 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
         "knot.type_set" => {
             let raw = data.get("type").and_then(Value::as_str);
             projection.knot_type = parse_knot_type(raw);
+            projection.updated_at = event.occurred_at.clone();
+        }
+        "knot.gate_data_set" => {
+            projection.gate_data = parse_gate_data_value(data.get("gate"));
             projection.updated_at = event.occurred_at.clone();
         }
         "knot.tag_add" => {
@@ -2134,9 +2644,18 @@ fn parse_invariants_value(value: Option<&Value>) -> Vec<Invariant> {
     serde_json::from_value(value).unwrap_or_default()
 }
 
+fn parse_gate_data_value(value: Option<&Value>) -> GateData {
+    let Some(value) = value.cloned() else {
+        return GateData::default();
+    };
+    serde_json::from_value(value).unwrap_or_default()
+}
+
 impl From<KnotCacheRecord> for KnotView {
     fn from(value: KnotCacheRecord) -> Self {
         let profile_id = canonical_profile_id(&value.profile_id);
+        let knot_type = parse_knot_type(value.knot_type.as_deref());
+        let gate = (knot_type == KnotType::Gate).then_some(value.gate_data.clone());
         Self {
             id: value.id,
             alias: None,
@@ -2146,12 +2665,13 @@ impl From<KnotCacheRecord> for KnotView {
             body: value.body,
             description: value.description,
             priority: value.priority,
-            knot_type: parse_knot_type(value.knot_type.as_deref()),
+            knot_type,
             tags: value.tags,
             notes: value.notes,
             handoff_capsules: value.handoff_capsules,
             invariants: value.invariants,
             step_history: value.step_history,
+            gate,
             profile_id,
             profile_etag: value.profile_etag,
             deferred_from_state: value.deferred_from_state,
@@ -2374,6 +2894,9 @@ mod tests_coverage_ext;
 #[cfg(test)]
 #[path = "app/tests_error_paths.rs"]
 mod tests_error_paths;
+#[cfg(test)]
+#[path = "app/tests_gate_ext.rs"]
+mod tests_gate_ext;
 #[cfg(test)]
 #[path = "app/tests_hierarchy.rs"]
 mod tests_hierarchy;

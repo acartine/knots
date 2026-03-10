@@ -2,9 +2,12 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::{io, io::BufRead, io::IsTerminal, io::Write};
 
-use crate::app::{App, AppError, StateActorMetadata, UpdateKnotPatch};
-use crate::cli::{Cli, Commands, EdgeSubcommands, StepSubcommands};
+use crate::app::{
+    App, AppError, CreateKnotOptions, GateDecision, StateActorMetadata, UpdateKnotPatch,
+};
+use crate::cli::{Cli, Commands, EdgeSubcommands, GateSubcommands, StepSubcommands};
 use crate::dispatch::{knot_ref, resolve_next_state};
+use crate::domain::gate::{parse_failure_mode_spec, GateData, GateOwnerKind};
 use crate::domain::invariant::parse_invariant_spec;
 use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::MetadataEntryInput;
@@ -13,8 +16,8 @@ use crate::domain::step_history::StepActorInfo;
 use crate::poll_claim;
 use crate::ui;
 use crate::write_queue::{
-    self, ClaimOperation, EdgeOperation, NewOperation, NextOperation, PollClaimOperation,
-    QueuedWriteRequest, QueuedWriteResponse, QuickNewOperation, StateOperation,
+    self, ClaimOperation, EdgeOperation, GateEvaluateOperation, NewOperation, NextOperation,
+    PollClaimOperation, QueuedWriteRequest, QueuedWriteResponse, QuickNewOperation, StateOperation,
     StepAnnotateOperation, UpdateOperation, WriteOperation,
 };
 
@@ -46,6 +49,9 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             state: args.state.clone(),
             profile: args.profile.clone(),
             fast: args.fast,
+            knot_type: args.knot_type.clone(),
+            gate_owner_kind: args.gate_owner_kind.clone(),
+            gate_failure_modes: args.gate_failure_modes.clone(),
         })),
         Commands::Q(args) => Some(WriteOperation::QuickNew(QuickNewOperation {
             title: args.title.clone(),
@@ -87,6 +93,9 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             add_invariants: args.add_invariants.clone(),
             remove_invariants: args.remove_invariants.clone(),
             clear_invariants: args.clear_invariants,
+            gate_owner_kind: args.gate_owner_kind.clone(),
+            gate_failure_modes: args.gate_failure_modes.clone(),
+            clear_gate_failure_modes: args.clear_gate_failure_modes,
             if_match: args.if_match.clone(),
             actor_kind: args.actor_kind.clone(),
             agent_name: args.agent_name.clone(),
@@ -124,6 +133,20 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             agent_model: args.agent_model.clone(),
             agent_version: args.agent_version.clone(),
         })),
+        Commands::Gate(args) => match &args.command {
+            GateSubcommands::Evaluate(gate) => {
+                Some(WriteOperation::GateEvaluate(GateEvaluateOperation {
+                    id: gate.id.clone(),
+                    decision: gate.decision.clone(),
+                    invariant: gate.invariant.clone(),
+                    json: gate.json,
+                    actor_kind: gate.actor_kind.clone(),
+                    agent_name: gate.agent_name.clone(),
+                    agent_model: gate.agent_model.clone(),
+                    agent_version: gate.agent_version.clone(),
+                }))
+            }
+        },
         Commands::Edge(args) => match &args.command {
             EdgeSubcommands::Add(edge) => Some(WriteOperation::EdgeAdd(EdgeOperation {
                 src: edge.src.clone(),
@@ -174,11 +197,21 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 None
             };
             let profile = profile_override.as_deref().or(args.profile.as_deref());
-            let knot = app.create_knot(
+            let knot_type = parse_knot_type_arg(args.knot_type.as_deref())?;
+            let gate_data = parse_gate_data_args(
+                args.gate_owner_kind.as_deref(),
+                &args.gate_failure_modes,
+                knot_type,
+            )?;
+            let knot = app.create_knot_with_options(
                 &args.title,
                 args.description.as_deref(),
                 args.state.as_deref(),
                 profile,
+                CreateKnotOptions {
+                    knot_type,
+                    gate_data,
+                },
             )?;
             let palette = ui::Palette::auto();
             Ok(format!(
@@ -278,6 +311,9 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                     })
                     .collect::<Result<Vec<_>, _>>()?,
                 clear_invariants: args.clear_invariants,
+                gate_owner_kind: parse_gate_owner_kind_arg(args.gate_owner_kind.as_deref())?,
+                gate_failure_modes: parse_gate_failure_modes_option(&args.gate_failure_modes)?,
+                clear_gate_failure_modes: args.clear_gate_failure_modes,
                 add_note,
                 add_handoff_capsule,
                 expected_profile_etag: args.if_match.clone(),
@@ -377,6 +413,38 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 Ok(format_json(&value))
             } else {
                 Ok(poll_claim::render_text(&claimed))
+            }
+        }
+        WriteOperation::GateEvaluate(args) => {
+            let result = app.evaluate_gate(
+                &args.id,
+                parse_gate_decision(&args.decision)?,
+                args.invariant.as_deref(),
+                StateActorMetadata {
+                    actor_kind: args.actor_kind.clone(),
+                    agent_name: args.agent_name.clone(),
+                    agent_model: args.agent_model.clone(),
+                    agent_version: args.agent_version.clone(),
+                },
+            )?;
+            if args.json {
+                Ok(format_json(
+                    &serde_json::to_value(&result).expect("gate evaluation should serialize"),
+                ))
+            } else {
+                let palette = ui::Palette::auto();
+                let reopened = if result.reopened.is_empty() {
+                    String::new()
+                } else {
+                    format!(" reopened={}", result.reopened.len())
+                };
+                Ok(format!(
+                    "evaluated {} -> {} decision={}{}\n",
+                    palette.id(&knot_ref(&result.gate)),
+                    palette.state(&result.gate.state),
+                    result.decision,
+                    reopened
+                ))
             }
         }
         WriteOperation::EdgeAdd(args) => {
@@ -499,6 +567,64 @@ fn format_json(value: &serde_json::Value) -> String {
     )
 }
 
+fn parse_gate_decision(raw: &str) -> Result<GateDecision, AppError> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "yes" | "pass" => Ok(GateDecision::Yes),
+        "no" | "fail" => Ok(GateDecision::No),
+        _ => Err(AppError::InvalidArgument(
+            "--decision must be one of: yes, no".to_string(),
+        )),
+    }
+}
+
+fn parse_knot_type_arg(raw: Option<&str>) -> Result<KnotType, AppError> {
+    raw.unwrap_or("work")
+        .parse::<KnotType>()
+        .map_err(|err| AppError::InvalidArgument(err.to_string()))
+}
+
+fn parse_gate_owner_kind_arg(raw: Option<&str>) -> Result<Option<GateOwnerKind>, AppError> {
+    raw.map(|value| {
+        value
+            .parse::<GateOwnerKind>()
+            .map_err(|err| AppError::InvalidArgument(err.to_string()))
+    })
+    .transpose()
+}
+
+fn parse_gate_failure_modes_option(
+    raw_specs: &[String],
+) -> Result<Option<std::collections::BTreeMap<String, Vec<String>>>, AppError> {
+    if raw_specs.is_empty() {
+        return Ok(None);
+    }
+    let mut failure_modes = std::collections::BTreeMap::new();
+    for raw in raw_specs {
+        let (invariant, targets) = parse_failure_mode_spec(raw)
+            .map_err(|err| AppError::InvalidArgument(err.to_string()))?;
+        failure_modes.insert(invariant, targets);
+    }
+    Ok(Some(failure_modes))
+}
+
+fn parse_gate_data_args(
+    owner_kind: Option<&str>,
+    raw_failure_modes: &[String],
+    knot_type: KnotType,
+) -> Result<GateData, AppError> {
+    let owner_kind = parse_gate_owner_kind_arg(owner_kind)?;
+    let failure_modes = parse_gate_failure_modes_option(raw_failure_modes)?.unwrap_or_default();
+    if knot_type != KnotType::Gate && (owner_kind.is_some() || !failure_modes.is_empty()) {
+        return Err(AppError::InvalidArgument(
+            "gate owner/failure mode fields require knot type 'gate'".to_string(),
+        ));
+    }
+    Ok(GateData {
+        owner_kind: owner_kind.unwrap_or_default(),
+        failure_modes,
+    })
+}
+
 fn normalize_expected_state(raw: &str) -> String {
     let trimmed = raw.trim();
     KnotState::from_str(trimmed)
@@ -582,6 +708,9 @@ mod tests {
                 state: None,
                 profile: None,
                 fast: false,
+                knot_type: None,
+                gate_owner_kind: None,
+                gate_failure_modes: vec![],
             }),
         };
         let response = execute_queued_request(&request);
@@ -850,6 +979,7 @@ mod tests {
             handoff_capsules: vec![],
             invariants: vec![],
             step_history: vec![],
+            gate: None,
             profile_id: "default".to_string(),
             profile_etag: None,
             deferred_from_state: None,
@@ -928,3 +1058,7 @@ mod tests {
         assert!(parsed["step_history"].as_array().is_some());
     }
 }
+
+#[cfg(test)]
+#[path = "write_dispatch/tests_gate_ext.rs"]
+mod tests_gate_ext;
