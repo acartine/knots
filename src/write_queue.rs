@@ -35,6 +35,7 @@ pub struct StateOperation {
     pub id: String,
     pub state: String,
     pub force: bool,
+    pub approve_terminal_cascade: bool,
     pub if_match: Option<String>,
     pub actor_kind: Option<String>,
     pub agent_name: Option<String>,
@@ -73,6 +74,7 @@ pub struct UpdateOperation {
     pub agent_model: Option<String>,
     pub agent_version: Option<String>,
     pub force: bool,
+    pub approve_terminal_cascade: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -80,6 +82,7 @@ pub struct NextOperation {
     pub id: String,
     pub expected_state: Option<String>,
     pub json: bool,
+    pub approve_terminal_cascade: bool,
     pub actor_kind: Option<String>,
     pub agent_name: Option<String>,
     pub agent_model: Option<String>,

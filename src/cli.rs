@@ -188,6 +188,12 @@ pub struct StateArgs {
     pub force: bool,
 
     #[arg(
+        long = "cascade-terminal-descendants",
+        help = "Approve cascading a terminal state to all descendants."
+    )]
+    pub cascade_terminal_descendants: bool,
+
+    #[arg(
         short = 'm',
         long = "if-match",
         help = "Require this profile etag to match before writing."
@@ -317,6 +323,12 @@ pub struct UpdateArgs {
         help = "Force invalid state transitions when --status is used."
     )]
     pub force: bool,
+
+    #[arg(
+        long = "cascade-terminal-descendants",
+        help = "Approve cascading a terminal state to all descendants."
+    )]
+    pub cascade_terminal_descendants: bool,
 }
 
 #[derive(Debug, Args)]
@@ -470,6 +482,12 @@ pub struct NextArgs {
 
     #[arg(long = "agent-version", help = "Agent version for step metadata.")]
     pub agent_version: Option<String>,
+
+    #[arg(
+        long = "cascade-terminal-descendants",
+        help = "Approve cascading a terminal state to all descendants."
+    )]
+    pub cascade_terminal_descendants: bool,
 }
 
 #[derive(Debug, Args)]

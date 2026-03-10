@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::{io, io::BufRead, io::IsTerminal, io::Write};
 
 use crate::app::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::cli::{Cli, Commands, EdgeSubcommands, StepSubcommands};
@@ -55,6 +56,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             id: args.id.clone(),
             state: args.state.clone(),
             force: args.force,
+            approve_terminal_cascade: args.cascade_terminal_descendants,
             if_match: args.if_match.clone(),
             actor_kind: args.actor_kind.clone(),
             agent_name: args.agent_name.clone(),
@@ -91,6 +93,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             agent_model: args.agent_model.clone(),
             agent_version: args.agent_version.clone(),
             force: args.force,
+            approve_terminal_cascade: args.cascade_terminal_descendants,
         })),
         Commands::Next(args) => Some(WriteOperation::Next(NextOperation {
             id: args.id.clone(),
@@ -99,6 +102,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
                 .clone()
                 .or_else(|| args.current_state.clone()),
             json: args.json,
+            approve_terminal_cascade: args.cascade_terminal_descendants,
             actor_kind: args.actor_kind.clone(),
             agent_name: args.agent_name.clone(),
             agent_model: args.agent_model.clone(),
@@ -201,16 +205,22 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
             ))
         }
         WriteOperation::State(args) => {
-            let knot = app.set_state_with_actor(
-                &args.id,
-                &args.state,
-                args.force,
-                args.if_match.as_deref(),
-                StateActorMetadata {
-                    actor_kind: args.actor_kind.clone(),
-                    agent_name: args.agent_name.clone(),
-                    agent_model: args.agent_model.clone(),
-                    agent_version: args.agent_version.clone(),
+            let knot = execute_with_terminal_cascade_prompt(
+                args.approve_terminal_cascade,
+                |approve_terminal_cascade| {
+                    app.set_state_with_actor_and_options(
+                        &args.id,
+                        &args.state,
+                        args.force,
+                        args.if_match.as_deref(),
+                        StateActorMetadata {
+                            actor_kind: args.actor_kind.clone(),
+                            agent_name: args.agent_name.clone(),
+                            agent_model: args.agent_model.clone(),
+                            agent_version: args.agent_version.clone(),
+                        },
+                        approve_terminal_cascade,
+                    )
                 },
             )?;
             let palette = ui::Palette::auto();
@@ -279,7 +289,12 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                     agent_version: args.agent_version.clone(),
                 },
             };
-            let knot = app.update_knot(&args.id, patch)?;
+            let knot = execute_with_terminal_cascade_prompt(
+                args.approve_terminal_cascade,
+                |approve_terminal_cascade| {
+                    app.update_knot_with_options(&args.id, patch.clone(), approve_terminal_cascade)
+                },
+            )?;
             let palette = ui::Palette::auto();
             Ok(format!(
                 "updated {} {} {}\n",
@@ -303,16 +318,22 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
             }
             let (knot, next, owner_kind) = resolve_next_state(app, &knot.id)?;
             let previous_state = knot.state.clone();
-            let updated = app.set_state_with_actor(
-                &knot.id,
-                &next,
-                false,
-                None,
-                StateActorMetadata {
-                    actor_kind: args.actor_kind.clone(),
-                    agent_name: args.agent_name.clone(),
-                    agent_model: args.agent_model.clone(),
-                    agent_version: args.agent_version.clone(),
+            let updated = execute_with_terminal_cascade_prompt(
+                args.approve_terminal_cascade,
+                |approve_terminal_cascade| {
+                    app.set_state_with_actor_and_options(
+                        &knot.id,
+                        &next,
+                        false,
+                        None,
+                        StateActorMetadata {
+                            actor_kind: args.actor_kind.clone(),
+                            agent_name: args.agent_name.clone(),
+                            agent_model: args.agent_model.clone(),
+                            agent_version: args.agent_version.clone(),
+                        },
+                        approve_terminal_cascade,
+                    )
                 },
             )?;
             Ok(format_next_output(
@@ -396,6 +417,81 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
     }
 }
 
+fn execute_with_terminal_cascade_prompt<T, F>(
+    preapproved: bool,
+    mut action: F,
+) -> Result<T, AppError>
+where
+    F: FnMut(bool) -> Result<T, AppError>,
+{
+    let mut approved = preapproved;
+    loop {
+        match action(approved) {
+            Ok(value) => return Ok(value),
+            Err(AppError::TerminalCascadeApprovalRequired {
+                knot_id,
+                target_state,
+                descendants,
+            }) if !approved => {
+                if !io::stdin().is_terminal() {
+                    return Err(AppError::TerminalCascadeApprovalRequired {
+                        knot_id,
+                        target_state,
+                        descendants,
+                    });
+                }
+                if prompt_for_terminal_cascade_approval(&knot_id, &target_state, &descendants)? {
+                    approved = true;
+                    continue;
+                }
+                return Err(AppError::InvalidArgument(
+                    "terminal cascade cancelled; no changes written".to_string(),
+                ));
+            }
+            Err(err) => return Err(err),
+        }
+    }
+}
+
+fn prompt_for_terminal_cascade_approval(
+    knot_id: &str,
+    target_state: &str,
+    descendants: &[crate::state_hierarchy::HierarchyKnot],
+) -> Result<bool, AppError> {
+    let mut stderr = io::stderr();
+    let mut stdin = io::stdin().lock();
+    terminal_cascade_prompt(&mut stderr, &mut stdin, knot_id, target_state, descendants)
+}
+
+fn terminal_cascade_prompt<W: Write, R: BufRead>(
+    writer: &mut W,
+    reader: &mut R,
+    knot_id: &str,
+    target_state: &str,
+    descendants: &[crate::state_hierarchy::HierarchyKnot],
+) -> Result<bool, AppError> {
+    writeln!(
+        writer,
+        "moving '{}' to '{}' will also move descendant knots to that terminal state:",
+        knot_id, target_state
+    )?;
+    writeln!(
+        writer,
+        "  {}",
+        crate::state_hierarchy::format_hierarchy_knots(descendants)
+    )?;
+    write!(writer, "continue? [y/N]: ")?;
+    writer.flush()?;
+
+    let mut input = String::new();
+    reader.read_line(&mut input)?;
+    Ok(is_terminal_cascade_approval(&input))
+}
+
+fn is_terminal_cascade_approval(input: &str) -> bool {
+    matches!(input.trim().to_ascii_lowercase().as_str(), "y" | "yes")
+}
+
 fn format_json(value: &serde_json::Value) -> String {
     format!(
         "{}\n",
@@ -439,6 +535,8 @@ fn format_next_output(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clap::Parser;
+    use std::io::Cursor;
     use std::path::{Path, PathBuf};
     use std::process::Command;
     use uuid::Uuid;
@@ -560,6 +658,7 @@ mod tests {
             id: created.id.clone(),
             expected_state: Some("planning".to_string()),
             json: false,
+            approve_terminal_cascade: false,
             actor_kind: None,
             agent_name: None,
             agent_model: None,
@@ -574,5 +673,258 @@ mod tests {
             }
             other => panic!("unexpected error: {other}"),
         }
+    }
+
+    #[test]
+    fn execute_with_terminal_cascade_prompt_returns_error_in_noninteractive_mode() {
+        let descendants = vec![crate::state_hierarchy::HierarchyKnot {
+            id: "knots-child".to_string(),
+            state: "planning".to_string(),
+            deferred_from_state: None,
+        }];
+        let err = execute_with_terminal_cascade_prompt(false, |_| -> Result<(), AppError> {
+            Err(AppError::TerminalCascadeApprovalRequired {
+                knot_id: "knots-parent".to_string(),
+                target_state: "abandoned".to_string(),
+                descendants: descendants.clone(),
+            })
+        })
+        .expect_err("non-interactive execution should return approval error");
+        match err {
+            AppError::TerminalCascadeApprovalRequired {
+                knot_id,
+                target_state,
+                descendants,
+            } => {
+                assert_eq!(knot_id, "knots-parent");
+                assert_eq!(target_state, "abandoned");
+                assert_eq!(descendants.len(), 1);
+            }
+            other => panic!("unexpected error: {other}"),
+        }
+    }
+
+    #[test]
+    fn terminal_cascade_prompt_accepts_yes_and_renders_descendants() {
+        let descendants = vec![crate::state_hierarchy::HierarchyKnot {
+            id: "knots-child".to_string(),
+            state: "deferred".to_string(),
+            deferred_from_state: Some("implementation".to_string()),
+        }];
+        let mut output = Vec::new();
+        let mut input = Cursor::new("yes\n");
+        let approved = terminal_cascade_prompt(
+            &mut output,
+            &mut input,
+            "knots-parent",
+            "shipped",
+            &descendants,
+        )
+        .expect("prompt should succeed");
+        assert!(approved);
+
+        let rendered = String::from_utf8(output).expect("output should be utf8");
+        assert!(rendered.contains("knots-parent"));
+        assert!(rendered.contains("knots-child [deferred from implementation]"));
+        assert!(rendered.contains("continue? [y/N]:"));
+    }
+
+    #[test]
+    fn terminal_cascade_prompt_rejects_non_yes_answers() {
+        let descendants = vec![crate::state_hierarchy::HierarchyKnot {
+            id: "knots-child".to_string(),
+            state: "planning".to_string(),
+            deferred_from_state: None,
+        }];
+        let mut output = Vec::new();
+        let mut input = Cursor::new("no\n");
+        let approved = terminal_cascade_prompt(
+            &mut output,
+            &mut input,
+            "knots-parent",
+            "abandoned",
+            &descendants,
+        )
+        .expect("prompt should succeed");
+        assert!(!approved);
+    }
+
+    #[test]
+    fn terminal_cascade_input_normalizes_common_yes_values() {
+        assert!(is_terminal_cascade_approval("y"));
+        assert!(is_terminal_cascade_approval(" YES "));
+        assert!(!is_terminal_cascade_approval("n"));
+        assert!(!is_terminal_cascade_approval(""));
+    }
+
+    #[test]
+    fn operation_from_command_threads_terminal_cascade_flags() {
+        let state_cli = crate::cli::Cli::parse_from([
+            "kno",
+            "state",
+            "knots-1",
+            "abandoned",
+            "--cascade-terminal-descendants",
+        ]);
+        let update_cli = crate::cli::Cli::parse_from([
+            "kno",
+            "update",
+            "knots-1",
+            "--status",
+            "abandoned",
+            "--cascade-terminal-descendants",
+        ]);
+        let next_cli = crate::cli::Cli::parse_from([
+            "kno",
+            "next",
+            "knots-1",
+            "--cascade-terminal-descendants",
+        ]);
+
+        match operation_from_command(&state_cli.command).expect("state should queue") {
+            WriteOperation::State(operation) => assert!(operation.approve_terminal_cascade),
+            other => panic!("unexpected state operation: {other:?}"),
+        }
+        match operation_from_command(&update_cli.command).expect("update should queue") {
+            WriteOperation::Update(operation) => assert!(operation.approve_terminal_cascade),
+            other => panic!("unexpected update operation: {other:?}"),
+        }
+        match operation_from_command(&next_cli.command).expect("next should queue") {
+            WriteOperation::Next(operation) => assert!(operation.approve_terminal_cascade),
+            other => panic!("unexpected next operation: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn operation_from_command_maps_step_annotate() {
+        let cli = crate::cli::Cli::parse_from([
+            "kno",
+            "step",
+            "annotate",
+            "knots-1",
+            "--actor-kind",
+            "agent",
+            "--agent-name",
+            "codex",
+            "--json",
+        ]);
+
+        match operation_from_command(&cli.command).expect("step annotate should queue") {
+            WriteOperation::StepAnnotate(operation) => {
+                assert_eq!(operation.id, "knots-1");
+                assert_eq!(operation.actor_kind.as_deref(), Some("agent"));
+                assert_eq!(operation.agent_name.as_deref(), Some("codex"));
+                assert!(operation.json);
+            }
+            other => panic!("unexpected step annotate operation: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn maybe_run_queued_command_returns_none_for_read_only_commands() {
+        let cli = crate::cli::Cli::parse_from(["kno", "show", "knots-1"]);
+        let result = maybe_run_queued_command(&cli).expect("read-only commands should skip queue");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn normalize_expected_state_and_format_next_output_cover_helpers() {
+        assert_eq!(
+            normalize_expected_state("implemented"),
+            "ready_for_implementation_review"
+        );
+        assert_eq!(normalize_expected_state("State-Name"), "state_name");
+
+        let knot = crate::app::KnotView {
+            id: "knots-1".to_string(),
+            alias: Some("root.1".to_string()),
+            title: "Example".to_string(),
+            state: "planning".to_string(),
+            updated_at: "2026-03-10T00:00:00Z".to_string(),
+            body: None,
+            description: None,
+            priority: None,
+            knot_type: KnotType::Work,
+            tags: vec![],
+            notes: vec![],
+            handoff_capsules: vec![],
+            invariants: vec![],
+            step_history: vec![],
+            profile_id: "default".to_string(),
+            profile_etag: None,
+            deferred_from_state: None,
+            created_at: None,
+            edges: vec![],
+        };
+
+        let text = format_next_output(&knot, "idea", Some("agent"), false);
+        assert!(text.contains("root.1"));
+        assert!(text.contains("owner: agent"));
+
+        let json = format_next_output(&knot, "idea", None, true);
+        let parsed: serde_json::Value =
+            serde_json::from_str(&json).expect("json next output should parse");
+        assert_eq!(parsed["previous_state"], "idea");
+        assert_eq!(parsed["state"], "planning");
+    }
+
+    #[test]
+    fn execute_operation_step_annotate_covers_text_and_json_paths() {
+        let root = unique_workspace("knots-write-dispatch-step-annotate");
+        setup_repo(&root);
+        let db_path = root.join(".knots/cache/state.sqlite");
+        let app = App::open(
+            db_path.to_str().expect("db path should be utf8"),
+            root.clone(),
+        )
+        .expect("app should open");
+        let created = app
+            .create_knot("Step annotate", None, Some("ready_for_planning"), None)
+            .expect("knot should be created");
+        let claimed = app
+            .set_state_with_actor(
+                &created.id,
+                "planning",
+                false,
+                created.profile_etag.as_deref(),
+                StateActorMetadata {
+                    actor_kind: Some("agent".to_string()),
+                    agent_name: Some("claimer".to_string()),
+                    agent_model: Some("model".to_string()),
+                    agent_version: Some("1.0".to_string()),
+                },
+            )
+            .expect("claim should start a step");
+
+        let text_output = execute_operation(
+            &app,
+            &WriteOperation::StepAnnotate(StepAnnotateOperation {
+                id: claimed.id.clone(),
+                actor_kind: Some("agent".to_string()),
+                agent_name: Some("annotator".to_string()),
+                agent_model: Some("model".to_string()),
+                agent_version: Some("2.0".to_string()),
+                json: false,
+            }),
+        )
+        .expect("text step annotate should succeed");
+        assert!(text_output.contains("step annotated"));
+
+        let json_output = execute_operation(
+            &app,
+            &WriteOperation::StepAnnotate(StepAnnotateOperation {
+                id: claimed.id.clone(),
+                actor_kind: Some("agent".to_string()),
+                agent_name: Some("annotator-json".to_string()),
+                agent_model: Some("model".to_string()),
+                agent_version: Some("3.0".to_string()),
+                json: true,
+            }),
+        )
+        .expect("json step annotate should succeed");
+        let parsed: serde_json::Value =
+            serde_json::from_str(&json_output).expect("json step annotate output should parse");
+        assert_eq!(parsed["id"], claimed.id);
+        assert!(parsed["step_history"].as_array().is_some());
     }
 }

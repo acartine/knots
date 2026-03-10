@@ -29,6 +29,7 @@ use crate::perf::{run_perf_harness, PerfError, PerfReport};
 use crate::remote_init::{init_remote_knots_branch, RemoteInitError};
 use crate::replication::{PushSummary, ReplicationService, ReplicationSummary};
 use crate::snapshots::{write_snapshots, SnapshotError, SnapshotWriteSummary};
+use crate::state_hierarchy::{self, HierarchyKnot, TransitionPlan};
 use crate::sync::{SyncError, SyncSummary};
 use crate::workflow::{normalize_profile_id, ProfileDefinition, ProfileError, ProfileRegistry};
 
@@ -73,6 +74,11 @@ pub struct StateActorMetadata {
     pub agent_name: Option<String>,
     pub agent_model: Option<String>,
     pub agent_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct StateCascadeMetadata<'a> {
+    root_id: &'a str,
 }
 
 #[derive(Debug, Clone)]
@@ -683,6 +689,25 @@ impl App {
         expected_profile_etag: Option<&str>,
         state_actor: StateActorMetadata,
     ) -> Result<KnotView, AppError> {
+        self.set_state_with_actor_and_options(
+            id,
+            next_state,
+            force,
+            expected_profile_etag,
+            state_actor,
+            false,
+        )
+    }
+
+    pub(crate) fn set_state_with_actor_and_options(
+        &self,
+        id: &str,
+        next_state: &str,
+        force: bool,
+        expected_profile_etag: Option<&str>,
+        state_actor: StateActorMetadata,
+        approve_terminal_cascade: bool,
+    ) -> Result<KnotView, AppError> {
         let id = self.resolve_knot_token(id)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
@@ -690,111 +715,28 @@ impl App {
         let current =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         ensure_profile_etag(&current, expected_profile_etag)?;
-        let profile = self.resolve_profile_for_record(&current)?;
-        let profile_id = profile.id.clone();
         let next = normalize_state_input(next_state)?;
-        if current.state == "deferred" && next != "deferred" && !force {
-            let expected = current.deferred_from_state.as_deref().ok_or_else(|| {
-                AppError::InvalidArgument(
-                    "deferred knot is missing deferred_from_state provenance".to_string(),
-                )
-            })?;
-            if expected != next {
-                return Err(AppError::InvalidArgument(format!(
-                    "deferred knots may only resume to '{}'",
-                    expected
-                )));
-            }
-        } else {
-            profile.validate_transition(&current.state, &next, force)?;
-        }
-        let deferred_from_state = if next == "deferred" && current.state != "deferred" {
-            Some(current.state.clone())
-        } else if current.state == "deferred" && next != "deferred" {
-            None
-        } else {
-            current.deferred_from_state.clone()
-        };
-
-        let occurred_at = now_utc_rfc3339();
-        let state_event_data = build_state_event_data(
-            &current.state,
+        let updated = self.apply_state_transition_locked(
+            &current,
             &next,
-            &profile_id,
             force,
-            deferred_from_state.as_deref(),
+            expected_profile_etag,
             &state_actor,
+            approve_terminal_cascade,
         )?;
-        let mut full_event = FullEvent::with_identity(
-            new_event_id(),
-            occurred_at.clone(),
-            id.clone(),
-            FullEventKind::KnotStateSet.as_str(),
-            state_event_data,
-        );
-        if let Some(expected) = expected_profile_etag {
-            full_event = full_event.with_precondition(expected);
-        }
-
-        let index_event_id = new_event_id();
-        let mut idx_event = IndexEvent::with_identity(
-            index_event_id.clone(),
-            occurred_at.clone(),
-            IndexEventKind::KnotHead.as_str(),
-            json!({
-                "knot_id": id,
-                "title": current.title,
-                "state": &next,
-                "profile_id": &profile_id,
-                "updated_at": occurred_at,
-                "terminal": profile.is_terminal_state(&next),
-                "deferred_from_state": deferred_from_state,
-                "invariants": &current.invariants,
-            }),
-        );
-        if let Some(expected) = expected_profile_etag {
-            idx_event = idx_event.with_precondition(expected);
-        }
-
-        self.writer.write(&EventRecord::full(full_event))?;
-        self.writer.write(&EventRecord::index(idx_event))?;
-
-        let updated_step_history = apply_step_transition(
-            &current.step_history,
-            &current.state,
-            &next,
-            &occurred_at,
-            &state_actor,
-        );
-
-        db::upsert_knot_hot(
-            &self.conn,
-            &UpsertKnotHot {
-                id: &id,
-                title: &current.title,
-                state: &next,
-                updated_at: &occurred_at,
-                body: current.body.as_deref(),
-                description: current.description.as_deref(),
-                priority: current.priority,
-                knot_type: current.knot_type.as_deref(),
-                tags: &current.tags,
-                notes: &current.notes,
-                handoff_capsules: &current.handoff_capsules,
-                invariants: &current.invariants,
-                step_history: &updated_step_history,
-                profile_id: &profile_id,
-                profile_etag: Some(&index_event_id),
-                deferred_from_state: deferred_from_state.as_deref(),
-                created_at: current.created_at.as_deref(),
-            },
-        )?;
-        let updated =
-            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         self.apply_alias_to_knot(KnotView::from(updated))
     }
 
     pub fn update_knot(&self, id: &str, patch: UpdateKnotPatch) -> Result<KnotView, AppError> {
+        self.update_knot_with_options(id, patch, false)
+    }
+
+    pub(crate) fn update_knot_with_options(
+        &self,
+        id: &str,
+        patch: UpdateKnotPatch,
+        approve_terminal_cascade: bool,
+    ) -> Result<KnotView, AppError> {
         let id = self.resolve_knot_token(id)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
@@ -805,9 +747,10 @@ impl App {
             ));
         }
 
-        let current =
+        let mut current =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         ensure_profile_etag(&current, patch.expected_profile_etag.as_deref())?;
+        let mut current_precondition = patch.expected_profile_etag.clone();
         let mut title = current.title.clone();
         let mut state = current.state.clone();
         let mut description = current.description.clone();
@@ -841,28 +784,60 @@ impl App {
             } else {
                 profile.validate_transition(&state, &next_state, patch.force)?;
             }
-            if state != next_state {
-                if next_state == "deferred" && state != "deferred" {
-                    deferred_from_state = Some(state.clone());
-                } else if state == "deferred" && next_state != "deferred" {
-                    deferred_from_state = None;
+            match state_hierarchy::plan_state_transition(
+                &self.conn,
+                &current,
+                &next_state,
+                profile.is_terminal_state(&next_state),
+                approve_terminal_cascade,
+            )? {
+                TransitionPlan::Allowed if state != next_state => {
+                    if next_state == "deferred" && state != "deferred" {
+                        deferred_from_state = Some(state.clone());
+                    } else if state == "deferred" && next_state != "deferred" {
+                        deferred_from_state = None;
+                    }
+                    state = next_state;
+                    let state_event_data = build_state_event_data(
+                        &current.state,
+                        &state,
+                        &profile_id,
+                        patch.force,
+                        deferred_from_state.as_deref(),
+                        &patch.state_actor,
+                        None,
+                    )?;
+                    full_events.push(FullEvent::with_identity(
+                        new_event_id(),
+                        occurred_at.clone(),
+                        id.to_string(),
+                        FullEventKind::KnotStateSet.as_str(),
+                        state_event_data,
+                    ));
                 }
-                state = next_state;
-                let state_event_data = build_state_event_data(
-                    &current.state,
-                    &state,
-                    &profile_id,
-                    patch.force,
-                    deferred_from_state.as_deref(),
-                    &patch.state_actor,
-                )?;
-                full_events.push(FullEvent::with_identity(
-                    new_event_id(),
-                    occurred_at.clone(),
-                    id.to_string(),
-                    FullEventKind::KnotStateSet.as_str(),
-                    state_event_data,
-                ));
+                TransitionPlan::Allowed => {}
+                TransitionPlan::CascadeTerminal { descendants } => {
+                    current = self.cascade_terminal_state_locked(
+                        &current,
+                        &next_state,
+                        patch.expected_profile_etag.as_deref(),
+                        &patch.state_actor,
+                        &descendants,
+                        patch.force,
+                    )?;
+                    current_precondition = current.profile_etag.clone();
+                    title = current.title.clone();
+                    state = current.state.clone();
+                    description = current.description.clone();
+                    body = current.body.clone();
+                    priority = current.priority;
+                    knot_type = parse_knot_type(current.knot_type.as_deref());
+                    deferred_from_state = current.deferred_from_state.clone();
+                    tags = current.tags.clone();
+                    notes = current.notes.clone();
+                    handoff_capsules = current.handoff_capsules.clone();
+                    invariants = current.invariants.clone();
+                }
             }
         }
 
@@ -1052,7 +1027,7 @@ impl App {
         }
 
         for mut event in full_events {
-            if let Some(expected) = patch.expected_profile_etag.as_deref() {
+            if let Some(expected) = current_precondition.as_deref() {
                 event = event.with_precondition(expected);
             }
             self.writer.write(&EventRecord::full(event))?;
@@ -1075,7 +1050,7 @@ impl App {
                 "invariants": &invariants,
             }),
         );
-        if let Some(expected) = patch.expected_profile_etag.as_deref() {
+        if let Some(expected) = current_precondition.as_deref() {
             idx_event = idx_event.with_precondition(expected);
         }
         self.writer.write(&EventRecord::index(idx_event))?;
@@ -1111,6 +1086,188 @@ impl App {
         let updated =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         self.apply_alias_to_knot(KnotView::from(updated))
+    }
+
+    fn apply_state_transition_locked(
+        &self,
+        current: &KnotCacheRecord,
+        next_state: &str,
+        force: bool,
+        expected_profile_etag: Option<&str>,
+        state_actor: &StateActorMetadata,
+        approve_terminal_cascade: bool,
+    ) -> Result<KnotCacheRecord, AppError> {
+        let profile = self.resolve_profile_for_record(current)?;
+        if current.state == "deferred" && next_state != "deferred" && !force {
+            let expected = current.deferred_from_state.as_deref().ok_or_else(|| {
+                AppError::InvalidArgument(
+                    "deferred knot is missing deferred_from_state provenance".to_string(),
+                )
+            })?;
+            if expected != next_state {
+                return Err(AppError::InvalidArgument(format!(
+                    "deferred knots may only resume to '{}'",
+                    expected
+                )));
+            }
+        } else {
+            profile.validate_transition(&current.state, next_state, force)?;
+        }
+
+        match state_hierarchy::plan_state_transition(
+            &self.conn,
+            current,
+            next_state,
+            profile.is_terminal_state(next_state),
+            approve_terminal_cascade,
+        )? {
+            TransitionPlan::Allowed => self.write_state_change_locked(
+                current,
+                next_state,
+                force,
+                expected_profile_etag,
+                state_actor,
+                None,
+            ),
+            TransitionPlan::CascadeTerminal { descendants } => self.cascade_terminal_state_locked(
+                current,
+                next_state,
+                expected_profile_etag,
+                state_actor,
+                &descendants,
+                force,
+            ),
+        }
+    }
+
+    fn cascade_terminal_state_locked(
+        &self,
+        current: &KnotCacheRecord,
+        next_state: &str,
+        expected_profile_etag: Option<&str>,
+        state_actor: &StateActorMetadata,
+        descendants: &[HierarchyKnot],
+        force_root: bool,
+    ) -> Result<KnotCacheRecord, AppError> {
+        let cascade = StateCascadeMetadata {
+            root_id: &current.id,
+        };
+        for descendant in descendants {
+            let Some(descendant_record) = db::get_knot_hot(&self.conn, &descendant.id)? else {
+                continue;
+            };
+            if state_hierarchy::is_terminal_state(&descendant_record.state)? {
+                continue;
+            }
+            self.write_state_change_locked(
+                &descendant_record,
+                next_state,
+                false,
+                None,
+                state_actor,
+                Some(cascade),
+            )?;
+        }
+
+        self.write_state_change_locked(
+            current,
+            next_state,
+            force_root,
+            expected_profile_etag,
+            state_actor,
+            Some(cascade),
+        )
+    }
+
+    fn write_state_change_locked(
+        &self,
+        current: &KnotCacheRecord,
+        next_state: &str,
+        force: bool,
+        expected_profile_etag: Option<&str>,
+        state_actor: &StateActorMetadata,
+        cascade: Option<StateCascadeMetadata<'_>>,
+    ) -> Result<KnotCacheRecord, AppError> {
+        let profile = self.resolve_profile_for_record(current)?;
+        let profile_id = profile.id.clone();
+        let deferred_from_state = next_deferred_from_state(current, next_state);
+        let occurred_at = now_utc_rfc3339();
+        let state_event_data = build_state_event_data(
+            &current.state,
+            next_state,
+            &profile_id,
+            force,
+            deferred_from_state.as_deref(),
+            state_actor,
+            cascade,
+        )?;
+        let mut full_event = FullEvent::with_identity(
+            new_event_id(),
+            occurred_at.clone(),
+            current.id.clone(),
+            FullEventKind::KnotStateSet.as_str(),
+            state_event_data,
+        );
+        if let Some(expected) = expected_profile_etag {
+            full_event = full_event.with_precondition(expected);
+        }
+
+        let index_event_id = new_event_id();
+        let mut idx_event = IndexEvent::with_identity(
+            index_event_id.clone(),
+            occurred_at.clone(),
+            IndexEventKind::KnotHead.as_str(),
+            json!({
+                "knot_id": &current.id,
+                "title": &current.title,
+                "state": next_state,
+                "profile_id": &profile_id,
+                "updated_at": occurred_at,
+                "terminal": profile.is_terminal_state(next_state),
+                "deferred_from_state": deferred_from_state,
+                "invariants": &current.invariants,
+            }),
+        );
+        if let Some(expected) = expected_profile_etag {
+            idx_event = idx_event.with_precondition(expected);
+        }
+
+        self.writer.write(&EventRecord::full(full_event))?;
+        self.writer.write(&EventRecord::index(idx_event))?;
+
+        let updated_step_history = apply_step_transition(
+            &current.step_history,
+            &current.state,
+            next_state,
+            &occurred_at,
+            state_actor,
+        );
+
+        db::upsert_knot_hot(
+            &self.conn,
+            &UpsertKnotHot {
+                id: &current.id,
+                title: &current.title,
+                state: next_state,
+                updated_at: &occurred_at,
+                body: current.body.as_deref(),
+                description: current.description.as_deref(),
+                priority: current.priority,
+                knot_type: current.knot_type.as_deref(),
+                tags: &current.tags,
+                notes: &current.notes,
+                handoff_capsules: &current.handoff_capsules,
+                invariants: &current.invariants,
+                step_history: &updated_step_history,
+                profile_id: &profile_id,
+                profile_etag: Some(&index_event_id),
+                deferred_from_state: deferred_from_state.as_deref(),
+                created_at: current.created_at.as_deref(),
+            },
+        )?;
+
+        db::get_knot_hot(&self.conn, &current.id)?
+            .ok_or_else(|| AppError::NotFound(current.id.clone()))
     }
 
     pub fn list_knots(&self) -> Result<Vec<KnotView>, AppError> {
@@ -1488,6 +1645,16 @@ fn normalize_tag(raw: &str) -> String {
     raw.trim().to_ascii_lowercase()
 }
 
+fn next_deferred_from_state(current: &KnotCacheRecord, next_state: &str) -> Option<String> {
+    if next_state == "deferred" && current.state != "deferred" {
+        Some(current.state.clone())
+    } else if current.state == "deferred" && next_state != "deferred" {
+        None
+    } else {
+        current.deferred_from_state.clone()
+    }
+}
+
 fn build_state_event_data(
     from: &str,
     to: &str,
@@ -1495,6 +1662,7 @@ fn build_state_event_data(
     force: bool,
     deferred_from_state: Option<&str>,
     state_actor: &StateActorMetadata,
+    cascade: Option<StateCascadeMetadata<'_>>,
 ) -> Result<Value, AppError> {
     let mut payload = serde_json::Map::new();
     payload.insert("from".to_string(), Value::String(from.to_string()));
@@ -1508,6 +1676,13 @@ fn build_state_event_data(
         payload.insert(
             "deferred_from_state".to_string(),
             Value::String(value.to_string()),
+        );
+    }
+    if let Some(cascade) = cascade {
+        payload.insert("cascade_approved".to_string(), Value::Bool(true));
+        payload.insert(
+            "cascade_root_id".to_string(),
+            Value::String(cascade.root_id.to_string()),
         );
     }
     append_state_actor_metadata(&mut payload, state_actor)?;
@@ -2011,7 +2186,20 @@ pub enum AppError {
     Workflow(ProfileError),
     ParseState(ParseKnotStateError),
     InvalidTransition(InvalidStateTransition),
-    StaleWorkflowHead { expected: String, current: String },
+    StaleWorkflowHead {
+        expected: String,
+        current: String,
+    },
+    HierarchyProgressBlocked {
+        knot_id: String,
+        target_state: String,
+        blockers: Vec<HierarchyKnot>,
+    },
+    TerminalCascadeApprovalRequired {
+        knot_id: String,
+        target_state: String,
+        descendants: Vec<HierarchyKnot>,
+    },
     InvalidArgument(String),
     NotFound(String),
     NotInitialized,
@@ -2037,6 +2225,32 @@ impl fmt::Display for AppError {
                 f,
                 "stale profile_etag: expected '{}', current '{}'",
                 expected, current
+            ),
+            AppError::HierarchyProgressBlocked {
+                knot_id,
+                target_state,
+                blockers,
+            } => write!(
+                f,
+                "{}: cannot move '{}' to '{}' because direct child knots are behind; blockers: {}",
+                state_hierarchy::HIERARCHY_PROGRESS_BLOCKED_CODE,
+                knot_id,
+                target_state,
+                state_hierarchy::format_hierarchy_knots(blockers)
+            ),
+            AppError::TerminalCascadeApprovalRequired {
+                knot_id,
+                target_state,
+                descendants,
+            } => write!(
+                f,
+                "{}: moving '{}' to '{}' requires approval because all descendants will also \
+                 move to that terminal state; descendants: {}; rerun with \
+                 --cascade-terminal-descendants or approve the interactive prompt",
+                state_hierarchy::TERMINAL_CASCADE_APPROVAL_REQUIRED_CODE,
+                knot_id,
+                target_state,
+                state_hierarchy::format_hierarchy_knots(descendants)
             ),
             AppError::InvalidArgument(message) => write!(f, "{}", message),
             AppError::NotFound(id) => write!(f, "knot '{}' not found in local cache", id),
@@ -2065,6 +2279,8 @@ impl Error for AppError {
             AppError::ParseState(err) => Some(err),
             AppError::InvalidTransition(err) => Some(err),
             AppError::StaleWorkflowHead { .. } => None,
+            AppError::HierarchyProgressBlocked { .. } => None,
+            AppError::TerminalCascadeApprovalRequired { .. } => None,
             AppError::InvalidArgument(_) => None,
             AppError::NotFound(_) => None,
             AppError::NotInitialized => None,
@@ -2158,6 +2374,9 @@ mod tests_coverage_ext;
 #[cfg(test)]
 #[path = "app/tests_error_paths.rs"]
 mod tests_error_paths;
+#[cfg(test)]
+#[path = "app/tests_hierarchy.rs"]
+mod tests_hierarchy;
 #[cfg(test)]
 #[path = "app/tests_step_history.rs"]
 mod tests_step_history;
