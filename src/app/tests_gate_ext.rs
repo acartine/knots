@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 
 use uuid::Uuid;
 
-use super::{App, AppError, CreateKnotOptions, GateDecision, StateActorMetadata, UpdateKnotPatch};
+use super::{
+    App, AppError, CreateKnotOptions, GateDecision, KnotView, StateActorMetadata, UpdateKnotPatch,
+};
 use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::invariant::{Invariant, InvariantType};
 use crate::domain::knot_type::KnotType;
@@ -16,7 +18,19 @@ fn unique_workspace() -> PathBuf {
 
 fn open_app(root: &Path) -> App {
     let db_path = root.join(".knots/cache/state.sqlite");
-    App::open(db_path.to_str().expect("utf8 db path"), root.to_path_buf()).expect("app should open")
+    App::open(db_path.to_str().unwrap(), root.to_path_buf()).expect("app should open")
+}
+
+fn add_invariants(app: &App, knot: &KnotView, invariants: Vec<Invariant>) -> KnotView {
+    app.update_knot(
+        &knot.id,
+        UpdateKnotPatch {
+            add_invariants: invariants,
+            expected_profile_etag: knot.profile_etag.clone(),
+            ..UpdateKnotPatch::default()
+        },
+    )
+    .expect("invariants should be added")
 }
 
 #[test]
@@ -77,32 +91,12 @@ fn evaluate_gate_no_covers_missing_invariant_and_failure_mode_errors() {
             },
         )
         .expect("gate should be created");
-    let gate = app
-        .update_knot(
-            &gate.id,
-            UpdateKnotPatch {
-                title: None,
-                description: None,
-                priority: None,
-                status: None,
-                knot_type: None,
-                add_tags: vec![],
-                remove_tags: vec![],
-                add_invariants: vec![Invariant::new(InvariantType::State, "release blocked")
-                    .expect("invariant should build")],
-                remove_invariants: vec![],
-                clear_invariants: false,
-                gate_owner_kind: None,
-                gate_failure_modes: None,
-                clear_gate_failure_modes: false,
-                add_note: None,
-                add_handoff_capsule: None,
-                expected_profile_etag: gate.profile_etag.clone(),
-                force: false,
-                state_actor: StateActorMetadata::default(),
-            },
-        )
-        .expect("gate should update");
+    let gate = add_invariants(
+        &app,
+        &gate,
+        vec![Invariant::new(InvariantType::State, "release blocked")
+            .expect("invariant should build")],
+    );
     let gate = app
         .set_state(
             &gate.id,
@@ -178,24 +172,10 @@ fn gate_metadata_updates_round_trip_and_work_knots_reject_them() {
         .update_knot(
             &gate.id,
             UpdateKnotPatch {
-                title: None,
-                description: None,
-                priority: None,
-                status: None,
-                knot_type: None,
-                add_tags: vec![],
-                remove_tags: vec![],
-                add_invariants: vec![],
-                remove_invariants: vec![],
-                clear_invariants: false,
                 gate_owner_kind: Some(GateOwnerKind::Human),
                 gate_failure_modes: Some(failure_modes),
-                clear_gate_failure_modes: false,
-                add_note: None,
-                add_handoff_capsule: None,
                 expected_profile_etag: gate.profile_etag.clone(),
-                force: false,
-                state_actor: StateActorMetadata::default(),
+                ..Default::default()
             },
         )
         .expect("gate metadata should update");
@@ -216,24 +196,9 @@ fn gate_metadata_updates_round_trip_and_work_knots_reject_them() {
         .update_knot(
             &gate.id,
             UpdateKnotPatch {
-                title: None,
-                description: None,
-                priority: None,
-                status: None,
-                knot_type: None,
-                add_tags: vec![],
-                remove_tags: vec![],
-                add_invariants: vec![],
-                remove_invariants: vec![],
-                clear_invariants: false,
-                gate_owner_kind: None,
-                gate_failure_modes: None,
                 clear_gate_failure_modes: true,
-                add_note: None,
-                add_handoff_capsule: None,
                 expected_profile_etag: updated.profile_etag.clone(),
-                force: false,
-                state_actor: StateActorMetadata::default(),
+                ..Default::default()
             },
         )
         .expect("gate failure modes should clear");
@@ -250,28 +215,214 @@ fn gate_metadata_updates_round_trip_and_work_knots_reject_them() {
         .update_knot(
             &work.id,
             UpdateKnotPatch {
-                title: None,
-                description: None,
-                priority: None,
-                status: None,
-                knot_type: None,
-                add_tags: vec![],
-                remove_tags: vec![],
-                add_invariants: vec![],
-                remove_invariants: vec![],
-                clear_invariants: false,
                 gate_owner_kind: Some(GateOwnerKind::Human),
-                gate_failure_modes: None,
-                clear_gate_failure_modes: false,
-                add_note: None,
-                add_handoff_capsule: None,
                 expected_profile_etag: work.profile_etag.clone(),
-                force: false,
-                state_actor: StateActorMetadata::default(),
+                ..Default::default()
             },
         )
         .expect_err("work knot should reject gate metadata");
     assert!(err.to_string().contains("require knot type 'gate'"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn evaluate_gate_no_reopens_targets_and_appends_metadata() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+
+    let target_a = app
+        .create_knot("Work A", None, Some("implementation"), Some("default"))
+        .expect("target A should be created");
+    let target_b = app
+        .create_knot("Work B", None, Some("shipped"), Some("default"))
+        .expect("target B should be created");
+
+    let mut failure_modes = BTreeMap::new();
+    failure_modes.insert(
+        "tests must pass".to_string(),
+        vec![target_a.id.clone(), target_b.id.clone()],
+    );
+    let gate = app
+        .create_knot_with_options(
+            "Quality gate",
+            None,
+            None,
+            Some("default"),
+            CreateKnotOptions {
+                knot_type: KnotType::Gate,
+                gate_data: GateData {
+                    owner_kind: GateOwnerKind::Agent,
+                    failure_modes,
+                },
+            },
+        )
+        .expect("gate should be created");
+    let gate = add_invariants(
+        &app,
+        &gate,
+        vec![Invariant::new(InvariantType::State, "tests must pass")
+            .expect("invariant should build")],
+    );
+    let gate = app
+        .set_state(
+            &gate.id,
+            crate::workflow_runtime::EVALUATING,
+            false,
+            gate.profile_etag.as_deref(),
+        )
+        .expect("gate should enter evaluating");
+
+    let result = app
+        .evaluate_gate(
+            &gate.id,
+            GateDecision::No,
+            Some("tests must pass"),
+            StateActorMetadata::default(),
+        )
+        .expect("gate evaluation should succeed");
+
+    assert_eq!(result.decision, "no");
+    assert_eq!(result.gate.state, "abandoned");
+    assert_eq!(result.invariant.as_deref(), Some("tests must pass"));
+    assert_eq!(result.reopened.len(), 2);
+    assert!(result.reopened.contains(&target_a.id));
+    assert!(result.reopened.contains(&target_b.id));
+
+    let reloaded_a = app
+        .show_knot(&target_a.id)
+        .expect("show should succeed")
+        .expect("target A should exist");
+    assert_eq!(reloaded_a.state, "ready_for_planning");
+    assert_eq!(reloaded_a.notes.len(), 1);
+    assert!(reloaded_a.notes[0].content.contains("failed invariant"));
+    assert!(reloaded_a.notes[0].content.contains(&gate.id));
+    assert_eq!(reloaded_a.handoff_capsules.len(), 1);
+    assert!(reloaded_a.handoff_capsules[0]
+        .content
+        .contains("reopened this knot for planning"));
+
+    let reloaded_b = app
+        .show_knot(&target_b.id)
+        .expect("show should succeed")
+        .expect("target B should exist");
+    assert_eq!(reloaded_b.state, "ready_for_planning");
+    assert_eq!(reloaded_b.notes.len(), 1);
+    assert_eq!(reloaded_b.handoff_capsules.len(), 1);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn evaluate_gate_no_skips_transition_for_already_ready_target() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+
+    let target = app
+        .create_knot(
+            "Already ready",
+            None,
+            Some("ready_for_planning"),
+            Some("default"),
+        )
+        .expect("target should be created");
+
+    let mut failure_modes = BTreeMap::new();
+    failure_modes.insert("scope unchanged".to_string(), vec![target.id.clone()]);
+    let gate = app
+        .create_knot_with_options(
+            "Scope gate",
+            None,
+            None,
+            Some("default"),
+            CreateKnotOptions {
+                knot_type: KnotType::Gate,
+                gate_data: GateData {
+                    owner_kind: GateOwnerKind::Agent,
+                    failure_modes,
+                },
+            },
+        )
+        .expect("gate should be created");
+    let gate = add_invariants(
+        &app,
+        &gate,
+        vec![Invariant::new(InvariantType::Scope, "scope unchanged")
+            .expect("invariant should build")],
+    );
+    let gate = app
+        .set_state(
+            &gate.id,
+            crate::workflow_runtime::EVALUATING,
+            false,
+            gate.profile_etag.as_deref(),
+        )
+        .expect("gate should enter evaluating");
+
+    let result = app
+        .evaluate_gate(
+            &gate.id,
+            GateDecision::No,
+            Some("scope unchanged"),
+            StateActorMetadata::default(),
+        )
+        .expect("gate evaluation should succeed");
+
+    assert_eq!(result.decision, "no");
+    assert_eq!(result.gate.state, "abandoned");
+    assert_eq!(result.reopened, vec![target.id.clone()]);
+
+    let reloaded = app
+        .show_knot(&target.id)
+        .expect("show should succeed")
+        .expect("target should exist");
+    assert_eq!(reloaded.state, "ready_for_planning");
+    assert_eq!(reloaded.notes.len(), 1);
+    assert!(reloaded.notes[0].content.contains(&gate.id));
+    assert_eq!(reloaded.handoff_capsules.len(), 1);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn evaluate_gate_rejects_non_gate_and_wrong_state() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot("Regular work", None, Some("idea"), Some("default"))
+        .expect("work knot should be created");
+    let err = app
+        .evaluate_gate(
+            &work.id,
+            GateDecision::Yes,
+            None,
+            StateActorMetadata::default(),
+        )
+        .expect_err("non-gate should fail");
+    assert!(err.to_string().contains("is not a gate"));
+
+    let gate = app
+        .create_knot_with_options(
+            "Unevaluated gate",
+            None,
+            None,
+            Some("default"),
+            CreateKnotOptions {
+                knot_type: KnotType::Gate,
+                gate_data: GateData::default(),
+            },
+        )
+        .expect("gate should be created");
+    let err = app
+        .evaluate_gate(
+            &gate.id,
+            GateDecision::Yes,
+            None,
+            StateActorMetadata::default(),
+        )
+        .expect_err("gate not in evaluating should fail");
+    assert!(err.to_string().contains("must be in"));
 
     let _ = std::fs::remove_dir_all(root);
 }
