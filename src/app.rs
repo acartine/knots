@@ -85,7 +85,7 @@ struct StateCascadeMetadata<'a> {
     root_id: &'a str,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct UpdateKnotPatch {
     pub title: Option<String>,
     pub description: Option<String>,
