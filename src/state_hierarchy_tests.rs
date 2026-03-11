@@ -272,14 +272,54 @@ fn effective_state_rank_covers_remaining_shipment_and_terminal_states() {
     );
     assert_eq!(
         effective_state_rank("shipped").expect("state should parse"),
-        12
+        14
     );
     assert_eq!(
         effective_state_rank("abandoned").expect("state should parse"),
-        12
+        14
     );
     assert_eq!(
         effective_state_rank("deferred").expect("state should parse"),
         255
     );
+}
+
+#[test]
+fn effective_state_rank_assigns_unique_ranks_to_gate_states() {
+    assert_eq!(
+        effective_state_rank("ready_to_evaluate").expect("state should parse"),
+        12
+    );
+    assert_eq!(
+        effective_state_rank("evaluating").expect("state should parse"),
+        13
+    );
+}
+
+#[test]
+fn gate_state_ranks_do_not_collide_with_work_state_ranks() {
+    let gate_ranks = [
+        effective_state_rank("ready_to_evaluate").unwrap(),
+        effective_state_rank("evaluating").unwrap(),
+    ];
+    let work_ranks = [
+        effective_state_rank("ready_for_planning").unwrap(),
+        effective_state_rank("planning").unwrap(),
+        effective_state_rank("ready_for_plan_review").unwrap(),
+        effective_state_rank("plan_review").unwrap(),
+        effective_state_rank("ready_for_implementation").unwrap(),
+        effective_state_rank("implementation").unwrap(),
+        effective_state_rank("ready_for_implementation_review").unwrap(),
+        effective_state_rank("implementation_review").unwrap(),
+        effective_state_rank("ready_for_shipment").unwrap(),
+        effective_state_rank("shipment").unwrap(),
+        effective_state_rank("ready_for_shipment_review").unwrap(),
+        effective_state_rank("shipment_review").unwrap(),
+    ];
+    for gate_rank in &gate_ranks {
+        assert!(
+            !work_ranks.contains(gate_rank),
+            "gate rank {gate_rank} collides with a work state rank"
+        );
+    }
 }
