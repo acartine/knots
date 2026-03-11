@@ -113,6 +113,22 @@ fn show_state(root: &Path, db: &Path, knot_id: &str) -> String {
         .to_string()
 }
 
+fn create_knot(root: &Path, db: &Path, title: &str, state: &str) -> String {
+    parse_created_id(&run_knots(
+        root,
+        db,
+        &["new", title, "--profile", "default", "--state", state],
+    ))
+}
+
+fn add_parent_edge(root: &Path, db: &Path, parent: &str, child: &str) {
+    assert_success(&run_knots(
+        root,
+        db,
+        &["edge", "add", parent, "parent_of", child],
+    ));
+}
+
 #[test]
 fn state_rejection_reports_code_and_blocking_child() {
     let root = unique_workspace("knots-cli-hierarchy-state");
@@ -389,4 +405,64 @@ fn next_terminal_requires_flag_and_cascades_descendants() {
     assert_success(&approved);
     assert_eq!(show_state(&root, &db, &parent), "shipped");
     assert_eq!(show_state(&root, &db, &child), "shipped");
+}
+
+#[test]
+fn deferred_child_blocks_state_and_reports_provenance() {
+    let root = unique_workspace("knots-cli-hierarchy-deferred");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let parent = create_knot(&root, &db, "Parent", "implementation");
+    let child = create_knot(&root, &db, "Child", "implementation");
+    add_parent_edge(&root, &db, &parent, &child);
+    assert_success(&run_knots(&root, &db, &["state", &child, "deferred"]));
+
+    let output = run_knots(
+        &root,
+        &db,
+        &[
+            "state",
+            &parent,
+            "ready_for_implementation_review",
+            "--force",
+        ],
+    );
+    assert_failure(&output);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("hierarchy_progress_blocked"));
+    assert!(stderr.contains("deferred from implementation"));
+    assert!(stderr.contains(&child));
+}
+
+#[test]
+fn update_terminal_cascade_flag_cascades_descendants() {
+    let root = unique_workspace("knots-cli-hierarchy-update-cascade");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let parent = create_knot(&root, &db, "Parent", "implementation");
+    let child = create_knot(&root, &db, "Child", "planning");
+    add_parent_edge(&root, &db, &parent, &child);
+
+    let rejected = run_knots(&root, &db, &["update", &parent, "--status", "abandoned"]);
+    assert_failure(&rejected);
+    assert!(
+        String::from_utf8_lossy(&rejected.stderr).contains("terminal_cascade_approval_required")
+    );
+
+    let approved = run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &parent,
+            "--status",
+            "abandoned",
+            "--cascade-terminal-descendants",
+        ],
+    );
+    assert_success(&approved);
+    assert_eq!(show_state(&root, &db, &parent), "abandoned");
+    assert_eq!(show_state(&root, &db, &child), "abandoned");
 }
