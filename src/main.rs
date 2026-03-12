@@ -25,6 +25,7 @@ mod perf;
 mod poll_claim;
 mod profile;
 mod profile_commands;
+mod progress;
 mod prompt;
 mod remote_init;
 mod replication;
@@ -57,6 +58,10 @@ fn main() {
 fn print_json(val: &impl serde::Serialize) {
     let s = serde_json::to_string_pretty(val).expect("json serialize");
     println!("{s}");
+}
+
+fn progress_reporter(enabled: bool) -> Option<ui::StdoutProgressReporter> {
+    enabled.then(ui::StdoutProgressReporter::auto)
 }
 
 fn run() -> Result<(), app::AppError> {
@@ -145,7 +150,12 @@ fn run() -> Result<(), app::AppError> {
             unreachable!("queued write commands are handled before app initialization")
         }
         Commands::Pull(args) => {
-            let summary = app.pull()?;
+            let mut reporter = progress_reporter(!args.json);
+            let summary = app.pull_with_progress(
+                reporter
+                    .as_mut()
+                    .map(|reporter| reporter as &mut dyn progress::ProgressReporter),
+            )?;
             let drift_warning = app.pull_drift_warning()?;
             if args.json {
                 print_json(&summary);
@@ -172,7 +182,12 @@ fn run() -> Result<(), app::AppError> {
             }
         }
         Commands::Push(args) => {
-            let summary = app.push()?;
+            let mut reporter = progress_reporter(!args.json);
+            let summary = app.push_with_progress(
+                reporter
+                    .as_mut()
+                    .map(|reporter| reporter as &mut dyn progress::ProgressReporter),
+            )?;
             if args.json {
                 print_json(&summary);
             } else {
@@ -191,7 +206,12 @@ fn run() -> Result<(), app::AppError> {
             }
         }
         Commands::Sync(args) => {
-            let summary = app.sync()?;
+            let mut reporter = progress_reporter(!args.json);
+            let summary = app.sync_with_progress(
+                reporter
+                    .as_mut()
+                    .map(|reporter| reporter as &mut dyn progress::ProgressReporter),
+            )?;
             if args.json {
                 print_json(&summary);
             } else {

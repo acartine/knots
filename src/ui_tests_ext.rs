@@ -1,13 +1,14 @@
 use super::{
-    format_doctor_line, format_doctor_line_with_width, format_knot_row, format_show_fields,
-    indentation_prefix, knot_show_fields, print_doctor_report, print_knot_list, print_knot_show,
-    state_color_code, wrap_split_index, wrap_value, Palette, ShowField,
+    format_doctor_line, format_doctor_line_with_width, format_knot_row, format_progress_line,
+    format_show_fields, indentation_prefix, knot_show_fields, print_doctor_report, print_knot_list,
+    print_knot_show, state_color_code, wrap_split_index, wrap_value, Palette, ShowField,
 };
 use crate::app::KnotView;
 use crate::doctor::{DoctorCheck, DoctorReport, DoctorStatus};
 use crate::domain::metadata::MetadataEntry;
 use crate::list_layout::DisplayKnot;
 use crate::listing::KnotListFilter;
+use crate::progress::ProgressKind;
 
 fn sample_knot() -> KnotView {
     KnotView {
@@ -241,4 +242,29 @@ fn print_doctor_report_covers_all_statuses() {
         ],
     };
     print_doctor_report(&report);
+}
+
+#[test]
+fn progress_lines_use_palette_colors_and_plain_fallback() {
+    let colored = format_progress_line(
+        &Palette { enabled: true },
+        ProgressKind::Stage,
+        "preparing knots worktree",
+    );
+    assert!(colored.contains("\x1b[1;36m"));
+    assert!(colored.contains("preparing knots worktree"));
+
+    let success = format_progress_line(
+        &Palette { enabled: false },
+        ProgressKind::Success,
+        "push complete at abc123",
+    );
+    assert_eq!(success, "✓ push complete at abc123");
+
+    let warn = format_progress_line(
+        &Palette { enabled: false },
+        ProgressKind::Warn,
+        "origin/knots is unavailable",
+    );
+    assert_eq!(warn, "! origin/knots is unavailable");
 }
