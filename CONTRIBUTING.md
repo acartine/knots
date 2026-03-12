@@ -1,6 +1,7 @@
 # Contributing
 
 ## Release process
+
 Knots uses Changesets to manage release metadata.
 
 1. Add a changeset for user-facing changes.

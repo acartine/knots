@@ -4,37 +4,46 @@
 [![Coverage][coverage-badge]][coverage-url]
 [![License: MIT][license-badge]][license-url]
 
-Knots is a local-first, git-backed Agentic Memory Management Framework designed for fast local workflows with append-only events and a SQLite cache.
+Knots is a local-first, git-backed system for helping humans and agents understand what they did, what they are doing, and what they plan to do next. It uses append-only events plus a SQLite cache to stay fast locally while remaining syncable through git.
 
-# Install with curl
+## Install
+
 The installer pulls from GitHub Releases and installs to `${HOME}/.local/bin` by default.
 
-Latest release:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/acartine/knots/main/install.sh | sh
 ```
 
-# Why Knot
-Yet another home-rolled agent memory thing when we already have [Beads](https://github.com/steveyegge/beads?tab=readme-ov-file).  :-)
+## Why Knots
 
-Its purpose is to provide a fast, opinionated workflow and responsibility enforcer.  Each knot allows for human-gating or agentic-delegation at each step of the workflow.  You decide what you need to see and what you don't.
+Knots is intentionally a lighter, thinner descendant of [Beads](https://github.com/steveyegge/beads?tab=readme-ov-file).
 
-# Basic Concepts
-## Actions and Queues
-Each step of the workflow is either an Action or a Queue.
-- Action states are "In Progress".  They cannot be assigned.
-- Queue states are, obviously, the opposite.
+Beads opened up a powerful way to think about structured memory, workflow, and human/agent collaboration. Knots keeps that lineage, but aims for a simpler local-first shape: fast CLI workflows, repo-native data, opinionated queue/action transitions, and less dependence on a larger orchestration platform.
 
-This makes it easy to see what needs to be done, and what is being worked on.
+A knot is not just a unit of work. It is a unit of coordination and understanding. A knot can represent work, but it can also represent a gate, and future versions may grow other kinds such as agents or teams. The point is to keep a durable record of what matters to humans and agents as they move through a process.
 
-## Profiles
-### Action Ownership and Output
-Knots provides one workflow - but several profiles.  A profile assigns ownership to actions,
-and in some cases it defines the output of action steps. This means you can have an Implementation Review step that is human gated, where the input is a branch, a PR, or a merged commit (gasp).  This provides granular control over what agents can do along with a a definition of done.
+## Basic Concepts
 
-### Knot-Level Profiles
-This means you can have different profiles for different knots.  You can decide if something is a 
-small patch that skips planning and review, or a full-blown feature that goes through the full workflow.
+### Actions and Queues
+
+Each step of the workflow is either an action state or a queue state.
+
+- **Action states** mean something is actively being worked.
+- **Queue states** mean something is ready to be picked up by the next responsible actor.
+
+That split keeps it obvious what is in progress, what is waiting, and what should happen next.
+
+### Profiles
+
+#### Action ownership and output
+
+Knots provides one core workflow with multiple profiles. A profile assigns ownership to actions and, in some cases, defines what a step is expected to produce.
+
+For example, an Implementation Review step can be human-gated, and its review target might be a branch, a PR, or a merged commit. That gives you fine-grained control over what agents are allowed to do and what counts as done.
+
+#### Knot-level profiles
+
+Different knots can use different profiles. A small patch might skip planning and review, while a larger feature can go through the full workflow.
 
 ## The Workflow
 ```mermaid
@@ -75,11 +84,19 @@ graph TD
   SHIPPED --> END(( ))
 ```
 
-# Quick Start
+## Quick Start
 
-The full flow from initialization to completion:
+If you only want the shortest path to seeing Knots work, it is this:
 
-### 1. Initialize knots in your repo
+1. `kno init`
+2. `kno new "fix foo" --desc "The foo module panics on empty input"`
+3. `kno poll --claim`
+4. do the work described in the prompt
+5. run the `kno next ...` command printed in the prompt
+
+The fuller walkthrough is below.
+
+### 1. Initialize Knots in your repo
 
 ```bash
 $ kno init
@@ -97,13 +114,9 @@ $ kno init
   ✔ remote branch origin/knots initialized
 ```
 
-This creates the `.knots/` directory, initializes the SQLite cache, adds
-`.knots/` to `.gitignore`, and sets up the `origin/knots` tracking branch.
+This creates the `.knots/` directory, initializes the SQLite cache, adds `.knots/` to `.gitignore`, and sets up the `origin/knots` tracking branch.
 
-`kno init` is also how you onboard to a repo that already uses Knots. If a
-project's README says it uses Knots, just run `kno init` in your clone.
-Instead of creating a new remote tracking branch, it will detect the existing
-`origin/knots` branch and sync you with the latest knots data.
+`kno init` is also how you onboard to a repo that already uses Knots. If a project's README says it uses Knots, just run `kno init` in your clone. Instead of creating a new remote tracking branch, it will detect the existing `origin/knots` branch and sync you with the latest Knots data.
 
 ### 2. Create a knot
 
@@ -114,10 +127,9 @@ $ kno new "fix foo" --desc "The foo module panics on empty input"
 created abc123 ready_for_planning fix foo
 ```
 
-The knot enters the first queue state (`ready_for_planning`) and is
-immediately available for an agent to pick up.
+The knot enters the first queue state (`ready_for_planning`) and is immediately available for the next responsible actor to pick up — often an agent, but not necessarily.
 
-### 3. Claim the work
+### 3. Claim the next thing
 
 ```bash
 $ kno poll --claim
@@ -163,16 +175,11 @@ The foo module panics on empty input
 - Out of scope / too complex: `kno update <id> --status ready_for_planning --add-note "<note>"`
 ```
 
-`poll --claim` atomically grabs the highest-priority item, transitions it
-from a queue state to its action state, and prints a self-contained
-prompt blob. The output contains everything an agent needs: the knot
-context, the skill instructions for the current step, and the exact
-command to run when done.
+`poll --claim` atomically grabs the highest-priority claimable item, transitions it from a queue state to its action state, and prints a self-contained prompt. The output includes the knot context, the instructions for the current step, and the exact command to run when that step is done.
 
 ### 4. Advance to the next state
 
-When the agent finishes the work, it runs the completion command from the
-prompt:
+When the current actor finishes the step, run the completion command from the prompt:
 
 ```bash
 $ kno next abc123 --expected-state planning --actor-kind agent \
@@ -183,12 +190,11 @@ $ kno next abc123 --expected-state planning --actor-kind agent \
 updated abc123 -> ready_for_plan_review
 ```
 
-The knot moves to the next queue state, where it waits for the next
-action to be claimed.
+The knot moves to the next queue state, where it waits for the next action to be claimed.
 
 ### Repeat
 
-The agent loop is just two commands:
+For an automated worker, the loop is just two commands:
 
 ```bash
 while true; do
@@ -198,16 +204,13 @@ while true; do
 done
 ```
 
-Each iteration claims work, executes it, and advances the knot through
-the workflow until it reaches `shipped`.
+Each iteration claims work, executes it, and advances the knot through the workflow until it reaches `shipped`.
 
-# Agent Integration
+## Agent Integration
 
-## Poll and Claim
+### Poll and Claim
 
-`poll` and `claim` are the primary agent interface. CLI stdout IS the
-prompt delivery mechanism — no file injection, no hooks, no
-agent-specific APIs required.
+`poll` and `claim` are the primary agent interface. CLI stdout is the prompt delivery mechanism — no file injection, no hooks, and no agent-specific API required.
 
 ```bash
 kno poll                       # peek at the top claimable knot
@@ -268,38 +271,40 @@ agent.run(prompt=item["prompt"])
     fi
 ```
 
-# Other Commands
-Verify install:
+## Other Commands
+
+### Verify install
 ```bash
 kno --version
 ```
 
-Update installed binary:
+### Update installed binary
 ```bash
 kno upgrade
 kno upgrade --version v0.2.0
 ```
 
-Uninstall installed binary:
+### Uninstall installed binary
 ```bash
 kno uninstall
 kno uninstall --remove-previous
 ```
 
 ## Core usage
-Create a knot:
+
+### Create a knot
 ```bash
 kno new "Document release pipeline" --state ready_for_implementation
 kno new "Triage regression"                  # uses repo default profile
 kno new "Hotfix gate" --profile semiauto
 ```
 
-Update state:
+### Update state
 ```bash
 kno state <knot-id> implementation
 ```
 
-Advance or rewind workflow state:
+### Advance or rewind workflow state
 ```bash
 kno next <knot-id> implementation
 kno rollback <knot-id>
@@ -309,7 +314,7 @@ kno rb <knot-id> --dry-run
 `rollback` moves action states back to the prior ready state; for example,
 `implementation_review` rewinds to `ready_for_implementation`.
 
-Patch fields with one command:
+### Patch fields with one command
 ```bash
 kno update <knot-id> \
   --title "Refine import reducer" \
@@ -326,7 +331,7 @@ kno update <knot-id> \
   --note-version 0.1
 ```
 
-List and inspect:
+### List and inspect
 ```bash
 kno ls
 kno ls               # shipped knots hidden by default
@@ -338,12 +343,12 @@ kno show <knot-id>
 kno show <knot-id> --json
 ```
 
-Sync from dedicated `knots` branch/worktree:
+### Sync from the dedicated `knots` branch/worktree
 ```bash
 kno sync
 ```
 
-Manage dependency edges:
+### Manage dependency edges
 ```bash
 kno edge add <src-id> blocked_by <dst-id>
 kno edge list <src-id> --direction outgoing

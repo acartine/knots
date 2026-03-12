@@ -1,6 +1,6 @@
 # Knots — Architecture Design (Rust)
 
-This document describes a robust, git-backed issue tracker named **Knots**, designed to feel “database-like” (fast queries, reliable concurrency) while remaining **repo-native** and **PR-invisible**.
+This document describes the architecture of **Knots**: a robust, git-backed coordination and memory system designed to feel database-like (fast queries, reliable concurrency) while remaining repo-native and PR-invisible.
 
 ---
 
@@ -58,7 +58,7 @@ This document describes a robust, git-backed issue tracker named **Knots**, desi
 ## 2. High-Level Design
 
 **Core idea**:  
-Git is the replication layer; Knots data is stored on a dedicated branch as an **append-only event log**. A local **SQLite cache** provides fast, indexed queries.
+Git is the replication layer; Knots data lives on a dedicated branch as an **append-only event log**. A local **SQLite cache** provides fast, indexed queries.
 
 - **Source of truth**: append-only event files in git
 - **Fast read model**: local SQLite materialized view
