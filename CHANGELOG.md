@@ -1,5 +1,13 @@
 # kno
 
+## 0.8.0
+
+### Minor Changes
+
+- 2129bcf: Enforce hierarchy state progression: parent knots cannot advance
+  past the state of any child knot. Attempts return an error with
+  the list of blocking descendants.
+
 ## 0.7.6
 
 ### Patch Changes
