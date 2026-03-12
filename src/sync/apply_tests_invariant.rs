@@ -130,16 +130,20 @@ fn apply_index_event_with_invariants_persists_them() {
     std::fs::create_dir_all(&idx_dir).expect("index directory should be creatable");
 
     let idx_path = idx_dir.join("7001-idx.knot_head.json");
+    let now = time::OffsetDateTime::now_utc();
+    let ts = now
+        .format(&time::format_description::well_known::Rfc3339)
+        .expect("timestamp should format");
     let payload = json!({
         "event_id": "7001",
-        "occurred_at": "2026-03-05T10:00:00Z",
+        "occurred_at": ts,
         "type": "idx.knot_head",
         "data": {
             "knot_id": "K-idx-inv",
             "title": "Index with invariants",
             "state": "implementation",
             "profile_id": "autopilot",
-            "updated_at": "2026-03-05T10:00:00Z",
+            "updated_at": ts,
             "terminal": false,
             "invariants": [
                 {
