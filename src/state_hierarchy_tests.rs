@@ -1,6 +1,8 @@
 use super::*;
-use crate::app::App;
+use crate::app::{App, CreateKnotOptions};
 use crate::db::KnotCacheRecord;
+use crate::domain::gate::GateData;
+use crate::domain::knot_type::KnotType;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
@@ -109,6 +111,48 @@ fn plan_state_transition_blocks_direct_children_that_are_behind() {
     let err = plan_state_transition(&conn, &parent, "ready_for_plan_review", false, false)
         .expect_err("direct child should block parent");
     assert!(matches!(err, AppError::HierarchyProgressBlocked { .. }));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn gate_parent_transition_blocks_work_child_with_lower_effective_rank() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let parent = app
+        .create_knot_with_options(
+            "Gate parent",
+            None,
+            None,
+            None,
+            CreateKnotOptions {
+                knot_type: KnotType::Gate,
+                gate_data: GateData::default(),
+            },
+        )
+        .expect("gate parent should be created");
+    let child = app
+        .create_knot("Work child", None, Some("shipment_review"), Some("default"))
+        .expect("work child should be created");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge should be added");
+    let conn =
+        crate::db::open_connection(db.to_str().expect("db path should be utf8")).expect("db");
+    let parent = crate::db::get_knot_hot(&conn, &parent.id)
+        .expect("db lookup should succeed")
+        .expect("parent should exist");
+
+    let err = plan_state_transition(&conn, &parent, "evaluating", false, false)
+        .expect_err("gate parent should be blocked by work child progress");
+    match err {
+        AppError::HierarchyProgressBlocked { blockers, .. } => {
+            assert_eq!(blockers.len(), 1);
+            assert_eq!(blockers[0].id, child.id);
+            assert_eq!(blockers[0].state, "shipment_review");
+        }
+        other => panic!("unexpected error: {other}"),
+    }
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -272,14 +316,26 @@ fn effective_state_rank_covers_remaining_shipment_and_terminal_states() {
     );
     assert_eq!(
         effective_state_rank("shipped").expect("state should parse"),
-        12
+        14
     );
     assert_eq!(
         effective_state_rank("abandoned").expect("state should parse"),
-        12
+        14
     );
     assert_eq!(
         effective_state_rank("deferred").expect("state should parse"),
         255
+    );
+}
+
+#[test]
+fn effective_state_rank_assigns_unique_ranks_to_gate_states() {
+    assert_eq!(
+        effective_state_rank("ready_to_evaluate").expect("state should parse"),
+        12
+    );
+    assert_eq!(
+        effective_state_rank("evaluating").expect("state should parse"),
+        13
     );
 }
