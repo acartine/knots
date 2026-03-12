@@ -13,7 +13,7 @@ use crate::app::{App, CreateKnotOptions, StateActorMetadata, UpdateKnotPatch};
 use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::invariant::{Invariant, InvariantType};
 use crate::domain::knot_type::KnotType;
-use crate::write_queue::{GateEvaluateOperation, WriteOperation};
+use crate::write_queue::{GateEvaluateOperation, RollbackOperation, WriteOperation};
 
 fn unique_workspace(prefix: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
@@ -272,6 +272,61 @@ fn execute_operation_gate_evaluate_covers_text_and_json_output() {
     assert_eq!(parsed["decision"], "no");
     assert_eq!(parsed["gate"]["state"], "abandoned");
     assert_eq!(parsed["reopened"][0], target.id);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn execute_operation_rollback_rewinds_gate_evaluating_state() {
+    let root = unique_workspace("knots-write-dispatch-gate-rollback");
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let gate = app
+        .create_knot_with_options(
+            "Release gate",
+            None,
+            None,
+            None,
+            CreateKnotOptions {
+                knot_type: KnotType::Gate,
+                gate_data: GateData {
+                    owner_kind: GateOwnerKind::Agent,
+                    ..Default::default()
+                },
+            },
+        )
+        .expect("gate should be created");
+    let gate = app
+        .set_state(
+            &gate.id,
+            crate::workflow_runtime::EVALUATING,
+            false,
+            gate.profile_etag.as_deref(),
+        )
+        .expect("gate should enter evaluating");
+
+    let output = execute_operation(
+        &app,
+        &WriteOperation::Rollback(RollbackOperation {
+            id: gate.id.clone(),
+            dry_run: false,
+            actor_kind: Some("agent".to_string()),
+            agent_name: Some("rollbacker".to_string()),
+            agent_model: Some("model".to_string()),
+            agent_version: Some("1.0".to_string()),
+        }),
+    )
+    .expect("gate rollback should succeed");
+    assert!(output.contains("rolled back"));
+    assert!(output.contains("ready_to_evaluate"));
+    assert!(output.contains("owner: agent"));
+
+    let reloaded = app
+        .show_knot(&gate.id)
+        .expect("gate should load")
+        .expect("gate should exist");
+    assert_eq!(reloaded.state, crate::workflow_runtime::READY_TO_EVALUATE);
 
     let _ = std::fs::remove_dir_all(root);
 }
