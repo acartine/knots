@@ -2,6 +2,7 @@ use crate::app::{App, AppError, KnotView};
 use crate::dispatch::owner_kind_label;
 use crate::profile::{DEFERRED, IMPLEMENTATION, PLANNING, SHIPMENT};
 use crate::workflow::{self, ProfileDefinition};
+use crate::workflow_runtime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RollbackResolution {
@@ -108,7 +109,7 @@ fn previous_ready_state(profile: &ProfileDefinition, before_idx: usize) -> Optio
 }
 
 fn is_queue_state(state: &str) -> bool {
-    state.starts_with("ready_for_")
+    state.starts_with("ready_for_") || state == workflow_runtime::READY_TO_EVALUATE
 }
 
 fn is_review_action_state(state: &str) -> bool {
@@ -210,5 +211,13 @@ mod tests {
         assert!(rollback_target(&profile, "ready_for_implementation").is_none());
         assert!(rollback_target(&profile, "shipped").is_none());
         assert!(rollback_target(&profile, "deferred").is_none());
+    }
+
+    #[test]
+    fn is_queue_state_recognizes_ready_to_evaluate() {
+        assert!(is_queue_state("ready_to_evaluate"));
+        assert!(is_queue_state("ready_for_planning"));
+        assert!(!is_queue_state("evaluating"));
+        assert!(!is_queue_state("planning"));
     }
 }
