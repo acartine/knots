@@ -124,6 +124,7 @@ fn apply_full_event_invariants_set_updates_hot_knot() {
 fn apply_index_event_with_invariants_persists_them() {
     let root = setup_repo();
     let conn = open_conn(&root);
+    db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let applier = IncrementalApplier::new(&conn, root.clone(), GitAdapter::new());
 
     let idx_dir = root.join(".knots/index/2026/03/05");

@@ -27,6 +27,7 @@ use crate::hierarchy_alias::{build_alias_maps, AliasMaps};
 use crate::knot_id::generate_knot_id;
 use crate::locks::{FileLock, LockError};
 use crate::perf::{run_perf_harness, PerfError, PerfReport};
+use crate::progress::ProgressReporter;
 use crate::remote_init::{init_remote_knots_branch, RemoteInitError};
 use crate::replication::{PushSummary, ReplicationService, ReplicationSummary};
 use crate::snapshots::{write_snapshots, SnapshotError, SnapshotWriteSummary};
@@ -382,6 +383,14 @@ impl App {
     fn pull_unlocked(&self) -> Result<SyncSummary, AppError> {
         let service = ReplicationService::new(&self.conn, self.repo_root.clone());
         Ok(service.pull()?)
+    }
+
+    fn pull_unlocked_with_progress(
+        &self,
+        reporter: &mut Option<&mut dyn ProgressReporter>,
+    ) -> Result<SyncSummary, AppError> {
+        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        Ok(service.pull_with_progress(reporter)?)
     }
 
     fn known_knot_ids(&self) -> Result<HashSet<String>, AppError> {
@@ -1746,10 +1755,18 @@ impl App {
     }
 
     pub fn pull(&self) -> Result<SyncSummary, AppError> {
+        self.pull_with_progress(None)
+    }
+
+    pub fn pull_with_progress(
+        &self,
+        reporter: Option<&mut dyn ProgressReporter>,
+    ) -> Result<SyncSummary, AppError> {
+        let mut reporter = reporter;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
-        self.pull_unlocked()
+        self.pull_unlocked_with_progress(&mut reporter)
     }
 
     pub fn pull_drift_warning(&self) -> Result<Option<PullDriftWarning>, AppError> {
@@ -1773,12 +1790,34 @@ impl App {
         Ok(service.push()?)
     }
 
+    pub fn push_with_progress(
+        &self,
+        reporter: Option<&mut dyn ProgressReporter>,
+    ) -> Result<PushSummary, AppError> {
+        let mut reporter = reporter;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        Ok(service.push_with_progress(&mut reporter)?)
+    }
+
     pub fn sync(&self) -> Result<ReplicationSummary, AppError> {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let service = ReplicationService::new(&self.conn, self.repo_root.clone());
         Ok(service.sync()?)
+    }
+
+    pub fn sync_with_progress(
+        &self,
+        reporter: Option<&mut dyn ProgressReporter>,
+    ) -> Result<ReplicationSummary, AppError> {
+        let mut reporter = reporter;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        Ok(service.sync_with_progress(&mut reporter)?)
     }
 
     pub fn init_remote(&self) -> Result<(), AppError> {

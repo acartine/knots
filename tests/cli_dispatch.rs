@@ -149,6 +149,16 @@ fn parse_created_id(output: &Output) -> String {
         .to_string()
 }
 
+fn assert_contains_in_order(haystack: &str, needles: &[&str]) {
+    let mut offset = 0usize;
+    for needle in needles {
+        let found = haystack[offset..]
+            .find(needle)
+            .unwrap_or_else(|| panic!("missing '{needle}' in output:\n{haystack}"));
+        offset += found + needle.len();
+    }
+}
+
 #[test]
 fn core_cli_commands_dispatch_success_and_failure_paths() {
     let root = unique_workspace("knots-cli-dispatch");
@@ -523,6 +533,80 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
     let doctor = run_knots(&root, &db, &["doctor"]);
     assert_success(&doctor);
     assert!(String::from_utf8_lossy(&doctor.stdout).contains("lock_health"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn push_pull_and_sync_emit_progress_in_text_mode_and_keep_json_clean() {
+    let root = unique_workspace("knots-cli-sync-progress");
+    let _remote = setup_repo_with_remote(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    assert_success(&run_knots(&root, &db, &["init"]));
+
+    let created = run_knots(&root, &db, &["new", "Progress knot"]);
+    assert_success(&created);
+
+    let push = run_knots(&root, &db, &["push"]);
+    assert_success(&push);
+    let push_stdout = String::from_utf8_lossy(&push.stdout);
+    assert_contains_in_order(
+        &push_stdout,
+        &[
+            "publishing local knots events",
+            "preparing knots worktree",
+            "scanning local knots event files",
+            "copying",
+            "pushing knots branch to origin",
+            "push local_event_files=",
+        ],
+    );
+
+    let pull = run_knots(&root, &db, &["pull"]);
+    assert_success(&pull);
+    let pull_stdout = String::from_utf8_lossy(&pull.stdout);
+    assert_contains_in_order(
+        &pull_stdout,
+        &[
+            "importing knots updates",
+            "preparing knots worktree",
+            "applying knots events to the local cache",
+            "pull head=",
+        ],
+    );
+
+    let sync = run_knots(&root, &db, &["sync"]);
+    assert_success(&sync);
+    let sync_stdout = String::from_utf8_lossy(&sync.stdout);
+    assert_contains_in_order(
+        &sync_stdout,
+        &[
+            "publishing local knots events",
+            "importing knots updates",
+            "sync push(",
+        ],
+    );
+
+    let push_json = run_knots(&root, &db, &["push", "--json"]);
+    assert_success(&push_json);
+    assert!(
+        !String::from_utf8_lossy(&push_json.stdout).contains("publishing knots events"),
+        "push --json should not include progress text"
+    );
+    let push_value: Value =
+        serde_json::from_slice(&push_json.stdout).expect("push --json should parse");
+    assert!(push_value.get("local_event_files").is_some());
+
+    let pull_json = run_knots(&root, &db, &["pull", "--json"]);
+    assert_success(&pull_json);
+    assert!(
+        !String::from_utf8_lossy(&pull_json.stdout).contains("importing knots updates"),
+        "pull --json should not include progress text"
+    );
+    let pull_value: Value =
+        serde_json::from_slice(&pull_json.stdout).expect("pull --json should parse");
+    assert!(pull_value.get("target_head").is_some());
 
     let _ = std::fs::remove_dir_all(root);
 }

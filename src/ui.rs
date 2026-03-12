@@ -5,6 +5,12 @@ use crate::doctor::{DoctorCheck, DoctorReport, DoctorStatus};
 use crate::list_layout::DisplayKnot;
 use crate::listing::KnotListFilter;
 
+mod progress;
+
+#[cfg(test)]
+pub(crate) use progress::format_progress_line;
+pub(crate) use progress::StdoutProgressReporter;
+
 const SHOW_VALUE_WIDTH: usize = 80;
 
 pub fn trim_json_metadata(value: &mut serde_json::Value, knot: &KnotView) {

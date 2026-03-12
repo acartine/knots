@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use rusqlite::Connection;
 use serde::Serialize;
 
+use crate::progress::{emit_progress, ProgressKind, ProgressReporter};
+
 mod apply;
 mod git;
 mod worktree;
@@ -39,7 +41,17 @@ impl<'a> SyncService<'a> {
     }
 
     pub fn sync(&self) -> Result<SyncSummary, SyncError> {
+        let mut reporter = None;
+        self.sync_with_progress(&mut reporter)
+    }
+
+    pub fn sync_with_progress(
+        &self,
+        reporter: &mut Option<&mut dyn ProgressReporter>,
+    ) -> Result<SyncSummary, SyncError> {
+        emit_progress(reporter, ProgressKind::Stage, "importing knots updates")?;
         let worktree = KnotsWorktree::new(self.repo_root.clone());
+        emit_progress(reporter, ProgressKind::Info, "preparing knots worktree")?;
         worktree.ensure_exists(&self.git)?;
 
         let target_head = match self.git.fetch_branch_with_filter(
@@ -50,20 +62,52 @@ impl<'a> SyncService<'a> {
         ) {
             Ok(()) => {
                 let remote_ref = format!("{}/{}", worktree.remote(), worktree.branch());
+                emit_progress(
+                    reporter,
+                    ProgressKind::Info,
+                    format!("resetting knots worktree to {remote_ref}"),
+                )?;
                 let head = self.git.rev_parse(&self.repo_root, &remote_ref)?;
                 self.git.reset_hard(worktree.path(), &head)?;
                 head
             }
-            Err(err) if err.is_missing_remote() => self.git.rev_parse(worktree.path(), "HEAD")?,
+            Err(err) if err.is_missing_remote() => {
+                emit_progress(
+                    reporter,
+                    ProgressKind::Warn,
+                    "origin/knots is unavailable; using local knots worktree state",
+                )?;
+                self.git.rev_parse(worktree.path(), "HEAD")?
+            }
             Err(err) => return Err(err),
         };
 
         worktree.ensure_clean(&self.git)?;
+        emit_progress(
+            reporter,
+            ProgressKind::Info,
+            "applying knots events to the local cache",
+        )?;
 
         let mut applier =
             IncrementalApplier::new(self.conn, worktree.path().to_path_buf(), self.git.clone());
-        applier.apply_to_head(&target_head)
+        let summary = applier.apply_to_head(&target_head)?;
+        emit_progress(
+            reporter,
+            ProgressKind::Success,
+            format!(
+                "pull complete at {} (index={}, full={})",
+                short_commit(&summary.target_head),
+                summary.index_files,
+                summary.full_files
+            ),
+        )?;
+        Ok(summary)
     }
+}
+
+fn short_commit(commit: &str) -> &str {
+    &commit[..commit.len().min(12)]
 }
 
 #[derive(Debug)]
