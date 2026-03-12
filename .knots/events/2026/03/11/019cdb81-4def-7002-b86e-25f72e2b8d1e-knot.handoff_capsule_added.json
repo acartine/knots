@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb81-4def-7002-b86e-25f72e2b8d1e",
+  "occurred_at": "2026-03-11T06:06:50.351414Z",
+  "knot_id": "knots-142d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "1. The requested app-level and CLI-level hierarchy guard behaviors are covered by passing tests, including direct-child blocking, deferred-child provenance, terminal cascade approval/cascade paths, recursive descendants, and next/state/update error reporting. 2. Approval is blocked because the required sanity gate is not green: 'make sanity' fails in the coverage stage with cargo tarpaulin error 'Failed to generate report: No such file or directory (os error 2)'. 3. This violates the implementation review requirement to verify all sanity gates pass before moving to shipment.",
+    "datetime": "2026-03-11T06:06:39Z",
+    "entry_id": "019cdb81-4def-7002-b86e-25e4ef0c37cf",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-11"
+  }
+}

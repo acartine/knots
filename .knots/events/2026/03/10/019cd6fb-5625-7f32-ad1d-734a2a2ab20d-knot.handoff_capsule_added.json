@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6fb-5625-7f32-ad1d-734a2a2ab20d",
+  "occurred_at": "2026-03-10T09:02:01.765486Z",
+  "knot_id": "knots-d5ef",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Merge commit a5084cb61ef9 and impl commit cc3a142350bd verified on main. make sanity passes (95.16% coverage). Implementation correctly resolves rollback targets from profile state ordering: non-review action states roll back 1 to preceding ready state, review states roll back 3 past the review loop. Queue/terminal/deferred states properly rejected. --dry-run is side-effect free. CLI alias rb works. Both unit tests (rollback.rs) and integration tests (cli_rollback.rs) provide thorough coverage. No regressions detected.",
+    "datetime": "2026-03-10T12:00:00Z",
+    "entry_id": "019cd6fb-5625-7f32-ad1d-7336a1c3e8c1",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

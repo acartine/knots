@@ -1,0 +1,19 @@
+{
+  "event_id": "019cdb84-0e4a-76b3-9fa5-ae3051e19f5d",
+  "occurred_at": "2026-03-11T06:09:50.661Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-8c0d",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "Implement gate failure reopen flow and coverage",
+    "type": "work",
+    "updated_at": "2026-03-11T06:09:50.661Z"
+  }
+}

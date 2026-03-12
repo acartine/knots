@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce17e-66fb-75b1-b3a6-ae98f457271a",
+  "occurred_at": "2026-03-12T10:01:23.450991Z",
+  "knot_id": "knots-8a97",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. The change correctly fixes rank collisions between gate evaluation states (ReadyToEvaluate/Evaluating at 10-11) and shipment review states (ReadyForShipmentReview/ShipmentReview also at 10-11) by moving gate states to ranks 12-13 and terminal states to 14. Two new tests cover gate-parent/work-child blocking and rank uniqueness. Pre-existing test failure on main (apply_index_event_with_invariants_persists_them) is unrelated. No security issues or regressions introduced.",
+    "datetime": "2026-03-12T10:02:00Z",
+    "entry_id": "019ce17e-66fa-7912-add6-39fba2078931",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb8e-d10b-79d3-b955-4d1d93f5e4ea",
+  "occurred_at": "2026-03-11T06:21:35.883635Z",
+  "knot_id": "knots-142d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude Code",
+    "content": "Shipment complete: merged feature branch worktree-knots-142d-hierarchy-tests to main (commit:15c0e89379cf), pushed to remote, CI green (run 22939655453). Coverage at 95.48% (6990/7321 lines).",
+    "datetime": "2026-03-11T06:21:00Z",
+    "entry_id": "019cdb8e-d10b-79d3-b955-4d058d37108b",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "2026-03-11"
+  }
+}

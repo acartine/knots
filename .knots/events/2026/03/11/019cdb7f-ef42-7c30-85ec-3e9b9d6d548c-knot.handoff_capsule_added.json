@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb7f-ef42-7c30-85ec-3e9b9d6d548c",
+  "occurred_at": "2026-03-11T06:05:20.578646Z",
+  "knot_id": "knots-142d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implemented 6 new hierarchy state guard tests: 4 app-level (recursive cascade with great-grandchildren, deferred descendant terminal cascade, update_knot terminal cascade approval path, selective blocker reporting) and 2 CLI-level (deferred child provenance in error output, update command cascade flag). All tests pass, make sanity green at 95.36% coverage. Branch: worktree-knots-142d-hierarchy-tests.",
+    "datetime": "2026-03-11T06:15:00Z",
+    "entry_id": "019cdb7f-ef42-7c30-85ec-3e864cd8884f",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce179-477f-7ad2-b2f7-cc0c8491a06f",
+  "occurred_at": "2026-03-12T09:55:47.711513Z",
+  "knot_id": "knots-2b62",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Change merged to main (commits 3582895, 404d615). Both commit tags verified. All 502 tests pass. No invariants defined. No regressions detected. Tarpaulin coverage tool error is pre-existing environmental issue, not related to this change.",
+    "datetime": "2026-03-12T09:56:00Z",
+    "entry_id": "019ce179-477f-7ad2-b2f7-cbf30e9df679",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

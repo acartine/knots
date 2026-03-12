@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce17b-3706-77e1-a0d2-ebe414291f22",
+  "occurred_at": "2026-03-12T09:57:54.566127Z",
+  "knot_id": "knots-8a97",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented hierarchy state ordering by assigning unique effective ranks to gate evaluation states, eliminating collisions with shipment review and preserving deferred-child provenance. Added regression coverage for gate-parent/work-child blocking and rank expectations. Validation: make install-hooks, cargo test state_hierarchy -- --nocapture, make sanity (95.48% coverage). Branch: knots-8a97-parent-child-order.",
+    "datetime": "2026-03-12T09:57:49Z",
+    "entry_id": "019ce17b-3706-77e1-a0d2-ebd9408d4418",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-12"
+  }
+}

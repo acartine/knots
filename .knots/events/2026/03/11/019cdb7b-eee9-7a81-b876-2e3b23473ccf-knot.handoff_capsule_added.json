@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb7b-eee9-7a81-b876-2e3b23473ccf",
+  "occurred_at": "2026-03-11T06:00:58.345573Z",
+  "knot_id": "knots-642d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation already present on main (commit 2129bcf). Verified: all 495 tests pass, make sanity green, 95.07% coverage. Feature includes: plan_state_transition with TerminalCascadeApprovalRequired error, collect_descendants with depth-sorted safe ordering, cascade_terminal_state_locked with StateCascadeMetadata audit (cascade_approved + cascade_root_id), CLI --cascade-terminal-descendants flag on state/update/next commands, and comprehensive unit + CLI integration tests.",
+    "datetime": "2026-03-11T06:00:00Z",
+    "entry_id": "019cdb7b-eee9-7a81-b876-2e28b9bd9b54",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "opus-4.6"
+  }
+}

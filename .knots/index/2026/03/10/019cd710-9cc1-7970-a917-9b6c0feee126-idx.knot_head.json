@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd710-9cc1-7970-a917-9b6c0feee126",
+  "occurred_at": "2026-03-10T09:25:16.090856Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-e892",
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "terminal": false,
+    "title": "Add \"Gate\" knot type with basic schema and workflow",
+    "updated_at": "2026-03-10T09:25:16.090856Z"
+  }
+}

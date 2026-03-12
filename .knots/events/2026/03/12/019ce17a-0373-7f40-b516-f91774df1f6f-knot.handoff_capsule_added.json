@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce17a-0373-7f40-b516-f91774df1f6f",
+  "occurred_at": "2026-03-12T09:56:35.82755Z",
+  "knot_id": "knots-aa2c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Approved implementation review: Gate knots persist type and gate metadata through domain, DB, events, app, sync, prompt/UI, and CLI flows. Review verified create/update/evaluate/reopen coverage and make sanity passed (fmt, clippy, tests, 95.48% coverage).",
+    "datetime": "2026-03-12T09:56:31Z",
+    "entry_id": "019ce17a-0373-7f40-b516-f909656adcf3",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

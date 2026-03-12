@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdc1a-e08c-7641-8f68-0fb8c2af1671",
+  "occurred_at": "2026-03-11T08:54:34.89244Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation complete: fixed gate evaluation state rank collisions in state_hierarchy (ready_to_evaluate/evaluating no longer collide with shipment review ranks), fixed rollback is_queue_state to recognize ready_to_evaluate via workflow_runtime constant instead of hardcoded ready_for_ prefix. Added tests for unique gate ranks and queue state recognition. All sanity checks pass, coverage at 95.48%.",
+    "datetime": "2026-03-11T08:50:00Z",
+    "entry_id": "019cdc1a-e08c-7641-8f68-0fac23666103",
+    "model": "claude-opus-4-6",
+    "username": "agent",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd70f-429e-7a53-af81-3284b7adb0b0",
+  "occurred_at": "2026-03-10T09:23:47.486348Z",
+  "knot_id": "knots-e892",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented gate knots with dedicated schema and workflow, gate evaluation CLI, gate failure reopening, and focused coverage tests. make sanity passes in the knots-e892-gate worktree; ready for implementation closeout.",
+    "datetime": "2026-03-10T09:23:47.486348Z",
+    "entry_id": "019cd70f-429e-7a53-af81-327cac53c7ba",
+    "model": "gpt-5",
+    "username": "unknown",
+    "version": "1"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "event_id": "019cdb83-859f-72f3-a236-cc485d71e3f6",
+  "occurred_at": "2026-03-11T06:09:15.671905Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-142d",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "Cover hierarchy state guards with app and CLI tests",
+    "type": "work",
+    "updated_at": "2026-03-11T06:09:15.671905Z"
+  }
+}

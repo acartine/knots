@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce179-db04-7f10-8f14-5256b14780be",
+  "occurred_at": "2026-03-12T09:56:25.476928Z",
+  "knot_id": "knots-78d5",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Planning completed. Implement a shared colored progress reporter for long-running sync actions, wire it into push/pull (and sync for consistency), keep `--json` stdout clean, and add CLI/UI tests for both colored progress output and JSON safety.",
+    "datetime": "2026-03-12T09:55:59Z",
+    "entry_id": "019ce179-db04-7f10-8f14-52481106d0f9",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

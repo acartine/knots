@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb84-0e45-7f40-a320-98075677c0dd",
+  "occurred_at": "2026-03-11T06:09:50.661Z",
+  "knot_id": "knots-8c0d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Approved in implementation review. Gate no-path reopens mapped knots to ready_for_planning, appends note and handoff metadata, and success/failure coverage is present. Verified targeted gate tests and make sanity; coverage is 95.19%.",
+    "datetime": "2026-03-11T06:09:46Z",
+    "entry_id": "019cdb84-0e45-7f40-a320-97f838f60f9c",
+    "model": "GPT-5",
+    "username": "cartine",
+    "version": "GPT-5"
+  }
+}

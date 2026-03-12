@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce184-e768-78c1-8941-9d9391f49308",
+  "occurred_at": "2026-03-12T10:08:29.544326Z",
+  "knot_id": "knots-8a97",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete. Merged feature branch knots-8a97-parent-child-order to main (e7d7f2e30508, 3bf936cf038c). Fixed a pre-existing time-sensitive test flake in apply_tests_invariant.rs (02f94904d306) that was blocking the pre-push hook. All 504 tests pass, 95.49% coverage. Pushed to remote, CI green.",
+    "datetime": "2026-03-12T12:00:00Z",
+    "entry_id": "019ce184-e768-78c1-8941-9d83b55acfb8",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

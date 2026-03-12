@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce184-cc04-7ea0-a4f7-a82ef9d7eb50",
+  "occurred_at": "2026-03-12T10:08:22.532589Z",
+  "knot_id": "knots-aa2c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Stabilized sync::apply::tests_invariant::apply_index_event_with_invariants_persists_them by setting hot_window_days=365 in the fixture so it stays in hot cache regardless of wall-clock date. Validated with cargo test sync::apply::tests_invariant and make sanity. Branch: knots-aa2c-gate-persisted-metadata. Commit: fbf7ada758dd.",
+    "datetime": "2026-03-12T10:07:56Z",
+    "entry_id": "019ce184-cc04-7ea0-a4f7-a815523d2abc",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-12"
+  }
+}

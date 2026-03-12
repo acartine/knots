@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce17e-e683-7111-9dac-eacf3a162015",
+  "occurred_at": "2026-03-12T10:01:56.099086Z",
+  "knot_id": "knots-aa2c",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[shipment_review 2026-03-12] Regression detected: test sync::apply::tests_invariant::apply_index_event_with_invariants_persists_them fails on main at merge commit 19ed01a. The test creates an index event without gate_data and the upsert silently fails to persist the hot knot record. make sanity exits with code 2. This was introduced by the knots-aa2c merge.",
+    "datetime": "2026-03-12T10:01:56.099086Z",
+    "entry_id": "019ce17e-e683-7111-9dac-eab5ac9a684e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

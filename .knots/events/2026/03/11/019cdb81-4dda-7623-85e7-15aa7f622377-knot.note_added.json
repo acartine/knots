@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb81-4dda-7623-85e7-15aa7f622377",
+  "occurred_at": "2026-03-11T06:06:50.329967Z",
+  "knot_id": "knots-142d",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "implementation review blocked: required sanity gate failed. make sanity exits non-zero in coverage with cargo tarpaulin reporting 'Failed to generate report: No such file or directory (os error 2)' while running cli_main_paths, so the knot does not currently satisfy the 'all sanity gates pass' review requirement.",
+    "datetime": "2026-03-11T06:06:50.329967Z",
+    "entry_id": "019cdb81-4dda-7623-85e7-159eedbb39fd",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

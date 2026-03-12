@@ -1,0 +1,22 @@
+{
+  "event_id": "019cdb77-d327-7e62-bfe5-0387412c2dae",
+  "occurred_at": "2026-03-11T05:56:29.095301Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-642d",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation",
+    "terminal": false,
+    "title": "Add terminal cascade approval and descendant termination",
+    "type": "work",
+    "updated_at": "2026-03-11T05:56:29.095301Z"
+  },
+  "precondition": {
+    "profile_etag": "019cd68d-f12e-7ef2-9926-e889812ef281"
+  }
+}

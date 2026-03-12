@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb81-e69e-7362-95b5-90679259e36f",
+  "occurred_at": "2026-03-11T06:07:29.438289Z",
+  "knot_id": "knots-8c0d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Added 3 new tests covering the gate failure reopen flow: (1) successful no-decision with multi-target reopening and metadata verification, (2) skip-transition for already-ready targets, (3) precondition rejections for non-gate and wrong-state knots. Derived Default on UpdateKnotPatch to reduce test boilerplate. All 538 tests pass, 95.18% coverage.",
+    "datetime": "2026-03-11T06:07:29Z",
+    "entry_id": "019cdb81-e69e-7362-95b5-905bcf4b6e6c",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

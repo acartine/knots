@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb7f-0f38-7422-ac57-808d99217973",
+  "occurred_at": "2026-03-11T06:04:23.224497Z",
+  "knot_id": "knots-642d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete. Implementation (commit 2129bcf) was already merged to main and pushed to remote. CI is green on main (all workflows succeeded on head commit 45d98c1). Tagged knot with commit:2129bcfbf938.",
+    "datetime": "2026-03-11T00:00:00Z",
+    "entry_id": "019cdb7f-0f38-7422-ac57-8072ebda625d",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "event_id": "019ce184-c8b6-7ce2-a7ca-ac5899bd6bb3",
+  "occurred_at": "2026-03-12T10:08:21.681203Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-8a97",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Enforce parent-child state ordering on transitions",
+    "type": "work",
+    "updated_at": "2026-03-12T10:08:21.681203Z"
+  }
+}

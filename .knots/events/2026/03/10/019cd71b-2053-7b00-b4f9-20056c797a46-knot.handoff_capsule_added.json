@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd71b-2053-7b00-b4f9-20056c797a46",
+  "occurred_at": "2026-03-10T09:36:45.139079Z",
+  "knot_id": "knots-e892",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipped gate knot type and workflow on main. Merged knots-e892-gate with follow-up formatting fix, recorded commit tags commit:19ed01a10975 and commit:45d98c1b9743, pushed 45d98c1b9743 to origin/main, and verified remote CI plus Changesets Version PR succeeded.",
+    "datetime": "2026-03-10T09:36:18Z",
+    "entry_id": "019cd71b-2053-7b00-b4f9-1ff7f241fb4f",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-10"
+  }
+}

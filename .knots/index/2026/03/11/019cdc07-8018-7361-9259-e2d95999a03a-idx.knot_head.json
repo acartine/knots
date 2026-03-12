@@ -1,0 +1,22 @@
+{
+  "event_id": "019cdc07-8018-7361-9259-e2d95999a03a",
+  "occurred_at": "2026-03-11T08:33:25.016406Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-aa2c",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation",
+    "terminal": false,
+    "title": "Add Gate knot type and persisted metadata",
+    "type": "work",
+    "updated_at": "2026-03-11T08:33:25.016406Z"
+  },
+  "precondition": {
+    "profile_etag": "019cd6dd-8c05-79e2-829f-935a71c01839"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce179-be5c-7b11-9731-242683221211",
+  "occurred_at": "2026-03-12T09:56:18.140309Z",
+  "knot_id": "knots-78d5",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan:\n1. Reuse the existing colored progress precedent from `src/init.rs` instead of inventing a third output style. The likely shape is a small shared progress helper in `src/ui.rs` (or a tiny focused UI module) that centralizes palette/no-color/TTY handling and exposes stage/info/success/warn rendering.\n2. Keep `kno push`/`kno pull` summaries stable, but add immediate human-facing progress messages around the real sync stages. `src/main.rs` should only decide whether progress is enabled (text mode, interactive use); the detailed stage emission should come from the sync internals so messages match actual work.\n3. Thread a lightweight progress callback/reporter through `ReplicationService::push` and `SyncService::sync` so push can announce worktree setup, fetch/reset, file copy, commit, and push; pull can announce worktree setup, fetch/reset, and apply/import work. `kno sync` should reuse the same reporter so the user sees ordered push then pull feedback.\n4. Preserve machine-readable behavior. `--json` stdout must remain parseable and existing final summaries should stay intact; progress should therefore be suppressed in JSON mode or routed to a non-JSON channel with explicit test coverage.\n5. Tests: extend CLI coverage in `tests/cli_dispatch.rs` (or `src/main_tests.rs` if easier) to assert that non-JSON push/pull emit immediate progress text and that JSON mode still parses cleanly. Add focused UI tests in `src/ui_tests_ext.rs` for the new progress formatter/color behavior, including `NO_COLOR` or disabled-color branches if the helper supports them.\n\nLikely files: `src/main.rs`, `src/ui.rs` or a new small UI progress module, `src/replication.rs`, `src/sync/mod.rs`, `src/init.rs` if progress helpers are deduplicated, plus `tests/cli_dispatch.rs` and `src/ui_tests_ext.rs`.\n\nComplexity: medium.\nPrimary risks: leaking progress output into JSON flows, duplicating color/progress code between init and sync commands, and emitting messages from the wrong layer so they drift from actual work. Mitigation: centralize formatting, gate progress behind text-mode execution, and emit stage messages as close as possible to the underlying git/apply operations.\n\nNo child knots are needed; this is a contained CLI UX change.",
+    "datetime": "2026-03-12T09:56:18.140309Z",
+    "entry_id": "019ce179-be5c-7b11-9731-241cb62b59df",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

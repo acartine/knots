@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb83-8597-71d1-8bb3-8890badda321",
+  "occurred_at": "2026-03-11T06:09:15.671905Z",
+  "knot_id": "knots-142d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Approved implementation review: app-level hierarchy tests cover direct-child blocking, deferred-child provenance, terminal cascade approval, and recursive descendant cascade behavior; CLI tests cover state/update/next hierarchy errors plus terminal cascade flag paths; make sanity passed on 2026-03-11 with cargo tarpaulin coverage at 95.19% (6969/7321).",
+    "datetime": "2026-03-11T06:09:03Z",
+    "entry_id": "019cdb83-8597-71d1-8bb3-88877b417f56",
+    "model": "GPT-5",
+    "username": "cartine",
+    "version": "2026-03-11"
+  }
+}

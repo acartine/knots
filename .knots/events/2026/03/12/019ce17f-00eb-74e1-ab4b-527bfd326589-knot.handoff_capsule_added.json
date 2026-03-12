@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce17f-00eb-74e1-ab4b-527bfd326589",
+  "occurred_at": "2026-03-12T10:02:02.859271Z",
+  "knot_id": "knots-aa2c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review rejected: regression in sync::apply::tests_invariant::apply_index_event_with_invariants_persists_them. Index event upsert fails when gate_data field was added to UpsertKnotHot but test payload lacks gate structure. make sanity fails on main (exit 2). Needs fix before re-shipment.",
+    "datetime": "2026-03-12T10:05:00Z",
+    "entry_id": "019ce17f-00eb-74e1-ab4b-5263a8bc6793",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

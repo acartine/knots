@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd713-5b5a-7f51-ae36-56827bbb14e8",
+  "occurred_at": "2026-03-10T09:28:15.962904Z",
+  "knot_id": "knots-e892",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Gate knot type fully implemented: GateData schema with owner_kind and failure_modes, gate workflow states (ready_to_evaluate, evaluating, shipped, abandoned), evaluate_gate() with invariant-based reopen logic, CLI surface (kno new --type gate, kno gate evaluate), workflow_runtime generalization, DB migration v9, sync/rehydrate support, evaluating skill prompt, and comprehensive test coverage. make sanity passes at 95.04% coverage. No specification drift, security issues, or regressions found.",
+    "datetime": "2026-03-10T00:00:00Z",
+    "entry_id": "019cd713-5b5a-7f51-ae36-56797bd2975c",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb8f-c2ad-7ca1-9e70-7e9f7fca4c23",
+  "occurred_at": "2026-03-11T06:22:37.741556Z",
+  "knot_id": "knots-142d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment review approved: main is at 61b14fdf0cd5, shipped merge 15c0e89379cf is present and tagged, origin/main matches local HEAD, and GitHub Actions CI run 22939655453 completed successfully for this head with no knot invariants to violate.",
+    "datetime": "2026-03-11T06:22:33Z",
+    "entry_id": "019cdb8f-c2ad-7ca1-9e70-7e8e4f3e1943",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-11"
+  }
+}

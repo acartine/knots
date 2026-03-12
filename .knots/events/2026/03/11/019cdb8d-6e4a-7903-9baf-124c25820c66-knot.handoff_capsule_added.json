@@ -1,0 +1,15 @@
+{
+  "event_id": "019cdb8d-6e4a-7903-9baf-124c25820c66",
+  "occurred_at": "2026-03-11T06:20:05.066771Z",
+  "knot_id": "knots-8c0d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Merged knots-8c0d/gate-failure-reopen to main (commit 61b14fdf0cd5). All 502 tests pass, coverage 95.48%. Pushed to remote, CI green (Repo Hygiene + Release).",
+    "datetime": "2026-03-11T06:20:00Z",
+    "entry_id": "019cdb8d-6e4a-7903-9baf-123351d32cea",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "opus-4.6"
+  }
+}

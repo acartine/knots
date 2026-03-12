@@ -1,0 +1,18 @@
+{
+  "event_id": "019cd6f9-b04d-7e13-b5fa-bd04fa0f513a",
+  "occurred_at": "2026-03-10T09:00:13.773536Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-d5ef",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "add `kno rollback` and `kno rb` (as alias) to rollback from action to ready state.",
+    "updated_at": "2026-03-10T09:00:13.773536Z"
+  },
+  "precondition": {
+    "profile_etag": "019cd6f9-7c1f-7093-848b-04c32f88c6f0"
+  }
+}

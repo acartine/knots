@@ -1,0 +1,15 @@
+{
+  "event_id": "019cd6f9-69bb-7772-b6e4-9f558566ec0c",
+  "occurred_at": "2026-03-10T08:59:55.70707Z",
+  "knot_id": "knots-d5ef",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete. Merged codex/knots-d5ef-rollback to main (merge commit a5084cb61ef9). Pre-push sanity passed locally. Pushed to origin. CI green on remote (run 22894705052). 465 tests passing, all checks green.",
+    "datetime": "2026-03-10T09:00:00Z",
+    "entry_id": "019cd6f9-69bb-7772-b6e4-9f47fc02926c",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}
