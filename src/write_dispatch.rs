@@ -5,7 +5,9 @@ use std::{io, io::BufRead, io::IsTerminal, io::Write};
 use crate::app::{
     App, AppError, CreateKnotOptions, GateDecision, StateActorMetadata, UpdateKnotPatch,
 };
-use crate::cli::{Cli, Commands, EdgeSubcommands, GateSubcommands, StepSubcommands};
+use crate::cli::{
+    Cli, Commands, EdgeSubcommands, GateSubcommands, LeaseSubcommands, StepSubcommands,
+};
 use crate::dispatch::{knot_ref, resolve_next_state};
 use crate::domain::gate::{parse_failure_mode_spec, GateData, GateOwnerKind};
 use crate::domain::invariant::parse_invariant_spec;
@@ -17,9 +19,10 @@ use crate::poll_claim;
 use crate::rollback::resolve_rollback_state;
 use crate::ui;
 use crate::write_queue::{
-    self, ClaimOperation, EdgeOperation, GateEvaluateOperation, NewOperation, NextOperation,
-    PollClaimOperation, QueuedWriteRequest, QueuedWriteResponse, QuickNewOperation,
-    RollbackOperation, StateOperation, StepAnnotateOperation, UpdateOperation, WriteOperation,
+    self, ClaimOperation, EdgeOperation, GateEvaluateOperation, LeaseCreateOperation,
+    LeaseTerminateOperation, NewOperation, NextOperation, PollClaimOperation, QueuedWriteRequest,
+    QueuedWriteResponse, QuickNewOperation, RollbackOperation, StateOperation,
+    StepAnnotateOperation, UpdateOperation, WriteOperation,
 };
 
 pub fn maybe_run_queued_command(cli: &Cli) -> Result<Option<String>, AppError> {
@@ -181,6 +184,25 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
                 }))
             }
         },
+        Commands::Lease(args) => match &args.command {
+            LeaseSubcommands::Create(create) => {
+                Some(WriteOperation::LeaseCreate(LeaseCreateOperation {
+                    nickname: create.nickname.clone(),
+                    lease_type: create.lease_type.clone(),
+                    provider: create.provider.clone(),
+                    agent_type: create.agent_type.clone(),
+                    agent_name: create.agent_name.clone(),
+                    model: create.model.clone(),
+                    model_version: create.model_version.clone(),
+                }))
+            }
+            LeaseSubcommands::Terminate(term) => {
+                Some(WriteOperation::LeaseTerminate(LeaseTerminateOperation {
+                    id: term.id.clone(),
+                }))
+            }
+            _ => None, // Show and List are read operations
+        },
         _ => None,
     }
 }
@@ -220,6 +242,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 CreateKnotOptions {
                     knot_type,
                     gate_data,
+                    ..CreateKnotOptions::default()
                 },
             )?;
             let palette = ui::Palette::auto();
@@ -381,6 +404,10 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                     )
                 },
             )?;
+            // Terminate and unbind lease if present (silent)
+            if updated.lease_id.is_some() {
+                let _ = crate::lease::unbind_lease(app, &updated.id);
+            }
             Ok(format_next_output(
                 &updated,
                 &previous_state,
@@ -523,7 +550,45 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 Ok(format!("step annotated {}\n", palette.id(&knot_ref(&knot))))
             }
         }
+        WriteOperation::LeaseCreate(op) => execute_lease_create(app, op),
+        WriteOperation::LeaseTerminate(op) => execute_lease_terminate(app, op),
     }
+}
+
+fn execute_lease_create(app: &App, op: &LeaseCreateOperation) -> Result<String, AppError> {
+    use crate::domain::lease::{AgentInfo, LeaseType};
+    let lease_type = match op.lease_type.as_str() {
+        "manual" => LeaseType::Manual,
+        _ => LeaseType::Agent,
+    };
+    let agent_info = if lease_type == LeaseType::Agent {
+        Some(AgentInfo {
+            agent_type: op.agent_type.clone().unwrap_or_default(),
+            provider: op.provider.clone().unwrap_or_default(),
+            agent_name: op.agent_name.clone().unwrap_or_default(),
+            model: op.model.clone().unwrap_or_default(),
+            model_version: op.model_version.clone().unwrap_or_default(),
+        })
+    } else {
+        None
+    };
+    let view = crate::lease::create_lease(app, &op.nickname, lease_type, agent_info)?;
+    let palette = ui::Palette::auto();
+    Ok(format!(
+        "created lease {} {}\n",
+        palette.id(&knot_ref(&view)),
+        view.title,
+    ))
+}
+
+fn execute_lease_terminate(app: &App, op: &LeaseTerminateOperation) -> Result<String, AppError> {
+    let view = crate::lease::terminate_lease(app, &op.id)?;
+    let palette = ui::Palette::auto();
+    Ok(format!(
+        "terminated lease {} -> {}\n",
+        palette.id(&knot_ref(&view)),
+        palette.state(&view.state),
+    ))
 }
 
 fn execute_with_terminal_cascade_prompt<T, F>(
@@ -1182,6 +1247,8 @@ mod tests {
             invariants: vec![],
             step_history: vec![],
             gate: None,
+            lease: None,
+            lease_id: None,
             profile_id: "default".to_string(),
             profile_etag: None,
             deferred_from_state: None,
@@ -1274,3 +1341,7 @@ mod tests {
 #[cfg(test)]
 #[path = "write_dispatch/tests_gate_ext.rs"]
 mod tests_gate_ext;
+
+#[cfg(test)]
+#[path = "write_dispatch/tests_lease_ext.rs"]
+mod tests_lease_ext;

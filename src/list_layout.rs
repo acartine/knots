@@ -394,6 +394,8 @@ mod tests {
             invariants: Vec::new(),
             step_history: Vec::new(),
             gate: None,
+            lease: None,
+            lease_id: None,
             profile_id: "default".to_string(),
             profile_etag: None,
             deferred_from_state: None,

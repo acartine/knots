@@ -411,6 +411,8 @@ fn upsert_and_get_knot_hot_round_trips_invariants() {
             invariants: &invariants,
             step_history: &[],
             gate_data: &crate::domain::gate::GateData::default(),
+            lease_data: &crate::domain::lease::LeaseData::default(),
+            lease_id: None,
             profile_id: "autopilot",
             profile_etag: Some("etag-inv"),
             deferred_from_state: None,
@@ -455,6 +457,8 @@ fn upsert_knot_hot_with_empty_invariants_round_trips() {
             invariants: &[],
             step_history: &[],
             gate_data: &crate::domain::gate::GateData::default(),
+            lease_data: &crate::domain::lease::LeaseData::default(),
+            lease_id: None,
             profile_id: "autopilot",
             profile_etag: None,
             deferred_from_state: None,
@@ -467,6 +471,63 @@ fn upsert_knot_hot_with_empty_invariants_round_trips() {
         .expect("get should succeed")
         .expect("record should exist");
     assert!(record.invariants.is_empty());
+
+    cleanup_db_files(&path);
+}
+
+#[test]
+fn count_active_leases_returns_count() {
+    use crate::db::{count_active_leases, upsert_knot_hot, UpsertKnotHot};
+    use crate::domain::lease::LeaseData;
+
+    let path = unique_db_path();
+    let conn = open_connection(&path).expect("connection should open");
+
+    let empty = count_active_leases(&conn).expect("count should succeed on empty db");
+    assert_eq!(empty, 0);
+
+    let gate_data = crate::domain::gate::GateData::default();
+    for (id, state) in [
+        ("K-lease-1", "lease_ready"),
+        ("K-lease-2", "lease_active"),
+        ("K-lease-3", "lease_terminated"),
+        ("K-work-1", "implementation"),
+    ] {
+        let knot_type = if id.starts_with("K-lease") {
+            Some("lease")
+        } else {
+            Some("work")
+        };
+        upsert_knot_hot(
+            &conn,
+            &UpsertKnotHot {
+                id,
+                title: id,
+                state,
+                updated_at: "2026-03-12T00:00:00Z",
+                body: None,
+                description: None,
+                priority: None,
+                knot_type,
+                tags: &[],
+                notes: &[],
+                handoff_capsules: &[],
+                invariants: &[],
+                step_history: &[],
+                gate_data: &gate_data,
+                lease_data: &LeaseData::default(),
+                lease_id: None,
+                profile_id: "autopilot",
+                profile_etag: None,
+                deferred_from_state: None,
+                created_at: None,
+            },
+        )
+        .expect("upsert should succeed");
+    }
+
+    let count = count_active_leases(&conn).expect("count should succeed");
+    assert_eq!(count, 2);
 
     cleanup_db_files(&path);
 }

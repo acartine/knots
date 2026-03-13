@@ -204,6 +204,7 @@ fn effective_state_rank(state: &str) -> Result<u8, AppError> {
         KnotState::ReadyToEvaluate => 12,
         KnotState::Evaluating => 13,
         KnotState::Shipped | KnotState::Abandoned => 14,
+        KnotState::LeaseReady | KnotState::LeaseActive | KnotState::LeaseTerminated => 14,
         KnotState::Deferred => 255,
     };
     Ok(rank)

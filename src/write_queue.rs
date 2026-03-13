@@ -155,6 +155,22 @@ pub struct StepAnnotateOperation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LeaseCreateOperation {
+    pub nickname: String,
+    pub lease_type: String,
+    pub agent_type: Option<String>,
+    pub provider: Option<String>,
+    pub agent_name: Option<String>,
+    pub model: Option<String>,
+    pub model_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LeaseTerminateOperation {
+    pub id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[allow(clippy::large_enum_variant)]
 pub enum WriteOperation {
     New(NewOperation),
@@ -169,6 +185,8 @@ pub enum WriteOperation {
     EdgeAdd(EdgeOperation),
     EdgeRemove(EdgeOperation),
     StepAnnotate(StepAnnotateOperation),
+    LeaseCreate(LeaseCreateOperation),
+    LeaseTerminate(LeaseTerminateOperation),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

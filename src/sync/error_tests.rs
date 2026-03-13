@@ -83,4 +83,12 @@ fn sync_error_display_source_and_from_cover_all_variants() {
     };
     assert!(snapshot.to_string().contains("snapshot load failed"));
     assert!(snapshot.source().is_none());
+
+    let active_leases = SyncError::ActiveLeasesExist(2);
+    assert!(active_leases.to_string().contains("2 active lease(s)"));
+    assert!(active_leases
+        .to_string()
+        .contains("terminate leases before syncing"));
+    assert!(active_leases.source().is_none());
+    assert!(active_leases.is_active_leases());
 }

@@ -46,6 +46,7 @@ fn evaluate_gate_yes_ships_without_reopening() {
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -88,6 +89,7 @@ fn evaluate_gate_no_covers_missing_invariant_and_failure_mode_errors() {
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -162,6 +164,7 @@ fn gate_metadata_updates_round_trip_and_work_knots_reject_them() {
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -255,6 +258,7 @@ fn evaluate_gate_no_reopens_targets_and_appends_metadata() {
                     owner_kind: GateOwnerKind::Agent,
                     failure_modes,
                 },
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -341,6 +345,7 @@ fn evaluate_gate_no_skips_transition_for_already_ready_target() {
                     owner_kind: GateOwnerKind::Agent,
                     failure_modes,
                 },
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -411,6 +416,7 @@ fn evaluate_gate_rejects_non_gate_and_wrong_state() {
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");

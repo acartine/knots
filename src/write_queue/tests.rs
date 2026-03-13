@@ -209,3 +209,45 @@ fn list_request_files_and_read_response_file_handle_missing_paths() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn lease_create_operation_serializes_round_trip() {
+    let op = WriteOperation::LeaseCreate(LeaseCreateOperation {
+        nickname: "test-session".to_string(),
+        lease_type: "agent".to_string(),
+        agent_type: Some("cli".to_string()),
+        provider: Some("Anthropic".to_string()),
+        agent_name: Some("claude".to_string()),
+        model: Some("opus".to_string()),
+        model_version: Some("4.6".to_string()),
+    });
+    let json = serde_json::to_string(&op).expect("should serialize");
+    let parsed: WriteOperation = serde_json::from_str(&json).expect("should deserialize");
+    assert_eq!(parsed, op);
+}
+
+#[test]
+fn lease_terminate_operation_serializes_round_trip() {
+    let op = WriteOperation::LeaseTerminate(LeaseTerminateOperation {
+        id: "knot-abc123".to_string(),
+    });
+    let json = serde_json::to_string(&op).expect("should serialize");
+    let parsed: WriteOperation = serde_json::from_str(&json).expect("should deserialize");
+    assert_eq!(parsed, op);
+}
+
+#[test]
+fn lease_create_operation_with_no_optional_fields() {
+    let op = WriteOperation::LeaseCreate(LeaseCreateOperation {
+        nickname: "manual-session".to_string(),
+        lease_type: "manual".to_string(),
+        agent_type: None,
+        provider: None,
+        agent_name: None,
+        model: None,
+        model_version: None,
+    });
+    let json = serde_json::to_string(&op).expect("should serialize");
+    let parsed: WriteOperation = serde_json::from_str(&json).expect("should deserialize");
+    assert_eq!(parsed, op);
+}

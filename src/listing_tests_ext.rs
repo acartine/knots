@@ -1,5 +1,6 @@
 use super::{apply_filters, normalize_knot_type_filter, KnotListFilter};
 use crate::app::KnotView;
+use crate::domain::knot_type::KnotType;
 
 fn knot(
     id: &str,
@@ -25,6 +26,8 @@ fn knot(
         invariants: Vec::new(),
         step_history: Vec::new(),
         gate: None,
+        lease: None,
+        lease_id: None,
         profile_id: "default".to_string(),
         profile_etag: None,
         deferred_from_state: None,
@@ -144,4 +147,47 @@ fn whitespace_only_query_filter_is_treated_as_no_filter() {
 
     let filtered = apply_filters(knots, &filter);
     assert_eq!(filtered.len(), 1);
+}
+
+#[test]
+fn hides_lease_knots_by_default() {
+    let mut lease = knot("K-3", "My Lease", "lease_ready", Some("lease"), &[], None);
+    lease.knot_type = KnotType::Lease;
+    let knots = vec![lease];
+    let filter = KnotListFilter::default();
+
+    let filtered = apply_filters(knots, &filter);
+    assert_eq!(filtered.len(), 0);
+}
+
+#[test]
+fn shows_lease_knots_with_type_filter() {
+    let mut lease = knot("K-3", "My Lease", "lease_ready", Some("lease"), &[], None);
+    lease.knot_type = KnotType::Lease;
+    let knots = vec![lease];
+    let filter = KnotListFilter {
+        knot_type: Some("lease".to_string()),
+        ..KnotListFilter::default()
+    };
+
+    let filtered = apply_filters(knots, &filter);
+    assert_eq!(filtered.len(), 1);
+    assert_eq!(filtered[0].id, "K-3");
+}
+
+#[test]
+fn does_not_hide_non_lease_knots() {
+    let knots = vec![knot(
+        "K-1",
+        "Active Work",
+        "implementing",
+        Some("work"),
+        &[],
+        None,
+    )];
+    let filter = KnotListFilter::default();
+
+    let filtered = apply_filters(knots, &filter);
+    assert_eq!(filtered.len(), 1);
+    assert_eq!(filtered[0].id, "K-1");
 }

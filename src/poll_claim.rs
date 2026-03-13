@@ -1,5 +1,6 @@
 use crate::app::{App, AppError, KnotView, StateActorMetadata};
 use crate::cli::{ClaimArgs, PollArgs, ReadyArgs};
+use crate::domain::knot_type::KnotType;
 use crate::listing::{apply_filters, KnotListFilter};
 use crate::prompt;
 use crate::skills;
@@ -152,6 +153,7 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
         actor_kind: Some(actor.actor_kind.unwrap_or_else(|| "agent".to_string())),
         ..actor
     };
+    let agent_info = build_agent_info_from_actor(&claim_actor);
     let claimed = app.set_state_with_actor(
         &knot.id,
         &next_action,
@@ -159,9 +161,23 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
         knot.profile_etag.as_deref(),
         claim_actor,
     )?;
-    let completion_cmd = completion_command(&claimed.id, &claimed.state);
+    // Create and bind lease (silent - no CLI output)
+    if let Some(info) = agent_info {
+        let lease = crate::lease::create_lease(
+            app,
+            &format!("claim-{}", &claimed.id),
+            crate::domain::lease::LeaseType::Agent,
+            Some(info),
+        )?;
+        let _ = crate::lease::activate_lease(app, &lease.id);
+        let _ = crate::lease::bind_lease(app, &claimed.id, &lease.id);
+    }
+    let bound = app
+        .show_knot(&claimed.id)?
+        .ok_or_else(|| AppError::NotFound(claimed.id.clone()))?;
+    let completion_cmd = completion_command(&bound.id, &bound.state);
     Ok(PollResult {
-        knot: claimed,
+        knot: bound,
         skill,
         completion_cmd,
     })
@@ -223,6 +239,7 @@ pub fn list_queue_candidates(app: &App, stage: Option<&str>) -> Result<Vec<KnotV
     };
     let mut knots = apply_filters(app.list_knots()?, &filter);
     knots.retain(|k| workflow_runtime::is_queue_state(&k.state));
+    knots.retain(|k| k.knot_type != KnotType::Lease);
     knots.sort_by(|a, b| {
         let pa = a.priority.unwrap_or(i64::MAX);
         let pb = b.priority.unwrap_or(i64::MAX);
@@ -271,7 +288,26 @@ fn match_pollable(
     }))
 }
 
+fn build_agent_info_from_actor(
+    actor: &StateActorMetadata,
+) -> Option<crate::domain::lease::AgentInfo> {
+    let name = actor.agent_name.as_deref()?;
+    Some(crate::domain::lease::AgentInfo {
+        agent_type: "cli".to_string(),
+        provider: String::new(),
+        agent_name: name.to_string(),
+        model: actor.agent_model.clone().unwrap_or_default(),
+        model_version: actor.agent_version.clone().unwrap_or_default(),
+    })
+}
+
 fn require_queue_state(knot: &KnotView) -> Result<(), AppError> {
+    if knot.knot_type == KnotType::Lease {
+        return Err(AppError::InvalidArgument(format!(
+            "knot '{}' is a lease and cannot be claimed",
+            knot.id
+        )));
+    }
     if !workflow_runtime::is_queue_state(&knot.state) {
         return Err(AppError::InvalidArgument(format!(
             "knot '{}' is in state '{}', which is not a claimable queue state",
@@ -532,3 +568,7 @@ mod tests {
 #[cfg(test)]
 #[path = "poll_claim/tests_gate_ext.rs"]
 mod tests_gate_ext;
+
+#[cfg(test)]
+#[path = "poll_claim/tests_lease_ext.rs"]
+mod tests_lease_ext;

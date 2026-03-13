@@ -134,6 +134,7 @@ pub enum SyncError {
     SnapshotLoad {
         message: String,
     },
+    ActiveLeasesExist(i64),
 }
 
 impl SyncError {
@@ -158,6 +159,11 @@ impl SyncError {
             }
             _ => false,
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn is_active_leases(&self) -> bool {
+        matches!(self, SyncError::ActiveLeasesExist(_))
     }
 
     pub fn is_non_fast_forward(&self) -> bool {
@@ -211,6 +217,14 @@ impl fmt::Display for SyncError {
             SyncError::SnapshotLoad { message } => {
                 write!(f, "snapshot load failed: {}", message)
             }
+            SyncError::ActiveLeasesExist(count) => {
+                write!(
+                    f,
+                    "{} active lease(s) found; \
+                     terminate leases before syncing",
+                    count
+                )
+            }
         }
     }
 }
@@ -227,6 +241,7 @@ impl Error for SyncError {
             SyncError::FileConflict { .. } => None,
             SyncError::MergeConflictEscalation { .. } => None,
             SyncError::SnapshotLoad { .. } => None,
+            SyncError::ActiveLeasesExist(_) => None,
         }
     }
 }

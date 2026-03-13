@@ -21,10 +21,13 @@ pub enum KnotState {
     Shipped,
     Deferred,
     Abandoned,
+    LeaseReady,
+    LeaseActive,
+    LeaseTerminated,
 }
 
 impl KnotState {
-    pub const ALL: [KnotState; 17] = [
+    pub const ALL: [KnotState; 20] = [
         KnotState::ReadyForPlanning,
         KnotState::Planning,
         KnotState::ReadyForPlanReview,
@@ -42,6 +45,9 @@ impl KnotState {
         KnotState::Shipped,
         KnotState::Deferred,
         KnotState::Abandoned,
+        KnotState::LeaseReady,
+        KnotState::LeaseActive,
+        KnotState::LeaseTerminated,
     ];
 
     pub fn as_str(self) -> &'static str {
@@ -63,11 +69,17 @@ impl KnotState {
             KnotState::Shipped => "shipped",
             KnotState::Deferred => "deferred",
             KnotState::Abandoned => "abandoned",
+            KnotState::LeaseReady => "lease_ready",
+            KnotState::LeaseActive => "lease_active",
+            KnotState::LeaseTerminated => "lease_terminated",
         }
     }
 
     pub fn is_terminal(self) -> bool {
-        matches!(self, KnotState::Shipped | KnotState::Abandoned)
+        matches!(
+            self,
+            KnotState::Shipped | KnotState::Abandoned | KnotState::LeaseTerminated
+        )
     }
 
     #[allow(dead_code)]
@@ -109,6 +121,9 @@ impl KnotState {
                 | (KnotState::ShipmentReview, KnotState::Shipped)
                 | (KnotState::ShipmentReview, KnotState::ReadyForImplementation)
                 | (KnotState::ShipmentReview, KnotState::ReadyForShipment)
+                | (KnotState::LeaseReady, KnotState::LeaseActive)
+                | (KnotState::LeaseReady, KnotState::LeaseTerminated)
+                | (KnotState::LeaseActive, KnotState::LeaseTerminated)
         )
     }
 
@@ -162,6 +177,9 @@ impl FromStr for KnotState {
             "shipped" => KnotState::Shipped,
             "deferred" => KnotState::Deferred,
             "abandoned" => KnotState::Abandoned,
+            "lease_ready" => KnotState::LeaseReady,
+            "lease_active" => KnotState::LeaseActive,
+            "lease_terminated" => KnotState::LeaseTerminated,
             _ => {
                 return Err(ParseKnotStateError {
                     value: value.to_string(),
@@ -301,5 +319,53 @@ mod tests {
             KnotState::from_str("implemented").unwrap(),
             KnotState::ReadyForImplementationReview
         );
+    }
+
+    #[test]
+    fn parses_lease_states() {
+        assert_eq!(
+            KnotState::from_str("lease_ready").unwrap(),
+            KnotState::LeaseReady
+        );
+        assert_eq!(
+            KnotState::from_str("lease_active").unwrap(),
+            KnotState::LeaseActive
+        );
+        assert_eq!(
+            KnotState::from_str("lease_terminated").unwrap(),
+            KnotState::LeaseTerminated
+        );
+    }
+
+    #[test]
+    fn lease_state_transitions() {
+        let transitions = [
+            (KnotState::LeaseReady, KnotState::LeaseActive),
+            (KnotState::LeaseReady, KnotState::LeaseTerminated),
+            (KnotState::LeaseActive, KnotState::LeaseTerminated),
+        ];
+        for (from, to) in transitions {
+            assert!(from.can_transition_to(to), "{from} -> {to} should be valid");
+        }
+    }
+
+    #[test]
+    fn lease_terminated_is_terminal() {
+        assert!(KnotState::LeaseTerminated.is_terminal());
+        assert!(!KnotState::LeaseReady.is_terminal());
+        assert!(!KnotState::LeaseActive.is_terminal());
+    }
+
+    #[test]
+    fn lease_state_round_trip() {
+        for state in [
+            KnotState::LeaseReady,
+            KnotState::LeaseActive,
+            KnotState::LeaseTerminated,
+        ] {
+            let s = state.as_str();
+            let parsed = KnotState::from_str(s).unwrap();
+            assert_eq!(parsed, state);
+        }
     }
 }

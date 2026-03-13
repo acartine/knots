@@ -203,6 +203,8 @@ mod tests {
             invariants: vec![],
             step_history: vec![],
             gate: None,
+            lease: None,
+            lease_id: None,
             profile_id: "autopilot".to_string(),
             profile_etag: None,
             deferred_from_state: None,
