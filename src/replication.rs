@@ -37,6 +37,7 @@ impl<'a> ReplicationService<'a> {
     }
 
     pub fn pull(&self) -> Result<SyncSummary, SyncError> {
+        self.require_no_active_leases()?;
         let service = SyncService::new(self.conn, self.repo_root.clone());
         service.sync()
     }
@@ -45,6 +46,7 @@ impl<'a> ReplicationService<'a> {
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncSummary, SyncError> {
+        self.require_no_active_leases()?;
         let service = SyncService::new(self.conn, self.repo_root.clone());
         service.sync_with_progress(reporter)
     }
@@ -58,6 +60,7 @@ impl<'a> ReplicationService<'a> {
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<PushSummary, SyncError> {
+        self.require_no_active_leases()?;
         const MAX_ATTEMPTS: usize = 3;
 
         emit_progress(
@@ -345,6 +348,14 @@ impl<'a> ReplicationService<'a> {
         }
         let dst_bytes = std::fs::read(&dst)?;
         Ok(dst_bytes != src_bytes)
+    }
+
+    fn require_no_active_leases(&self) -> Result<(), SyncError> {
+        let count = crate::db::count_active_leases(self.conn)?;
+        if count > 0 {
+            return Err(SyncError::ActiveLeasesExist(count));
+        }
+        Ok(())
     }
 }
 

@@ -80,6 +80,7 @@ pub fn run_doctor(repo_root: &Path) -> Result<DoctorReport, DoctorError> {
         check_remote(repo_root)?,
         check_version(),
         crate::git_hooks::check_hooks(repo_root),
+        check_stuck_leases(repo_root)?,
     ];
     Ok(DoctorReport { checks })
 }
@@ -311,6 +312,36 @@ fn is_outdated(current: &str, latest: &str) -> Option<bool> {
         return None;
     }
     Some(cur < lat)
+}
+
+fn check_stuck_leases(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
+    let db_path = repo_root.join(".knots").join("cache").join("state.sqlite");
+    if !db_path.exists() {
+        return Ok(DoctorCheck {
+            name: "stuck_leases".to_string(),
+            status: DoctorStatus::Pass,
+            detail: "no cache database found".to_string(),
+        });
+    }
+    let conn = crate::db::open_connection(db_path.to_str().unwrap_or(".knots/cache/state.sqlite"))
+        .map_err(|e| DoctorError::Io(std::io::Error::other(e.to_string())))?;
+
+    let count = crate::db::count_active_leases(&conn)
+        .map_err(|e| DoctorError::Io(std::io::Error::other(e.to_string())))?;
+
+    if count > 0 {
+        Ok(DoctorCheck {
+            name: "stuck_leases".to_string(),
+            status: DoctorStatus::Warn,
+            detail: format!("{} active lease(s) may be stuck", count),
+        })
+    } else {
+        Ok(DoctorCheck {
+            name: "stuck_leases".to_string(),
+            status: DoctorStatus::Pass,
+            detail: "no stuck leases".to_string(),
+        })
+    }
 }
 
 #[cfg(test)]

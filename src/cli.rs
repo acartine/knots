@@ -117,6 +117,8 @@ pub enum Commands {
     Ready(ReadyArgs),
     #[command(about = "Manage step execution history.")]
     Step(StepArgs),
+    #[command(about = "Manage lease sessions.")]
+    Lease(LeaseArgs),
     #[command(about = "Manage git sync hooks (post-merge).")]
     Hooks(HooksArgs),
 }
@@ -645,6 +647,85 @@ pub struct StepAnnotateArgs {
     pub json: bool,
 }
 
+#[derive(Debug, Args)]
+#[command(about = "Manage lease sessions.")]
+pub struct LeaseArgs {
+    #[command(subcommand)]
+    pub command: LeaseSubcommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum LeaseSubcommands {
+    #[command(about = "Create a new lease.")]
+    Create(LeaseCreateArgs),
+    #[command(about = "Show a lease.")]
+    Show(LeaseShowArgs),
+    #[command(about = "Terminate an active lease.")]
+    Terminate(LeaseTerminateArgs),
+    #[command(about = "List leases.", alias = "ls")]
+    List(LeaseListArgs),
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Create a new lease.")]
+pub struct LeaseCreateArgs {
+    #[arg(long, help = "Nickname for the lease session.")]
+    pub nickname: String,
+
+    #[arg(
+        long = "type",
+        default_value = "agent",
+        help = "Lease type: agent or manual."
+    )]
+    pub lease_type: String,
+
+    #[arg(long = "agent-type", help = "Agent type: cli or api.")]
+    pub agent_type: Option<String>,
+
+    #[arg(long, help = "Agent provider (e.g. Anthropic).")]
+    pub provider: Option<String>,
+
+    #[arg(long = "agent-name", help = "Agent name (e.g. claude).")]
+    pub agent_name: Option<String>,
+
+    #[arg(long, help = "Model name (e.g. opus).")]
+    pub model: Option<String>,
+
+    #[arg(long = "model-version", help = "Model version (e.g. 4.6).")]
+    pub model_version: Option<String>,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Show a lease.")]
+pub struct LeaseShowArgs {
+    #[arg(help = "Lease knot id.")]
+    pub id: String,
+
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Terminate a lease.")]
+pub struct LeaseTerminateArgs {
+    #[arg(help = "Lease knot id.")]
+    pub id: String,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "List leases.")]
+pub struct LeaseListArgs {
+    #[arg(short = 'a', long = "all", help = "Include terminated leases.")]
+    pub all: bool,
+
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
+}
+
 #[cfg(test)]
 #[path = "cli_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "cli_lease_tests.rs"]
+mod lease_tests;

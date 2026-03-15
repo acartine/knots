@@ -4,11 +4,15 @@ use crate::workflow::{OwnerKind, ProfileDefinition, ProfileError, ProfileRegistr
 
 pub const READY_TO_EVALUATE: &str = "ready_to_evaluate";
 pub const EVALUATING: &str = "evaluating";
+pub const LEASE_READY: &str = "lease_ready";
+pub const LEASE_ACTIVE: &str = "lease_active";
+pub const LEASE_TERMINATED: &str = "lease_terminated";
 
 pub fn initial_state(knot_type: KnotType, profile: &ProfileDefinition) -> String {
     match knot_type {
         KnotType::Work => profile.initial_state.clone(),
         KnotType::Gate => READY_TO_EVALUATE.to_string(),
+        KnotType::Lease => LEASE_READY.to_string(),
     }
 }
 
@@ -60,6 +64,7 @@ pub fn is_terminal_state(
     match knot_type {
         KnotType::Work => Ok(registry.require(profile_id)?.is_terminal_state(state)),
         KnotType::Gate => Ok(matches!(state, "shipped" | "abandoned")),
+        KnotType::Lease => Ok(matches!(state, LEASE_TERMINATED)),
     }
 }
 
@@ -76,6 +81,7 @@ pub fn validate_transition(
             .require(profile_id)?
             .validate_transition(from, to, force),
         KnotType::Gate => validate_gate_transition(from, to, force),
+        KnotType::Lease => validate_lease_transition(from, to, force),
     }
 }
 
@@ -95,6 +101,11 @@ pub fn next_happy_path_state(
             EVALUATING => Some("shipped".to_string()),
             _ => None,
         }),
+        KnotType::Lease => Ok(match current {
+            LEASE_READY => Some(LEASE_ACTIVE.to_string()),
+            LEASE_ACTIVE => Some(LEASE_TERMINATED.to_string()),
+            _ => None,
+        }),
     }
 }
 
@@ -111,6 +122,7 @@ pub fn owner_kind_for_state(
             .owners
             .owner_kind_for_state(state)
             .cloned()),
+        KnotType::Lease => Ok(None),
         KnotType::Gate => Ok(match state {
             READY_TO_EVALUATE | EVALUATING => Some(match gate.owner_kind {
                 crate::domain::gate::GateOwnerKind::Human => OwnerKind::Human,
@@ -137,6 +149,25 @@ fn validate_gate_transition(from: &str, to: &str, force: bool) -> Result<(), Pro
     }
     Err(ProfileError::InvalidDefinition(format!(
         "invalid gate transition: {} -> {}",
+        from, to
+    )))
+}
+
+fn validate_lease_transition(from: &str, to: &str, force: bool) -> Result<(), ProfileError> {
+    if force || from == to {
+        return Ok(());
+    }
+    let allowed = matches!(
+        (from, to),
+        (LEASE_READY, LEASE_ACTIVE)
+            | (LEASE_READY, LEASE_TERMINATED)
+            | (LEASE_ACTIVE, LEASE_TERMINATED)
+    );
+    if allowed {
+        return Ok(());
+    }
+    Err(ProfileError::InvalidDefinition(format!(
+        "invalid lease transition: {} -> {}",
         from, to
     )))
 }
@@ -285,6 +316,136 @@ mod tests {
             READY_TO_EVALUATE,
             "shipped",
             true
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn lease_initial_state_is_lease_ready() {
+        let registry = ProfileRegistry::load().unwrap();
+        let profile = registry.require("autopilot").unwrap();
+        assert_eq!(initial_state(KnotType::Lease, profile), super::LEASE_READY);
+    }
+
+    #[test]
+    fn lease_next_happy_path_follows_lifecycle() {
+        let registry = ProfileRegistry::load().unwrap();
+        assert_eq!(
+            next_happy_path_state(&registry, "autopilot", KnotType::Lease, super::LEASE_READY,)
+                .unwrap(),
+            Some(super::LEASE_ACTIVE.to_string())
+        );
+        assert_eq!(
+            next_happy_path_state(&registry, "autopilot", KnotType::Lease, super::LEASE_ACTIVE,)
+                .unwrap(),
+            Some(super::LEASE_TERMINATED.to_string())
+        );
+        assert_eq!(
+            next_happy_path_state(
+                &registry,
+                "autopilot",
+                KnotType::Lease,
+                super::LEASE_TERMINATED,
+            )
+            .unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn lease_terminal_state_is_terminated() {
+        let registry = ProfileRegistry::load().unwrap();
+        assert!(is_terminal_state(
+            &registry,
+            "autopilot",
+            KnotType::Lease,
+            super::LEASE_TERMINATED,
+        )
+        .unwrap());
+        assert!(
+            !is_terminal_state(&registry, "autopilot", KnotType::Lease, super::LEASE_ACTIVE,)
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn lease_owner_kind_is_always_none() {
+        let registry = ProfileRegistry::load().unwrap();
+        let gate = GateData::default();
+        assert_eq!(
+            owner_kind_for_state(
+                &registry,
+                "autopilot",
+                KnotType::Lease,
+                &gate,
+                super::LEASE_ACTIVE,
+            )
+            .unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn lease_transition_rules() {
+        let registry = ProfileRegistry::load().unwrap();
+        // Valid transitions
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Lease,
+            super::LEASE_READY,
+            super::LEASE_ACTIVE,
+            false,
+        )
+        .is_ok());
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Lease,
+            super::LEASE_ACTIVE,
+            super::LEASE_TERMINATED,
+            false,
+        )
+        .is_ok());
+        // Direct ready -> terminated
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Lease,
+            super::LEASE_READY,
+            super::LEASE_TERMINATED,
+            false,
+        )
+        .is_ok());
+        // Noop (same state)
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Lease,
+            super::LEASE_ACTIVE,
+            super::LEASE_ACTIVE,
+            false,
+        )
+        .is_ok());
+        // Invalid (terminated -> active)
+        let err = validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Lease,
+            super::LEASE_TERMINATED,
+            super::LEASE_ACTIVE,
+            false,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("invalid lease transition"));
+        // Force overrides invalid
+        assert!(validate_transition(
+            &registry,
+            "autopilot",
+            KnotType::Lease,
+            super::LEASE_TERMINATED,
+            super::LEASE_ACTIVE,
+            true,
         )
         .is_ok());
     }

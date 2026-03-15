@@ -40,6 +40,7 @@ pub(crate) fn apply_fixes(repo_root: &Path, checks: &[DoctorCheck]) {
             "remote" => fix_remote(repo_root),
             "version" => fix_version(),
             "hooks" => fix_hooks(repo_root),
+            "stuck_leases" => fix_stuck_leases(repo_root),
             _ => {}
         }
     }
@@ -90,6 +91,26 @@ fn fix_remote(repo_root: &Path) {
 fn fix_hooks(repo_root: &Path) {
     crate::git_hooks::cleanup_legacy_hooks(repo_root);
     let _ = crate::git_hooks::install_hooks(repo_root);
+}
+
+fn fix_stuck_leases(repo_root: &Path) {
+    let db_path = repo_root.join(".knots").join("cache").join("state.sqlite");
+    if !db_path.exists() {
+        return;
+    }
+    let db_str = db_path.to_str().unwrap_or(".knots/cache/state.sqlite");
+    let Ok(conn) = crate::db::open_connection(db_str) else {
+        return;
+    };
+    let _ = conn.execute(
+        r#"
+UPDATE knot_hot
+SET state = 'lease_terminated'
+WHERE knot_type = 'lease'
+  AND state IN ('lease_ready', 'lease_active')
+"#,
+        [],
+    );
 }
 
 fn run_git(cwd: &Path, args: &[&str]) -> bool {

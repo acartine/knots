@@ -8,6 +8,7 @@ use time::OffsetDateTime;
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::gate::GateData;
 use crate::domain::invariant::Invariant;
+use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 use crate::events::{FullEvent, IndexEvent, IndexEventKind, WorkflowPrecondition};
@@ -222,6 +223,11 @@ impl<'a> IncrementalApplier<'a> {
         if data.contains_key("gate") {
             gate_data = parse_gate_data(data, &absolute_path)?;
         }
+        let lease_data = existing
+            .as_ref()
+            .map(|record| record.lease_data.clone())
+            .unwrap_or_default();
+        let lease_id = existing.as_ref().and_then(|record| record.lease_id.clone());
         let deferred_from_state = existing
             .as_ref()
             .and_then(|record| record.deferred_from_state.clone());
@@ -251,6 +257,8 @@ impl<'a> IncrementalApplier<'a> {
                         invariants: &invariants,
                         step_history: &step_history,
                         gate_data: &gate_data,
+                        lease_data: &lease_data,
+                        lease_id: lease_id.as_deref(),
                         profile_id: &profile_id,
                         profile_etag: Some(&event.event_id),
                         deferred_from_state: deferred_from_state.as_deref(),
@@ -381,6 +389,20 @@ impl<'a> IncrementalApplier<'a> {
                 })?;
                 Ok(FullApplyOutcome::Ignored)
             }
+            "knot.lease_data_set" => {
+                let ld = parse_lease_data(data, &absolute_path)?;
+                self.apply_metadata_update(&event.knot_id, |record| {
+                    record.lease_data = ld;
+                })?;
+                Ok(FullApplyOutcome::Ignored)
+            }
+            "knot.lease_id_set" => {
+                let lid = optional_string(data.get("lease_id"));
+                self.apply_metadata_update(&event.knot_id, |record| {
+                    record.lease_id = lid;
+                })?;
+                Ok(FullApplyOutcome::Ignored)
+            }
             _ => Ok(FullApplyOutcome::Ignored),
         }
     }
@@ -407,6 +429,8 @@ impl<'a> IncrementalApplier<'a> {
             invariants: existing.invariants,
             step_history: existing.step_history,
             gate_data: existing.gate_data,
+            lease_data: existing.lease_data,
+            lease_id: existing.lease_id,
             profile_id: existing.profile_id,
             profile_etag: existing.profile_etag,
             deferred_from_state: existing.deferred_from_state,
@@ -431,6 +455,8 @@ impl<'a> IncrementalApplier<'a> {
                 invariants: &projection.invariants,
                 step_history: &projection.step_history,
                 gate_data: &projection.gate_data,
+                lease_data: &projection.lease_data,
+                lease_id: projection.lease_id.as_deref(),
                 profile_id: &projection.profile_id,
                 profile_etag: projection.profile_etag.as_deref(),
                 deferred_from_state: projection.deferred_from_state.as_deref(),
@@ -461,6 +487,8 @@ struct MetadataProjection {
     invariants: Vec<Invariant>,
     step_history: Vec<StepRecord>,
     gate_data: GateData,
+    lease_data: LeaseData,
+    lease_id: Option<String>,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
@@ -562,6 +590,14 @@ fn parse_gate_data(object: &Map<String, Value>, path: &Path) -> Result<GateData,
         .ok_or_else(|| invalid_event(path, "missing 'gate' object field"))?;
     serde_json::from_value(raw.clone())
         .map_err(|err| invalid_event(path, &format!("invalid 'gate' payload: {}", err)))
+}
+
+fn parse_lease_data(object: &Map<String, Value>, path: &Path) -> Result<LeaseData, SyncError> {
+    let raw = object
+        .get("lease_data")
+        .ok_or_else(|| invalid_event(path, "missing 'lease_data' field"))?;
+    serde_json::from_value(raw.clone())
+        .map_err(|err| invalid_event(path, &format!("invalid 'lease_data' payload: {}", err)))
 }
 
 fn invalid_event(path: &Path, message: &str) -> SyncError {

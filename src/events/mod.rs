@@ -48,6 +48,8 @@ pub enum FullEventKind {
     KnotEdgeRemove,
     KnotProfileSet,
     KnotReviewDecision,
+    KnotLeaseDataSet,
+    KnotLeaseIdSet,
 }
 
 impl FullEventKind {
@@ -71,6 +73,8 @@ impl FullEventKind {
             FullEventKind::KnotEdgeRemove => "knot.edge_remove",
             FullEventKind::KnotProfileSet => "knot.profile_set",
             FullEventKind::KnotReviewDecision => "knot.review_decision",
+            FullEventKind::KnotLeaseDataSet => "knot.lease_data_set",
+            FullEventKind::KnotLeaseIdSet => "knot.lease_id_set",
         }
     }
 }

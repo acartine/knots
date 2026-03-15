@@ -37,6 +37,8 @@ fn sample_record(id: &str, state: &str, deferred_from_state: Option<&str>) -> Kn
         invariants: Vec::new(),
         step_history: Vec::new(),
         gate_data: crate::domain::gate::GateData::default(),
+        lease_data: crate::domain::lease::LeaseData::default(),
+        lease_id: None,
         profile_id: "default".to_string(),
         profile_etag: None,
         deferred_from_state: deferred_from_state.map(ToString::to_string),
@@ -129,6 +131,7 @@ fn gate_parent_transition_blocks_work_child_with_lower_effective_rank() {
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate parent should be created");

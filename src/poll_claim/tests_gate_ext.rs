@@ -44,6 +44,7 @@ fn list_and_poll_gate_candidates_respect_stage_and_owner() {
                     owner_kind: GateOwnerKind::Human,
                     ..Default::default()
                 },
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -79,6 +80,7 @@ fn peek_and_claim_gate_follow_gate_workflow_states() {
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -120,6 +122,7 @@ fn run_poll_and_claim_cover_json_and_text_rendering_paths() {
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -155,6 +158,7 @@ fn run_poll_and_claim_cover_json_and_text_rendering_paths() {
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");

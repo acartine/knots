@@ -18,6 +18,8 @@ fn knot(id: &str, alias: Option<&str>, title: &str, state: &str) -> KnotView {
         invariants: Vec::new(),
         step_history: Vec::new(),
         gate: None,
+        lease: None,
+        lease_id: None,
         profile_id: "automation_granular".to_string(),
         profile_etag: None,
         deferred_from_state: None,

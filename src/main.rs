@@ -14,6 +14,7 @@ mod git_hooks;
 mod hierarchy_alias;
 mod init;
 mod knot_id;
+mod lease;
 mod list_layout;
 #[cfg(test)]
 mod list_layout_tests_ext;
@@ -66,7 +67,7 @@ fn progress_reporter(enabled: bool) -> Option<ui::StdoutProgressReporter> {
 
 fn run() -> Result<(), app::AppError> {
     use clap::FromArgMatches;
-    use cli::{ColdSubcommands, Commands, EdgeSubcommands};
+    use cli::{ColdSubcommands, Commands, EdgeSubcommands, LeaseSubcommands};
 
     let cli = cli::Cli::from_arg_matches_mut(&mut cli::styled_command().get_matches())
         .expect("arg matches should be valid");
@@ -432,6 +433,46 @@ fn run() -> Result<(), app::AppError> {
         Commands::Step(_) => {
             unreachable!("queued write commands are handled before app initialization")
         }
+        Commands::Lease(args) => match args.command {
+            LeaseSubcommands::Show(ref show) => {
+                let knot = app
+                    .show_knot(&show.id)?
+                    .ok_or_else(|| app::AppError::NotFound(show.id.clone()))?;
+                if show.json {
+                    print_json(&knot);
+                } else {
+                    ui::print_knot_show(&knot, false);
+                }
+            }
+            LeaseSubcommands::List(ref list) => {
+                let leases = if list.all {
+                    app.list_knots()?
+                        .into_iter()
+                        .filter(|k| k.knot_type == domain::knot_type::KnotType::Lease)
+                        .collect::<Vec<_>>()
+                } else {
+                    lease::list_active_leases(&app)?
+                };
+                if list.json {
+                    print_json(&leases);
+                } else if leases.is_empty() {
+                    println!("no active leases");
+                } else {
+                    let palette = ui::Palette::auto();
+                    for l in &leases {
+                        println!(
+                            "{} {} {}",
+                            palette.id(&l.id),
+                            palette.state(&l.state),
+                            l.title
+                        );
+                    }
+                }
+            }
+            _ => {
+                unreachable!("lease write commands handled before app init")
+            }
+        },
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
         Commands::Completions(_) => unreachable!("completions handled before app init"),

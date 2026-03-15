@@ -15,6 +15,7 @@ use crate::doctor::{run_doctor_with_fix, DoctorError, DoctorReport};
 use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::invariant::Invariant;
 use crate::domain::knot_type::{parse_knot_type, KnotType};
+use crate::domain::lease::LeaseData;
 use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
 use crate::domain::state::{InvalidStateTransition, ParseKnotStateError};
 use crate::domain::step_history::{derive_phase, StepActorInfo, StepRecord, StepStatus};
@@ -65,6 +66,10 @@ pub struct KnotView {
     pub step_history: Vec<StepRecord>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gate: Option<GateData>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lease: Option<LeaseData>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lease_id: Option<String>,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -112,6 +117,7 @@ pub struct UpdateKnotPatch {
 pub struct CreateKnotOptions {
     pub knot_type: KnotType,
     pub gate_data: GateData,
+    pub lease_data: LeaseData,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -365,7 +371,8 @@ impl App {
                 if let Err(err) = self.pull_unlocked() {
                     return match err {
                         AppError::Sync(SyncError::GitCommandFailed { .. })
-                        | AppError::Sync(SyncError::GitUnavailable) => {
+                        | AppError::Sync(SyncError::GitUnavailable)
+                        | AppError::Sync(SyncError::ActiveLeasesExist(_)) => {
                             self.mark_sync_pending()?;
                             Ok(())
                         }
@@ -603,6 +610,14 @@ impl App {
         );
 
         self.writer.write(&EventRecord::full(full_event))?;
+        if options.knot_type == KnotType::Lease {
+            let lease_event = FullEvent::new(
+                knot_id.clone(),
+                FullEventKind::KnotLeaseDataSet,
+                json!({"lease_data": &options.lease_data}),
+            );
+            self.writer.write(&EventRecord::full(lease_event))?;
+        }
         self.writer.write(&EventRecord::index(idx_event))?;
 
         db::upsert_knot_hot(
@@ -622,6 +637,8 @@ impl App {
                 invariants: &[],
                 step_history: &[],
                 gate_data: &options.gate_data,
+                lease_data: &options.lease_data,
+                lease_id: None,
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: None,
@@ -736,6 +753,8 @@ impl App {
                 invariants: &current.invariants,
                 step_history: &current.step_history,
                 gate_data: &current.gate_data,
+                lease_data: &current.lease_data,
+                lease_id: current.lease_id.as_deref(),
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1205,6 +1224,8 @@ impl App {
                     &patch.state_actor,
                 ),
                 gate_data: &gate_data,
+                lease_data: &current.lease_data,
+                lease_id: current.lease_id.as_deref(),
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1410,6 +1431,8 @@ impl App {
                 invariants: &current.invariants,
                 step_history: &updated_step_history,
                 gate_data: &current.gate_data,
+                lease_data: &current.lease_data,
+                lease_id: current.lease_id.as_deref(),
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1541,6 +1564,8 @@ impl App {
                 invariants: &current.invariants,
                 step_history: &current.step_history,
                 gate_data: &current.gate_data,
+                lease_data: &current.lease_data,
+                lease_id: current.lease_id.as_deref(),
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -1549,6 +1574,47 @@ impl App {
         )?;
         db::get_knot_hot(&self.conn, &current.id)?
             .ok_or_else(|| AppError::NotFound(current.id.clone()))
+    }
+
+    pub fn set_lease_id(&self, knot_id: &str, lease_id: Option<&str>) -> Result<(), AppError> {
+        let id = self.resolve_knot_token(knot_id)?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        let record =
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.clone()))?;
+        let event = FullEvent::new(
+            id.clone(),
+            FullEventKind::KnotLeaseIdSet,
+            json!({ "lease_id": lease_id }),
+        );
+        self.writer.write(&EventRecord::full(event))?;
+        db::upsert_knot_hot(
+            &self.conn,
+            &UpsertKnotHot {
+                id: &record.id,
+                title: &record.title,
+                state: &record.state,
+                updated_at: &record.updated_at,
+                body: record.body.as_deref(),
+                description: record.description.as_deref(),
+                priority: record.priority,
+                knot_type: record.knot_type.as_deref(),
+                tags: &record.tags,
+                notes: &record.notes,
+                handoff_capsules: &record.handoff_capsules,
+                invariants: &record.invariants,
+                step_history: &record.step_history,
+                gate_data: &record.gate_data,
+                lease_data: &record.lease_data,
+                lease_id,
+                profile_id: &record.profile_id,
+                profile_etag: record.profile_etag.as_deref(),
+                deferred_from_state: record.deferred_from_state.as_deref(),
+                created_at: record.created_at.as_deref(),
+            },
+        )?;
+        Ok(())
     }
 
     pub fn list_knots(&self) -> Result<Vec<KnotView>, AppError> {
@@ -1630,6 +1696,8 @@ impl App {
                 invariants: &current.invariants,
                 step_history: &updated_history,
                 gate_data: &current.gate_data,
+                lease_data: &current.lease_data,
+                lease_id: current.lease_id.as_deref(),
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -1939,6 +2007,8 @@ impl App {
                 invariants: &record.invariants,
                 step_history: &record.step_history,
                 gate_data: &record.gate_data,
+                lease_data: &record.lease_data,
+                lease_id: record.lease_id.as_deref(),
                 profile_id: &record.profile_id,
                 profile_etag: record.profile_etag.as_deref(),
                 deferred_from_state: record.deferred_from_state.as_deref(),
@@ -2035,6 +2105,8 @@ impl App {
                 invariants: &current.invariants,
                 step_history: &current.step_history,
                 gate_data: &current.gate_data,
+                lease_data: &current.lease_data,
+                lease_id: current.lease_id.as_deref(),
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -2119,6 +2191,21 @@ fn require_state_for_knot_type(
             } else {
                 Err(AppError::InvalidArgument(format!(
                     "state '{}' is not valid for gate knots",
+                    state
+                )))
+            }
+        }
+        KnotType::Lease => {
+            if matches!(
+                state,
+                workflow_runtime::LEASE_READY
+                    | workflow_runtime::LEASE_ACTIVE
+                    | workflow_runtime::LEASE_TERMINATED
+            ) {
+                Ok(())
+            } else {
+                Err(AppError::InvalidArgument(format!(
+                    "state '{}' is not valid for lease knots",
                     state
                 )))
             }
@@ -2365,6 +2452,8 @@ struct RehydrateProjection {
     invariants: Vec<Invariant>,
     step_history: Vec<StepRecord>,
     gate_data: GateData,
+    lease_data: LeaseData,
+    lease_id: Option<String>,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
@@ -2392,6 +2481,8 @@ fn rehydrate_from_events(
         invariants: Vec::new(),
         step_history: Vec::new(),
         gate_data: GateData::default(),
+        lease_data: LeaseData::default(),
+        lease_id: None,
         profile_id: String::new(),
         profile_etag: None,
         deferred_from_state: None,
@@ -2695,6 +2786,7 @@ impl From<KnotCacheRecord> for KnotView {
         let profile_id = canonical_profile_id(&value.profile_id);
         let knot_type = parse_knot_type(value.knot_type.as_deref());
         let gate = (knot_type == KnotType::Gate).then_some(value.gate_data.clone());
+        let lease = (knot_type == KnotType::Lease).then_some(value.lease_data.clone());
         Self {
             id: value.id,
             alias: None,
@@ -2711,6 +2803,8 @@ impl From<KnotCacheRecord> for KnotView {
             invariants: value.invariants,
             step_history: value.step_history,
             gate,
+            lease,
+            lease_id: value.lease_id,
             profile_id,
             profile_etag: value.profile_etag,
             deferred_from_state: value.deferred_from_state,

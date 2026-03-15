@@ -62,6 +62,9 @@ impl From<&KnotListFilter> for NormalizedFilter {
 }
 
 fn matches_filter(knot: &KnotView, filter: &NormalizedFilter) -> bool {
+    if should_hide_lease(knot, filter) {
+        return false;
+    }
     if should_hide_terminal(knot, filter) {
         return false;
     }
@@ -93,6 +96,18 @@ fn matches_filter(knot: &KnotView, filter: &NormalizedFilter) -> bool {
         return matches_query(knot, query);
     }
 
+    true
+}
+
+fn should_hide_lease(knot: &KnotView, filter: &NormalizedFilter) -> bool {
+    if knot.knot_type != KnotType::Lease {
+        return false;
+    }
+    // Show if user explicitly requested lease type
+    if let Some(ref ft) = filter.knot_type {
+        return ft != "lease";
+    }
+    // Hide by default
     true
 }
 
@@ -191,6 +206,8 @@ mod tests {
             invariants: Vec::new(),
             step_history: Vec::new(),
             gate: None,
+            lease: None,
+            lease_id: None,
             profile_id: "default".to_string(),
             profile_etag: None,
             deferred_from_state: None,

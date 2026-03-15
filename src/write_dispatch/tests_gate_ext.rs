@@ -171,6 +171,7 @@ fn execute_operation_gate_evaluate_covers_text_and_json_output() {
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -216,6 +217,7 @@ fn execute_operation_gate_evaluate_covers_text_and_json_output() {
                     owner_kind: GateOwnerKind::Agent,
                     failure_modes,
                 },
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");
@@ -294,6 +296,7 @@ fn execute_operation_rollback_rewinds_gate_evaluating_state() {
                     owner_kind: GateOwnerKind::Agent,
                     ..Default::default()
                 },
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");

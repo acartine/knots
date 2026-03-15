@@ -67,7 +67,7 @@ fn require_rollback_state(
     state: &str,
 ) -> Result<(), AppError> {
     match knot_type {
-        KnotType::Work => Ok(profile.require_state(state)?),
+        KnotType::Work | KnotType::Lease => Ok(profile.require_state(state)?),
         KnotType::Gate => {
             if matches!(
                 state,
@@ -118,7 +118,7 @@ fn is_terminal_rollback_state(
     state: &str,
 ) -> bool {
     match knot_type {
-        KnotType::Work => profile.is_terminal_state(state),
+        KnotType::Work | KnotType::Lease => profile.is_terminal_state(state),
         KnotType::Gate => matches!(state, "shipped" | "abandoned"),
     }
 }

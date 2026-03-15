@@ -200,3 +200,147 @@ fn wait_for_lock_release_succeeds_for_unlocked_path() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn check_stuck_leases_passes_when_no_db() {
+    let root = unique_workspace();
+    run_git(&root, &["init"]);
+    run_git(&root, &["config", "user.email", "knots@example.com"]);
+    run_git(&root, &["config", "user.name", "Knots Test"]);
+    std::fs::write(root.join("README.md"), "# t\n").expect("readme");
+    run_git(&root, &["add", "README.md"]);
+    run_git(&root, &["commit", "-m", "init"]);
+
+    let report = run_doctor(&root).expect("doctor should run");
+    let lease_check = report
+        .checks
+        .iter()
+        .find(|c| c.name == "stuck_leases")
+        .expect("stuck_leases check should exist");
+    assert_eq!(lease_check.status, DoctorStatus::Pass);
+    assert!(lease_check.detail.contains("no cache database"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn check_stuck_leases_warns_when_active() {
+    let root = unique_workspace();
+    run_git(&root, &["init"]);
+    run_git(&root, &["config", "user.email", "knots@example.com"]);
+    run_git(&root, &["config", "user.name", "Knots Test"]);
+    std::fs::write(root.join("README.md"), "# t\n").expect("readme");
+    run_git(&root, &["add", "README.md"]);
+    run_git(&root, &["commit", "-m", "init"]);
+
+    let db_path = root.join(".knots/cache/state.sqlite");
+    std::fs::create_dir_all(db_path.parent().expect("db parent"))
+        .expect("db parent should be creatable");
+    let conn =
+        crate::db::open_connection(db_path.to_str().expect("utf8 path")).expect("db should open");
+    let gate = crate::domain::gate::GateData::default();
+    let lease = crate::domain::lease::LeaseData::default();
+    crate::db::upsert_knot_hot(
+        &conn,
+        &crate::db::UpsertKnotHot {
+            id: "K-stuck",
+            title: "Lease: stuck",
+            state: "lease_active",
+            updated_at: "2026-03-12T00:00:00Z",
+            body: None,
+            description: None,
+            priority: None,
+            knot_type: Some("lease"),
+            tags: &[],
+            notes: &[],
+            handoff_capsules: &[],
+            invariants: &[],
+            step_history: &[],
+            gate_data: &gate,
+            lease_data: &lease,
+            lease_id: None,
+            profile_id: "autopilot",
+            profile_etag: None,
+            deferred_from_state: None,
+            created_at: None,
+        },
+    )
+    .expect("upsert should succeed");
+    drop(conn);
+
+    let report = run_doctor(&root).expect("doctor should run");
+    let lease_check = report
+        .checks
+        .iter()
+        .find(|c| c.name == "stuck_leases")
+        .expect("stuck_leases check should exist");
+    assert_eq!(lease_check.status, DoctorStatus::Warn);
+    assert!(lease_check.detail.contains("1 active lease(s)"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn fix_stuck_leases_terminates_active() {
+    let root = unique_workspace();
+    run_git(&root, &["init"]);
+    run_git(&root, &["config", "user.email", "knots@example.com"]);
+    run_git(&root, &["config", "user.name", "Knots Test"]);
+    std::fs::write(root.join("README.md"), "# t\n").expect("readme");
+    run_git(&root, &["add", "README.md"]);
+    run_git(&root, &["commit", "-m", "init"]);
+
+    let db_path = root.join(".knots/cache/state.sqlite");
+    std::fs::create_dir_all(db_path.parent().expect("db parent"))
+        .expect("db parent should be creatable");
+    let conn =
+        crate::db::open_connection(db_path.to_str().expect("utf8 path")).expect("db should open");
+    let gate = crate::domain::gate::GateData::default();
+    let lease = crate::domain::lease::LeaseData::default();
+    crate::db::upsert_knot_hot(
+        &conn,
+        &crate::db::UpsertKnotHot {
+            id: "K-fix-lease",
+            title: "Lease: fixable",
+            state: "lease_ready",
+            updated_at: "2026-03-12T00:00:00Z",
+            body: None,
+            description: None,
+            priority: None,
+            knot_type: Some("lease"),
+            tags: &[],
+            notes: &[],
+            handoff_capsules: &[],
+            invariants: &[],
+            step_history: &[],
+            gate_data: &gate,
+            lease_data: &lease,
+            lease_id: None,
+            profile_id: "autopilot",
+            profile_etag: None,
+            deferred_from_state: None,
+            created_at: None,
+        },
+    )
+    .expect("upsert should succeed");
+    drop(conn);
+
+    let checks = vec![crate::doctor::DoctorCheck {
+        name: "stuck_leases".to_string(),
+        status: DoctorStatus::Warn,
+        detail: "1 active lease(s) may be stuck".to_string(),
+    }];
+    crate::doctor_fix::apply_fixes(&root, &checks);
+
+    let conn2 =
+        crate::db::open_connection(db_path.to_str().expect("utf8 path")).expect("db should reopen");
+    let count = crate::db::count_active_leases(&conn2).expect("count should succeed");
+    assert_eq!(count, 0, "all leases should be terminated");
+
+    let record = crate::db::get_knot_hot(&conn2, "K-fix-lease")
+        .expect("get should succeed")
+        .expect("record should still exist");
+    assert_eq!(record.state, "lease_terminated");
+
+    let _ = std::fs::remove_dir_all(root);
+}

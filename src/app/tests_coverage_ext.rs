@@ -672,6 +672,7 @@ fn evaluate_gate_failure_reopens_linked_knots_and_adds_metadata() {
                     owner_kind: GateOwnerKind::Human,
                     failure_modes,
                 },
+                ..CreateKnotOptions::default()
             },
         )
         .expect("gate should be created");

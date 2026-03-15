@@ -10,10 +10,11 @@ use time::OffsetDateTime;
 
 use crate::domain::gate::GateData;
 use crate::domain::invariant::Invariant;
+use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 9;
+pub const CURRENT_SCHEMA_VERSION: i64 = 10;
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
 const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
@@ -33,7 +34,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 9] = [
+const MIGRATIONS: [Migration; 10] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -188,6 +189,14 @@ ALTER TABLE knot_hot ADD COLUMN step_history_json TEXT NOT NULL DEFAULT '[]';
         name: "knot_gate_data_v1",
         sql: r#"
 ALTER TABLE knot_hot ADD COLUMN gate_data_json TEXT NOT NULL DEFAULT '{}';
+"#,
+    },
+    Migration {
+        version: 10,
+        name: "knot_lease_data_v1",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN lease_data_json TEXT NOT NULL DEFAULT '{}';
+ALTER TABLE knot_hot ADD COLUMN lease_id TEXT;
 "#,
     },
 ];
@@ -419,6 +428,9 @@ pub struct KnotCacheRecord {
     pub step_history: Vec<StepRecord>,
     #[serde(default)]
     pub gate_data: GateData,
+    #[serde(default)]
+    pub lease_data: LeaseData,
+    pub lease_id: Option<String>,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -454,6 +466,8 @@ pub struct UpsertKnotHot<'a> {
     pub invariants: &'a [Invariant],
     pub step_history: &'a [StepRecord],
     pub gate_data: &'a GateData,
+    pub lease_data: &'a LeaseData,
+    pub lease_id: Option<&'a str>,
     pub profile_id: &'a str,
     pub profile_etag: Option<&'a str>,
     pub deferred_from_state: Option<&'a str>,
@@ -467,20 +481,25 @@ pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()
     let invariants_json = to_json_text(args.invariants)?;
     let step_history_json = to_json_text(args.step_history)?;
     let gate_data_json = to_json_text(args.gate_data)?;
+    let lease_data_json = to_json_text(args.lease_data)?;
     with_write_retry(|| {
         conn.execute(
             r#"
 INSERT INTO knot_hot (
     id, title, state, updated_at, body, description, priority,
     knot_type, tags_json, notes_json, handoff_capsules_json,
-    invariants_json, step_history_json, gate_data_json, profile_id, profile_etag,
+    invariants_json, step_history_json, gate_data_json,
+    lease_data_json, lease_id,
+    profile_id, profile_etag,
     deferred_from_state, created_at
 )
 VALUES (
     ?1, ?2, ?3, ?4, ?5, ?6, ?7,
     ?8, ?9, ?10, ?11,
-    ?12, ?13, ?14, ?15, ?16,
-    ?17, ?18
+    ?12, ?13, ?14,
+    ?15, ?16,
+    ?17, ?18,
+    ?19, ?20
 )
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
@@ -496,6 +515,8 @@ ON CONFLICT(id) DO UPDATE SET
     invariants_json = excluded.invariants_json,
     step_history_json = excluded.step_history_json,
     gate_data_json = excluded.gate_data_json,
+    lease_data_json = excluded.lease_data_json,
+    lease_id = excluded.lease_id,
     profile_id = excluded.profile_id,
     profile_etag = excluded.profile_etag,
     deferred_from_state = excluded.deferred_from_state,
@@ -516,6 +537,8 @@ ON CONFLICT(id) DO UPDATE SET
                 invariants_json.as_str(),
                 step_history_json.as_str(),
                 gate_data_json.as_str(),
+                lease_data_json.as_str(),
+                args.lease_id,
                 args.profile_id,
                 args.profile_etag,
                 args.deferred_from_state,
@@ -537,7 +560,9 @@ pub fn get_knot_hot(conn: &Connection, id: &str) -> Result<Option<KnotCacheRecor
         r#"
 SELECT id, title, state, updated_at, body, description, priority,
        knot_type, tags_json, notes_json, handoff_capsules_json,
-       invariants_json, step_history_json, gate_data_json, profile_id, profile_etag,
+       invariants_json, step_history_json, gate_data_json,
+       lease_data_json, lease_id,
+       profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 WHERE id = ?1
@@ -553,7 +578,9 @@ pub fn list_knot_hot(conn: &Connection) -> Result<Vec<KnotCacheRecord>> {
         r#"
 SELECT id, title, state, updated_at, body, description, priority,
        knot_type, tags_json, notes_json, handoff_capsules_json,
-       invariants_json, step_history_json, gate_data_json, profile_id, profile_etag,
+       invariants_json, step_history_json, gate_data_json,
+       lease_data_json, lease_id,
+       profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 ORDER BY updated_at DESC, id ASC
@@ -576,6 +603,7 @@ fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> 
     let invariants_json: String = row.get(11)?;
     let step_history_json: String = row.get(12)?;
     let gate_data_json: String = row.get(13)?;
+    let lease_data_json: String = row.get(14)?;
     Ok(KnotCacheRecord {
         id: row.get(0)?,
         title: row.get(1)?,
@@ -591,10 +619,12 @@ fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> 
         invariants: from_json_text(invariants_json, 11)?,
         step_history: from_json_text(step_history_json, 12)?,
         gate_data: from_json_text(gate_data_json, 13)?,
-        profile_id: row.get(14)?,
-        profile_etag: row.get(15)?,
-        deferred_from_state: row.get(16)?,
-        created_at: row.get(17)?,
+        lease_data: from_json_text(lease_data_json, 14)?,
+        lease_id: row.get(15)?,
+        profile_id: row.get(16)?,
+        profile_etag: row.get(17)?,
+        deferred_from_state: row.get(18)?,
+        created_at: row.get(19)?,
     })
 }
 
@@ -790,6 +820,18 @@ pub fn get_pull_drift_warn_threshold(conn: &Connection) -> Result<u64> {
         .parse::<u64>()
         .unwrap_or(25);
     Ok(parsed)
+}
+
+pub fn count_active_leases(conn: &Connection) -> Result<i64> {
+    conn.query_row(
+        r#"
+SELECT COUNT(*) FROM knot_hot
+WHERE knot_type = 'lease'
+  AND state IN ('lease_ready', 'lease_active')
+"#,
+        [],
+        |row| row.get(0),
+    )
 }
 
 pub fn get_meta(conn: &Connection, key: &str) -> Result<Option<String>> {
