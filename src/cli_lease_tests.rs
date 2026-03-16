@@ -186,3 +186,53 @@ fn lease_list_alias_ls() {
         other => panic!("expected Lease, got {:?}", other),
     }
 }
+
+#[test]
+fn lease_create_parses_json_flag() {
+    let cli = parse(&["kno", "lease", "create", "--nickname", "sess", "--json"]);
+    match cli.command {
+        Commands::Lease(args) => match args.command {
+            LeaseSubcommands::Create(create) => {
+                assert!(create.json);
+            }
+            other => panic!("expected Create, got {:?}", other),
+        },
+        other => panic!("expected Lease, got {:?}", other),
+    }
+}
+
+#[test]
+fn lease_create_parses_json_short_flag() {
+    let cli = parse(&["kno", "lease", "create", "--nickname", "s", "-j"]);
+    match cli.command {
+        Commands::Lease(args) => match args.command {
+            LeaseSubcommands::Create(create) => {
+                assert!(create.json);
+            }
+            other => panic!("expected Create, got {:?}", other),
+        },
+        other => panic!("expected Lease, got {:?}", other),
+    }
+}
+
+#[test]
+fn update_parses_lease_flag() {
+    let cli = parse(&["kno", "update", "knot-abc", "--lease", "lease-xyz"]);
+    match cli.command {
+        Commands::Update(args) => {
+            assert_eq!(args.lease.as_deref(), Some("lease-xyz"));
+        }
+        other => panic!("expected Update, got {:?}", other),
+    }
+}
+
+#[test]
+fn new_parses_lease_flag() {
+    let cli = parse(&["kno", "new", "My title", "--lease", "lease-xyz"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert_eq!(args.lease.as_deref(), Some("lease-xyz"));
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}

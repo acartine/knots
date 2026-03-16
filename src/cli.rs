@@ -195,6 +195,9 @@ pub struct NewArgs {
         help = "Use the default quick profile (skips planning)."
     )]
     pub fast: bool,
+
+    #[arg(long, help = "Bind a lease to this knot.")]
+    pub lease: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -365,6 +368,9 @@ pub struct UpdateArgs {
         help = "Approve cascading a terminal state to all descendants."
     )]
     pub cascade_terminal_descendants: bool,
+
+    #[arg(long, help = "Bind a lease to this knot.")]
+    pub lease: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -693,6 +699,9 @@ pub struct LeaseCreateArgs {
 
     #[arg(long = "model-version", help = "Model version (e.g. 4.6).")]
     pub model_version: Option<String>,
+
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
 }
 
 #[derive(Debug, Args)]

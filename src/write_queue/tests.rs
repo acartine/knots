@@ -220,6 +220,7 @@ fn lease_create_operation_serializes_round_trip() {
         agent_name: Some("claude".to_string()),
         model: Some("opus".to_string()),
         model_version: Some("4.6".to_string()),
+        json: false,
     });
     let json = serde_json::to_string(&op).expect("should serialize");
     let parsed: WriteOperation = serde_json::from_str(&json).expect("should deserialize");
@@ -246,6 +247,7 @@ fn lease_create_operation_with_no_optional_fields() {
         agent_name: None,
         model: None,
         model_version: None,
+        json: false,
     });
     let json = serde_json::to_string(&op).expect("should serialize");
     let parsed: WriteOperation = serde_json::from_str(&json).expect("should deserialize");

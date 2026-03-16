@@ -10,7 +10,8 @@ use crate::app::{App, StateActorMetadata};
 use crate::cli::Cli;
 use crate::poll_claim;
 use crate::write_queue::{
-    LeaseCreateOperation, LeaseTerminateOperation, NextOperation, WriteOperation,
+    LeaseCreateOperation, LeaseTerminateOperation, NewOperation, NextOperation, UpdateOperation,
+    WriteOperation,
 };
 
 fn unique_workspace() -> PathBuf {
@@ -189,6 +190,7 @@ fn execute_lease_create_and_terminate() {
         agent_name: Some("claude".to_string()),
         model: Some("opus".to_string()),
         model_version: Some("4.6".to_string()),
+        json: false,
     });
     let output = execute_operation(&app, &create_op).expect("create should succeed");
     assert!(
@@ -213,4 +215,375 @@ fn execute_lease_create_and_terminate() {
     assert!(after.is_empty(), "no active leases after");
 
     let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn lease_create_json_output() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let op = WriteOperation::LeaseCreate(LeaseCreateOperation {
+        nickname: "json-test".to_string(),
+        lease_type: "agent".to_string(),
+        agent_type: Some("cli".to_string()),
+        provider: Some("Anthropic".to_string()),
+        agent_name: Some("claude".to_string()),
+        model: Some("opus".to_string()),
+        model_version: Some("4.6".to_string()),
+        json: true,
+    });
+    let output = execute_operation(&app, &op).expect("create should succeed");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&output).expect("output should be valid JSON");
+    assert!(parsed["id"].is_string(), "JSON should contain id");
+    assert_eq!(parsed["title"].as_str().unwrap(), "Lease: json-test");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn lease_create_text_output_when_json_false() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let op = WriteOperation::LeaseCreate(LeaseCreateOperation {
+        nickname: "text-test".to_string(),
+        lease_type: "agent".to_string(),
+        agent_type: None,
+        provider: None,
+        agent_name: None,
+        model: None,
+        model_version: None,
+        json: false,
+    });
+    let output = execute_operation(&app, &op).expect("create should succeed");
+    assert!(
+        output.contains("created lease"),
+        "text output should contain 'created lease': {output}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+fn create_test_lease(app: &App) -> String {
+    let op = WriteOperation::LeaseCreate(LeaseCreateOperation {
+        nickname: "test-lease".to_string(),
+        lease_type: "agent".to_string(),
+        agent_type: Some("cli".to_string()),
+        provider: Some("Anthropic".to_string()),
+        agent_name: Some("claude".to_string()),
+        model: Some("opus".to_string()),
+        model_version: Some("4.6".to_string()),
+        json: false,
+    });
+    execute_operation(app, &op).expect("lease create should succeed");
+    let leases = crate::lease::list_active_leases(app).expect("list");
+    leases.into_iter().last().expect("at least one lease").id
+}
+
+#[test]
+fn new_with_lease_flag_binds_lease() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let lease_id = create_test_lease(&app);
+
+    let op = WriteOperation::New(NewOperation {
+        title: "Lease-bound new".to_string(),
+        description: None,
+        state: None,
+        profile: None,
+        fast: false,
+        knot_type: None,
+        gate_owner_kind: None,
+        gate_failure_modes: vec![],
+        lease_id: Some(lease_id.clone()),
+    });
+    let output = execute_operation(&app, &op).expect("new should succeed");
+    assert!(output.contains("created"), "should confirm creation");
+
+    let knots = app.list_knots().expect("list");
+    let work = knots
+        .iter()
+        .find(|k| k.title == "Lease-bound new")
+        .expect("knot should exist");
+    assert_eq!(
+        work.lease_id.as_deref(),
+        Some(lease_id.as_str()),
+        "lease_id should be set"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn update_with_lease_flag_binds_lease() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let knot = app
+        .create_knot("Update lease test", None, None, None)
+        .expect("create");
+    let lease_id = create_test_lease(&app);
+
+    let op = WriteOperation::Update(UpdateOperation {
+        id: knot.id.clone(),
+        title: Some("Updated with lease".to_string()),
+        description: None,
+        priority: None,
+        status: None,
+        knot_type: None,
+        add_tags: vec![],
+        remove_tags: vec![],
+        add_invariants: vec![],
+        remove_invariants: vec![],
+        clear_invariants: false,
+        gate_owner_kind: None,
+        gate_failure_modes: vec![],
+        clear_gate_failure_modes: false,
+        add_note: None,
+        note_username: None,
+        note_datetime: None,
+        note_agentname: None,
+        note_model: None,
+        note_version: None,
+        add_handoff_capsule: None,
+        handoff_username: None,
+        handoff_datetime: None,
+        handoff_agentname: None,
+        handoff_model: None,
+        handoff_version: None,
+        if_match: None,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        force: false,
+        approve_terminal_cascade: false,
+        lease_id: Some(lease_id.clone()),
+    });
+    execute_operation(&app, &op).expect("update should succeed");
+
+    let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
+    assert_eq!(updated.title, "Updated with lease");
+    assert_eq!(
+        updated.lease_id.as_deref(),
+        Some(lease_id.as_str()),
+        "lease_id should be bound via update"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn note_auto_fills_from_lease_agent_info() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let knot = app
+        .create_knot("Note autofill test", None, None, None)
+        .expect("create");
+    let lease_id = create_test_lease(&app);
+    crate::lease::bind_lease(&app, &knot.id, &lease_id).expect("bind");
+
+    let op = WriteOperation::Update(UpdateOperation {
+        id: knot.id.clone(),
+        title: None,
+        description: None,
+        priority: None,
+        status: None,
+        knot_type: None,
+        add_tags: vec![],
+        remove_tags: vec![],
+        add_invariants: vec![],
+        remove_invariants: vec![],
+        clear_invariants: false,
+        gate_owner_kind: None,
+        gate_failure_modes: vec![],
+        clear_gate_failure_modes: false,
+        add_note: Some("auto-filled note".to_string()),
+        note_username: None,
+        note_datetime: None,
+        note_agentname: None,
+        note_model: None,
+        note_version: None,
+        add_handoff_capsule: None,
+        handoff_username: None,
+        handoff_datetime: None,
+        handoff_agentname: None,
+        handoff_model: None,
+        handoff_version: None,
+        if_match: None,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        force: false,
+        approve_terminal_cascade: false,
+        lease_id: None,
+    });
+    execute_operation(&app, &op).expect("update with note should succeed");
+
+    let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
+    let note = updated.notes.last().expect("should have a note");
+    assert_eq!(note.agentname, "claude");
+    assert_eq!(note.model, "opus");
+    assert_eq!(note.version, "4.6");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn explicit_note_flags_override_lease_agent_info() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let knot = app
+        .create_knot("Override test", None, None, None)
+        .expect("create");
+    let lease_id = create_test_lease(&app);
+    crate::lease::bind_lease(&app, &knot.id, &lease_id).expect("bind");
+
+    let op = WriteOperation::Update(UpdateOperation {
+        id: knot.id.clone(),
+        title: None,
+        description: None,
+        priority: None,
+        status: None,
+        knot_type: None,
+        add_tags: vec![],
+        remove_tags: vec![],
+        add_invariants: vec![],
+        remove_invariants: vec![],
+        clear_invariants: false,
+        gate_owner_kind: None,
+        gate_failure_modes: vec![],
+        clear_gate_failure_modes: false,
+        add_note: Some("override note".to_string()),
+        note_username: None,
+        note_datetime: None,
+        note_agentname: Some("custom-agent".to_string()),
+        note_model: Some("custom-model".to_string()),
+        note_version: Some("9.9".to_string()),
+        add_handoff_capsule: None,
+        handoff_username: None,
+        handoff_datetime: None,
+        handoff_agentname: None,
+        handoff_model: None,
+        handoff_version: None,
+        if_match: None,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        force: false,
+        approve_terminal_cascade: false,
+        lease_id: None,
+    });
+    execute_operation(&app, &op).expect("update should succeed");
+
+    let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
+    let note = updated.notes.last().expect("should have a note");
+    assert_eq!(note.agentname, "custom-agent");
+    assert_eq!(note.model, "custom-model");
+    assert_eq!(note.version, "9.9");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn note_defaults_preserved_without_lease() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let knot = app
+        .create_knot("No lease test", None, None, None)
+        .expect("create");
+
+    let op = WriteOperation::Update(UpdateOperation {
+        id: knot.id.clone(),
+        title: None,
+        description: None,
+        priority: None,
+        status: None,
+        knot_type: None,
+        add_tags: vec![],
+        remove_tags: vec![],
+        add_invariants: vec![],
+        remove_invariants: vec![],
+        clear_invariants: false,
+        gate_owner_kind: None,
+        gate_failure_modes: vec![],
+        clear_gate_failure_modes: false,
+        add_note: Some("plain note".to_string()),
+        note_username: None,
+        note_datetime: None,
+        note_agentname: None,
+        note_model: None,
+        note_version: None,
+        add_handoff_capsule: None,
+        handoff_username: None,
+        handoff_datetime: None,
+        handoff_agentname: None,
+        handoff_model: None,
+        handoff_version: None,
+        if_match: None,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        force: false,
+        approve_terminal_cascade: false,
+        lease_id: None,
+    });
+    execute_operation(&app, &op).expect("update should succeed");
+
+    let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
+    let note = updated.notes.last().expect("should have a note");
+    assert_eq!(note.agentname, "unknown");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn operation_from_lease_create_includes_json() {
+    let cli = parse(&["kno", "lease", "create", "--nickname", "sess", "--json"]);
+    let op = operation_from_command(&cli.command);
+    match op {
+        Some(WriteOperation::LeaseCreate(c)) => {
+            assert!(c.json, "json flag should be true");
+        }
+        other => panic!("expected LeaseCreate, got {:?}", other),
+    }
+}
+
+#[test]
+fn operation_from_new_includes_lease_id() {
+    let cli = parse(&["kno", "new", "My title", "--lease", "lease-abc"]);
+    let op = operation_from_command(&cli.command);
+    match op {
+        Some(WriteOperation::New(n)) => {
+            assert_eq!(n.lease_id.as_deref(), Some("lease-abc"));
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}
+
+#[test]
+fn operation_from_update_includes_lease_id() {
+    let cli = parse(&["kno", "update", "knot-xyz", "--lease", "lease-abc"]);
+    let op = operation_from_command(&cli.command);
+    match op {
+        Some(WriteOperation::Update(u)) => {
+            assert_eq!(u.lease_id.as_deref(), Some("lease-abc"));
+        }
+        other => panic!("expected Update, got {:?}", other),
+    }
 }

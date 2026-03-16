@@ -56,6 +56,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             knot_type: args.knot_type.clone(),
             gate_owner_kind: args.gate_owner_kind.clone(),
             gate_failure_modes: args.gate_failure_modes.clone(),
+            lease_id: args.lease.clone(),
         })),
         Commands::Q(args) => Some(WriteOperation::QuickNew(QuickNewOperation {
             title: args.title.clone(),
@@ -107,6 +108,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             agent_version: args.agent_version.clone(),
             force: args.force,
             approve_terminal_cascade: args.cascade_terminal_descendants,
+            lease_id: args.lease.clone(),
         })),
         Commands::Next(args) => Some(WriteOperation::Next(NextOperation {
             id: args.id.clone(),
@@ -194,6 +196,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
                     agent_name: create.agent_name.clone(),
                     model: create.model.clone(),
                     model_version: create.model_version.clone(),
+                    json: create.json,
                 }))
             }
             LeaseSubcommands::Terminate(term) => {
@@ -245,6 +248,9 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                     ..CreateKnotOptions::default()
                 },
             )?;
+            if let Some(lid) = &args.lease_id {
+                crate::lease::bind_lease(app, &knot.id, lid)?;
+            }
             let palette = ui::Palette::auto();
             Ok(format!(
                 "created {} {} {}\n",
@@ -296,25 +302,47 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
             ))
         }
         WriteOperation::Update(args) => {
-            let add_note = args.add_note.clone().map(|content| MetadataEntryInput {
-                content,
-                username: args.note_username.clone(),
-                datetime: args.note_datetime.clone(),
-                agentname: args.note_agentname.clone(),
-                model: args.note_model.clone(),
-                version: args.note_version.clone(),
+            let lease_agent = resolve_lease_agent_info(app, &args.id);
+            let add_note = args.add_note.clone().map(|content| {
+                let lai = lease_agent.as_ref();
+                MetadataEntryInput {
+                    content,
+                    username: args.note_username.clone(),
+                    datetime: args.note_datetime.clone(),
+                    agentname: args
+                        .note_agentname
+                        .clone()
+                        .or_else(|| lai.map(|i| i.agent_name.clone())),
+                    model: args
+                        .note_model
+                        .clone()
+                        .or_else(|| lai.map(|i| i.model.clone())),
+                    version: args
+                        .note_version
+                        .clone()
+                        .or_else(|| lai.map(|i| i.model_version.clone())),
+                }
             });
-            let add_handoff_capsule =
-                args.add_handoff_capsule
-                    .clone()
-                    .map(|content| MetadataEntryInput {
-                        content,
-                        username: args.handoff_username.clone(),
-                        datetime: args.handoff_datetime.clone(),
-                        agentname: args.handoff_agentname.clone(),
-                        model: args.handoff_model.clone(),
-                        version: args.handoff_version.clone(),
-                    });
+            let add_handoff_capsule = args.add_handoff_capsule.clone().map(|content| {
+                let lai = lease_agent.as_ref();
+                MetadataEntryInput {
+                    content,
+                    username: args.handoff_username.clone(),
+                    datetime: args.handoff_datetime.clone(),
+                    agentname: args
+                        .handoff_agentname
+                        .clone()
+                        .or_else(|| lai.map(|i| i.agent_name.clone())),
+                    model: args
+                        .handoff_model
+                        .clone()
+                        .or_else(|| lai.map(|i| i.model.clone())),
+                    version: args
+                        .handoff_version
+                        .clone()
+                        .or_else(|| lai.map(|i| i.model_version.clone())),
+                }
+            });
             let patch = UpdateKnotPatch {
                 title: args.title.clone(),
                 description: args.description.clone(),
@@ -363,6 +391,9 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                     app.update_knot_with_options(&args.id, patch.clone(), approve_terminal_cascade)
                 },
             )?;
+            if let Some(lid) = &args.lease_id {
+                crate::lease::bind_lease(app, &knot.id, lid)?;
+            }
             let palette = ui::Palette::auto();
             Ok(format!(
                 "updated {} {} {}\n",
@@ -555,6 +586,13 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
     }
 }
 
+fn resolve_lease_agent_info(app: &App, knot_id: &str) -> Option<crate::domain::lease::AgentInfo> {
+    let knot = app.show_knot(knot_id).ok()??;
+    let lease_id = knot.lease_id.as_ref()?;
+    let lease_knot = app.show_knot(lease_id).ok()??;
+    lease_knot.lease.as_ref()?.agent_info.clone()
+}
+
 fn execute_lease_create(app: &App, op: &LeaseCreateOperation) -> Result<String, AppError> {
     use crate::domain::lease::{AgentInfo, LeaseType};
     let lease_type = match op.lease_type.as_str() {
@@ -573,12 +611,18 @@ fn execute_lease_create(app: &App, op: &LeaseCreateOperation) -> Result<String, 
         None
     };
     let view = crate::lease::create_lease(app, &op.nickname, lease_type, agent_info)?;
-    let palette = ui::Palette::auto();
-    Ok(format!(
-        "created lease {} {}\n",
-        palette.id(&knot_ref(&view)),
-        view.title,
-    ))
+    if op.json {
+        Ok(format_json(
+            &serde_json::to_value(&view).expect("serialize"),
+        ))
+    } else {
+        let palette = ui::Palette::auto();
+        Ok(format!(
+            "created lease {} {}\n",
+            palette.id(&knot_ref(&view)),
+            view.title,
+        ))
+    }
 }
 
 fn execute_lease_terminate(app: &App, op: &LeaseTerminateOperation) -> Result<String, AppError> {
@@ -842,6 +886,7 @@ mod tests {
                 knot_type: None,
                 gate_owner_kind: None,
                 gate_failure_modes: vec![],
+                lease_id: None,
             }),
         };
         let response = execute_queued_request(&request);

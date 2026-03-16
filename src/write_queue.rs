@@ -24,6 +24,7 @@ pub struct NewOperation {
     pub knot_type: Option<String>,
     pub gate_owner_kind: Option<String>,
     pub gate_failure_modes: Vec<String>,
+    pub lease_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -81,6 +82,7 @@ pub struct UpdateOperation {
     pub agent_version: Option<String>,
     pub force: bool,
     pub approve_terminal_cascade: bool,
+    pub lease_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -163,6 +165,7 @@ pub struct LeaseCreateOperation {
     pub agent_name: Option<String>,
     pub model: Option<String>,
     pub model_version: Option<String>,
+    pub json: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
