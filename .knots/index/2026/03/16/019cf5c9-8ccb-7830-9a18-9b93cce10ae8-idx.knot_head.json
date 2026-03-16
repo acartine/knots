@@ -1,0 +1,15 @@
+{
+  "event_id": "019cf5c9-8ccb-7830-9a18-9b93cce10ae8",
+  "occurred_at": "2026-03-16T08:35:52.651638344Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "invariants": [],
+    "knot_id": "knots-4c5d",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "customizable workflows and profiles",
+    "updated_at": "2026-03-16T08:35:52.651638344Z"
+  }
+}
