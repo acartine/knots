@@ -1,0 +1,484 @@
+use std::fmt;
+use std::fs;
+use std::io::{self, BufRead, IsTerminal, Write};
+use std::path::{Path, PathBuf};
+
+use crate::app::AppError;
+use crate::doctor::{DoctorCheck, DoctorStatus};
+
+#[path = "managed_skills_inventory.rs"]
+mod inventory;
+use inventory::managed_skills;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SkillTool {
+    Codex,
+    Claude,
+    OpenCode,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LocationScope {
+    Project,
+    User,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct SkillLocation {
+    scope: LocationScope,
+    tool_root: PathBuf,
+    skills_root: PathBuf,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ManagedSkill {
+    deploy_name: &'static str,
+    title: &'static str,
+    body: &'static str,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SkillsCommand {
+    Install(SkillTool),
+    Uninstall(SkillTool),
+    Update(SkillTool),
+}
+
+impl SkillTool {
+    pub fn slug(self) -> &'static str {
+        match self {
+            SkillTool::Codex => "codex",
+            SkillTool::Claude => "claude",
+            SkillTool::OpenCode => "opencode",
+        }
+    }
+
+    fn display_name(self) -> &'static str {
+        match self {
+            SkillTool::Codex => "Codex",
+            SkillTool::Claude => "Claude",
+            SkillTool::OpenCode => "OpenCode",
+        }
+    }
+
+    fn doctor_check_name(self) -> String {
+        format!("skills_{}", self.slug())
+    }
+
+    fn locations(self, repo_root: &Path, home: Option<&Path>) -> Vec<SkillLocation> {
+        let mut locations = Vec::new();
+        match self {
+            SkillTool::Codex => {
+                if let Some(home) = home {
+                    push_location(
+                        &mut locations,
+                        LocationScope::User,
+                        home.join(".codex"),
+                        "skills",
+                    );
+                }
+            }
+            SkillTool::Claude => {
+                push_location(
+                    &mut locations,
+                    LocationScope::Project,
+                    repo_root.join(".claude"),
+                    "skills",
+                );
+                if let Some(home) = home {
+                    push_location(
+                        &mut locations,
+                        LocationScope::User,
+                        home.join(".claude"),
+                        "skills",
+                    );
+                }
+            }
+            SkillTool::OpenCode => {
+                push_location(
+                    &mut locations,
+                    LocationScope::Project,
+                    repo_root.join(".opencode"),
+                    "skills",
+                );
+                if let Some(home) = home {
+                    push_location(
+                        &mut locations,
+                        LocationScope::User,
+                        home.join(".config").join("opencode"),
+                        "skills",
+                    );
+                }
+            }
+        }
+        locations
+    }
+}
+
+impl fmt::Display for SkillTool {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.display_name())
+    }
+}
+
+pub fn run_command(repo_root: &Path, command: SkillsCommand) -> Result<String, AppError> {
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let interactive = io::stdin().is_terminal();
+    run_command_with_io(repo_root, home.as_deref(), interactive, command)
+}
+
+pub fn doctor_checks(repo_root: &Path) -> Vec<DoctorCheck> {
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    doctor_checks_with_home(repo_root, home.as_deref())
+}
+
+pub fn fix_doctor_check(repo_root: &Path, check_name: &str) {
+    let Some(tool) = tool_for_check_name(check_name) else {
+        return;
+    };
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let _ = install_missing(repo_root, home.as_deref(), tool);
+}
+
+fn doctor_checks_with_home(repo_root: &Path, home: Option<&Path>) -> Vec<DoctorCheck> {
+    [SkillTool::Codex, SkillTool::Claude, SkillTool::OpenCode]
+        .into_iter()
+        .map(|tool| doctor_check(repo_root, home, tool))
+        .collect()
+}
+
+fn doctor_check(repo_root: &Path, home: Option<&Path>, tool: SkillTool) -> DoctorCheck {
+    let locations = tool.locations(repo_root, home);
+    let preferred = locations.first();
+    let (status, detail) = match preferred {
+        Some(location) => {
+            let missing = missing_skills(location);
+            if missing.is_empty() {
+                (
+                    DoctorStatus::Pass,
+                    format!(
+                        "{} managed skills installed at {}",
+                        tool.display_name(),
+                        location.skills_root.display()
+                    ),
+                )
+            } else {
+                (
+                    DoctorStatus::Warn,
+                    format!(
+                        "{} missing managed skills at {}: {}; run `kno skills install {}`",
+                        tool.display_name(),
+                        location.skills_root.display(),
+                        skill_names(&missing).join(", "),
+                        tool.slug()
+                    ),
+                )
+            }
+        }
+        None => (
+            DoctorStatus::Warn,
+            format!(
+                "{} root not detected; create {} and run `kno skills install {}`",
+                tool.display_name(),
+                expected_root_hint(tool),
+                tool.slug()
+            ),
+        ),
+    };
+
+    DoctorCheck {
+        name: tool.doctor_check_name(),
+        status,
+        detail,
+    }
+}
+
+fn run_command_with_io(
+    repo_root: &Path,
+    home: Option<&Path>,
+    interactive: bool,
+    command: SkillsCommand,
+) -> Result<String, AppError> {
+    match command {
+        SkillsCommand::Install(tool) => install_missing(repo_root, home, tool),
+        SkillsCommand::Uninstall(tool) => uninstall_managed(repo_root, home, tool),
+        SkillsCommand::Update(tool) => update_managed(repo_root, home, interactive, tool),
+    }
+}
+
+fn install_missing(
+    repo_root: &Path,
+    home: Option<&Path>,
+    tool: SkillTool,
+) -> Result<String, AppError> {
+    let destination = preferred_location(repo_root, home, tool)?;
+    let missing = missing_skills(&destination);
+    if missing.is_empty() {
+        return Ok(format!(
+            "{} managed skills already installed at {}",
+            tool.display_name(),
+            destination.skills_root.display()
+        ));
+    }
+    write_skills(&destination, &missing)?;
+    Ok(format!(
+        "{} installed {} managed skill(s) at {}",
+        tool.display_name(),
+        missing.len(),
+        destination.skills_root.display()
+    ))
+}
+
+fn uninstall_managed(
+    repo_root: &Path,
+    home: Option<&Path>,
+    tool: SkillTool,
+) -> Result<String, AppError> {
+    let locations = tool.locations(repo_root, home);
+    let mut removed = 0usize;
+    let mut touched = Vec::new();
+    for location in locations {
+        let installed = installed_skills(&location);
+        if installed.is_empty() {
+            continue;
+        }
+        remove_skills(&location, &installed)?;
+        removed += installed.len();
+        touched.push(location.skills_root);
+    }
+    if removed == 0 {
+        return Err(AppError::InvalidArgument(format!(
+            "{} has no installed managed skills to uninstall",
+            tool.display_name()
+        )));
+    }
+    Ok(format!(
+        "{} removed {} managed skill(s) from {} location(s)",
+        tool.display_name(),
+        removed,
+        touched.len()
+    ))
+}
+
+fn update_managed(
+    repo_root: &Path,
+    home: Option<&Path>,
+    interactive: bool,
+    tool: SkillTool,
+) -> Result<String, AppError> {
+    let destination = preferred_location(repo_root, home, tool)?;
+    let mut missing = missing_skills(&destination);
+    if !missing.is_empty() {
+        if !interactive {
+            return Err(AppError::InvalidArgument(format!(
+                "{} missing managed skills at {}; run `kno skills install {}` or rerun \
+                 interactively",
+                tool.display_name(),
+                destination.skills_root.display(),
+                tool.slug()
+            )));
+        }
+        let mut stderr = io::stderr();
+        let mut stdin = io::stdin().lock();
+        if !prompt_install_missing(&mut stderr, &mut stdin, tool, &destination, &missing)? {
+            return Err(AppError::InvalidArgument(
+                "managed skill update cancelled; no changes written".to_string(),
+            ));
+        }
+        write_skills(&destination, &missing)?;
+    }
+
+    let installed_locations = installed_locations(repo_root, home, tool);
+    if installed_locations.is_empty() {
+        return Err(AppError::InvalidArgument(format!(
+            "{} has no installed managed skills to update",
+            tool.display_name()
+        )));
+    }
+
+    for location in &installed_locations {
+        let installed = installed_skills(location);
+        write_skills(location, &installed)?;
+    }
+    missing = missing_skills(&destination);
+    let status = if missing.is_empty() {
+        "updated"
+    } else {
+        "partially updated"
+    };
+    Ok(format!(
+        "{} {} managed skills in {} location(s)",
+        tool.display_name(),
+        status,
+        installed_locations.len()
+    ))
+}
+
+fn prompt_install_missing<W: Write, R: BufRead>(
+    writer: &mut W,
+    reader: &mut R,
+    tool: SkillTool,
+    destination: &SkillLocation,
+    missing: &[ManagedSkill],
+) -> Result<bool, AppError> {
+    writeln!(
+        writer,
+        "{} is missing managed skills at {}:",
+        tool.display_name(),
+        destination.skills_root.display()
+    )?;
+    writeln!(writer, "  {}", skill_names(missing).join(", "))?;
+    write!(writer, "install missing skills before update? [y/N]: ")?;
+    writer.flush()?;
+
+    let mut input = String::new();
+    reader.read_line(&mut input)?;
+    Ok(matches!(
+        input.trim().to_ascii_lowercase().as_str(),
+        "y" | "yes"
+    ))
+}
+
+fn preferred_location(
+    repo_root: &Path,
+    home: Option<&Path>,
+    tool: SkillTool,
+) -> Result<SkillLocation, AppError> {
+    tool.locations(repo_root, home)
+        .into_iter()
+        .next()
+        .ok_or_else(|| {
+            AppError::InvalidArgument(format!(
+                "{} root not detected; create {} first",
+                tool.display_name(),
+                expected_root_hint(tool)
+            ))
+        })
+}
+
+fn installed_locations(
+    repo_root: &Path,
+    home: Option<&Path>,
+    tool: SkillTool,
+) -> Vec<SkillLocation> {
+    tool.locations(repo_root, home)
+        .into_iter()
+        .filter(|location| !installed_skills(location).is_empty())
+        .collect()
+}
+
+fn installed_skills(location: &SkillLocation) -> Vec<ManagedSkill> {
+    managed_skills()
+        .iter()
+        .copied()
+        .filter(|skill| skill_path(location, *skill).exists())
+        .collect()
+}
+
+fn missing_skills(location: &SkillLocation) -> Vec<ManagedSkill> {
+    managed_skills()
+        .iter()
+        .copied()
+        .filter(|skill| !skill_path(location, *skill).exists())
+        .collect()
+}
+
+fn write_skills(location: &SkillLocation, skills: &[ManagedSkill]) -> Result<(), AppError> {
+    if skills.is_empty() {
+        return Ok(());
+    }
+    fs::create_dir_all(&location.skills_root)?;
+    for skill in skills {
+        let path = skill_path(location, *skill);
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::write(path, render_skill(*skill))?;
+    }
+    Ok(())
+}
+
+fn remove_skills(location: &SkillLocation, skills: &[ManagedSkill]) -> Result<(), AppError> {
+    for skill in skills {
+        let path = skill_path(location, *skill);
+        if path.exists() {
+            fs::remove_file(&path)?;
+        }
+        if let Some(dir) = path.parent() {
+            remove_dir_if_empty(dir)?;
+        }
+    }
+    remove_dir_if_empty(&location.skills_root)?;
+    Ok(())
+}
+
+fn remove_dir_if_empty(path: &Path) -> Result<(), AppError> {
+    let Ok(mut entries) = fs::read_dir(path) else {
+        return Ok(());
+    };
+    if entries.next().is_none() {
+        fs::remove_dir(path)?;
+    }
+    Ok(())
+}
+
+fn render_skill(skill: ManagedSkill) -> String {
+    format!(
+        concat!(
+            "---\n",
+            "name: {}\n",
+            "description: >-\n",
+            "  Knots workflow instructions for the {} step.\n",
+            "---\n\n",
+            "{}"
+        ),
+        skill.deploy_name, skill.title, skill.body
+    )
+}
+
+fn skill_path(location: &SkillLocation, skill: ManagedSkill) -> PathBuf {
+    location
+        .skills_root
+        .join(skill.deploy_name)
+        .join("SKILL.md")
+}
+
+fn skill_names(skills: &[ManagedSkill]) -> Vec<&'static str> {
+    skills.iter().map(|skill| skill.deploy_name).collect()
+}
+
+fn push_location(
+    locations: &mut Vec<SkillLocation>,
+    scope: LocationScope,
+    tool_root: PathBuf,
+    skills_dir_name: &str,
+) {
+    if tool_root.exists() {
+        locations.push(SkillLocation {
+            scope,
+            skills_root: tool_root.join(skills_dir_name),
+            tool_root,
+        });
+    }
+}
+
+fn expected_root_hint(tool: SkillTool) -> &'static str {
+    match tool {
+        SkillTool::Codex => "~/.codex",
+        SkillTool::Claude => ".claude or ~/.claude",
+        SkillTool::OpenCode => ".opencode or ~/.config/opencode",
+    }
+}
+
+fn tool_for_check_name(name: &str) -> Option<SkillTool> {
+    match name {
+        "skills_codex" => Some(SkillTool::Codex),
+        "skills_claude" => Some(SkillTool::Claude),
+        "skills_opencode" => Some(SkillTool::OpenCode),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+#[path = "managed_skills_tests.rs"]
+mod tests;

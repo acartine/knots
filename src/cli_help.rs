@@ -5,7 +5,7 @@ use clap::CommandFactory;
 use crate::cli::Cli;
 
 pub(crate) const COMMON_COMMANDS: &[&str] = &[
-    "claim", "init", "ls", "new", "poll", "q", "sync", "update", "upgrade",
+    "claim", "init", "ls", "new", "poll", "q", "skills", "sync", "update", "upgrade",
 ];
 
 pub fn is_toplevel_help(args: &[String]) -> bool {
