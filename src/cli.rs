@@ -6,6 +6,7 @@ use clap::{Args, Parser, Subcommand};
 use clap::CommandFactory;
 
 pub use crate::cli_ops::*;
+pub use crate::cli_skills::*;
 
 pub fn styled_command() -> clap::Command {
     Cli::command()
@@ -105,6 +106,8 @@ pub enum Commands {
     Rollback(RollbackArgs),
     #[command(about = "Print the skill prompt for a knot's next action state.")]
     Skill(SkillArgs),
+    #[command(about = "Manage Knots-managed agent skills.")]
+    Skills(SkillsArgs),
     #[command(about = "Quick-create a knot using the default quick profile.")]
     Q(QuickNewArgs),
     #[command(about = "Generate or install shell completions.")]

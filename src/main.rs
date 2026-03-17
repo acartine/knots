@@ -2,6 +2,7 @@ mod app;
 mod cli;
 mod cli_help;
 mod cli_ops;
+mod cli_skills;
 mod completions;
 mod db;
 mod dispatch;
@@ -22,6 +23,7 @@ mod listing;
 mod locks;
 #[cfg(test)]
 mod main_tests;
+mod managed_skills;
 mod perf;
 mod poll_claim;
 mod profile;
@@ -91,6 +93,9 @@ fn run() -> Result<(), app::AppError> {
     }
     if let Commands::Completions(args) = &cli.command {
         return completions::run_completions_command(args.shell.as_deref(), args.install);
+    }
+    if let Commands::Skills(args) = &cli.command {
+        return run_skills_command(&cli.repo_root, args);
     }
     if let Commands::Profile(args) = &cli.command {
         return profile_commands::run_profile_command(args, &cli.repo_root, &cli.db);
@@ -476,10 +481,41 @@ fn run() -> Result<(), app::AppError> {
         Commands::Upgrade(_) => unreachable!("self management commands return before app init"),
         Commands::Uninstall(_) => unreachable!("self management commands return before app init"),
         Commands::Completions(_) => unreachable!("completions handled before app init"),
+        Commands::Skills(_) => unreachable!("skills handled before app init"),
         Commands::Hooks(_) => unreachable!("hooks handled before app init"),
     }
 
     Ok(())
+}
+
+fn run_skills_command(
+    repo_root: &std::path::Path,
+    args: &cli::SkillsArgs,
+) -> Result<(), app::AppError> {
+    use cli::SkillsSubcommands;
+    use managed_skills::SkillsCommand;
+
+    let tool = match &args.command {
+        SkillsSubcommands::Install(inner) => target_from_arg(inner.target),
+        SkillsSubcommands::Uninstall(inner) => target_from_arg(inner.target),
+        SkillsSubcommands::Update(inner) => target_from_arg(inner.target),
+    };
+    let command = match &args.command {
+        SkillsSubcommands::Install(_) => SkillsCommand::Install(tool),
+        SkillsSubcommands::Uninstall(_) => SkillsCommand::Uninstall(tool),
+        SkillsSubcommands::Update(_) => SkillsCommand::Update(tool),
+    };
+    let output = managed_skills::run_command(repo_root, command)?;
+    println!("{output}");
+    Ok(())
+}
+
+fn target_from_arg(target: cli_skills::SkillTargetArg) -> managed_skills::SkillTool {
+    match target {
+        cli_skills::SkillTargetArg::Codex => managed_skills::SkillTool::Codex,
+        cli_skills::SkillTargetArg::Claude => managed_skills::SkillTool::Claude,
+        cli_skills::SkillTargetArg::OpenCode => managed_skills::SkillTool::OpenCode,
+    }
 }
 
 fn run_hooks_command(

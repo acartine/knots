@@ -41,6 +41,9 @@ pub(crate) fn apply_fixes(repo_root: &Path, checks: &[DoctorCheck]) {
             "version" => fix_version(),
             "hooks" => fix_hooks(repo_root),
             "stuck_leases" => fix_stuck_leases(repo_root),
+            name if name.starts_with("skills_") => {
+                crate::managed_skills::fix_doctor_check(repo_root, name)
+            }
             _ => {}
         }
     }

@@ -74,7 +74,7 @@ impl From<LockError> for DoctorError {
 }
 
 pub fn run_doctor(repo_root: &Path) -> Result<DoctorReport, DoctorError> {
-    let checks = vec![
+    let mut checks = vec![
         check_locks(repo_root)?,
         check_worktree(repo_root),
         check_remote(repo_root)?,
@@ -82,6 +82,7 @@ pub fn run_doctor(repo_root: &Path) -> Result<DoctorReport, DoctorError> {
         crate::git_hooks::check_hooks(repo_root),
         check_stuck_leases(repo_root)?,
     ];
+    checks.extend(crate::managed_skills::doctor_checks(repo_root));
     Ok(DoctorReport { checks })
 }
 
