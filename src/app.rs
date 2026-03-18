@@ -842,7 +842,9 @@ impl App {
             &state_actor,
             approve_terminal_cascade,
         )?;
-        if current.state != updated.state && state_hierarchy::is_terminal_state(&updated.state)? {
+        if current.state != updated.state
+            && state_hierarchy::is_terminal_resolution_state(&updated.state)?
+        {
             self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
         }
         self.apply_alias_to_knot(KnotView::from(updated))
@@ -1253,7 +1255,9 @@ impl App {
         )?;
         let updated =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        if current.state != updated.state && state_hierarchy::is_terminal_state(&updated.state)? {
+        if current.state != updated.state
+            && state_hierarchy::is_terminal_resolution_state(&updated.state)?
+        {
             self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
         }
         self.apply_alias_to_knot(KnotView::from(updated))

@@ -310,6 +310,95 @@ fn reconcile_terminal_parent_state_updates_only_parent() {
 }
 
 #[test]
+fn child_terminal_transition_auto_resolves_parent_chain() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let grandparent = app
+        .create_knot("Grandparent", None, Some("implementation"), Some("default"))
+        .expect("grandparent should be created");
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let child = app
+        .create_knot("Child", None, Some("implementation"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&grandparent.id, "parent_of", &parent.id)
+        .expect("edge should be added");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge should be added");
+
+    let child = app
+        .set_state(&child.id, "deferred", false, None)
+        .expect("child should defer");
+    assert_eq!(child.state, "deferred");
+    assert_eq!(
+        app.show_knot(&parent.id)
+            .expect("parent should load")
+            .expect("parent should exist")
+            .state,
+        "deferred"
+    );
+    assert_eq!(
+        app.show_knot(&grandparent.id)
+            .expect("grandparent should load")
+            .expect("grandparent should exist")
+            .state,
+        "deferred"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn update_child_to_terminal_auto_resolves_parent() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let child = app
+        .create_knot("Child", None, Some("implementation"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge should be added");
+
+    let patch = UpdateKnotPatch {
+        title: None,
+        description: None,
+        priority: None,
+        status: Some("deferred".to_string()),
+        knot_type: None,
+        add_tags: vec![],
+        remove_tags: vec![],
+        add_invariants: vec![],
+        remove_invariants: vec![],
+        clear_invariants: false,
+        gate_owner_kind: None,
+        gate_failure_modes: None,
+        clear_gate_failure_modes: false,
+        add_note: None,
+        add_handoff_capsule: None,
+        expected_profile_etag: None,
+        force: false,
+        state_actor: StateActorMetadata::default(),
+    };
+
+    let child = app
+        .update_knot(&child.id, patch)
+        .expect("child update should succeed");
+    assert_eq!(child.state, "deferred");
+    assert_eq!(
+        app.show_knot(&parent.id)
+            .expect("parent should load")
+            .expect("parent should exist")
+            .state,
+        "deferred"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn recursive_cascade_reaches_great_grandchildren() {
     let root = unique_workspace();
     let app = open_app(&root);
@@ -374,14 +463,29 @@ fn deferred_descendant_is_cascaded_in_terminal_transition() {
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
         .expect("parent created");
-    let child = app
-        .create_knot("Child", None, Some("implementation"), Some("default"))
-        .expect("child created");
-    app.add_edge(&parent.id, "parent_of", &child.id)
+    let deferred_child = app
+        .create_knot(
+            "Deferred child",
+            None,
+            Some("implementation"),
+            Some("default"),
+        )
+        .expect("deferred child created");
+    let active_child = app
+        .create_knot(
+            "Active child",
+            None,
+            Some("implementation"),
+            Some("default"),
+        )
+        .expect("active child created");
+    app.add_edge(&parent.id, "parent_of", &deferred_child.id)
+        .expect("edge added");
+    app.add_edge(&parent.id, "parent_of", &active_child.id)
         .expect("edge added");
 
-    app.set_state(&child.id, "deferred", false, None)
-        .expect("child should defer");
+    app.set_state(&deferred_child.id, "deferred", false, None)
+        .expect("deferred child should defer");
 
     let parent = app
         .set_state_with_actor_and_options(
@@ -395,9 +499,14 @@ fn deferred_descendant_is_cascaded_in_terminal_transition() {
         .expect("cascade should include deferred child");
     assert_eq!(parent.state, "abandoned");
     assert_eq!(
-        app.show_knot(&child.id).unwrap().unwrap().state,
+        app.show_knot(&deferred_child.id).unwrap().unwrap().state,
         "abandoned",
         "deferred child should be cascaded to abandoned"
+    );
+    assert_eq!(
+        app.show_knot(&active_child.id).unwrap().unwrap().state,
+        "abandoned",
+        "active child should be cascaded to abandoned"
     );
 
     let _ = std::fs::remove_dir_all(root);
