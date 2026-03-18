@@ -108,35 +108,35 @@ pub fn find_terminal_parent_resolutions(
     let mut resolutions = Vec::new();
 
     for parent_id in child_graph.keys() {
-        let Some(parent) = db::get_knot_hot(conn, parent_id)? else {
-            continue;
-        };
-        if is_terminal_resolution_state(&parent.state)? {
-            continue;
+        if let Some(resolution) = check_parent_resolution(conn, &child_graph, parent_id)? {
+            resolutions.push(resolution);
         }
+    }
 
-        let child_ids = child_graph.get(parent_id).map(Vec::as_slice).unwrap_or(&[]);
-        if child_ids.is_empty() {
-            continue;
-        }
+    resolutions.sort_by(|left, right| left.parent.id.cmp(&right.parent.id));
+    Ok(resolutions)
+}
 
-        let children = direct_children(&child_graph, conn, parent_id)?;
-        if children.len() != child_ids.len() {
-            continue;
-        }
-        if !children
-            .iter()
-            .all(|child| is_terminal_resolution_state(&child.state).unwrap_or(false))
-        {
-            continue;
-        }
+pub fn find_ancestor_terminal_resolutions(
+    conn: &Connection,
+    knot_id: &str,
+) -> Result<Vec<TerminalParentResolution>, AppError> {
+    let child_graph = load_child_graph(conn)?;
+    let parent_graph = invert_to_parent_graph(&child_graph);
+    let mut queue = parent_graph.get(knot_id).cloned().unwrap_or_default();
+    let mut seen = HashSet::new();
+    let mut resolutions = Vec::new();
 
-        let target_state = terminal_resolution_target(&children)?;
-        resolutions.push(TerminalParentResolution {
-            parent: HierarchyKnot::from_record(&parent),
-            children: children.iter().map(HierarchyKnot::from_record).collect(),
-            target_state: target_state.to_string(),
-        });
+    while let Some(parent_id) = queue.pop() {
+        if !seen.insert(parent_id.clone()) {
+            continue;
+        }
+        if let Some(resolution) = check_parent_resolution(conn, &child_graph, &parent_id)? {
+            for ancestor in parent_graph.get(&parent_id).into_iter().flatten() {
+                queue.push(ancestor.clone());
+            }
+            resolutions.push(resolution);
+        }
     }
 
     resolutions.sort_by(|left, right| left.parent.id.cmp(&right.parent.id));
@@ -149,6 +149,54 @@ fn load_child_graph(conn: &Connection) -> Result<HashMap<String, Vec<String>>, A
         graph.entry(edge.src).or_default().push(edge.dst);
     }
     Ok(graph)
+}
+
+fn invert_to_parent_graph(
+    child_graph: &HashMap<String, Vec<String>>,
+) -> HashMap<String, Vec<String>> {
+    let mut graph: HashMap<String, Vec<String>> = HashMap::new();
+    for (parent_id, child_ids) in child_graph {
+        for child_id in child_ids {
+            graph
+                .entry(child_id.clone())
+                .or_default()
+                .push(parent_id.clone());
+        }
+    }
+    graph
+}
+
+fn check_parent_resolution(
+    conn: &Connection,
+    child_graph: &HashMap<String, Vec<String>>,
+    parent_id: &str,
+) -> Result<Option<TerminalParentResolution>, AppError> {
+    let Some(parent) = db::get_knot_hot(conn, parent_id)? else {
+        return Ok(None);
+    };
+    if is_terminal_resolution_state(&parent.state)? {
+        return Ok(None);
+    }
+    let child_ids = child_graph.get(parent_id).map(Vec::as_slice).unwrap_or(&[]);
+    if child_ids.is_empty() {
+        return Ok(None);
+    }
+    let children = direct_children(child_graph, conn, parent_id)?;
+    if children.len() != child_ids.len() {
+        return Ok(None);
+    }
+    if !children
+        .iter()
+        .all(|child| is_terminal_resolution_state(&child.state).unwrap_or(false))
+    {
+        return Ok(None);
+    }
+    let target_state = terminal_resolution_target(&children)?;
+    Ok(Some(TerminalParentResolution {
+        parent: HierarchyKnot::from_record(&parent),
+        children: children.iter().map(HierarchyKnot::from_record).collect(),
+        target_state: target_state.to_string(),
+    }))
 }
 
 fn direct_children(

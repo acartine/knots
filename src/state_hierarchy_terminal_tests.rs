@@ -201,3 +201,65 @@ fn terminal_resolution_target_handles_deferred_abandoned_and_invalid_states() {
         .to_string()
         .contains("non-terminal child state 'implementation'"));
 }
+
+#[test]
+fn ancestor_terminal_resolutions_walks_parent_chain() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let grandparent = app
+        .create_knot("Grandparent", None, Some("implementation"), Some("default"))
+        .expect("grandparent created");
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent created");
+    let child = app
+        .create_knot("Child", None, Some("shipped"), Some("default"))
+        .expect("child created");
+    app.add_edge(&grandparent.id, "parent_of", &parent.id)
+        .expect("edge added");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge added");
+
+    let conn = crate::db::open_connection(db.to_str().expect("db path")).expect("db");
+    let resolutions = find_ancestor_terminal_resolutions(&conn, &child.id).expect("should resolve");
+    let ids: Vec<_> = resolutions.iter().map(|r| r.parent.id.as_str()).collect();
+    assert!(ids.contains(&parent.id.as_str()), "parent should resolve");
+    assert!(
+        !ids.contains(&grandparent.id.as_str()),
+        "grandparent should NOT resolve yet (parent not terminal)"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn ancestor_terminal_resolutions_skips_unrelated_parents() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let unrelated = app
+        .create_knot("Unrelated", None, Some("implementation"), Some("default"))
+        .expect("unrelated created");
+    let unrelated_child = app
+        .create_knot("Unrelated child", None, Some("abandoned"), Some("default"))
+        .expect("unrelated child created");
+    app.add_edge(&unrelated.id, "parent_of", &unrelated_child.id)
+        .expect("edge added");
+
+    let target = app
+        .create_knot("Target", None, Some("shipped"), Some("default"))
+        .expect("target created");
+
+    let conn = crate::db::open_connection(db.to_str().expect("db path")).expect("db");
+    let resolutions =
+        find_ancestor_terminal_resolutions(&conn, &target.id).expect("should resolve");
+    assert!(
+        resolutions.is_empty(),
+        "unrelated parent should not appear in ancestor resolutions"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
