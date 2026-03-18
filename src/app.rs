@@ -795,14 +795,7 @@ impl App {
         let current =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         let next_state = normalize_state_input(next_state)?;
-        let updated = self.write_state_change_locked(
-            &current,
-            &next_state,
-            true,
-            None,
-            &StateActorMetadata::default(),
-            None,
-        )?;
+        let updated = self.reconcile_terminal_parent_state_locked(&current, &next_state)?;
         self.apply_alias_to_knot(KnotView::from(updated))
     }
 
@@ -849,6 +842,9 @@ impl App {
             &state_actor,
             approve_terminal_cascade,
         )?;
+        if current.state != updated.state && state_hierarchy::is_terminal_state(&updated.state)? {
+            self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
+        }
         self.apply_alias_to_knot(KnotView::from(updated))
     }
 
@@ -1257,6 +1253,9 @@ impl App {
         )?;
         let updated =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        if current.state != updated.state && state_hierarchy::is_terminal_state(&updated.state)? {
+            self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
+        }
         self.apply_alias_to_knot(KnotView::from(updated))
     }
 
@@ -1337,6 +1336,7 @@ impl App {
         let cascade = StateCascadeMetadata {
             root_id: &current.id,
         };
+        let mut changed_terminal_ids = Vec::new();
         for descendant in descendants {
             let Some(descendant_record) = db::get_knot_hot(&self.conn, &descendant.id)? else {
                 continue;
@@ -1352,16 +1352,20 @@ impl App {
                 state_actor,
                 Some(cascade),
             )?;
+            changed_terminal_ids.push(descendant_record.id);
         }
 
-        self.write_state_change_locked(
+        let updated = self.write_state_change_locked(
             current,
             next_state,
             force_root,
             expected_profile_etag,
             state_actor,
             Some(cascade),
-        )
+        )?;
+        changed_terminal_ids.push(updated.id.clone());
+        self.auto_resolve_terminal_parents_locked(changed_terminal_ids.iter().map(String::as_str))?;
+        Ok(updated)
     }
 
     fn write_state_change_locked(
@@ -1465,6 +1469,51 @@ impl App {
 
         db::get_knot_hot(&self.conn, &current.id)?
             .ok_or_else(|| AppError::NotFound(current.id.clone()))
+    }
+
+    fn reconcile_terminal_parent_state_locked(
+        &self,
+        current: &KnotCacheRecord,
+        next_state: &str,
+    ) -> Result<KnotCacheRecord, AppError> {
+        self.write_state_change_locked(
+            current,
+            next_state,
+            true,
+            None,
+            &StateActorMetadata::default(),
+            None,
+        )
+    }
+
+    fn auto_resolve_terminal_parents_locked<'a>(
+        &self,
+        knot_ids: impl IntoIterator<Item = &'a str>,
+    ) -> Result<(), AppError> {
+        let mut pending = knot_ids
+            .into_iter()
+            .map(str::to_string)
+            .collect::<Vec<String>>();
+        let mut seen = HashSet::new();
+
+        while let Some(knot_id) = pending.pop() {
+            let resolutions =
+                state_hierarchy::find_ancestor_terminal_resolutions(&self.conn, &knot_id)?;
+            for resolution in resolutions {
+                if !seen.insert(resolution.parent.id.clone()) {
+                    continue;
+                }
+                let Some(parent) = db::get_knot_hot(&self.conn, &resolution.parent.id)? else {
+                    continue;
+                };
+                if !state_hierarchy::is_terminal_resolution_state(&parent.state)? {
+                    self.reconcile_terminal_parent_state_locked(&parent, &resolution.target_state)?;
+                    pending.push(parent.id);
+                }
+            }
+        }
+
+        Ok(())
     }
 
     fn append_gate_failure_metadata_locked(
@@ -3056,6 +3105,9 @@ mod tests_gate_ext;
 #[cfg(test)]
 #[path = "app/tests_hierarchy.rs"]
 mod tests_hierarchy;
+#[cfg(test)]
+#[path = "app/tests_hierarchy_auto_resolve.rs"]
+mod tests_hierarchy_auto_resolve;
 #[cfg(test)]
 #[path = "app/tests_step_history.rs"]
 mod tests_step_history;

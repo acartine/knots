@@ -201,3 +201,59 @@ fn terminal_resolution_target_handles_deferred_abandoned_and_invalid_states() {
         .to_string()
         .contains("non-terminal child state 'implementation'"));
 }
+
+#[test]
+fn ancestor_terminal_resolutions_walk_parents_once_and_sort_results() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let grandparent = app
+        .create_knot("Grandparent", None, Some("implementation"), Some("default"))
+        .expect("grandparent should be created");
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let sibling_parent = app
+        .create_knot(
+            "Sibling parent",
+            None,
+            Some("implementation"),
+            Some("default"),
+        )
+        .expect("sibling parent should be created");
+    let child = app
+        .create_knot("Child", None, Some("shipped"), Some("default"))
+        .expect("child should be created");
+    let sibling_child = app
+        .create_knot("Sibling child", None, Some("deferred"), Some("default"))
+        .expect("sibling child should be created");
+
+    app.add_edge(&grandparent.id, "parent_of", &parent.id)
+        .expect("edge should be added");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge should be added");
+    app.add_edge(&sibling_parent.id, "parent_of", &child.id)
+        .expect("edge should be added");
+    app.add_edge(&sibling_parent.id, "parent_of", &sibling_child.id)
+        .expect("edge should be added");
+
+    let conn =
+        crate::db::open_connection(db.to_str().expect("db path should be utf8")).expect("db");
+    let resolutions = find_ancestor_terminal_resolutions(&conn, &child.id)
+        .expect("ancestor resolutions should load");
+    let mut summary = resolutions
+        .into_iter()
+        .map(|resolution| (resolution.parent.id, resolution.target_state))
+        .collect::<Vec<_>>();
+    summary.sort();
+
+    let mut expected = vec![
+        (parent.id, "shipped".to_string()),
+        (sibling_parent.id, "shipped".to_string()),
+    ];
+    expected.sort();
+    assert_eq!(summary, expected);
+
+    let _ = std::fs::remove_dir_all(root);
+}
