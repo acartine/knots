@@ -52,7 +52,7 @@ has_changeset_file=0
 is_doc_or_chore() {
   local file="$1"
   case "${file}" in
-    *.md|docs/*|.github/*|LICENSE|SECURITY.md|AGENTS.md|CLAUDE.md)
+    *.md|docs/*|.github/*|scripts/repo/*|LICENSE|SECURITY.md|AGENTS.md|CLAUDE.md)
       return 0
       ;;
     *)
