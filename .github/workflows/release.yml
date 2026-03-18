@@ -18,7 +18,7 @@ jobs:
       tag: ${{ steps.detect.outputs.tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -67,7 +67,7 @@ jobs:
     if: needs.detect-release.outputs.should_release == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -87,7 +87,7 @@ jobs:
           tar -C dist -czf "knots-v${version}-linux-x86_64.tar.gz" knots
 
       - name: Upload Linux artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-linux
           path: knots-v${{ needs.detect-release.outputs.version }}-linux-x86_64.tar.gz
@@ -98,7 +98,7 @@ jobs:
     if: needs.detect-release.outputs.should_release == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -118,7 +118,7 @@ jobs:
           tar -C dist -czf "knots-v${version}-linux-aarch64.tar.gz" knots
 
       - name: Upload Linux ARM64 artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-linux-arm64
           path: knots-v${{ needs.detect-release.outputs.version }}-linux-aarch64.tar.gz
@@ -129,7 +129,7 @@ jobs:
     if: needs.detect-release.outputs.should_release == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -149,7 +149,7 @@ jobs:
           tar -C dist -czf "knots-v${version}-darwin-arm64.tar.gz" knots
 
       - name: Upload Darwin artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-darwin
           path: knots-v${{ needs.detect-release.outputs.version }}-darwin-arm64.tar.gz
@@ -160,19 +160,19 @@ jobs:
     if: needs.detect-release.outputs.should_release == 'true'
     steps:
       - name: Download Linux artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: release-linux
           path: dist
 
       - name: Download Linux ARM64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: release-linux-arm64
           path: dist
 
       - name: Download Darwin artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: release-darwin
           path: dist

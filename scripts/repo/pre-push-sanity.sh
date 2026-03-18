@@ -13,5 +13,8 @@ cd "${repo_root}"
 # temporary git repos are not confused by the parent context.
 unset GIT_DIR GIT_QUARANTINE_PATH GIT_WORK_TREE 2>/dev/null || true
 
+echo "Checking changeset requirements..."
+"${repo_root}/scripts/repo/require-changeset.sh"
+
 echo "Running make sanity before push..."
 make sanity
