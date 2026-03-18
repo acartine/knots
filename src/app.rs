@@ -796,6 +796,9 @@ impl App {
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         let next_state = normalize_state_input(next_state)?;
         let updated = self.reconcile_terminal_parent_state_locked(&current, &next_state)?;
+        if self.transitioned_to_terminal_resolution_state(&current, &updated)? {
+            self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
+        }
         self.apply_alias_to_knot(KnotView::from(updated))
     }
 
@@ -842,7 +845,7 @@ impl App {
             &state_actor,
             approve_terminal_cascade,
         )?;
-        if current.state != updated.state && state_hierarchy::is_terminal_state(&updated.state)? {
+        if self.transitioned_to_terminal_resolution_state(&current, &updated)? {
             self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
         }
         self.apply_alias_to_knot(KnotView::from(updated))
@@ -891,7 +894,14 @@ impl App {
 
         if let Some(next_state_raw) = patch.status.as_deref() {
             let next_state = normalize_state_input(next_state_raw)?;
-            if state == "deferred" && next_state != "deferred" && !patch.force {
+            let next_is_terminal = workflow_runtime::is_terminal_state(
+                &self.profile_registry,
+                &profile_id,
+                knot_type,
+                &next_state,
+            )?;
+            if state == "deferred" && next_state != "deferred" && !patch.force && !next_is_terminal
+            {
                 let expected = deferred_from_state.as_deref().ok_or_else(|| {
                     AppError::InvalidArgument(
                         "deferred knot is missing deferred_from_state provenance".to_string(),
@@ -917,12 +927,7 @@ impl App {
                 &self.conn,
                 &current,
                 &next_state,
-                workflow_runtime::is_terminal_state(
-                    &self.profile_registry,
-                    &profile_id,
-                    knot_type,
-                    &next_state,
-                )?,
+                next_is_terminal,
                 approve_terminal_cascade,
             )? {
                 TransitionPlan::Allowed if state != next_state => {
@@ -1253,7 +1258,7 @@ impl App {
         )?;
         let updated =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        if current.state != updated.state && state_hierarchy::is_terminal_state(&updated.state)? {
+        if self.transitioned_to_terminal_resolution_state(&current, &updated)? {
             self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
         }
         self.apply_alias_to_knot(KnotView::from(updated))
@@ -1270,7 +1275,13 @@ impl App {
     ) -> Result<KnotCacheRecord, AppError> {
         let profile = self.resolve_profile_for_record(current)?;
         let knot_type = parse_knot_type(current.knot_type.as_deref());
-        if current.state == "deferred" && next_state != "deferred" && !force {
+        let next_is_terminal = workflow_runtime::is_terminal_state(
+            &self.profile_registry,
+            &profile.id,
+            knot_type,
+            next_state,
+        )?;
+        if current.state == "deferred" && next_state != "deferred" && !force && !next_is_terminal {
             let expected = current.deferred_from_state.as_deref().ok_or_else(|| {
                 AppError::InvalidArgument(
                     "deferred knot is missing deferred_from_state provenance".to_string(),
@@ -1297,12 +1308,7 @@ impl App {
             &self.conn,
             current,
             next_state,
-            workflow_runtime::is_terminal_state(
-                &self.profile_registry,
-                &profile.id,
-                knot_type,
-                next_state,
-            )?,
+            next_is_terminal,
             approve_terminal_cascade,
         )? {
             TransitionPlan::Allowed => self.write_state_change_locked(
@@ -1514,6 +1520,17 @@ impl App {
         }
 
         Ok(())
+    }
+
+    fn transitioned_to_terminal_resolution_state(
+        &self,
+        current: &KnotCacheRecord,
+        updated: &KnotCacheRecord,
+    ) -> Result<bool, AppError> {
+        Ok(
+            !state_hierarchy::is_terminal_resolution_state(&current.state)?
+                && state_hierarchy::is_terminal_resolution_state(&updated.state)?,
+        )
     }
 
     fn append_gate_failure_metadata_locked(
@@ -3111,3 +3128,6 @@ mod tests_hierarchy_auto_resolve;
 #[cfg(test)]
 #[path = "app/tests_step_history.rs"]
 mod tests_step_history;
+#[cfg(test)]
+#[path = "app/tests_terminal_deferred.rs"]
+mod tests_terminal_deferred;
