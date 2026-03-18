@@ -277,6 +277,39 @@ fn approved_terminal_cascade_updates_descendants_and_marks_events() {
 }
 
 #[test]
+fn reconcile_terminal_parent_state_updates_only_parent() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let shipped = app
+        .create_knot("Shipped child", None, Some("shipped"), Some("default"))
+        .expect("child should be created");
+    let deferred = app
+        .create_knot("Deferred child", None, Some("deferred"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&parent.id, "parent_of", &shipped.id)
+        .expect("edge should be added");
+    app.add_edge(&parent.id, "parent_of", &deferred.id)
+        .expect("edge should be added");
+
+    let updated = app
+        .reconcile_terminal_parent_state(&parent.id, "shipped")
+        .expect("parent should reconcile");
+    assert_eq!(updated.state, "shipped");
+    assert_eq!(
+        app.show_knot(&deferred.id)
+            .expect("child should load")
+            .expect("child should exist")
+            .state,
+        "deferred"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn recursive_cascade_reaches_great_grandchildren() {
     let root = unique_workspace();
     let app = open_app(&root);

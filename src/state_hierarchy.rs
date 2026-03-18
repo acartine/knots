@@ -35,6 +35,13 @@ impl HierarchyKnot {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TerminalParentResolution {
+    pub parent: HierarchyKnot,
+    pub children: Vec<HierarchyKnot>,
+    pub target_state: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TransitionPlan {
     Allowed,
     CascadeTerminal { descendants: Vec<HierarchyKnot> },
@@ -92,6 +99,48 @@ pub fn format_hierarchy_knots(knots: &[HierarchyKnot]) -> String {
         .map(|knot| format!("{} [{}]", knot.id, knot.display_state()))
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+pub fn find_terminal_parent_resolutions(
+    conn: &Connection,
+) -> Result<Vec<TerminalParentResolution>, AppError> {
+    let child_graph = load_child_graph(conn)?;
+    let mut resolutions = Vec::new();
+
+    for parent_id in child_graph.keys() {
+        let Some(parent) = db::get_knot_hot(conn, parent_id)? else {
+            continue;
+        };
+        if is_terminal_resolution_state(&parent.state)? {
+            continue;
+        }
+
+        let child_ids = child_graph.get(parent_id).map(Vec::as_slice).unwrap_or(&[]);
+        if child_ids.is_empty() {
+            continue;
+        }
+
+        let children = direct_children(&child_graph, conn, parent_id)?;
+        if children.len() != child_ids.len() {
+            continue;
+        }
+        if !children
+            .iter()
+            .all(|child| is_terminal_resolution_state(&child.state).unwrap_or(false))
+        {
+            continue;
+        }
+
+        let target_state = terminal_resolution_target(&children)?;
+        resolutions.push(TerminalParentResolution {
+            parent: HierarchyKnot::from_record(&parent),
+            children: children.iter().map(HierarchyKnot::from_record).collect(),
+            target_state: target_state.to_string(),
+        });
+    }
+
+    resolutions.sort_by(|left, right| left.parent.id.cmp(&right.parent.id));
+    Ok(resolutions)
 }
 
 fn load_child_graph(conn: &Connection) -> Result<HashMap<String, Vec<String>>, AppError> {
@@ -212,6 +261,36 @@ fn effective_state_rank(state: &str) -> Result<u8, AppError> {
 
 pub fn is_terminal_state(state: &str) -> Result<bool, AppError> {
     Ok(KnotState::from_str(state)?.is_terminal())
+}
+
+pub fn is_terminal_resolution_state(state: &str) -> Result<bool, AppError> {
+    Ok(matches!(
+        KnotState::from_str(state)?,
+        KnotState::Shipped | KnotState::Deferred | KnotState::Abandoned
+    ))
+}
+
+fn terminal_resolution_target(children: &[KnotCacheRecord]) -> Result<&'static str, AppError> {
+    let mut saw_deferred = false;
+    for child in children {
+        match KnotState::from_str(&child.state)? {
+            KnotState::Shipped => return Ok("shipped"),
+            KnotState::Deferred => saw_deferred = true,
+            KnotState::Abandoned => {}
+            other => {
+                return Err(AppError::InvalidArgument(format!(
+                    "non-terminal child state '{}' cannot be reconciled",
+                    other.as_str()
+                )));
+            }
+        }
+    }
+
+    if saw_deferred {
+        Ok("deferred")
+    } else {
+        Ok("abandoned")
+    }
 }
 
 #[cfg(test)]

@@ -78,6 +78,14 @@ fn terminal_state_helper_matches_terminal_states() {
 }
 
 #[test]
+fn terminal_resolution_state_helper_includes_deferred() {
+    assert!(is_terminal_resolution_state("shipped").expect("shipped should parse"));
+    assert!(is_terminal_resolution_state("deferred").expect("deferred should parse"));
+    assert!(is_terminal_resolution_state("abandoned").expect("abandoned should parse"));
+    assert!(!is_terminal_resolution_state("implementation").expect("implementation should parse"));
+}
+
+#[test]
 fn format_hierarchy_knots_lists_each_knot_and_display_state() {
     let rendered = format_hierarchy_knots(&[
         HierarchyKnot::from_record(&sample_record("knots-a", "planning", None)),
@@ -341,4 +349,141 @@ fn effective_state_rank_assigns_unique_ranks_to_gate_states() {
         effective_state_rank("evaluating").expect("state should parse"),
         13
     );
+}
+
+#[test]
+fn terminal_parent_resolutions_require_all_direct_children_and_pick_precedence() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let shipped_parent = app
+        .create_knot(
+            "Shipped parent",
+            None,
+            Some("implementation"),
+            Some("default"),
+        )
+        .expect("parent should be created");
+    let shipped_child = app
+        .create_knot("Shipped child", None, Some("shipped"), Some("default"))
+        .expect("child should be created");
+    let deferred_child = app
+        .create_knot("Deferred child", None, Some("deferred"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&shipped_parent.id, "parent_of", &shipped_child.id)
+        .expect("edge should be added");
+    app.add_edge(&shipped_parent.id, "parent_of", &deferred_child.id)
+        .expect("edge should be added");
+
+    let deferred_parent = app
+        .create_knot(
+            "Deferred parent",
+            None,
+            Some("implementation"),
+            Some("default"),
+        )
+        .expect("parent should be created");
+    let abandoned_child = app
+        .create_knot("Abandoned child", None, Some("abandoned"), Some("default"))
+        .expect("child should be created");
+    let deferred_only_child = app
+        .create_knot(
+            "Deferred only child",
+            None,
+            Some("deferred"),
+            Some("default"),
+        )
+        .expect("child should be created");
+    app.add_edge(&deferred_parent.id, "parent_of", &abandoned_child.id)
+        .expect("edge should be added");
+    app.add_edge(&deferred_parent.id, "parent_of", &deferred_only_child.id)
+        .expect("edge should be added");
+
+    let abandoned_parent = app
+        .create_knot(
+            "Abandoned parent",
+            None,
+            Some("implementation"),
+            Some("default"),
+        )
+        .expect("parent should be created");
+    let abandoned_only_child = app
+        .create_knot(
+            "Abandoned only child",
+            None,
+            Some("abandoned"),
+            Some("default"),
+        )
+        .expect("child should be created");
+    app.add_edge(&abandoned_parent.id, "parent_of", &abandoned_only_child.id)
+        .expect("edge should be added");
+
+    let blocked_parent = app
+        .create_knot(
+            "Blocked parent",
+            None,
+            Some("implementation"),
+            Some("default"),
+        )
+        .expect("parent should be created");
+    let active_child = app
+        .create_knot(
+            "Active child",
+            None,
+            Some("implementation"),
+            Some("default"),
+        )
+        .expect("child should be created");
+    app.add_edge(&blocked_parent.id, "parent_of", &active_child.id)
+        .expect("edge should be added");
+
+    let conn =
+        crate::db::open_connection(db.to_str().expect("db path should be utf8")).expect("db");
+    let resolutions = find_terminal_parent_resolutions(&conn).expect("resolutions should load");
+    let summary = resolutions
+        .into_iter()
+        .map(|resolution| (resolution.parent.id, resolution.target_state))
+        .collect::<Vec<_>>();
+
+    assert!(summary.contains(&(shipped_parent.id, "shipped".to_string())));
+    assert!(summary.contains(&(deferred_parent.id, "deferred".to_string())));
+    assert!(summary.contains(&(abandoned_parent.id, "abandoned".to_string())));
+    assert!(!summary.iter().any(|(id, _)| id == &blocked_parent.id));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn terminal_parent_resolutions_skip_terminal_parents_and_missing_children() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let shipped_parent = app
+        .create_knot("Shipped parent", None, Some("shipped"), Some("default"))
+        .expect("parent should be created");
+    let shipped_child = app
+        .create_knot("Shipped child", None, Some("shipped"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&shipped_parent.id, "parent_of", &shipped_child.id)
+        .expect("edge should be added");
+
+    let missing_parent = app
+        .create_knot(
+            "Missing child parent",
+            None,
+            Some("implementation"),
+            Some("default"),
+        )
+        .expect("parent should be created");
+    let conn =
+        crate::db::open_connection(db.to_str().expect("db path should be utf8")).expect("db");
+    crate::db::insert_edge(&conn, &missing_parent.id, "parent_of", "missing-child")
+        .expect("edge should be inserted");
+
+    let resolutions = find_terminal_parent_resolutions(&conn).expect("resolutions should load");
+    assert!(resolutions.is_empty());
+
+    let _ = std::fs::remove_dir_all(root);
 }
