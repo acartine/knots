@@ -350,3 +350,34 @@ fn effective_state_rank_assigns_unique_ranks_to_gate_states() {
         13
     );
 }
+
+#[test]
+fn terminal_plan_allowed_when_all_descendants_already_in_target_state() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let child_a = app
+        .create_knot("Child A", None, Some("shipped"), Some("default"))
+        .expect("child should be created");
+    let child_b = app
+        .create_knot("Child B", None, Some("shipped"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&parent.id, "parent_of", &child_a.id)
+        .expect("edge should be added");
+    app.add_edge(&parent.id, "parent_of", &child_b.id)
+        .expect("edge should be added");
+    let conn =
+        crate::db::open_connection(db.to_str().expect("db path should be utf8")).expect("db");
+    let parent = crate::db::get_knot_hot(&conn, &parent.id)
+        .expect("db lookup should succeed")
+        .expect("parent should exist");
+
+    let plan = plan_state_transition(&conn, &parent, "shipped", true, false)
+        .expect("should be allowed without cascade approval");
+    assert!(matches!(plan, TransitionPlan::Allowed));
+
+    let _ = std::fs::remove_dir_all(root);
+}
