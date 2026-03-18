@@ -2,6 +2,7 @@ use std::path::Path;
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use crate::app::App;
 use crate::doctor::{DoctorCheck, DoctorStatus};
 use crate::remote_init::init_remote_knots_branch;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError};
@@ -41,6 +42,7 @@ pub(crate) fn apply_fixes(repo_root: &Path, checks: &[DoctorCheck]) {
             "version" => fix_version(),
             "hooks" => fix_hooks(repo_root),
             "stuck_leases" => fix_stuck_leases(repo_root),
+            "terminal_parents" => fix_terminal_parents(repo_root),
             name if name.starts_with("skills_") => {
                 crate::managed_skills::fix_doctor_check(repo_root, name)
             }
@@ -114,6 +116,45 @@ WHERE knot_type = 'lease'
 "#,
         [],
     );
+}
+
+fn fix_terminal_parents(repo_root: &Path) {
+    let db_path = repo_root.join(".knots").join("cache").join("state.sqlite");
+    let Some(db_path) = db_path.to_str() else {
+        return;
+    };
+    let Ok(app) = App::open(db_path, repo_root.to_path_buf()) else {
+        return;
+    };
+
+    loop {
+        let Ok(conn) = crate::db::open_connection(db_path) else {
+            return;
+        };
+        let Ok(resolutions) = crate::state_hierarchy::find_terminal_parent_resolutions(&conn)
+        else {
+            return;
+        };
+        drop(conn);
+
+        if resolutions.is_empty() {
+            return;
+        }
+
+        let mut progressed = false;
+        for resolution in resolutions {
+            if app
+                .reconcile_terminal_parent_state(&resolution.parent.id, &resolution.target_state)
+                .is_ok()
+            {
+                progressed = true;
+            }
+        }
+
+        if !progressed {
+            return;
+        }
+    }
 }
 
 fn run_git(cwd: &Path, args: &[&str]) -> bool {
@@ -409,6 +450,34 @@ mod tests {
         );
         assert!(!repo_lock.exists());
         assert!(!cache_lock.exists());
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn apply_fixes_reconciles_terminal_parents() {
+        let (root, local) = setup_repo_with_origin();
+        let db = local.join(".knots/cache/state.sqlite");
+        let app =
+            crate::app::App::open(db.to_str().expect("db path should be utf8"), local.clone())
+                .expect("app should open");
+        let parent = app
+            .create_knot("Parent", None, Some("implementation"), Some("default"))
+            .expect("parent should be created");
+        let child = app
+            .create_knot("Child", None, Some("shipped"), Some("default"))
+            .expect("child should be created");
+        app.add_edge(&parent.id, "parent_of", &child.id)
+            .expect("edge should be added");
+
+        let checks = vec![sample_check("terminal_parents", DoctorStatus::Warn)];
+        apply_fixes(&local, &checks);
+
+        let updated = app
+            .show_knot(&parent.id)
+            .expect("parent should load")
+            .expect("parent should exist");
+        assert_eq!(updated.state, "shipped");
 
         let _ = std::fs::remove_dir_all(root);
     }

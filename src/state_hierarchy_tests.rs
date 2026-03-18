@@ -78,6 +78,14 @@ fn terminal_state_helper_matches_terminal_states() {
 }
 
 #[test]
+fn terminal_resolution_state_helper_includes_deferred() {
+    assert!(is_terminal_resolution_state("shipped").expect("shipped should parse"));
+    assert!(is_terminal_resolution_state("deferred").expect("deferred should parse"));
+    assert!(is_terminal_resolution_state("abandoned").expect("abandoned should parse"));
+    assert!(!is_terminal_resolution_state("implementation").expect("implementation should parse"));
+}
+
+#[test]
 fn format_hierarchy_knots_lists_each_knot_and_display_state() {
     let rendered = format_hierarchy_knots(&[
         HierarchyKnot::from_record(&sample_record("knots-a", "planning", None)),

@@ -344,3 +344,71 @@ fn fix_stuck_leases_terminates_active() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn terminal_parents_check_passes_when_no_parents_need_reconciliation() {
+    let root = unique_workspace();
+    run_git(&root, &["init"]);
+    run_git(&root, &["config", "user.email", "knots@example.com"]);
+    run_git(&root, &["config", "user.name", "Knots Test"]);
+    std::fs::write(root.join("README.md"), "# t\n").expect("readme");
+    run_git(&root, &["add", "README.md"]);
+    run_git(&root, &["commit", "-m", "init"]);
+
+    let db = root.join(".knots/cache/state.sqlite");
+    let app = crate::app::App::open(db.to_str().expect("db path should be utf8"), root.clone())
+        .expect("app should open");
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let child = app
+        .create_knot("Child", None, Some("implementation"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge should be added");
+
+    let report = run_doctor(&root).expect("doctor should run");
+    let check = report
+        .checks
+        .iter()
+        .find(|check| check.name == "terminal_parents")
+        .expect("terminal_parents check should exist");
+    assert_eq!(check.status, DoctorStatus::Pass);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn terminal_parents_check_warns_when_parent_can_be_resolved() {
+    let root = unique_workspace();
+    run_git(&root, &["init"]);
+    run_git(&root, &["config", "user.email", "knots@example.com"]);
+    run_git(&root, &["config", "user.name", "Knots Test"]);
+    std::fs::write(root.join("README.md"), "# t\n").expect("readme");
+    run_git(&root, &["add", "README.md"]);
+    run_git(&root, &["commit", "-m", "init"]);
+
+    let db = root.join(".knots/cache/state.sqlite");
+    let app = crate::app::App::open(db.to_str().expect("db path should be utf8"), root.clone())
+        .expect("app should open");
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let child = app
+        .create_knot("Child", None, Some("shipped"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge should be added");
+
+    let report = run_doctor(&root).expect("doctor should run");
+    let check = report
+        .checks
+        .iter()
+        .find(|check| check.name == "terminal_parents")
+        .expect("terminal_parents check should exist");
+    assert_eq!(check.status, DoctorStatus::Warn);
+    assert!(check.detail.contains(&parent.id));
+    assert!(check.detail.contains("shipped"));
+
+    let _ = std::fs::remove_dir_all(root);
+}

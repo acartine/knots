@@ -783,6 +783,29 @@ impl App {
         )
     }
 
+    pub(crate) fn reconcile_terminal_parent_state(
+        &self,
+        id: &str,
+        next_state: &str,
+    ) -> Result<KnotView, AppError> {
+        let id = self.resolve_knot_token(id)?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        let current =
+            db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        let next_state = normalize_state_input(next_state)?;
+        let updated = self.write_state_change_locked(
+            &current,
+            &next_state,
+            true,
+            None,
+            &StateActorMetadata::default(),
+            None,
+        )?;
+        self.apply_alias_to_knot(KnotView::from(updated))
+    }
+
     pub fn set_state_with_actor(
         &self,
         id: &str,
