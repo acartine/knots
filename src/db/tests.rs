@@ -531,3 +531,54 @@ fn count_active_leases_returns_count() {
 
     cleanup_db_files(&path);
 }
+
+#[test]
+fn get_knot_hot_accepts_legacy_empty_lease_data_json() {
+    use crate::db::{get_knot_hot, upsert_knot_hot, UpsertKnotHot};
+
+    let path = unique_db_path();
+    let conn = open_connection(&path).expect("connection should open");
+
+    upsert_knot_hot(
+        &conn,
+        &UpsertKnotHot {
+            id: "K-legacy-lease",
+            title: "Legacy lease",
+            state: "implementation",
+            updated_at: "2026-03-18T10:00:00Z",
+            body: None,
+            description: None,
+            priority: None,
+            knot_type: Some("work"),
+            tags: &[],
+            notes: &[],
+            handoff_capsules: &[],
+            invariants: &[],
+            step_history: &[],
+            gate_data: &crate::domain::gate::GateData::default(),
+            lease_data: &crate::domain::lease::LeaseData::default(),
+            lease_id: None,
+            profile_id: "autopilot",
+            profile_etag: None,
+            deferred_from_state: None,
+            created_at: None,
+        },
+    )
+    .expect("upsert should succeed");
+
+    conn.execute(
+        "UPDATE knot_hot SET lease_data_json = '{}' WHERE id = ?1",
+        params!["K-legacy-lease"],
+    )
+    .expect("legacy lease payload should update");
+
+    let record = get_knot_hot(&conn, "K-legacy-lease")
+        .expect("legacy read should succeed")
+        .expect("record should exist");
+    assert_eq!(
+        record.lease_data,
+        crate::domain::lease::LeaseData::default()
+    );
+
+    cleanup_db_files(&path);
+}

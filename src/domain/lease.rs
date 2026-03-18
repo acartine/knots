@@ -90,6 +90,7 @@ pub struct AgentInfo {
 pub struct LeaseData {
     #[serde(default)]
     pub lease_type: LeaseType,
+    #[serde(default)]
     pub nickname: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_info: Option<AgentInfo>,
@@ -187,6 +188,12 @@ mod tests {
         assert_eq!(data.lease_type, LeaseType::Agent);
         assert_eq!(data.nickname, "");
         assert!(data.agent_info.is_none());
+    }
+
+    #[test]
+    fn lease_data_deserializes_legacy_empty_payload() {
+        let parsed: LeaseData = serde_json::from_str("{}").unwrap();
+        assert_eq!(parsed, LeaseData::default());
     }
 
     #[test]
