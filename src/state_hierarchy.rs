@@ -296,3 +296,7 @@ fn terminal_resolution_target(children: &[KnotCacheRecord]) -> Result<&'static s
 #[cfg(test)]
 #[path = "state_hierarchy_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "state_hierarchy_terminal_tests.rs"]
+mod terminal_tests;
