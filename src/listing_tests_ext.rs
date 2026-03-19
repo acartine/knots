@@ -34,6 +34,7 @@ fn knot(
         deferred_from_state: None,
         created_at: None,
         edges: Vec::new(),
+        child_summaries: vec![],
     }
 }
 

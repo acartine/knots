@@ -51,6 +51,7 @@ fn sample_knot() -> KnotView {
         deferred_from_state: None,
         created_at: Some("2026-02-24T10:00:00Z".to_string()),
         edges: vec![],
+        child_summaries: vec![],
     }
 }
 

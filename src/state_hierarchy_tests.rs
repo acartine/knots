@@ -119,7 +119,7 @@ fn plan_state_transition_blocks_direct_children_that_are_behind() {
         .expect("db lookup should succeed")
         .expect("parent should exist");
 
-    let err = plan_state_transition(&conn, &parent, "ready_for_plan_review", false, false)
+    let err = plan_state_transition(&conn, &parent, "ready_for_plan_review", false, false, false)
         .expect_err("direct child should block parent");
     assert!(matches!(err, AppError::HierarchyProgressBlocked { .. }));
 
@@ -155,7 +155,7 @@ fn gate_parent_transition_blocks_work_child_with_lower_effective_rank() {
         .expect("db lookup should succeed")
         .expect("parent should exist");
 
-    let err = plan_state_transition(&conn, &parent, "evaluating", false, false)
+    let err = plan_state_transition(&conn, &parent, "evaluating", false, false, false)
         .expect_err("gate parent should be blocked by work child progress");
     match err {
         AppError::HierarchyProgressBlocked { blockers, .. } => {
@@ -193,7 +193,7 @@ fn plan_state_transition_returns_sorted_descendants_for_terminal_cascade() {
         .expect("db lookup should succeed")
         .expect("parent should exist");
 
-    let plan = plan_state_transition(&conn, &parent, "abandoned", true, true)
+    let plan = plan_state_transition(&conn, &parent, "abandoned", true, true, false)
         .expect("approved terminal cascade should plan");
     match plan {
         TransitionPlan::CascadeTerminal { descendants } => {
@@ -223,7 +223,8 @@ fn no_op_transition_is_allowed() {
         .expect("db lookup should succeed")
         .expect("knot should exist");
 
-    let plan = plan_state_transition(&conn, &knot, "planning", false, false).expect("plan works");
+    let plan =
+        plan_state_transition(&conn, &knot, "planning", false, false, false).expect("plan works");
     assert!(matches!(plan, TransitionPlan::Allowed));
 
     let _ = std::fs::remove_dir_all(root);
@@ -243,7 +244,8 @@ fn terminal_plan_without_descendants_is_allowed() {
         .expect("db lookup should succeed")
         .expect("parent should exist");
 
-    let plan = plan_state_transition(&conn, &parent, "abandoned", true, false).expect("plan works");
+    let plan =
+        plan_state_transition(&conn, &parent, "abandoned", true, false, false).expect("plan works");
     assert!(matches!(plan, TransitionPlan::Allowed));
 
     let _ = std::fs::remove_dir_all(root);
@@ -268,7 +270,7 @@ fn terminal_plan_requires_approval_when_descendants_exist() {
         .expect("db lookup should succeed")
         .expect("parent should exist");
 
-    let err = plan_state_transition(&conn, &parent, "abandoned", true, false)
+    let err = plan_state_transition(&conn, &parent, "abandoned", true, false, false)
         .expect_err("approval should be required");
     match err {
         AppError::TerminalCascadeApprovalRequired { descendants, .. } => {
@@ -376,9 +378,64 @@ fn terminal_plan_allowed_when_all_descendants_already_in_target_state() {
         .expect("db lookup should succeed")
         .expect("parent should exist");
 
-    let plan = plan_state_transition(&conn, &parent, "shipped", true, false)
+    let plan = plan_state_transition(&conn, &parent, "shipped", true, false, false)
         .expect("should be allowed without cascade approval");
     assert!(matches!(plan, TransitionPlan::Allowed));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn skip_progress_check_allows_parent_claim_despite_behind_children() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let parent = app
+        .create_knot("Parent", None, Some("planning"), Some("default"))
+        .expect("parent should be created");
+    let child = app
+        .create_knot("Child", None, Some("planning"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge should be added");
+    let conn =
+        crate::db::open_connection(db.to_str().expect("db path should be utf8")).expect("db");
+    let parent = crate::db::get_knot_hot(&conn, &parent.id)
+        .expect("db lookup should succeed")
+        .expect("parent should exist");
+
+    let plan = plan_state_transition(&conn, &parent, "ready_for_plan_review", false, false, true)
+        .expect("skip_progress_check should bypass blocker");
+    assert!(matches!(plan, TransitionPlan::Allowed));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn skip_progress_check_still_enforces_terminal_cascade() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let child = app
+        .create_knot("Child", None, Some("planning"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge should be added");
+    let conn =
+        crate::db::open_connection(db.to_str().expect("db path should be utf8")).expect("db");
+    let parent = crate::db::get_knot_hot(&conn, &parent.id)
+        .expect("db lookup should succeed")
+        .expect("parent should exist");
+
+    let err = plan_state_transition(&conn, &parent, "abandoned", true, false, true)
+        .expect_err("terminal cascade should still require approval");
+    assert!(matches!(
+        err,
+        AppError::TerminalCascadeApprovalRequired { .. }
+    ));
 
     let _ = std::fs::remove_dir_all(root);
 }

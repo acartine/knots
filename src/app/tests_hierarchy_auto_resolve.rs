@@ -43,6 +43,7 @@ fn set_state_terminal_transition_resolves_parent_chain() {
         None,
         StateActorMetadata::default(),
         false,
+        false,
     )
     .expect("child should ship");
 
@@ -121,6 +122,7 @@ fn cascade_terminal_transition_resolves_other_parent_of_descendant() {
         None,
         StateActorMetadata::default(),
         true,
+        false,
     )
     .expect("cascade should succeed");
 

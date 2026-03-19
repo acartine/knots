@@ -630,6 +630,7 @@ mod tests {
             deferred_from_state: None,
             created_at: Some("2026-02-25T14:00:00Z".to_string()),
             edges: vec![],
+            child_summaries: vec![],
         };
 
         let fields = knot_show_fields(&knot, false);
@@ -684,6 +685,7 @@ mod tests {
             deferred_from_state: None,
             created_at: None,
             edges: vec![],
+            child_summaries: vec![],
         }
     }
 

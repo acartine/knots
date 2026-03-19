@@ -26,6 +26,7 @@ fn knot(id: &str, alias: Option<&str>, title: &str, state: &str) -> KnotView {
         deferred_from_state: None,
         created_at: None,
         edges: Vec::new(),
+        child_summaries: vec![],
     }
 }
 

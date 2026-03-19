@@ -77,6 +77,8 @@ pub struct KnotView {
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub edges: Vec<EdgeView>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub child_summaries: Vec<ChildSummary>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -126,6 +128,13 @@ pub struct EdgeView {
     pub src: String,
     pub kind: String,
     pub dst: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ChildSummary {
+    pub id: String,
+    pub title: String,
+    pub state: String,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -891,9 +900,11 @@ impl App {
             expected_profile_etag,
             state_actor,
             false,
+            false,
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn set_state_with_actor_and_options(
         &self,
         id: &str,
@@ -902,6 +913,7 @@ impl App {
         expected_profile_etag: Option<&str>,
         state_actor: StateActorMetadata,
         approve_terminal_cascade: bool,
+        skip_hierarchy_progress_check: bool,
     ) -> Result<KnotView, AppError> {
         let id = self.resolve_knot_token(id)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
@@ -918,6 +930,7 @@ impl App {
             expected_profile_etag,
             &state_actor,
             approve_terminal_cascade,
+            skip_hierarchy_progress_check,
         )?;
         if self.transitioned_to_terminal_resolution_state(&current, &updated)? {
             self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
@@ -1003,6 +1016,7 @@ impl App {
                 &next_state,
                 next_is_terminal,
                 approve_terminal_cascade,
+                false,
             )? {
                 TransitionPlan::Allowed if state != next_state => {
                     if next_state == "deferred" && state != "deferred" {
@@ -1341,6 +1355,7 @@ impl App {
         self.apply_alias_to_knot(KnotView::from(updated))
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn apply_state_transition_locked(
         &self,
         current: &KnotCacheRecord,
@@ -1349,6 +1364,7 @@ impl App {
         expected_profile_etag: Option<&str>,
         state_actor: &StateActorMetadata,
         approve_terminal_cascade: bool,
+        skip_hierarchy_progress_check: bool,
     ) -> Result<KnotCacheRecord, AppError> {
         let profile = self.resolve_profile_for_record(current)?;
         let knot_type = parse_knot_type(current.knot_type.as_deref());
@@ -1387,6 +1403,7 @@ impl App {
             next_state,
             next_is_terminal,
             approve_terminal_cascade,
+            skip_hierarchy_progress_check,
         )? {
             TransitionPlan::Allowed => self.write_state_change_locked(
                 current,
@@ -1805,6 +1822,21 @@ impl App {
             let mut view = self.apply_alias_to_knot(KnotView::from(knot))?;
             let edges = db::list_edges(&self.conn, &id, db::EdgeDirection::Both)?;
             view.edges = edges.into_iter().map(EdgeView::from).collect();
+            view.child_summaries = view
+                .edges
+                .iter()
+                .filter(|e| e.kind == "parent_of" && e.src == id)
+                .filter_map(|e| {
+                    db::get_knot_hot(&self.conn, &e.dst)
+                        .ok()
+                        .flatten()
+                        .map(|child| ChildSummary {
+                            id: child.id,
+                            title: child.title,
+                            state: child.state,
+                        })
+                })
+                .collect();
             return Ok(Some(view));
         }
         self.rehydrate(&id)
@@ -3038,6 +3070,7 @@ impl From<KnotCacheRecord> for KnotView {
             deferred_from_state: value.deferred_from_state,
             created_at: value.created_at,
             edges: Vec::new(),
+            child_summaries: Vec::new(),
         }
     }
 }

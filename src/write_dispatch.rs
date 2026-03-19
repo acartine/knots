@@ -291,6 +291,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                             agent_version: args.agent_version.clone(),
                         },
                         approve_terminal_cascade,
+                        false,
                     )
                 },
             )?;
@@ -432,6 +433,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                             agent_version: args.agent_version.clone(),
                         },
                         approve_terminal_cascade,
+                        false,
                     )
                 },
             )?;
@@ -468,6 +470,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                     agent_model: args.agent_model.clone(),
                     agent_version: args.agent_version.clone(),
                 },
+                false,
                 false,
             )?;
             Ok(format_rollback_output(
@@ -1300,6 +1303,7 @@ mod tests {
             deferred_from_state: None,
             created_at: None,
             edges: vec![],
+            child_summaries: vec![],
         };
 
         let text = format_next_output(&knot, "idea", Some("agent"), false);

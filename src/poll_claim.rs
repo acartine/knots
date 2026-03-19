@@ -147,12 +147,14 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
         ..actor
     };
     let agent_info = build_agent_info_from_actor(&claim_actor);
-    let claimed = app.set_state_with_actor(
+    let claimed = app.set_state_with_actor_and_options(
         &knot.id,
         &next_action,
         false,
         knot.profile_etag.as_deref(),
         claim_actor,
+        false,
+        true,
     )?;
     // Create and bind lease (silent - no CLI output)
     if let Some(info) = agent_info {

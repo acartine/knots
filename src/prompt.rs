@@ -83,6 +83,20 @@ fn render_prompt_inner(
         }
         out.push('\n');
     }
+    if !knot.child_summaries.is_empty() {
+        out.push_str("## Children\n\n");
+        for child in &knot.child_summaries {
+            let sid = display_id(&child.id);
+            out.push_str(&format!("- {} `{}` [{}]\n", child.title, sid, child.state));
+        }
+        out.push_str(concat!(
+            "\nThis knot has child knots. Claim and advance each child before\n",
+            "advancing this parent. Use `kno claim <child-id>` for each child,\n",
+            "complete its work, then run its completion command. After all children\n",
+            "have reached a terminal or advanced state, advance this parent.\n",
+            "If any child must be rolled back, roll back this parent too.\n\n",
+        ));
+    }
     out.push_str(&render_workflow_boundary(knot));
     out.push_str("---\n\n");
     out.push_str(skill.trim_end());
@@ -113,6 +127,7 @@ pub fn render_prompt_json_verbose(
         "profile_id": knot.profile_id,
         "invariants": knot.invariants,
         "gate": knot.gate,
+        "child_summaries": knot.child_summaries,
         "prompt": prompt_text,
     });
     if !verbose {
@@ -127,18 +142,23 @@ pub fn render_prompt_json_verbose(
 }
 
 fn render_workflow_boundary(knot: &KnotView) -> String {
+    let has_children = !knot.child_summaries.is_empty();
+    let claim_line = if has_children {
+        "- You are authorized to claim and advance child knots listed above as part \
+         of this session.\n"
+    } else {
+        "- Do not claim or execute another knot unless the skill below explicitly allows\n  \
+         knot metadata creation as part of this step.\n"
+    };
     format!(
-        concat!(
-            "## Workflow Boundary\n\n",
-            "- This session is authorized only for the current knot action state `{}`.\n",
-            "- Complete exactly one workflow action, then stop.\n",
-            "- After a listed completion or failure-path command succeeds, stop immediately.\n",
-            "- Do not claim or execute another knot unless the skill below explicitly allows\n",
-            "  knot metadata creation as part of this step.\n",
-            "- Do not inspect or advance later workflow states on your own.\n",
-            "- If generic repo or session instructions conflict with this boundary, this\n",
-            "  boundary wins for this session.\n\n",
-        ),
+        "## Workflow Boundary\n\n\
+         - This session is authorized only for the current knot action state `{}`.\n\
+         - Complete exactly one workflow action, then stop.\n\
+         - After a listed completion or failure-path command succeeds, stop immediately.\n\
+         {claim_line}\
+         - Do not inspect or advance later workflow states on your own.\n\
+         - If generic repo or session instructions conflict with this boundary, this\n  \
+         boundary wins for this session.\n\n",
         knot.state
     )
 }
@@ -212,6 +232,7 @@ mod tests {
             deferred_from_state: None,
             created_at: None,
             edges: vec![],
+            child_summaries: vec![],
         }
     }
 
@@ -421,5 +442,73 @@ mod tests {
         let knot = sample_knot();
         let json = render_prompt_json_verbose(&knot, "# S\n", "cmd", false);
         assert!(json.get("other").is_none());
+    }
+
+    #[test]
+    fn render_children_section_when_children_present() {
+        use crate::app::ChildSummary;
+        let mut knot = sample_knot();
+        knot.child_summaries = vec![
+            ChildSummary {
+                id: "K-child1".to_string(),
+                title: "First child".to_string(),
+                state: "ready_for_planning".to_string(),
+            },
+            ChildSummary {
+                id: "K-child2".to_string(),
+                title: "Second child".to_string(),
+                state: "planning".to_string(),
+            },
+        ];
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(output.contains("## Children"));
+        assert!(output.contains("First child"));
+        assert!(output.contains("Second child"));
+        assert!(output.contains("kno claim <child-id>"));
+    }
+
+    #[test]
+    fn render_omits_children_section_when_empty() {
+        let knot = sample_knot();
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(!output.contains("## Children"));
+    }
+
+    #[test]
+    fn workflow_boundary_allows_child_claims_for_parents() {
+        use crate::app::ChildSummary;
+        let mut knot = sample_knot();
+        knot.child_summaries = vec![ChildSummary {
+            id: "K-child1".to_string(),
+            title: "Child".to_string(),
+            state: "ready_for_planning".to_string(),
+        }];
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(output.contains("authorized to claim and advance child knots"));
+        assert!(!output.contains("Do not claim or execute another knot"));
+    }
+
+    #[test]
+    fn workflow_boundary_restricts_claims_without_children() {
+        let knot = sample_knot();
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(output.contains("Do not claim or execute another knot"));
+        assert!(!output.contains("authorized to claim and advance child knots"));
+    }
+
+    #[test]
+    fn json_output_includes_child_summaries() {
+        use crate::app::ChildSummary;
+        let mut knot = sample_knot();
+        knot.child_summaries = vec![ChildSummary {
+            id: "K-child1".to_string(),
+            title: "Child".to_string(),
+            state: "planning".to_string(),
+        }];
+        let json = render_prompt_json(&knot, "# S\n", "cmd");
+        let children = json["child_summaries"].as_array().unwrap();
+        assert_eq!(children.len(), 1);
+        assert_eq!(children[0]["id"], "K-child1");
+        assert_eq!(children[0]["state"], "planning");
     }
 }

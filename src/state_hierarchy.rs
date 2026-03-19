@@ -53,6 +53,7 @@ pub fn plan_state_transition(
     target_state: &str,
     target_is_terminal: bool,
     approve_terminal_cascade: bool,
+    skip_progress_check: bool,
 ) -> Result<TransitionPlan, AppError> {
     if knot.state == target_state {
         return Ok(TransitionPlan::Allowed);
@@ -76,6 +77,10 @@ pub fn plan_state_transition(
             target_state: target_state.to_string(),
             descendants,
         });
+    }
+
+    if skip_progress_check {
+        return Ok(TransitionPlan::Allowed);
     }
 
     let target_rank = effective_target_rank(knot, target_state)?;

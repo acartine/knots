@@ -64,6 +64,7 @@ fn knot_ref_prefers_alias_when_available() {
         deferred_from_state: None,
         created_at: None,
         edges: Vec::new(),
+        child_summaries: vec![],
     };
     assert_eq!(knot_ref(&with_alias), "A.1 (123)");
 
@@ -213,6 +214,7 @@ fn knot_json_serialization_always_includes_step_history_field() {
         deferred_from_state: None,
         created_at: None,
         edges: Vec::new(),
+        child_summaries: vec![],
     };
 
     let json = serde_json::to_value(&knot).expect("serialize knot");

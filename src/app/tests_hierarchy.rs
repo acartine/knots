@@ -89,6 +89,7 @@ fn parent_cannot_advance_past_direct_child_state() {
         None,
         StateActorMetadata::default(),
         false,
+        false,
     );
     assert!(
         matches!(forced, Err(AppError::HierarchyProgressBlocked { .. })),
@@ -180,6 +181,7 @@ fn terminal_transition_requires_approval_when_descendants_exist() {
             None,
             StateActorMetadata::default(),
             false,
+            false,
         )
         .expect_err("terminal parent transition should require approval");
     match err {
@@ -238,6 +240,7 @@ fn approved_terminal_cascade_updates_descendants_and_marks_events() {
                 agent_version: Some("1".to_string()),
             },
             true,
+            false,
         )
         .expect("approved cascade should succeed");
     assert_eq!(parent.state, "abandoned");
@@ -340,6 +343,7 @@ fn recursive_cascade_reaches_great_grandchildren() {
             None,
             StateActorMetadata::default(),
             true,
+            false,
         )
         .expect("approved cascade should succeed");
     assert_eq!(parent.state, "abandoned");
@@ -391,6 +395,7 @@ fn deferred_descendant_is_cascaded_in_terminal_transition() {
             None,
             StateActorMetadata::default(),
             true,
+            false,
         )
         .expect("cascade should include deferred child");
     assert_eq!(parent.state, "abandoned");
