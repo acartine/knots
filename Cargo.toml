@@ -3,6 +3,9 @@ name = "knots"
 version = "0.7.6"
 edition = "2021"
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
+
 [dependencies]
 clap = { version = "4.5", features = ["derive", "env"] }
 rusqlite = { version = "0.32", features = ["bundled"] }

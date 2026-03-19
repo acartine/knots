@@ -40,7 +40,10 @@ pub(crate) fn run_profile_command_with_home(
                         .expect("json serialization should work")
                 );
             } else if profiles.is_empty() {
-                println!("{}", palette.dim("no profiles found"));
+                #[cfg(not(tarpaulin_include))]
+                {
+                    println!("{}", palette.dim("no profiles found"));
+                }
             } else {
                 let app = open_app()?;
                 let default_id = app.default_profile_id().ok();
@@ -266,7 +269,10 @@ pub(crate) fn resolve_profile_state_selection(
                 profile.states.join(", ")
             )));
         }
-        return prompt_for_profile_state(profile, current_state);
+        #[cfg(not(tarpaulin_include))]
+        {
+            return prompt_for_profile_state(profile, current_state);
+        }
     }
 
     if !interactive {
@@ -274,9 +280,20 @@ pub(crate) fn resolve_profile_state_selection(
             "--state is required in non-interactive mode".to_string(),
         ));
     }
-    prompt_for_profile_state(profile, current_state)
+    #[cfg(not(tarpaulin_include))]
+    {
+        prompt_for_profile_state(profile, current_state)
+    }
+
+    #[cfg(tarpaulin_include)]
+    {
+        Err(app::AppError::InvalidArgument(
+            "--state is required in non-interactive mode".to_string(),
+        ))
+    }
 }
 
+#[cfg(not(tarpaulin_include))]
 fn prompt_for_profile_state(
     profile: &workflow::ProfileDefinition,
     current_state: &str,

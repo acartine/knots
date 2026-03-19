@@ -190,9 +190,9 @@ fn validate_lease_transition(from: &str, to: &str, force: bool) -> Result<(), Pr
 #[cfg(test)]
 mod tests {
     use super::{
-        initial_state, is_action_state, is_queue_state, is_terminal_state, next_happy_path_state,
-        owner_kind_for_state, queue_state_for_stage, validate_transition, EVALUATING,
-        READY_TO_EVALUATE,
+        initial_state, is_action_state, is_action_state_for_profile, is_queue_state,
+        is_queue_state_for_profile, is_terminal_state, next_happy_path_state, owner_kind_for_state,
+        queue_state_for_stage, validate_transition, EVALUATING, READY_TO_EVALUATE,
     };
     use crate::domain::gate::{GateData, GateOwnerKind};
     use crate::domain::knot_type::KnotType;
@@ -463,5 +463,83 @@ mod tests {
             true,
         )
         .is_ok());
+    }
+
+    #[test]
+    fn work_runtime_delegates_to_profile_definition() {
+        let registry = ProfileRegistry::load().unwrap();
+        let gate = GateData::default();
+        assert_eq!(
+            initial_state(KnotType::Work, registry.require("autopilot").unwrap()),
+            "ready_for_planning"
+        );
+        assert!(is_queue_state_for_profile(
+            &registry,
+            "autopilot",
+            KnotType::Work,
+            "ready_for_planning",
+        )
+        .unwrap());
+        assert!(
+            is_action_state_for_profile(&registry, "autopilot", KnotType::Work, "planning",)
+                .unwrap()
+        );
+        assert_eq!(
+            next_happy_path_state(&registry, "autopilot", KnotType::Work, "planning").unwrap(),
+            Some("ready_for_plan_review".to_string())
+        );
+        assert_eq!(
+            owner_kind_for_state(
+                &registry,
+                "autopilot",
+                KnotType::Work,
+                &gate,
+                "implementation"
+            )
+            .unwrap(),
+            Some(OwnerKind::Agent)
+        );
+    }
+
+    #[test]
+    fn queue_and_action_checks_report_unknown_profiles() {
+        let registry = ProfileRegistry::load().unwrap();
+        let err = is_queue_state_for_profile(&registry, "missing", KnotType::Work, "planning")
+            .expect_err("missing profile should fail");
+        assert!(err.to_string().contains("unknown profile"));
+        let err = is_action_state_for_profile(&registry, "missing", KnotType::Work, "planning")
+            .expect_err("missing profile should fail");
+        assert!(err.to_string().contains("unknown profile"));
+    }
+
+    #[test]
+    fn gate_and_lease_queue_action_helpers_cover_remaining_paths() {
+        let registry = ProfileRegistry::load().unwrap();
+        assert!(is_queue_state_for_profile(
+            &registry,
+            "autopilot",
+            KnotType::Gate,
+            READY_TO_EVALUATE,
+        )
+        .unwrap());
+        assert!(is_queue_state_for_profile(
+            &registry,
+            "autopilot",
+            KnotType::Lease,
+            super::LEASE_READY,
+        )
+        .unwrap());
+        assert!(
+            is_action_state_for_profile(&registry, "autopilot", KnotType::Gate, EVALUATING,)
+                .unwrap()
+        );
+        assert!(is_action_state_for_profile(
+            &registry,
+            "autopilot",
+            KnotType::Lease,
+            super::LEASE_ACTIVE,
+        )
+        .unwrap());
+        assert_eq!(queue_state_for_stage("unknown-stage"), None);
     }
 }

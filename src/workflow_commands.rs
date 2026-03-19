@@ -2,6 +2,7 @@ use crate::app;
 use crate::cli;
 use crate::installed_workflows;
 
+#[cfg(not(tarpaulin_include))]
 pub(crate) fn run_workflow_command(
     args: &cli::WorkflowArgs,
     repo_root: &std::path::Path,

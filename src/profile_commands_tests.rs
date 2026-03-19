@@ -32,6 +32,28 @@ fn profile_output_mode_labels_remote_main_as_merged() {
         format_profile_output_mode(&OutputMode::RemoteMain),
         "RemoteMain (merged)"
     );
+    assert_eq!(format_profile_output_mode(&OutputMode::Local), "Local");
+    assert_eq!(format_profile_output_mode(&OutputMode::Remote), "Remote");
+    assert_eq!(format_profile_output_mode(&OutputMode::Pr), "Pr");
+    assert_eq!(
+        format_profile_gate_mode(&crate::workflow::GateMode::Optional),
+        "Optional"
+    );
+    assert_eq!(
+        format_profile_gate_mode(&crate::workflow::GateMode::Skipped),
+        "Skipped"
+    );
+}
+
+#[test]
+fn profile_helpers_cover_empty_fields_and_enabled_palette_paths() {
+    let lines = format_profile_fields(&[], &ProfilePalette { enabled: false });
+    assert!(lines.is_empty());
+
+    let palette = ProfilePalette { enabled: true };
+    assert_eq!(palette.label("id"), "\u{1b}[36mid\u{1b}[0m");
+    assert_eq!(palette.heading("Profile"), "\u{1b}[1;36mProfile\u{1b}[0m");
+    assert_eq!(palette.dim("muted"), "\u{1b}[2mmuted\u{1b}[0m");
 }
 
 #[test]
@@ -185,6 +207,45 @@ fn profile_set_requires_state_in_non_interactive_mode() {
         .expect("knot should exist");
     assert_eq!(updated.profile_id, "autopilot_no_planning");
     assert_eq!(updated.state, "ready_for_implementation");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn profile_set_formats_alias_when_available() {
+    let root = unique_dir("knots-profcmd-alias");
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let db_str = db_path.to_str().expect("utf8 db path").to_string();
+
+    let app = crate::app::App::open(&db_str, root.clone()).expect("app should open");
+    let parent = app
+        .create_knot("Parent", None, Some("planning"), Some("autopilot"))
+        .expect("parent should exist");
+    let child = app
+        .create_knot("Child", None, Some("planning"), Some("autopilot"))
+        .expect("child should exist");
+    app.add_edge(&parent.id, "parent_of", &child.id)
+        .expect("edge should add");
+
+    run_profile_command(
+        &ProfileArgs {
+            command: ProfileSubcommands::Set(ProfileSetArgs {
+                id: child.id.clone(),
+                profile: "autopilot_no_planning".to_string(),
+                state: Some("ready_for_implementation".to_string()),
+                if_match: None,
+            }),
+        },
+        &root,
+        &db_str,
+    )
+    .expect("profile set should succeed with alias");
+
+    let updated = app
+        .show_knot(&child.id)
+        .expect("show should succeed")
+        .expect("child should exist");
+    assert!(updated.alias.is_some());
 
     let _ = std::fs::remove_dir_all(root);
 }

@@ -1344,6 +1344,9 @@ impl fmt::Display for WorkflowDefinition {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
+    use std::sync::{Mutex, OnceLock};
+    use uuid::Uuid;
 
     const SAMPLE_BUNDLE: &str = r#"
 [workflow]
@@ -1427,6 +1430,17 @@ approved = "done"
 changes = "ready_for_work"
 "#;
 
+    fn unique_workspace(prefix: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
+        std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
+        root
+    }
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
     #[test]
     fn parses_bundle_and_renders_prompt() {
         let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
@@ -1441,5 +1455,802 @@ changes = "ready_for_work"
         let rendered = prompt.render(&workflow, profile);
         assert!(rendered.contains("Ship remote_main output."));
         assert!(rendered.contains("Built output"));
+    }
+
+    #[test]
+    fn repo_config_round_trips_through_disk() {
+        let root = unique_workspace("knots-installed-workflows-config");
+        let config = WorkflowRepoConfig {
+            current_workflow: Some("custom_flow".to_string()),
+            current_version: Some(3),
+            current_profile: Some("custom_flow/autopilot".to_string()),
+        };
+        write_repo_config(&root, &config).expect("config should write");
+        let loaded = read_repo_config(&root).expect("config should load");
+        assert_eq!(loaded, config);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn install_bundle_writes_repo_local_registry_and_sets_current_selection() {
+        let root = unique_workspace("knots-installed-workflows-install");
+        let source = root.join("custom-flow.toml");
+        std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
+
+        let workflow_id = install_bundle(&root, &source).expect("bundle should install");
+        assert_eq!(workflow_id, "custom_flow");
+
+        let version_dir = workflows_root(&root).join("custom_flow/3");
+        assert!(version_dir.join("bundle.json").exists());
+        assert!(version_dir.join("bundle.toml").exists());
+        assert!(workflows_root(&root)
+            .join("custom_flow/bundle.json")
+            .exists());
+
+        let current = read_repo_config(&root).expect("current config should load");
+        assert_eq!(current.current_workflow.as_deref(), Some("custom_flow"));
+        assert_eq!(current.current_version, Some(3));
+        assert_eq!(
+            current.current_profile.as_deref(),
+            Some("custom_flow/autopilot")
+        );
+
+        let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+        let workflow = registry
+            .current_workflow()
+            .expect("current workflow should resolve");
+        assert_eq!(workflow.id, "custom_flow");
+        assert_eq!(registry.current_profile_id(), Some("custom_flow/autopilot"));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn set_current_workflow_selection_keeps_builtin_profiles_unscoped() {
+        let root = unique_workspace("knots-installed-workflows-builtin");
+        let config =
+            set_current_workflow_selection(&root, COMPATIBILITY_WORKFLOW_ID, Some(1), None)
+                .expect("builtin workflow should select");
+        assert_eq!(
+            config.current_workflow.as_deref(),
+            Some(COMPATIBILITY_WORKFLOW_ID)
+        );
+        assert_eq!(config.current_profile.as_deref(), Some("autopilot"));
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn resolve_bundle_source_path_finds_supported_candidates_and_errors_cleanly() {
+        let root = unique_workspace("knots-installed-workflows-resolve");
+        let candidate_dir = root.join("bundle-dir");
+        std::fs::create_dir_all(candidate_dir.join("dist")).expect("dist should exist");
+        std::fs::write(candidate_dir.join("dist/bundle.toml"), SAMPLE_BUNDLE)
+            .expect("bundle should write");
+        let resolved =
+            resolve_bundle_source_path(&candidate_dir).expect("candidate bundle should resolve");
+        assert!(resolved.ends_with("dist/bundle.toml"));
+
+        let missing_dir = root.join("missing");
+        std::fs::create_dir_all(&missing_dir).expect("missing dir should exist");
+        let err = resolve_bundle_source_path(&missing_dir).expect_err("empty dir should fail");
+        assert!(err.to_string().contains("no Loom bundle found"));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn installed_bundle_path_prefers_json_and_falls_back_to_toml() {
+        let root = unique_workspace("knots-installed-workflows-installed-path");
+        let workflow_dir = root.join("custom_flow/3");
+        std::fs::create_dir_all(&workflow_dir).expect("workflow dir should exist");
+        std::fs::write(workflow_dir.join("bundle.toml"), SAMPLE_BUNDLE)
+            .expect("toml bundle should write");
+        assert_eq!(
+            installed_bundle_path(&workflow_dir),
+            Some(workflow_dir.join("bundle.toml"))
+        );
+        std::fs::write(workflow_dir.join("bundle.json"), "{}").expect("json bundle should write");
+        assert_eq!(
+            installed_bundle_path(&workflow_dir),
+            Some(workflow_dir.join("bundle.json"))
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn json_bundle_round_trips_and_preserves_prompt_routes() {
+        let rendered =
+            render_json_bundle_from_toml(SAMPLE_BUNDLE).expect("json render should work");
+        let workflow = parse_bundle_json(&rendered).expect("json bundle should parse");
+        let profile = workflow
+            .require_profile("autopilot")
+            .expect("profile should exist");
+        assert_eq!(profile.initial_state, "ready_for_work");
+        assert_eq!(
+            profile.next_happy_path_state("work"),
+            Some("ready_for_review")
+        );
+        assert_eq!(
+            profile.prompt_for_action_state("review"),
+            Some("Review it.\n")
+        );
+        assert_eq!(
+            profile.acceptance_for_action_state("work"),
+            &["Built output".to_string()]
+        );
+    }
+
+    #[test]
+    fn parse_bundle_json_rejects_unsupported_metadata() {
+        let wrong_format = r#"{
+  "format": "other",
+  "format_version": 1,
+  "workflow": {"name": "x", "version": 1, "default_profile": null},
+  "states": [],
+  "steps": [],
+  "phases": [],
+  "profiles": [],
+  "prompts": []
+}"#;
+        let err = parse_bundle_json(wrong_format).expect_err("unknown format should fail");
+        assert!(err.to_string().contains("unsupported bundle format"));
+
+        let wrong_version = r#"{
+  "format": "knots-bundle",
+  "format_version": 99,
+  "workflow": {"name": "x", "version": 1, "default_profile": null},
+  "states": [],
+  "steps": [],
+  "phases": [],
+  "profiles": [],
+  "prompts": []
+}"#;
+        let err = parse_bundle_json(wrong_version).expect_err("unknown version should fail");
+        assert!(err
+            .to_string()
+            .contains("unsupported bundle format version"));
+    }
+
+    #[test]
+    fn parse_bundle_toml_rejects_multiple_success_outcomes() {
+        let invalid = SAMPLE_BUNDLE.replace(
+            "[prompts.work.success]\ncomplete = \"ready_for_review\"\n",
+            "[prompts.work.success]\ncomplete = \"ready_for_review\"\nalso_complete = \"done\"\n",
+        );
+        let err = parse_bundle_toml(&invalid).expect_err("multiple success routes should fail");
+        assert!(err.to_string().contains("multiple success outcomes"));
+    }
+
+    #[test]
+    fn parse_bundle_toml_rejects_unsupported_output_mode() {
+        let invalid = SAMPLE_BUNDLE.replace("output = \"remote_main\"", "output = \"saturn\"");
+        let err = parse_bundle_toml(&invalid).expect_err("unsupported output should fail");
+        assert!(err.to_string().contains("unsupported output mode"));
+    }
+
+    #[test]
+    fn compatibility_workflow_exposes_builtin_prompts_and_profiles() {
+        let workflow = compatibility_workflow().expect("compatibility workflow should build");
+        assert!(workflow.builtin);
+        assert_eq!(workflow.default_profile.as_deref(), Some("autopilot"));
+        assert!(workflow.prompts.contains_key("planning"));
+        assert!(workflow.action_prompts.contains_key("implementation"));
+        assert!(workflow.require_profile("autopilot").is_ok());
+    }
+
+    #[test]
+    fn workflow_registry_helpers_cover_lookup_and_sorting_paths() {
+        let root = unique_workspace("knots-installed-workflows-registry");
+        assert_eq!(
+            InstalledWorkflowRegistry::load(&root)
+                .expect("registry should load")
+                .current_workflow_id(),
+            COMPATIBILITY_WORKFLOW_ID
+        );
+
+        let source = root.join("custom-flow.toml");
+        std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
+        install_bundle(&root, &source).expect("bundle should install");
+
+        let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+        assert_eq!(registry.current_workflow_version(), Some(3));
+        assert_eq!(registry.current_profile_id(), Some("custom_flow/autopilot"));
+        assert_eq!(
+            registry
+                .require_workflow("custom_flow")
+                .expect("workflow should exist")
+                .to_string(),
+            "custom_flow v3"
+        );
+        assert!(registry.require_workflow("missing").is_err());
+        assert!(registry
+            .require_workflow_version("custom_flow", 99)
+            .is_err());
+
+        let listed = registry
+            .list()
+            .into_iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>();
+        assert_eq!(listed, vec!["compatibility v1", "custom_flow v3"]);
+
+        let workflow = registry
+            .require_workflow_version("custom_flow", 3)
+            .expect("workflow should exist");
+        assert_eq!(workflow.display_description(), None);
+        assert_eq!(workflow.list_profiles().len(), 1);
+        assert!(workflow.require_profile("missing").is_err());
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn read_bundle_source_supports_file_and_directory_inputs() {
+        let root = unique_workspace("knots-installed-workflows-read-source");
+        let toml_path = root.join("bundle.toml");
+        std::fs::write(&toml_path, SAMPLE_BUNDLE).expect("bundle should write");
+        let (raw, format) = read_bundle_source(&toml_path).expect("toml bundle should load");
+        assert_eq!(raw, SAMPLE_BUNDLE);
+        assert!(matches!(format, BundleFormat::Toml));
+
+        let json_dir = root.join("json");
+        std::fs::create_dir_all(&json_dir).expect("dir should exist");
+        let json_bundle = render_json_bundle_from_toml(SAMPLE_BUNDLE).expect("json render");
+        std::fs::write(json_dir.join("bundle.json"), &json_bundle).expect("json bundle writes");
+        let (raw, format) = read_bundle_source(&json_dir).expect("json dir should load");
+        assert_eq!(raw, json_bundle);
+        assert!(matches!(format, BundleFormat::Json));
+
+        let err = read_bundle_source(&root.join("does-not-exist")).expect_err("missing source");
+        assert!(err.to_string().contains("does not exist"));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn parse_bundle_dispatches_for_both_supported_formats() {
+        let json_bundle = render_json_bundle_from_toml(SAMPLE_BUNDLE).expect("json render");
+        let from_toml = parse_bundle(SAMPLE_BUNDLE, BundleFormat::Toml).expect("toml parse");
+        let from_json = parse_bundle(&json_bundle, BundleFormat::Json).expect("json parse");
+        assert_eq!(from_toml.id, from_json.id);
+        assert_eq!(from_toml.version, from_json.version);
+    }
+
+    #[test]
+    fn parse_bundle_toml_reports_missing_phase_and_step_references() {
+        let missing_phase = SAMPLE_BUNDLE.replace("phases = [\"main\"]", "phases = [\"missing\"]");
+        let err = parse_bundle_toml(&missing_phase).expect_err("missing phase should fail");
+        assert!(err.to_string().contains("unknown phase"));
+
+        let missing_step = SAMPLE_BUNDLE.replace("produce = \"impl\"", "produce = \"missing\"");
+        let err = parse_bundle_toml(&missing_step).expect_err("missing step should fail");
+        assert!(err.to_string().contains("unknown step"));
+    }
+
+    #[test]
+    fn parse_bundle_toml_reports_invalid_state_kinds_and_prompt_metadata() {
+        let invalid_queue = SAMPLE_BUNDLE.replace(
+            "[states.ready_for_work]\ndisplay_name = \"Ready for Work\"\nkind = \"queue\"\n",
+            "[states.ready_for_work]\ndisplay_name = \"Ready for Work\"\nkind = \"action\"\n",
+        );
+        let err = parse_bundle_toml(&invalid_queue).expect_err("queue kind should fail");
+        assert!(err.to_string().contains("must be a queue state"));
+
+        let invalid_action = SAMPLE_BUNDLE.replace(
+            "[states.work]\ndisplay_name = \"Work\"\nkind = \"action\"\naction_type = \"produce\"\nexecutor = \"agent\"\nprompt = \"work\"\n",
+            "[states.work]\ndisplay_name = \"Work\"\nkind = \"queue\"\naction_type = \"produce\"\nexecutor = \"agent\"\nprompt = \"work\"\n",
+        );
+        let err = parse_bundle_toml(&invalid_action).expect_err("action kind should fail");
+        assert!(err.to_string().contains("must be an action state"));
+
+        let missing_prompt = SAMPLE_BUNDLE.replace("prompt = \"work\"\n", "");
+        let err = parse_bundle_toml(&missing_prompt).expect_err("missing prompt should fail");
+        assert!(err.to_string().contains("missing prompt"));
+
+        let unknown_prompt = SAMPLE_BUNDLE.replace("prompt = \"work\"", "prompt = \"missing\"");
+        let err = parse_bundle_toml(&unknown_prompt).expect_err("unknown prompt should fail");
+        assert!(err.to_string().contains("references unknown prompt"));
+    }
+
+    #[test]
+    fn parse_bundle_toml_requires_success_targets_and_honors_owner_overrides() {
+        let missing_success = SAMPLE_BUNDLE.replace(
+            "[prompts.work.success]\ncomplete = \"ready_for_review\"\n",
+            "",
+        );
+        let err = parse_bundle_toml(&missing_success).expect_err("missing success should fail");
+        assert!(err.to_string().contains("must define one success target"));
+
+        let overridden = SAMPLE_BUNDLE.replace(
+            "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\noutput = \"remote_main\"\n",
+            "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\noutput = \"remote_main\"\noverrides.work = \"human\"\n",
+        );
+        let workflow = parse_bundle_toml(&overridden).expect("override bundle should parse");
+        let profile = workflow
+            .require_profile("autopilot")
+            .expect("profile should exist");
+        assert_eq!(
+            profile.owners.owner_kind_for_state("work"),
+            Some(&OwnerKind::Human)
+        );
+        assert_eq!(
+            profile.owners.owner_kind_for_state("ready_for_work"),
+            Some(&OwnerKind::Human)
+        );
+    }
+
+    #[test]
+    fn helper_functions_cover_prompt_rendering_and_output_modes() {
+        assert_eq!(
+            namespaced_profile_id("custom", "autopilot"),
+            "custom/autopilot"
+        );
+        assert!(matches!(parse_output_mode(None), Ok(OutputMode::Local)));
+        assert!(matches!(
+            parse_output_mode(Some("remote")),
+            Ok(OutputMode::Remote)
+        ));
+        assert!(matches!(parse_output_mode(Some("pr")), Ok(OutputMode::Pr)));
+        assert_eq!(output_mode_slug(&OutputMode::RemoteMain), "remote_main");
+
+        let mut values = vec!["a".to_string()];
+        push_unique(&mut values, "a".to_string());
+        push_unique(&mut values, "b".to_string());
+        assert_eq!(values, vec!["a".to_string(), "b".to_string()]);
+
+        let mut unresolved = Vec::new();
+        let rendered = render_prompt_template(
+            "Hello {{ name }} and {{ missing }} {{ missing }}",
+            &BTreeMap::from([(String::from("name"), String::from("Loom"))]),
+            &mut unresolved,
+        );
+        assert_eq!(rendered, "Hello Loom and {{ missing }} {{ missing }}");
+        assert_eq!(unresolved, vec!["missing".to_string()]);
+
+        let mut unresolved = Vec::new();
+        let rendered = render_prompt_template("{{ name ", &BTreeMap::new(), &mut unresolved);
+        assert_eq!(rendered, "{{ name ");
+        assert!(unresolved.is_empty());
+    }
+
+    #[test]
+    fn read_bundle_source_can_shell_out_to_loom_for_package_directories() {
+        let _guard = env_lock().lock().expect("env lock");
+        let root = unique_workspace("knots-installed-workflows-loom-dir");
+        let bin_dir = root.join("bin");
+        let package_dir = root.join("pkg");
+        std::fs::create_dir_all(&bin_dir).expect("bin dir should exist");
+        std::fs::create_dir_all(&package_dir).expect("package dir should exist");
+        std::fs::write(package_dir.join("loom.toml"), "name = 'pkg'").expect("loom.toml writes");
+
+        let json_bundle = render_json_bundle_from_toml(SAMPLE_BUNDLE).expect("json render");
+        let loom_script = format!(
+            "#!/bin/sh\nif [ \"$1\" = \"build\" ] && [ \"$3\" = \"--emit\" ] && [ \"$4\" = \"knots-bundle\" ]; then\ncat <<'EOF'\n{json_bundle}\nEOF\nelse\nexit 1\nfi\n"
+        );
+        let loom_path = bin_dir.join("loom");
+        std::fs::write(&loom_path, loom_script).expect("loom script writes");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = std::fs::metadata(&loom_path)
+                .expect("metadata")
+                .permissions();
+            perms.set_mode(0o755);
+            std::fs::set_permissions(&loom_path, perms).expect("permissions");
+        }
+
+        let original_path = std::env::var_os("PATH");
+        let joined_path = match &original_path {
+            Some(path) => {
+                let mut paths = vec![bin_dir.clone()];
+                paths.extend(std::env::split_paths(path));
+                std::env::join_paths(paths).expect("joined path")
+            }
+            None => std::env::join_paths([bin_dir.clone()]).expect("joined path"),
+        };
+        std::env::set_var("PATH", joined_path);
+
+        let (raw, format) = read_bundle_source(&package_dir).expect("loom package should build");
+        assert!(matches!(format, BundleFormat::Json));
+        assert!(raw.contains("\"format\": \"knots-bundle\""));
+
+        match original_path {
+            Some(path) => std::env::set_var("PATH", path),
+            None => std::env::remove_var("PATH"),
+        }
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn registry_prefers_latest_version_when_current_selection_has_no_version() {
+        let root = unique_workspace("knots-installed-workflows-latest");
+        let v3 = root.join("custom-v3.toml");
+        let v4 = root.join("custom-v4.toml");
+        std::fs::write(&v3, SAMPLE_BUNDLE).expect("v3 writes");
+        std::fs::write(&v4, SAMPLE_BUNDLE.replace("version = 3", "version = 4"))
+            .expect("v4 writes");
+        install_bundle(&root, &v3).expect("v3 installs");
+        install_bundle(&root, &v4).expect("v4 installs");
+        write_repo_config(
+            &root,
+            &WorkflowRepoConfig {
+                current_workflow: Some("custom_flow".to_string()),
+                current_version: None,
+                current_profile: None,
+            },
+        )
+        .expect("config writes");
+
+        let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+        let current = registry
+            .current_workflow()
+            .expect("current workflow resolves");
+        assert_eq!(current.version, 4);
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn set_current_workflow_selection_honors_explicit_profile() {
+        let root = unique_workspace("knots-installed-workflows-explicit-profile");
+        let source = root.join("custom-flow.toml");
+        std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
+        install_bundle(&root, &source).expect("bundle should install");
+
+        let config =
+            set_current_workflow_selection(&root, "custom_flow", Some(3), Some("autopilot"))
+                .expect("selection should succeed");
+        assert_eq!(config.current_version, Some(3));
+        assert_eq!(
+            config.current_profile.as_deref(),
+            Some("custom_flow/autopilot")
+        );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn parse_bundle_json_validates_profile_references_and_shape() {
+        let rendered = render_json_bundle_from_toml(SAMPLE_BUNDLE).expect("json render");
+        let mut json: serde_json::Value =
+            serde_json::from_str(&rendered).expect("json bundle should parse as value");
+
+        json["profiles"][0]["phases"] = serde_json::json!(["missing"]);
+        let err = parse_bundle_json(&serde_json::to_string(&json).expect("serialize"))
+            .expect_err("unknown phase should fail");
+        assert!(err.to_string().contains("unknown phase"));
+
+        let mut json: serde_json::Value =
+            serde_json::from_str(&rendered).expect("json bundle should parse as value");
+        json["phases"][0]["produce_step"] = serde_json::json!("missing");
+        let err = parse_bundle_json(&serde_json::to_string(&json).expect("serialize"))
+            .expect_err("unknown step should fail");
+        assert!(err.to_string().contains("unknown step"));
+
+        let mut json: serde_json::Value =
+            serde_json::from_str(&rendered).expect("json bundle should parse as value");
+        json["profiles"][0]["phases"] = serde_json::json!([]);
+        let err = parse_bundle_json(&serde_json::to_string(&json).expect("serialize"))
+            .expect_err("empty phases should fail");
+        assert!(err
+            .to_string()
+            .contains("profile has no initial queue state"));
+
+        let mut json: serde_json::Value =
+            serde_json::from_str(&rendered).expect("json bundle should parse as value");
+        json["profiles"][0]["id"] = serde_json::json!("   ");
+        let err = parse_bundle_json(&serde_json::to_string(&json).expect("serialize"))
+            .expect_err("blank profile id should fail");
+        assert!(err.to_string().contains("profile id is required"));
+    }
+
+    #[test]
+    fn registry_load_skips_non_version_entries_and_accepts_legacy_toml_bundle() {
+        let root = unique_workspace("knots-installed-workflows-load-legacy");
+        let workflow_root = workflows_root(&root).join("legacy_flow");
+        std::fs::create_dir_all(&workflow_root).expect("workflow root should exist");
+        std::fs::write(workflow_root.join("README.txt"), "ignore me").expect("file should write");
+        std::fs::create_dir_all(workflow_root.join("not-a-version")).expect("dir should exist");
+        std::fs::create_dir_all(workflow_root.join("7")).expect("version dir should exist");
+        std::fs::write(
+            workflow_root.join("7/bundle.toml"),
+            SAMPLE_BUNDLE.replace("custom_flow", "legacy_flow"),
+        )
+        .expect("legacy bundle should write");
+
+        let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+        let workflow = registry
+            .require_workflow("legacy_flow")
+            .expect("legacy flow should load from bundle.toml");
+        assert_eq!(workflow.id, "legacy_flow");
+        assert_eq!(workflow.version, 3);
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn install_bundle_supports_json_input_without_re_rendering() {
+        let root = unique_workspace("knots-installed-workflows-json-install");
+        let source = root.join("bundle.json");
+        let json_bundle = render_json_bundle_from_toml(SAMPLE_BUNDLE).expect("json render");
+        std::fs::write(&source, &json_bundle).expect("json bundle should write");
+
+        let workflow_id = install_bundle(&root, &source).expect("json bundle should install");
+        assert_eq!(workflow_id, "custom_flow");
+        let installed =
+            std::fs::read_to_string(workflows_root(&root).join("custom_flow/3/bundle.json"))
+                .expect("installed json should read");
+        assert_eq!(installed, json_bundle);
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn set_current_workflow_selection_falls_back_to_first_profile_when_default_is_missing() {
+        let root = unique_workspace("knots-installed-workflows-first-profile");
+        let source = root.join("bundle.toml");
+        let bundle = SAMPLE_BUNDLE
+            .replace("default_profile = \"autopilot\"\n", "")
+            .replace(
+                "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\noutput = \"remote_main\"\n",
+                "[profiles.beta]\ndescription = \"Beta\"\nphases = [\"main\"]\noutput = \"remote_main\"\n\n[profiles.alpha]\ndescription = \"Alpha\"\nphases = [\"main\"]\noutput = \"remote_main\"\n",
+            );
+        std::fs::write(&source, bundle).expect("bundle should write");
+        install_bundle(&root, &source).expect("bundle should install");
+
+        let config =
+            set_current_workflow_selection(&root, "custom_flow", Some(3), None).expect("select");
+        assert_eq!(config.current_profile.as_deref(), Some("custom_flow/alpha"));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn read_bundle_source_reports_loom_failures_and_invalid_utf8() {
+        let _guard = env_lock().lock().expect("env lock");
+        let root = unique_workspace("knots-installed-workflows-loom-errors");
+        let bin_dir = root.join("bin");
+        let package_dir = root.join("pkg");
+        std::fs::create_dir_all(&bin_dir).expect("bin dir should exist");
+        std::fs::create_dir_all(&package_dir).expect("pkg dir should exist");
+        std::fs::write(package_dir.join("loom.toml"), "name = 'pkg'").expect("loom.toml writes");
+
+        let loom_path = bin_dir.join("loom");
+        let original_path = std::env::var_os("PATH");
+        let joined_path = match &original_path {
+            Some(path) => {
+                let mut paths = vec![bin_dir.clone()];
+                paths.extend(std::env::split_paths(path));
+                std::env::join_paths(paths).expect("joined path")
+            }
+            None => std::env::join_paths([bin_dir.clone()]).expect("joined path"),
+        };
+        std::env::set_var("PATH", joined_path);
+
+        std::fs::write(&loom_path, "#!/bin/sh\necho boom >&2\nexit 1\n").expect("script writes");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = std::fs::metadata(&loom_path)
+                .expect("metadata")
+                .permissions();
+            perms.set_mode(0o755);
+            std::fs::set_permissions(&loom_path, perms).expect("permissions");
+        }
+        let err = read_bundle_source(&package_dir).expect_err("loom failure should bubble up");
+        assert!(err
+            .to_string()
+            .contains("loom build --emit knots-bundle failed"));
+
+        std::fs::write(
+            &loom_path,
+            "#!/bin/sh\nif [ \"$1\" = \"build\" ]; then\nprintf '\\377\\376'\nexit 0\nfi\nexit 1\n",
+        )
+        .expect("invalid utf8 script writes");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = std::fs::metadata(&loom_path)
+                .expect("metadata")
+                .permissions();
+            perms.set_mode(0o755);
+            std::fs::set_permissions(&loom_path, perms).expect("permissions");
+        }
+        let err = read_bundle_source(&package_dir).expect_err("invalid utf8 should fail");
+        assert!(err.to_string().contains("invalid UTF-8 bundle output"));
+
+        match original_path {
+            Some(path) => std::env::set_var("PATH", path),
+            None => std::env::remove_var("PATH"),
+        }
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn build_profile_definition_validates_empty_phase_and_missing_states() {
+        let mut states = BTreeMap::new();
+        states.insert(
+            "ready".to_string(),
+            BundleStateSection {
+                kind: "queue".to_string(),
+                executor: None,
+                prompt: None,
+            },
+        );
+        states.insert(
+            "work".to_string(),
+            BundleStateSection {
+                kind: "action".to_string(),
+                executor: None,
+                prompt: Some("work".to_string()),
+            },
+        );
+        let mut steps = BTreeMap::new();
+        steps.insert(
+            "step".to_string(),
+            BundleStepSection {
+                queue: "ready".to_string(),
+                action: "work".to_string(),
+            },
+        );
+        let mut phases = BTreeMap::new();
+        phases.insert(
+            "phase".to_string(),
+            BundlePhaseSection {
+                produce: "step".to_string(),
+                gate: "step".to_string(),
+            },
+        );
+        let mut prompts = BTreeMap::new();
+        prompts.insert(
+            "work".to_string(),
+            BundlePromptSection {
+                accept: Vec::new(),
+                success: BTreeMap::from([(String::from("ok"), String::from("done"))]),
+                failure: BTreeMap::new(),
+                body: String::from("do work"),
+                params: BTreeMap::new(),
+            },
+        );
+
+        let empty_profile = BundleProfileSection {
+            description: None,
+            phases: Vec::new(),
+            output: None,
+            overrides: BTreeMap::new(),
+        };
+        let err = build_profile_definition(
+            "wf",
+            "empty",
+            &empty_profile,
+            &states,
+            &steps,
+            &phases,
+            &prompts,
+        )
+        .expect_err("empty profile should fail");
+        assert!(err.to_string().contains("must define at least one phase"));
+
+        steps.insert(
+            "broken".to_string(),
+            BundleStepSection {
+                queue: "missing".to_string(),
+                action: "work".to_string(),
+            },
+        );
+        phases.insert(
+            "broken".to_string(),
+            BundlePhaseSection {
+                produce: "broken".to_string(),
+                gate: "broken".to_string(),
+            },
+        );
+        let err = build_profile_definition(
+            "wf",
+            "broken",
+            &BundleProfileSection {
+                description: None,
+                phases: vec!["broken".to_string()],
+                output: None,
+                overrides: BTreeMap::new(),
+            },
+            &states,
+            &steps,
+            &phases,
+            &prompts,
+        )
+        .expect_err("missing queue should fail");
+        assert!(err.to_string().contains("unknown queue state"));
+
+        let err = build_profile_definition(
+            "wf",
+            "broken-action",
+            &BundleProfileSection {
+                description: None,
+                phases: vec!["broken".to_string()],
+                output: None,
+                overrides: BTreeMap::new(),
+            },
+            &states,
+            &BTreeMap::from([(
+                String::from("broken"),
+                BundleStepSection {
+                    queue: "ready".to_string(),
+                    action: "missing-action".to_string(),
+                },
+            )]),
+            &BTreeMap::from([(
+                String::from("broken"),
+                BundlePhaseSection {
+                    produce: "broken".to_string(),
+                    gate: "broken".to_string(),
+                },
+            )]),
+            &prompts,
+        )
+        .expect_err("missing action should fail");
+        assert!(err.to_string().contains("unknown action state"));
+
+        states.insert(
+            "orphan".to_string(),
+            BundleStateSection {
+                kind: "action".to_string(),
+                executor: None,
+                prompt: None,
+            },
+        );
+        let err = build_profile_definition(
+            "wf",
+            "orphan",
+            &BundleProfileSection {
+                description: None,
+                phases: vec!["broken".to_string()],
+                output: None,
+                overrides: BTreeMap::new(),
+            },
+            &states,
+            &BTreeMap::from([(
+                String::from("broken"),
+                BundleStepSection {
+                    queue: "ready".to_string(),
+                    action: "orphan".to_string(),
+                },
+            )]),
+            &BTreeMap::from([(
+                String::from("broken"),
+                BundlePhaseSection {
+                    produce: "broken".to_string(),
+                    gate: "broken".to_string(),
+                },
+            )]),
+            &prompts,
+        )
+        .expect_err("missing prompt metadata should fail");
+        assert!(err.to_string().contains("is missing prompt"));
+    }
+
+    #[test]
+    fn prompt_defaults_and_output_mode_slug_cover_remaining_variants() {
+        let workflow = parse_bundle_toml(
+            &SAMPLE_BUNDLE.replace(
+                "[prompts.work]\naccept = [\"Built output\"]\nbody = \"\"\"\nShip {{ output_kind }} output.\n\"\"\"\n",
+                "[prompts.work]\naccept = [\"Built output\"]\nbody = \"\"\"\nShip {{ output_kind }} output for {{ audience }}.\n\"\"\"\n[prompts.work.params.audience]\ntype = \"enum\"\ndefault = \"operators\"\n",
+            ),
+        )
+        .expect("bundle with params should parse");
+        let profile = workflow
+            .require_profile("autopilot")
+            .expect("profile should exist");
+        let prompt = workflow
+            .prompt_for_action_state("work")
+            .expect("prompt should exist");
+        let params = build_prompt_params(&workflow, profile, prompt);
+        assert_eq!(
+            params.get("audience").map(String::as_str),
+            Some("operators")
+        );
+        assert_eq!(output_mode_slug(&OutputMode::Local), "local");
+        assert_eq!(output_mode_slug(&OutputMode::Remote), "remote");
+        assert_eq!(output_mode_slug(&OutputMode::Pr), "pr");
     }
 }
