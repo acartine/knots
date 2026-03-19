@@ -121,6 +121,7 @@ fn install_stub_loom(root: &Path, bundle: &str, validate_failure: Option<&str>) 
            exit 0\n\
          fi\n\
          if [ \"$1\" = \"init\" ]; then\n\
+           test -n \"$2\" || exit 1\n\
            touch loom.toml\n\
            exit 0\n\
          fi\n\
@@ -406,7 +407,7 @@ fn compat_harness_reports_validate_failures_without_stderr() {
         &bin_dir,
         "#!/bin/sh\n\
          if [ \"$1\" = \"--version\" ]; then echo 'loom 0.1.0'; exit 0; fi\n\
-         if [ \"$1\" = \"init\" ]; then touch loom.toml; exit 0; fi\n\
+         if [ \"$1\" = \"init\" ]; then test -n \"$2\" || exit 1; touch loom.toml; exit 0; fi\n\
          if [ \"$1\" = \"validate\" ]; then exit 1; fi\n\
          if [ \"$1\" = \"build\" ]; then exit 0; fi\n\
          exit 1\n",
@@ -438,7 +439,7 @@ fn compat_harness_reports_invalid_utf8_from_build_output() {
         &bin_dir,
         "#!/bin/sh\n\
          if [ \"$1\" = \"--version\" ]; then echo 'loom 0.1.0'; exit 0; fi\n\
-         if [ \"$1\" = \"init\" ]; then touch loom.toml; exit 0; fi\n\
+         if [ \"$1\" = \"init\" ]; then test -n \"$2\" || exit 1; touch loom.toml; exit 0; fi\n\
          if [ \"$1\" = \"validate\" ]; then exit 0; fi\n\
          if [ \"$1\" = \"build\" ]; then printf '\\377\\376'; exit 0; fi\n\
          exit 1\n",

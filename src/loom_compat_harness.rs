@@ -97,6 +97,11 @@ fn run_compat_test_inner(
 ) -> Result<TestResult, AppError> {
     let package_dir = workspace.join("package");
     std::fs::create_dir_all(&package_dir)?;
+    let package_name = source
+        .file_name()
+        .and_then(|name| name.to_str())
+        .filter(|name| !name.is_empty())
+        .unwrap_or("loom-compat");
 
     let mut steps = Vec::new();
     steps.push(StepResult {
@@ -104,7 +109,11 @@ fn run_compat_test_inner(
         detail: run_loom(config.loom_bin.as_deref(), workspace, &["--version"])?,
     });
 
-    run_loom(config.loom_bin.as_deref(), &package_dir, &["init"])?;
+    run_loom(
+        config.loom_bin.as_deref(),
+        &package_dir,
+        &["init", package_name],
+    )?;
     copy_dir_contents(source, &package_dir)?;
     steps.push(StepResult {
         name: "prepare_package".to_string(),
@@ -121,7 +130,11 @@ fn run_compat_test_inner(
         &package_dir,
         &["build", "--emit", "knots-bundle"],
     )?;
-    let bundle_path = workspace.join("bundle.toml");
+    let bundle_path = workspace.join(if bundle.trim_start().starts_with('{') {
+        "bundle.json"
+    } else {
+        "bundle.toml"
+    });
     std::fs::write(&bundle_path, &bundle)?;
     steps.push(StepResult {
         name: "build".to_string(),

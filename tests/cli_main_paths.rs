@@ -202,7 +202,7 @@ changes = "ready_for_work"
     let script = format!(
         "#!/bin/sh\n\
          if [ \"$1\" = \"--version\" ]; then echo 'loom 0.1.0'; exit 0; fi\n\
-         if [ \"$1\" = \"init\" ]; then touch loom.toml; exit 0; fi\n\
+         if [ \"$1\" = \"init\" ]; then test -n \"$2\" || exit 1; touch loom.toml; exit 0; fi\n\
          if [ \"$1\" = \"validate\" ]; then exit 0; fi\n\
          if [ \"$1\" = \"build\" ]; then\n\
            cat <<'EOF'\n\
