@@ -111,11 +111,17 @@ fn skills_install_and_uninstall_round_trip_for_codex() {
 
     let install = run_knots(&root, &db, &home, &["skills", "install", "codex"]);
     assert_success(&install);
-    assert!(home.join(".codex/skills/planning/SKILL.md").exists());
+    let stdout = String::from_utf8_lossy(&install.stdout);
+    assert!(stdout.contains(".codex/skills/knots/SKILL.md"));
+    assert!(stdout.contains(".codex/skills/knots-e2e/SKILL.md"));
+    assert!(home.join(".codex/skills/knots/SKILL.md").exists());
 
     let uninstall = run_knots(&root, &db, &home, &["skills", "uninstall", "codex"]);
     assert_success(&uninstall);
-    assert!(!home.join(".codex/skills/planning/SKILL.md").exists());
+    let stdout = String::from_utf8_lossy(&uninstall.stdout);
+    assert!(stdout.contains(".codex/skills/knots/SKILL.md"));
+    assert!(stdout.contains(".codex/skills/knots-e2e/SKILL.md"));
+    assert!(!home.join(".codex/skills/knots/SKILL.md").exists());
 }
 
 #[test]
@@ -129,8 +135,8 @@ fn skills_install_prefers_project_root_for_claude() {
     let install = run_knots(&root, &db, &home, &["skills", "install", "claude"]);
     assert_success(&install);
 
-    assert!(root.join(".claude/skills/planning/SKILL.md").exists());
-    assert!(!home.join(".claude/skills/planning/SKILL.md").exists());
+    assert!(root.join(".claude/skills/knots/SKILL.md").exists());
+    assert!(!home.join(".claude/skills/knots/SKILL.md").exists());
 }
 
 #[test]
@@ -159,17 +165,14 @@ fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
 
     let user_install = run_knots(&root, &db, &home, &["skills", "install", "claude"]);
     assert_success(&user_install);
-    let planning_skill = user_claude.join("skills/planning/SKILL.md");
-    let project_planning_skill = project_claude.join("skills/planning/SKILL.md");
-    assert!(project_planning_skill.exists());
-    std::fs::rename(
-        &project_planning_skill,
-        project_claude.join("planning.backup"),
-    )
-    .expect("project skill should be movable");
-    assert!(!project_planning_skill.exists());
-    assert!(!planning_skill.exists());
-    assert!(project_claude.join("planning.backup").exists());
+    let user_skill = user_claude.join("skills/knots/SKILL.md");
+    let project_skill = project_claude.join("skills/knots/SKILL.md");
+    assert!(project_skill.exists());
+    std::fs::rename(&project_skill, project_claude.join("knots.backup"))
+        .expect("project skill should be movable");
+    assert!(!project_skill.exists());
+    assert!(!user_skill.exists());
+    assert!(project_claude.join("knots.backup").exists());
 
     let doctor = run_knots(&root, &db, &home, &["doctor", "--json"]);
     assert_success(&doctor);
@@ -180,12 +183,13 @@ fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
         .as_str()
         .expect("detail should be a string");
     assert!(detail.contains(".claude/skills"));
+    assert!(detail.contains("knots/SKILL.md"));
     assert!(detail.contains("run `kno skills install claude`"));
 
     let doctor_fix = run_knots(&root, &db, &home, &["doctor", "--fix"]);
     assert_success(&doctor_fix);
-    assert!(project_planning_skill.exists());
-    assert!(!planning_skill.exists());
+    assert!(project_skill.exists());
+    assert!(!user_skill.exists());
 
     let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
     assert_success(&after);
@@ -212,7 +216,7 @@ fn doctor_fix_creates_missing_codex_root_and_installs_skills() {
 
     let doctor_fix = run_knots(&root, &db, &home, &["doctor", "--fix"]);
     assert_success(&doctor_fix);
-    assert!(home.join(".codex/skills/planning/SKILL.md").exists());
+    assert!(home.join(".codex/skills/knots/SKILL.md").exists());
 
     let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
     assert_success(&after);

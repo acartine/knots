@@ -292,7 +292,8 @@ agent.run(prompt=item["prompt"])
 
 ### Managed Skills
 
-Knots can also install its workflow prompts as managed skills for supported agent tools:
+Knots can install its managed `knots` and `knots-e2e` skills for supported
+agent tools:
 
 ```bash
 kno skills install codex
@@ -300,9 +301,10 @@ kno skills install claude
 kno skills install opencode
 ```
 
-When a project-level root exists, Knots installs there first (`.claude/skills` or
-`.opencode/skills`). Otherwise it falls back to the supported user-level root. `kno doctor`
-checks whether the expected managed skills are present and reports any missing setup.
+When a project-level root exists, Knots installs there first (`.claude/skills`
+or `.opencode/skills`). Otherwise it falls back to the supported user-level
+root. `kno doctor` checks whether those expected skills are present and reports
+missing setup with the exact `SKILL.md` paths.
 
 **CI/CD**:
 ```yaml

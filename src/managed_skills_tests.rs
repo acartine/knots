@@ -31,8 +31,9 @@ fn install_prefers_project_location_when_supported() {
     .expect("install should succeed");
 
     assert!(output.contains("installed"));
-    assert!(repo_root.join(".claude/skills/planning/SKILL.md").exists());
-    assert!(!home.join(".claude/skills/planning/SKILL.md").exists());
+    assert!(output.contains(".claude/skills/knots/SKILL.md"));
+    assert!(repo_root.join(".claude/skills/knots/SKILL.md").exists());
+    assert!(!home.join(".claude/skills/knots/SKILL.md").exists());
 }
 
 #[test]
@@ -69,9 +70,9 @@ fn uninstall_removes_installed_skills_from_all_detected_locations() {
     )
     .expect("uninstall should succeed");
 
-    assert!(output.contains("2 location(s)"));
-    assert!(!repo_root.join(".claude/skills/planning/SKILL.md").exists());
-    assert!(!home.join(".claude/skills/planning/SKILL.md").exists());
+    assert!(output.contains(".claude/skills/knots/SKILL.md"));
+    assert!(!repo_root.join(".claude/skills/knots/SKILL.md").exists());
+    assert!(!home.join(".claude/skills/knots/SKILL.md").exists());
 }
 
 #[test]
@@ -117,8 +118,17 @@ fn doctor_warns_when_preferred_destination_is_missing_skills() {
 #[test]
 fn render_skill_uses_hyphenated_deploy_name() {
     let rendered = render_skill(managed_skills()[1]);
-    assert!(rendered.contains("name: plan-review"));
-    assert!(rendered.contains("# Plan Review"));
+    assert!(rendered.contains("name: knots-e2e"));
+    assert!(rendered.contains("# Knots E2E"));
+}
+
+#[test]
+fn managed_skill_inventory_contains_only_knots_skills() {
+    let names = managed_skills()
+        .iter()
+        .map(|skill| skill.deploy_name)
+        .collect::<Vec<_>>();
+    assert_eq!(names, vec!["knots", "knots-e2e"]);
 }
 
 #[test]
@@ -231,14 +241,15 @@ fn update_rewrites_existing_skills_when_install_is_complete() {
     fs::create_dir_all(&codex_root).expect("codex root");
 
     install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("install");
-    let planning = codex_root.join("skills/planning/SKILL.md");
-    fs::write(&planning, "stale").expect("planning skill should be writable");
+    let knots = codex_root.join("skills/knots/SKILL.md");
+    fs::write(&knots, "stale").expect("knots skill should be writable");
 
     let output = update_managed(&repo_root, Some(&home), false, SkillTool::Codex).expect("update");
 
     assert!(output.contains("updated"));
-    assert!(fs::read_to_string(planning)
-        .expect("planning should exist")
+    assert!(output.contains(".codex/skills/knots/SKILL.md"));
+    assert!(fs::read_to_string(knots)
+        .expect("knots should exist")
         .contains("---"));
 }
 
@@ -261,9 +272,9 @@ fn prompt_install_missing_accepts_yes_and_rejects_no() {
     )
     .expect("prompt should succeed");
     assert!(approved);
-    assert!(String::from_utf8(output)
-        .expect("utf8")
-        .contains("planning, plan-review"));
+    let output = String::from_utf8(output).expect("utf8");
+    assert!(output.contains("/tmp/.codex/skills/knots/SKILL.md"));
+    assert!(output.contains("/tmp/.codex/skills/knots-e2e/SKILL.md"));
 
     let mut output = Vec::new();
     let mut no = std::io::Cursor::new("n\n");
@@ -310,13 +321,13 @@ fn doctor_fix_installs_missing_skills_when_user_root_is_absent() {
     let before = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
     assert_eq!(before.status, DoctorStatus::Warn);
     assert!(before.detail.contains(".codex/skills"));
-    assert!(!home.join(".codex/skills/planning/SKILL.md").exists());
+    assert!(!home.join(".codex/skills/knots/SKILL.md").exists());
 
     fix_doctor_check(&repo_root, "skills_codex");
 
     let after = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
     assert_eq!(after.status, DoctorStatus::Pass);
-    assert!(home.join(".codex/skills/planning/SKILL.md").exists());
+    assert!(home.join(".codex/skills/knots/SKILL.md").exists());
 
     match prior_home {
         Some(value) => std::env::set_var("HOME", value),
@@ -343,10 +354,10 @@ fn public_environment_based_helpers_use_home_env() {
         .iter()
         .any(|check| check.status == DoctorStatus::Pass));
 
-    let shipped = home.join(".codex/skills/shipment/SKILL.md");
-    fs::remove_file(&shipped).expect("shipment skill should exist");
+    let knots = home.join(".codex/skills/knots/SKILL.md");
+    fs::remove_file(&knots).expect("knots skill should exist");
     fix_doctor_check(&repo_root, "skills_codex");
-    assert!(shipped.exists());
+    assert!(knots.exists());
     fix_doctor_check(&repo_root, "unknown");
 
     match prior_home {

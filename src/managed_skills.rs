@@ -9,6 +9,9 @@ use crate::doctor::{DoctorCheck, DoctorStatus};
 #[path = "managed_skills_inventory.rs"]
 mod inventory;
 use inventory::managed_skills;
+#[path = "managed_skills_output.rs"]
+mod output;
+use output::{format_changed_paths, format_existing_skills, format_missing_detail, skill_paths};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SkillTool {
@@ -33,8 +36,7 @@ struct SkillLocation {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct ManagedSkill {
     deploy_name: &'static str,
-    title: &'static str,
-    body: &'static str,
+    contents: &'static str,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -171,13 +173,7 @@ fn doctor_check(repo_root: &Path, home: Option<&Path>, tool: SkillTool) -> Docto
             } else {
                 (
                     DoctorStatus::Warn,
-                    format!(
-                        "{} missing managed skills at {}: {}; run `kno skills install {}`",
-                        tool.display_name(),
-                        location.skills_root.display(),
-                        skill_names(&missing).join(", "),
-                        tool.slug()
-                    ),
+                    format_missing_detail(tool, &location, &missing),
                 )
             }
         }
@@ -220,19 +216,10 @@ fn install_missing(
     let destination = preferred_location(repo_root, home, tool)?;
     let missing = missing_skills(&destination);
     if missing.is_empty() {
-        return Ok(format!(
-            "{} managed skills already installed at {}",
-            tool.display_name(),
-            destination.skills_root.display()
-        ));
+        return Ok(format_existing_skills(tool, &destination));
     }
-    write_skills(&destination, &missing)?;
-    Ok(format!(
-        "{} installed {} managed skill(s) at {}",
-        tool.display_name(),
-        missing.len(),
-        destination.skills_root.display()
-    ))
+    let changed = write_skills(&destination, &missing)?;
+    Ok(format_changed_paths(tool, "installed", &changed))
 }
 
 fn uninstall_managed(
@@ -241,29 +228,21 @@ fn uninstall_managed(
     tool: SkillTool,
 ) -> Result<String, AppError> {
     let locations = tool.locations(repo_root, home);
-    let mut removed = 0usize;
-    let mut touched = Vec::new();
+    let mut removed_paths = Vec::new();
     for location in locations {
         let installed = installed_skills(&location);
         if installed.is_empty() {
             continue;
         }
-        remove_skills(&location, &installed)?;
-        removed += installed.len();
-        touched.push(location.skills_root);
+        removed_paths.extend(remove_skills(&location, &installed)?);
     }
-    if removed == 0 {
+    if removed_paths.is_empty() {
         return Err(AppError::InvalidArgument(format!(
             "{} has no installed managed skills to uninstall",
             tool.display_name()
         )));
     }
-    Ok(format!(
-        "{} removed {} managed skill(s) from {} location(s)",
-        tool.display_name(),
-        removed,
-        touched.len()
-    ))
+    Ok(format_changed_paths(tool, "removed", &removed_paths))
 }
 
 fn update_managed(
@@ -273,7 +252,7 @@ fn update_managed(
     tool: SkillTool,
 ) -> Result<String, AppError> {
     let destination = preferred_location(repo_root, home, tool)?;
-    let mut missing = missing_skills(&destination);
+    let missing = missing_skills(&destination);
     if !missing.is_empty() {
         if !interactive {
             return Err(AppError::InvalidArgument(format!(
@@ -295,29 +274,12 @@ fn update_managed(
     }
 
     let installed_locations = installed_locations(repo_root, home, tool);
-    if installed_locations.is_empty() {
-        return Err(AppError::InvalidArgument(format!(
-            "{} has no installed managed skills to update",
-            tool.display_name()
-        )));
-    }
-
+    let mut updated_paths = Vec::new();
     for location in &installed_locations {
         let installed = installed_skills(location);
-        write_skills(location, &installed)?;
+        updated_paths.extend(write_skills(location, &installed)?);
     }
-    missing = missing_skills(&destination);
-    let status = if missing.is_empty() {
-        "updated"
-    } else {
-        "partially updated"
-    };
-    Ok(format!(
-        "{} {} managed skills in {} location(s)",
-        tool.display_name(),
-        status,
-        installed_locations.len()
-    ))
+    Ok(format_changed_paths(tool, "updated", &updated_paths))
 }
 
 fn prompt_install_missing<W: Write, R: BufRead>(
@@ -333,7 +295,9 @@ fn prompt_install_missing<W: Write, R: BufRead>(
         tool.display_name(),
         destination.skills_root.display()
     )?;
-    writeln!(writer, "  {}", skill_names(missing).join(", "))?;
+    for path in skill_paths(destination, missing) {
+        writeln!(writer, "  {}", path.display())?;
+    }
     write!(writer, "install missing skills before update? [y/N]: ")?;
     writer.flush()?;
 
@@ -386,33 +350,43 @@ fn missing_skills(location: &SkillLocation) -> Vec<ManagedSkill> {
         .collect()
 }
 
-fn write_skills(location: &SkillLocation, skills: &[ManagedSkill]) -> Result<(), AppError> {
+fn write_skills(
+    location: &SkillLocation,
+    skills: &[ManagedSkill],
+) -> Result<Vec<PathBuf>, AppError> {
     if skills.is_empty() {
-        return Ok(());
+        return Ok(Vec::new());
     }
     fs::create_dir_all(&location.skills_root)?;
+    let mut written = Vec::with_capacity(skills.len());
     for skill in skills {
         let path = skill_path(location, *skill);
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
-        fs::write(path, render_skill(*skill))?;
+        fs::write(&path, render_skill(*skill))?;
+        written.push(path);
     }
-    Ok(())
+    Ok(written)
 }
 
-fn remove_skills(location: &SkillLocation, skills: &[ManagedSkill]) -> Result<(), AppError> {
+fn remove_skills(
+    location: &SkillLocation,
+    skills: &[ManagedSkill],
+) -> Result<Vec<PathBuf>, AppError> {
+    let mut removed = Vec::new();
     for skill in skills {
         let path = skill_path(location, *skill);
         if path.exists() {
             fs::remove_file(&path)?;
+            removed.push(path.clone());
         }
         if let Some(dir) = path.parent() {
             remove_dir_if_empty(dir)?;
         }
     }
     remove_dir_if_empty(&location.skills_root)?;
-    Ok(())
+    Ok(removed)
 }
 
 fn remove_dir_if_empty(path: &Path) -> Result<(), AppError> {
@@ -426,17 +400,7 @@ fn remove_dir_if_empty(path: &Path) -> Result<(), AppError> {
 }
 
 fn render_skill(skill: ManagedSkill) -> String {
-    format!(
-        concat!(
-            "---\n",
-            "name: {}\n",
-            "description: >-\n",
-            "  Knots workflow instructions for the {} step.\n",
-            "---\n\n",
-            "{}"
-        ),
-        skill.deploy_name, skill.title, skill.body
-    )
+    skill.contents.to_string()
 }
 
 fn skill_path(location: &SkillLocation, skill: ManagedSkill) -> PathBuf {
@@ -444,10 +408,6 @@ fn skill_path(location: &SkillLocation, skill: ManagedSkill) -> PathBuf {
         .skills_root
         .join(skill.deploy_name)
         .join("SKILL.md")
-}
-
-fn skill_names(skills: &[ManagedSkill]) -> Vec<&'static str> {
-    skills.iter().map(|skill| skill.deploy_name).collect()
 }
 
 fn doctor_location(
