@@ -16,6 +16,9 @@ Follow this sequence:
 kno claim <id>
 ```
 
+- If you are working inside a git worktree, run Knots commands as
+  `kno -C <path_to_repo> ...` because Knots is installed for the repo root,
+  not the worktree path.
 - Record the current state from the claim output.
 - If the current state is `SHIPPED` or `DEFERRED`, stop cleanly.
 - Use the claim output to determine the current state's completion goals.
