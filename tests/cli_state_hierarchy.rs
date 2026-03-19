@@ -43,6 +43,10 @@ fn knots_binary() -> PathBuf {
     if configured.exists() {
         return std::fs::canonicalize(&configured).unwrap_or(configured);
     }
+    let manifest_relative = Path::new(env!("CARGO_MANIFEST_DIR")).join(&configured);
+    if manifest_relative.exists() {
+        return std::fs::canonicalize(&manifest_relative).unwrap_or(manifest_relative);
+    }
 
     if let Ok(current_exe) = std::env::current_exe() {
         if !configured.is_absolute() {
