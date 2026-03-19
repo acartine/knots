@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
+use serde_json::Value;
 use uuid::Uuid;
 
 fn unique_workspace(prefix: &str) -> PathBuf {
@@ -33,6 +34,21 @@ fn run_knots(repo_root: &Path, db_path: &Path, home: &Path, args: &[&str]) -> Ou
         .expect("knots command should run")
 }
 
+fn run_git(cwd: &Path, args: &[&str]) {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(cwd)
+        .args(args)
+        .output()
+        .expect("git command should run");
+    assert!(
+        output.status.success(),
+        "git {:?} failed: {}",
+        args,
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
 fn assert_success(output: &Output) {
     assert!(
         output.status.success(),
@@ -49,6 +65,41 @@ fn assert_failure(output: &Output) {
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
+}
+
+fn find_check<'a>(report: &'a Value, name: &str) -> &'a Value {
+    report["checks"]
+        .as_array()
+        .expect("checks should be an array")
+        .iter()
+        .find(|check| check["name"] == name)
+        .expect("expected check to exist")
+}
+
+fn setup_repo_with_remote(root: &Path) {
+    run_git(root, &["init"]);
+    run_git(root, &["config", "user.email", "knots@example.com"]);
+    run_git(root, &["config", "user.name", "Knots Test"]);
+    std::fs::write(root.join("README.md"), "# knots\n").expect("readme should be writable");
+    run_git(root, &["add", "README.md"]);
+    run_git(root, &["commit", "-m", "init"]);
+    run_git(root, &["branch", "-M", "main"]);
+
+    let remote = root.join("remote.git");
+    run_git(
+        root,
+        &["init", "--bare", remote.to_str().expect("utf8 path")],
+    );
+    run_git(
+        root,
+        &[
+            "remote",
+            "add",
+            "origin",
+            remote.to_str().expect("utf8 path"),
+        ],
+    );
+    run_git(root, &["push", "-u", "origin", "main"]);
 }
 
 #[test]
@@ -93,4 +144,79 @@ fn skills_update_fails_non_interactively_when_install_is_required() {
     assert_failure(&update);
     let stderr = String::from_utf8_lossy(&update.stderr);
     assert!(stderr.contains("run `kno skills install opencode`"));
+}
+
+#[test]
+fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
+    let root = unique_workspace("knots-cli-skills-doctor");
+    let home = unique_workspace("knots-cli-skills-home");
+    setup_repo_with_remote(&root);
+    let project_claude = root.join(".claude");
+    let user_claude = home.join(".claude");
+    std::fs::create_dir_all(&project_claude).expect("project root should exist");
+    std::fs::create_dir_all(&user_claude).expect("user root should exist");
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let user_install = run_knots(&root, &db, &home, &["skills", "install", "claude"]);
+    assert_success(&user_install);
+    let planning_skill = user_claude.join("skills/planning/SKILL.md");
+    let project_planning_skill = project_claude.join("skills/planning/SKILL.md");
+    assert!(project_planning_skill.exists());
+    std::fs::rename(
+        &project_planning_skill,
+        project_claude.join("planning.backup"),
+    )
+    .expect("project skill should be movable");
+    assert!(!project_planning_skill.exists());
+    assert!(!planning_skill.exists());
+    assert!(project_claude.join("planning.backup").exists());
+
+    let doctor = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    assert_success(&doctor);
+    let report: Value = serde_json::from_slice(&doctor.stdout).expect("doctor json should parse");
+    let claude = find_check(&report, "skills_claude");
+    assert_eq!(claude["status"], "warn");
+    let detail = claude["detail"]
+        .as_str()
+        .expect("detail should be a string");
+    assert!(detail.contains(".claude/skills"));
+    assert!(detail.contains("run `kno skills install claude`"));
+
+    let doctor_fix = run_knots(&root, &db, &home, &["doctor", "--fix"]);
+    assert_success(&doctor_fix);
+    assert!(project_planning_skill.exists());
+    assert!(!planning_skill.exists());
+
+    let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    assert_success(&after);
+    let report: Value = serde_json::from_slice(&after.stdout).expect("doctor json should parse");
+    let claude = find_check(&report, "skills_claude");
+    assert_eq!(claude["status"], "pass");
+}
+
+#[test]
+fn doctor_fix_creates_missing_codex_root_and_installs_skills() {
+    let root = unique_workspace("knots-cli-skills-doctor-fix-root");
+    let home = unique_workspace("knots-cli-skills-home");
+    setup_repo_with_remote(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let doctor = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    assert_success(&doctor);
+    let report: Value = serde_json::from_slice(&doctor.stdout).expect("doctor json should parse");
+    let codex = find_check(&report, "skills_codex");
+    assert_eq!(codex["status"], "warn");
+    let detail = codex["detail"].as_str().expect("detail should be a string");
+    assert!(detail.contains(".codex/skills"));
+    assert!(detail.contains("run `kno skills install codex`"));
+
+    let doctor_fix = run_knots(&root, &db, &home, &["doctor", "--fix"]);
+    assert_success(&doctor_fix);
+    assert!(home.join(".codex/skills/planning/SKILL.md").exists());
+
+    let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    assert_success(&after);
+    let report: Value = serde_json::from_slice(&after.stdout).expect("doctor json should parse");
+    let codex = find_check(&report, "skills_codex");
+    assert_eq!(codex["status"], "pass");
 }

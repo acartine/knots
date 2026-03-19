@@ -157,6 +157,10 @@ fn skill_tool_helpers_cover_display_and_lookup_paths() {
         expected_root_hint(SkillTool::Claude),
         ".claude or ~/.claude"
     );
+    assert_eq!(
+        expected_root_hint(SkillTool::OpenCode),
+        ".opencode or ~/.config/opencode"
+    );
     assert_eq!(tool_for_check_name("skills_codex"), Some(SkillTool::Codex));
     assert_eq!(tool_for_check_name("unknown"), None);
 }
@@ -278,8 +282,11 @@ fn prompt_install_missing_accepts_yes_and_rejects_no() {
 fn helper_functions_cover_empty_and_missing_paths() {
     let repo_root = unique_root("managed-skills-helpers");
     let home = unique_root("managed-skills-home");
-    let missing = preferred_location(&repo_root, Some(&home), SkillTool::Codex)
-        .expect_err("preferred location should fail");
+    let preferred = preferred_location(&repo_root, Some(&home), SkillTool::Codex)
+        .expect("preferred location should resolve to the user root");
+    assert_eq!(preferred.tool_root, home.join(".codex"));
+    let missing = preferred_location(&repo_root, None, SkillTool::Codex)
+        .expect_err("preferred location should fail without HOME");
     assert!(missing.to_string().contains("create ~/.codex first"));
 
     let empty_location = SkillLocation {
@@ -290,6 +297,31 @@ fn helper_functions_cover_empty_and_missing_paths() {
     write_skills(&empty_location, &[]).expect("empty writes should succeed");
     remove_dir_if_empty(&empty_location.skills_root).expect("missing dirs should be ignored");
     assert!(installed_locations(&repo_root, Some(&home), SkillTool::Codex).is_empty());
+}
+
+#[test]
+fn doctor_fix_installs_missing_skills_when_user_root_is_absent() {
+    let _guard = env_lock().lock().expect("env lock");
+    let repo_root = unique_root("managed-skills-fix-missing-root");
+    let home = unique_root("managed-skills-home");
+    let prior_home = std::env::var_os("HOME");
+    std::env::set_var("HOME", &home);
+
+    let before = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
+    assert_eq!(before.status, DoctorStatus::Warn);
+    assert!(before.detail.contains(".codex/skills"));
+    assert!(!home.join(".codex/skills/planning/SKILL.md").exists());
+
+    fix_doctor_check(&repo_root, "skills_codex");
+
+    let after = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
+    assert_eq!(after.status, DoctorStatus::Pass);
+    assert!(home.join(".codex/skills/planning/SKILL.md").exists());
+
+    match prior_home {
+        Some(value) => std::env::set_var("HOME", value),
+        None => std::env::remove_var("HOME"),
+    }
 }
 
 #[test]

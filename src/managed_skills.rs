@@ -66,6 +66,13 @@ impl SkillTool {
     }
 
     fn locations(self, repo_root: &Path, home: Option<&Path>) -> Vec<SkillLocation> {
+        self.location_candidates(repo_root, home)
+            .into_iter()
+            .filter(|location| location.tool_root.exists())
+            .collect()
+    }
+
+    fn location_candidates(self, repo_root: &Path, home: Option<&Path>) -> Vec<SkillLocation> {
         let mut locations = Vec::new();
         match self {
             SkillTool::Codex => {
@@ -148,11 +155,10 @@ fn doctor_checks_with_home(repo_root: &Path, home: Option<&Path>) -> Vec<DoctorC
 }
 
 fn doctor_check(repo_root: &Path, home: Option<&Path>, tool: SkillTool) -> DoctorCheck {
-    let locations = tool.locations(repo_root, home);
-    let preferred = locations.first();
+    let preferred = doctor_location(repo_root, home, tool);
     let (status, detail) = match preferred {
         Some(location) => {
-            let missing = missing_skills(location);
+            let missing = missing_skills(&location);
             if missing.is_empty() {
                 (
                     DoctorStatus::Pass,
@@ -344,16 +350,13 @@ fn preferred_location(
     home: Option<&Path>,
     tool: SkillTool,
 ) -> Result<SkillLocation, AppError> {
-    tool.locations(repo_root, home)
-        .into_iter()
-        .next()
-        .ok_or_else(|| {
-            AppError::InvalidArgument(format!(
-                "{} root not detected; create {} first",
-                tool.display_name(),
-                expected_root_hint(tool)
-            ))
-        })
+    doctor_location(repo_root, home, tool).ok_or_else(|| {
+        AppError::InvalidArgument(format!(
+            "{} root not detected; create {} first",
+            tool.display_name(),
+            expected_root_hint(tool)
+        ))
+    })
 }
 
 fn installed_locations(
@@ -447,19 +450,36 @@ fn skill_names(skills: &[ManagedSkill]) -> Vec<&'static str> {
     skills.iter().map(|skill| skill.deploy_name).collect()
 }
 
+fn doctor_location(
+    repo_root: &Path,
+    home: Option<&Path>,
+    tool: SkillTool,
+) -> Option<SkillLocation> {
+    let candidates = tool.location_candidates(repo_root, home);
+    candidates
+        .iter()
+        .find(|location| location.tool_root.exists())
+        .cloned()
+        .or_else(|| {
+            candidates
+                .iter()
+                .find(|location| location.scope == LocationScope::User)
+                .cloned()
+        })
+        .or_else(|| candidates.into_iter().next())
+}
+
 fn push_location(
     locations: &mut Vec<SkillLocation>,
     scope: LocationScope,
     tool_root: PathBuf,
     skills_dir_name: &str,
 ) {
-    if tool_root.exists() {
-        locations.push(SkillLocation {
-            scope,
-            skills_root: tool_root.join(skills_dir_name),
-            tool_root,
-        });
-    }
+    locations.push(SkillLocation {
+        scope,
+        skills_root: tool_root.join(skills_dir_name),
+        tool_root,
+    });
 }
 
 fn expected_root_hint(tool: SkillTool) -> &'static str {
