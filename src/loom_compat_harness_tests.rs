@@ -98,6 +98,10 @@ fn unique_workspace(prefix: &str) -> PathBuf {
 
 fn source_dir(prefix: &str) -> PathBuf {
     let root = unique_workspace(prefix);
+    std::fs::write(root.join("loom.toml"), "name = \"compat\"\nversion = 1\n")
+        .expect("loom manifest should write");
+    std::fs::write(root.join("workflow.loom"), "workflow compat {}\n")
+        .expect("workflow file should write");
     std::fs::write(root.join("README.md"), "# compat\n").expect("source file should write");
     root
 }
@@ -355,6 +359,26 @@ fn compat_harness_rejects_file_source() {
 }
 
 #[test]
+fn compat_harness_rejects_non_package_directory() {
+    let source = unique_workspace("knots-loom-non-package");
+
+    let err = run_compat_test(&CompatTestConfig {
+        source: source.clone(),
+        mode: CompatTestMode::Smoke,
+        keep_artifacts: false,
+        loom_bin: None,
+    })
+    .expect_err("non-package source should fail");
+    let message = invalid_argument(err);
+    assert!(message.contains("is not a Loom package directory"));
+    assert!(message.contains(source.to_string_lossy().as_ref()));
+    assert!(message.contains("loom.toml"));
+    assert!(message.contains("workflow.loom"));
+
+    let _ = std::fs::remove_dir_all(source);
+}
+
+#[test]
 fn compat_harness_drops_workspace_when_keep_artifacts_is_disabled() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
     let root = unique_workspace("knots-loom-clean");
@@ -390,7 +414,10 @@ fn compat_harness_reports_validate_command_failures() {
         loom_bin: Some(loom_bin(&bin_dir)),
     })
     .expect_err("validate failure should bubble up");
-    assert!(invalid_argument(err).contains("loom validate failed: validate exploded"));
+    let message = invalid_argument(err);
+    assert!(message.contains("loom validate failed in"));
+    assert!(message.contains("validate exploded"));
+    assert!(message.contains("/package"));
 
     let _ = std::fs::remove_dir_all(root);
     let _ = std::fs::remove_dir_all(source);
