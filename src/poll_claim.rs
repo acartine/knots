@@ -1,6 +1,6 @@
 use crate::app::{App, AppError, KnotView, StateActorMetadata};
-use crate::dispatch::profile_lookup_id;
 use crate::cli::{ClaimArgs, PollArgs, ReadyArgs};
+use crate::dispatch::profile_lookup_id;
 use crate::domain::knot_type::KnotType;
 use crate::listing::{apply_filters, KnotListFilter};
 use crate::prompt;
@@ -387,10 +387,9 @@ fn queue_stage_matches(registry: &ProfileRegistry, knot: &KnotView, normalized: 
         return true;
     }
     if let Ok(profile) = registry.require(&profile_lookup_id(knot)) {
-        return profile
-            .queue_states
-            .iter()
-            .any(|state| state == &knot.state && state.trim_start_matches("ready_for_") == normalized);
+        return profile.queue_states.iter().any(|state| {
+            state == &knot.state && state.trim_start_matches("ready_for_") == normalized
+        });
     }
     false
 }

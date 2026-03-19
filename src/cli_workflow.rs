@@ -53,7 +53,11 @@ pub struct WorkflowUseArgs {
     #[arg(short = 'v', long, help = "Workflow version (defaults to latest).")]
     pub version: Option<u32>,
 
-    #[arg(short = 'p', long = "profile", help = "Profile id (defaults to bundle default).")]
+    #[arg(
+        short = 'p',
+        long = "profile",
+        help = "Profile id (defaults to bundle default)."
+    )]
     pub profile: Option<String>,
 }
 

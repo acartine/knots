@@ -151,11 +151,16 @@ fn custom_workflow_install_use_and_runtime_flow() {
         &root,
         &db,
         &home,
-        &["workflow", "install", bundle_path.to_str().expect("utf8 path")],
+        &[
+            "workflow",
+            "install",
+            bundle_path.to_str().expect("utf8 path"),
+        ],
     );
     assert_success(&install);
     assert!(
-        root.join(".knots/workflows/custom_flow/1/bundle.json").exists(),
+        root.join(".knots/workflows/custom_flow/1/bundle.json")
+            .exists(),
         "installed bundle should be copied into repo-local workflow registry"
     );
 
@@ -190,12 +195,10 @@ fn custom_workflow_install_use_and_runtime_flow() {
     let shown_json: Value = serde_json::from_slice(&shown.stdout).expect("show json");
     assert_eq!(shown_json["state"], "ready_for_work");
     assert_eq!(shown_json["workflow_id"], "custom_flow");
-    assert!(
-        shown_json["profile_id"]
-            .as_str()
-            .expect("profile id should exist")
-            .ends_with("autopilot")
-    );
+    assert!(shown_json["profile_id"]
+        .as_str()
+        .expect("profile id should exist")
+        .ends_with("autopilot"));
 
     let claim = run_knots(&root, &db, &home, &["claim", &knot_id, "--json"]);
     assert_success(&claim);

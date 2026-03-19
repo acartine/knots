@@ -253,7 +253,9 @@ impl ProfileRegistry {
                 let namespaced = installed_workflows::namespaced_profile_id(&workflow.id, &raw_id);
                 profile.aliases.push(raw_id);
                 profile.id = namespaced.clone();
-                registry.aliases.insert(namespaced.clone(), namespaced.clone());
+                registry
+                    .aliases
+                    .insert(namespaced.clone(), namespaced.clone());
                 registry.profiles.insert(namespaced, profile);
             }
         }
@@ -288,7 +290,6 @@ impl ProfileRegistry {
 
         Ok(Self { profiles, aliases })
     }
-
 
     pub fn list(&self) -> Vec<ProfileDefinition> {
         let mut values = self.profiles.values().cloned().collect::<Vec<_>>();
@@ -364,7 +365,10 @@ impl ProfileDefinition {
     #[allow(dead_code)]
     pub fn is_action_state(&self, state: &str) -> bool {
         if !self.action_states.is_empty() {
-            return self.action_states.iter().any(|candidate| candidate == state);
+            return self
+                .action_states
+                .iter()
+                .any(|candidate| candidate == state);
         }
         self.owners.for_action_state(state).is_some() || state == "evaluating"
     }
@@ -431,9 +435,10 @@ impl ProfileDefinition {
         let current = normalize_state_alias(current);
         let pos = self.states.iter().position(|state| state == current)?;
         for candidate in &self.states[pos + 1..] {
-            let valid = self.transitions.iter().any(|transition| {
-                transition.from == current && transition.to == *candidate
-            });
+            let valid = self
+                .transitions
+                .iter()
+                .any(|transition| transition.from == current && transition.to == *candidate);
             if valid {
                 return Some(candidate.as_str());
             }
@@ -540,13 +545,19 @@ fn normalize_profile_definition(
     let mut owner_states = BTreeMap::new();
     owner_states.insert(READY_FOR_PLANNING.to_string(), raw.owners.planning.clone());
     owner_states.insert(PLANNING.to_string(), raw.owners.planning.clone());
-    owner_states.insert(READY_FOR_PLAN_REVIEW.to_string(), raw.owners.plan_review.clone());
+    owner_states.insert(
+        READY_FOR_PLAN_REVIEW.to_string(),
+        raw.owners.plan_review.clone(),
+    );
     owner_states.insert(PLAN_REVIEW.to_string(), raw.owners.plan_review.clone());
     owner_states.insert(
         READY_FOR_IMPLEMENTATION.to_string(),
         raw.owners.implementation.clone(),
     );
-    owner_states.insert(IMPLEMENTATION.to_string(), raw.owners.implementation.clone());
+    owner_states.insert(
+        IMPLEMENTATION.to_string(),
+        raw.owners.implementation.clone(),
+    );
     owner_states.insert(
         READY_FOR_IMPLEMENTATION_REVIEW.to_string(),
         raw.owners.implementation_review.clone(),

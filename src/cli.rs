@@ -6,8 +6,8 @@ use clap::{Args, Parser, Subcommand};
 use clap::CommandFactory;
 
 pub use crate::cli_ops::*;
-pub use crate::cli_workflow::*;
 pub use crate::cli_skills::*;
+pub use crate::cli_workflow::*;
 
 pub fn styled_command() -> clap::Command {
     Cli::command()

@@ -157,7 +157,8 @@ impl InstalledWorkflowRegistry {
                     if !version_path.is_dir() {
                         continue;
                     }
-                    let Some(version_name) = version_path.file_name().and_then(|name| name.to_str())
+                    let Some(version_name) =
+                        version_path.file_name().and_then(|name| name.to_str())
                     else {
                         continue;
                     };
@@ -198,7 +199,9 @@ impl InstalledWorkflowRegistry {
     }
 
     pub fn current_workflow_version(&self) -> Option<u32> {
-        self.current.as_ref().and_then(|config| config.current_version)
+        self.current
+            .as_ref()
+            .and_then(|config| config.current_version)
     }
 
     pub fn current_profile_id(&self) -> Option<&str> {
@@ -268,17 +271,21 @@ pub fn read_repo_config(repo_root: &Path) -> Result<WorkflowRepoConfig, ProfileE
     if !path.exists() {
         return Ok(WorkflowRepoConfig::default());
     }
-    let raw = fs::read_to_string(&path).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
+    let raw =
+        fs::read_to_string(&path).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
     toml::from_str(&raw).map_err(|err| ProfileError::InvalidBundle(err.to_string()))
 }
 
-pub fn write_repo_config(repo_root: &Path, config: &WorkflowRepoConfig) -> Result<(), ProfileError> {
+pub fn write_repo_config(
+    repo_root: &Path,
+    config: &WorkflowRepoConfig,
+) -> Result<(), ProfileError> {
     let path = repo_config_path(repo_root);
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
     }
-    let rendered =
-        toml::to_string_pretty(config).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
+    let rendered = toml::to_string_pretty(config)
+        .map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
     fs::write(path, rendered).map_err(|err| ProfileError::InvalidBundle(err.to_string()))
 }
 
@@ -328,7 +335,13 @@ pub fn set_current_workflow_selection(
             .as_deref()
             .and_then(|default_profile| workflow.require_profile(default_profile).ok())
             .map(|profile| profile.id.clone())
-            .or_else(|| workflow.list_profiles().into_iter().next().map(|profile| profile.id.clone()))
+            .or_else(|| {
+                workflow
+                    .list_profiles()
+                    .into_iter()
+                    .next()
+                    .map(|profile| profile.id.clone())
+            })
             .unwrap_or_else(|| "autopilot".to_string()),
     };
     let selected_profile_id = if workflow.builtin {
@@ -360,14 +373,15 @@ fn read_bundle_source(source: &Path) -> Result<(String, BundleFormat), ProfileEr
                 String::from_utf8_lossy(&output.stderr)
             )));
         }
-        let raw = String::from_utf8(output.stdout)
-            .map_err(|err| ProfileError::InvalidBundle(format!("invalid UTF-8 bundle output: {err}")))?;
+        let raw = String::from_utf8(output.stdout).map_err(|err| {
+            ProfileError::InvalidBundle(format!("invalid UTF-8 bundle output: {err}"))
+        })?;
         return Ok((raw, BundleFormat::Json));
     }
 
     let source_path = resolve_bundle_source_path(source)?;
-    let raw =
-        fs::read_to_string(&source_path).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
+    let raw = fs::read_to_string(&source_path)
+        .map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
     let format = match source_path.extension().and_then(|ext| ext.to_str()) {
         Some("json") => BundleFormat::Json,
         _ => BundleFormat::Toml,
@@ -435,7 +449,12 @@ fn compatibility_workflow() -> Result<WorkflowDefinition, ProfileError> {
                 .states
                 .iter()
                 .filter(|state| !profile.queue_states.iter().any(|queue| queue == *state))
-                .filter(|state| !profile.terminal_states.iter().any(|terminal| terminal == *state))
+                .filter(|state| {
+                    !profile
+                        .terminal_states
+                        .iter()
+                        .any(|terminal| terminal == *state)
+                })
                 .filter(|state| *state != "deferred" && *state != "abandoned")
                 .cloned()
                 .collect();
@@ -643,10 +662,15 @@ fn render_json_bundle_from_toml(raw: &str) -> Result<String, ProfileError> {
                         is_success: true,
                     })
                     .collect::<Vec<_>>();
-                outcomes.extend(prompt.failure.into_values().map(|target| JsonPromptOutcome {
-                    target,
-                    is_success: false,
-                }));
+                outcomes.extend(
+                    prompt
+                        .failure
+                        .into_values()
+                        .map(|target| JsonPromptOutcome {
+                            target,
+                            is_success: false,
+                        }),
+                );
                 JsonPromptSection {
                     name,
                     accept: prompt.accept,
@@ -663,21 +687,18 @@ fn render_json_bundle_from_toml(raw: &str) -> Result<String, ProfileError> {
 fn parse_bundle_toml(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
     let parsed: BundleToml =
         toml::from_str(raw).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
-    let workflow_id = normalize_profile_id(&parsed.workflow.name).ok_or_else(|| {
-        ProfileError::InvalidBundle("workflow.name is required".to_string())
-    })?;
+    let workflow_id = normalize_profile_id(&parsed.workflow.name)
+        .ok_or_else(|| ProfileError::InvalidBundle("workflow.name is required".to_string()))?;
 
     let mut prompts = BTreeMap::new();
     for (prompt_name, prompt) in &parsed.prompts {
         let success_target = match prompt.success.len() {
             0 => None,
             1 => Some(prompt.success.values().next().cloned().unwrap_or_default()),
-            _ => {
-                return Err(ProfileError::InvalidBundle(format!(
-                    "prompt '{}' has multiple success outcomes; Knots requires one happy-path target",
-                    prompt_name
-                )))
-            }
+            _ => return Err(ProfileError::InvalidBundle(format!(
+                "prompt '{}' has multiple success outcomes; Knots requires one happy-path target",
+                prompt_name
+            ))),
         };
         let params = prompt
             .params
@@ -901,18 +922,20 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
                     from: queue_name.to_string(),
                     to: action_name.to_string(),
                 });
-                let owner = default_owner(match profile
-                    .executors
-                    .get(action_name)
-                    .map(|value| value.as_str())
-                    .unwrap_or("agent")
-                    .trim()
-                    .to_ascii_lowercase()
-                    .as_str()
-                {
-                    "human" => OwnerKind::Human,
-                    _ => OwnerKind::Agent,
-                });
+                let owner = default_owner(
+                    match profile
+                        .executors
+                        .get(action_name)
+                        .map(|value| value.as_str())
+                        .unwrap_or("agent")
+                        .trim()
+                        .to_ascii_lowercase()
+                        .as_str()
+                    {
+                        "human" => OwnerKind::Human,
+                        _ => OwnerKind::Agent,
+                    },
+                );
                 owner_states.insert(queue_name.to_string(), owner.clone());
                 owner_states.insert(action_name.to_string(), owner);
                 first_queue.get_or_insert_with(|| queue_name.to_string());
@@ -924,14 +947,17 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
                             prompt_bodies.insert(action_name.to_string(), prompt.body.clone());
                             prompt_acceptance
                                 .insert(action_name.to_string(), prompt.accept.clone());
-                            if let Some(success) = prompt.outcomes.iter().find(|outcome| outcome.is_success) {
+                            if let Some(success) =
+                                prompt.outcomes.iter().find(|outcome| outcome.is_success)
+                            {
                                 transitions.push(WorkflowTransition {
                                     from: action_name.to_string(),
                                     to: success.target.clone(),
                                 });
                                 push_unique(&mut ordered_states, success.target.clone());
                             }
-                            for failure in prompt.outcomes.iter().filter(|outcome| !outcome.is_success)
+                            for failure in
+                                prompt.outcomes.iter().filter(|outcome| !outcome.is_success)
                             {
                                 transitions.push(WorkflowTransition {
                                     from: action_name.to_string(),
@@ -969,7 +995,10 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
                 id: profile_id,
                 workflow_id: workflow_id.clone(),
                 aliases: Vec::new(),
-                description: profile.description.clone().or_else(|| profile.display_name.clone()),
+                description: profile
+                    .description
+                    .clone()
+                    .or_else(|| profile.display_name.clone()),
                 planning_mode: GateMode::Required,
                 implementation_review_mode: GateMode::Required,
                 output: parse_output_mode(profile.output.as_deref())?,
@@ -1247,10 +1276,15 @@ fn build_prompt_params(
     let mut params = BTreeMap::new();
     params.insert("workflow_id".to_string(), workflow.id.clone());
     params.insert("profile_id".to_string(), profile.id.clone());
-    params.insert("output_kind".to_string(), output_mode_slug(&profile.output).to_string());
+    params.insert(
+        "output_kind".to_string(),
+        output_mode_slug(&profile.output).to_string(),
+    );
     for param in &prompt.params {
         if let Some(default) = param.default.as_deref() {
-            params.entry(param.name.clone()).or_insert_with(|| default.to_string());
+            params
+                .entry(param.name.clone())
+                .or_insert_with(|| default.to_string());
         }
     }
     params

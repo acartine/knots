@@ -20,7 +20,9 @@ pub(crate) fn run_workflow_command(
                 use_args.version,
                 use_args.profile.as_deref(),
             )?;
-            let workflow_id = config.current_workflow.unwrap_or_else(|| use_args.id.clone());
+            let workflow_id = config
+                .current_workflow
+                .unwrap_or_else(|| use_args.id.clone());
             if let Some(version) = config.current_version {
                 if let Some(profile) = config.current_profile.as_deref() {
                     println!("current workflow: {workflow_id} v{version} profile={profile}");

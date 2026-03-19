@@ -139,7 +139,9 @@ fn version_check_is_present_in_doctor_report() {
         version.detail
     );
     assert!(
-        version.detail.contains(&format!("v{}", env!("CARGO_PKG_VERSION")))
+        version
+            .detail
+            .contains(&format!("v{}", env!("CARGO_PKG_VERSION")))
             || version.detail.contains("restart and rerun `kno doctor`"),
         "detail should contain current version or the restart notice: {}",
         version.detail

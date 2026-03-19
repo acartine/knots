@@ -341,7 +341,8 @@ impl App {
         if let Some(id) = self.resolve_config_profile(&config.default_profile) {
             return Ok(id);
         }
-        if let Ok(registry) = installed_workflows::InstalledWorkflowRegistry::load(&self.repo_root) {
+        if let Ok(registry) = installed_workflows::InstalledWorkflowRegistry::load(&self.repo_root)
+        {
             if let Some(current_profile) = registry.current_profile_id() {
                 if self.profile_registry.require(current_profile).is_ok() {
                     return Ok(current_profile.to_string());
@@ -613,9 +614,7 @@ impl App {
             Some(raw) => Some(self.resolve_profile_id(raw, None)?),
             None => default_profile.clone(),
         };
-        let profile = self
-            .profile_registry
-            .resolve(resolved_profile.as_deref())?;
+        let profile = self.profile_registry.resolve(resolved_profile.as_deref())?;
         let state = if let Some(requested) = non_empty(initial_state.unwrap_or("")) {
             normalize_state_input(&requested)?
         } else {
@@ -730,7 +729,8 @@ impl App {
         } else {
             current.workflow_id.clone()
         };
-        let resolved_profile_id = self.resolve_profile_id(profile_id, Some(&current_workflow_id))?;
+        let resolved_profile_id =
+            self.resolve_profile_id(profile_id, Some(&current_workflow_id))?;
         let profile = self.profile_registry.require(&resolved_profile_id)?;
         if profile.workflow_id != current_workflow_id {
             return Err(AppError::InvalidArgument(format!(

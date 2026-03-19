@@ -23,7 +23,10 @@ pub fn is_queue_state(state: &str) -> bool {
 pub fn is_action_state(state: &str) -> bool {
     state == EVALUATING
         || (!is_queue_state(state)
-            && !matches!(state, "shipped" | "abandoned" | "deferred" | LEASE_TERMINATED))
+            && !matches!(
+                state,
+                "shipped" | "abandoned" | "deferred" | LEASE_TERMINATED
+            ))
 }
 
 pub fn is_queue_state_for_profile(

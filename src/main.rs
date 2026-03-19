@@ -2,8 +2,8 @@ mod app;
 mod cli;
 mod cli_help;
 mod cli_ops;
-mod cli_workflow;
 mod cli_skills;
+mod cli_workflow;
 mod completions;
 mod db;
 mod dispatch;
@@ -15,6 +15,7 @@ mod fsck;
 mod git_hooks;
 mod hierarchy_alias;
 mod init;
+mod installed_workflows;
 mod knot_id;
 mod lease;
 mod list_layout;
@@ -45,7 +46,6 @@ mod workflow;
 mod workflow_commands;
 mod workflow_diagram;
 mod workflow_runtime;
-mod installed_workflows;
 mod write_dispatch;
 mod write_queue;
 
@@ -158,7 +158,9 @@ fn run() -> Result<(), app::AppError> {
         Commands::Profile(_) => {
             unreachable!("profile commands are handled before app initialization")
         }
-        Commands::Workflow(_) => unreachable!("workflow commands are handled before app initialization"),
+        Commands::Workflow(_) => {
+            unreachable!("workflow commands are handled before app initialization")
+        }
         Commands::Rollback(_) => {
             unreachable!("queued write commands are handled before app initialization")
         }
