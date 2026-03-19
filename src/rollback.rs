@@ -1,8 +1,8 @@
 use crate::app::{App, AppError, KnotView};
-use crate::dispatch::owner_kind_label;
+use crate::dispatch::{owner_kind_label, profile_lookup_id};
 use crate::domain::knot_type::KnotType;
 use crate::profile::{DEFERRED, IMPLEMENTATION, PLANNING, SHIPMENT};
-use crate::workflow::{self, ProfileDefinition};
+use crate::workflow::ProfileDefinition;
 use crate::workflow_runtime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -18,8 +18,9 @@ pub fn resolve_rollback_state(app: &App, id: &str) -> Result<RollbackResolution,
     let knot = app
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.to_string()))?;
-    let registry = workflow::ProfileRegistry::load()?;
-    let profile = registry.require(&knot.profile_id)?;
+    let registry = app.profile_registry();
+    let profile_id = profile_lookup_id(&knot);
+    let profile = registry.require(&profile_id)?;
     let gate = knot.gate.clone().unwrap_or_default();
 
     require_rollback_state(profile, knot.knot_type, &knot.state)?;
@@ -30,7 +31,7 @@ pub fn resolve_rollback_state(app: &App, id: &str) -> Result<RollbackResolution,
     })?;
     let requires_force = workflow_runtime::validate_transition(
         &registry,
-        &knot.profile_id,
+        &profile_id,
         knot.knot_type,
         &knot.state,
         target.target_state,
@@ -39,7 +40,7 @@ pub fn resolve_rollback_state(app: &App, id: &str) -> Result<RollbackResolution,
     .is_err();
     let owner_kind = workflow_runtime::owner_kind_for_state(
         &registry,
-        &knot.profile_id,
+        &profile_id,
         knot.knot_type,
         &gate,
         target.target_state,
@@ -187,9 +188,10 @@ fn is_non_review_action_state(state: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::workflow::ProfileRegistry;
 
     fn profile(id: &str) -> ProfileDefinition {
-        workflow::ProfileRegistry::load()
+        ProfileRegistry::load()
             .expect("registry should load")
             .require(id)
             .expect("profile should exist")
@@ -197,7 +199,7 @@ mod tests {
     }
 
     fn profile_from_toml(raw: &str, id: &str) -> ProfileDefinition {
-        workflow::ProfileRegistry::from_toml(raw)
+        ProfileRegistry::from_toml(raw)
             .expect("registry should load from toml")
             .require(id)
             .expect("profile should exist")
@@ -309,7 +311,7 @@ mod tests {
 
     #[test]
     fn gate_owner_kind_uses_gate_metadata() {
-        let registry = workflow::ProfileRegistry::load().expect("registry should load");
+        let registry = ProfileRegistry::load().expect("registry should load");
         let owner_kind = workflow_runtime::owner_kind_for_state(
             &registry,
             "autopilot",

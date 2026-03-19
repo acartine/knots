@@ -1,8 +1,11 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::error::Error;
 use std::fmt;
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
+
+use crate::installed_workflows;
 
 const PROFILES_TOML: &str = include_str!("profiles.toml");
 const WILDCARD_STATE: &str = "*";
@@ -100,11 +103,15 @@ pub struct ProfileOwners {
     pub implementation_review: StepOwner,
     pub shipment: StepOwner,
     pub shipment_review: StepOwner,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub states: BTreeMap<String, StepOwner>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProfileDefinition {
     pub id: String,
+    #[serde(default = "builtin_workflow_id")]
+    pub workflow_id: String,
     #[serde(default)]
     pub aliases: Vec<String>,
     #[serde(default)]
@@ -115,8 +122,16 @@ pub struct ProfileDefinition {
     pub owners: ProfileOwners,
     pub initial_state: String,
     pub states: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub queue_states: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub action_states: Vec<String>,
     pub terminal_states: Vec<String>,
     pub transitions: Vec<WorkflowTransition>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub action_prompts: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub prompt_acceptance: BTreeMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -165,8 +180,10 @@ impl Error for InvalidWorkflowTransition {}
 pub enum ProfileError {
     Toml(toml::de::Error),
     InvalidDefinition(String),
+    InvalidBundle(String),
     MissingProfileReference,
     UnknownProfile(String),
+    UnknownWorkflow(String),
     UnknownState { profile_id: String, state: String },
     InvalidTransition(InvalidWorkflowTransition),
 }
@@ -178,10 +195,14 @@ impl fmt::Display for ProfileError {
             ProfileError::InvalidDefinition(message) => {
                 write!(f, "invalid profile definition: {}", message)
             }
+            ProfileError::InvalidBundle(message) => {
+                write!(f, "invalid workflow bundle: {}", message)
+            }
             ProfileError::MissingProfileReference => {
                 write!(f, "profile id is required")
             }
             ProfileError::UnknownProfile(id) => write!(f, "unknown profile '{}'", id),
+            ProfileError::UnknownWorkflow(id) => write!(f, "unknown workflow '{}'", id),
             ProfileError::UnknownState { profile_id, state } => {
                 write!(f, "unknown state '{}' for profile '{}'", state, profile_id)
             }
@@ -195,8 +216,10 @@ impl Error for ProfileError {
         match self {
             ProfileError::Toml(err) => Some(err),
             ProfileError::InvalidDefinition(_) => None,
+            ProfileError::InvalidBundle(_) => None,
             ProfileError::MissingProfileReference => None,
             ProfileError::UnknownProfile(_) => None,
+            ProfileError::UnknownWorkflow(_) => None,
             ProfileError::UnknownState { .. } => None,
             ProfileError::InvalidTransition(err) => Some(err),
         }
@@ -218,6 +241,23 @@ impl From<InvalidWorkflowTransition> for ProfileError {
 impl ProfileRegistry {
     pub fn load() -> Result<Self, ProfileError> {
         Self::from_toml(PROFILES_TOML)
+    }
+
+    pub fn load_for_repo(repo_root: &Path) -> Result<Self, ProfileError> {
+        let mut registry = Self::from_toml(PROFILES_TOML)?;
+        let installed = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
+        let workflow = installed.current_workflow()?;
+        if !workflow.builtin {
+            for mut profile in workflow.list_profiles() {
+                let raw_id = profile.id.clone();
+                let namespaced = installed_workflows::namespaced_profile_id(&workflow.id, &raw_id);
+                profile.aliases.push(raw_id);
+                profile.id = namespaced.clone();
+                registry.aliases.insert(namespaced.clone(), namespaced.clone());
+                registry.profiles.insert(namespaced, profile);
+            }
+        }
+        Ok(registry)
     }
 
     pub(crate) fn from_toml(raw: &str) -> Result<Self, ProfileError> {
@@ -248,6 +288,7 @@ impl ProfileRegistry {
 
         Ok(Self { profiles, aliases })
     }
+
 
     pub fn list(&self) -> Vec<ProfileDefinition> {
         let mut values = self.profiles.values().cloned().collect::<Vec<_>>();
@@ -296,6 +337,9 @@ impl ProfileOwners {
     /// Queue states (`ready_for_*`) map to the owner of their
     /// corresponding action state. Terminal states return `None`.
     pub fn owner_kind_for_state(&self, state: &str) -> Option<&OwnerKind> {
+        if let Some(owner) = self.states.get(state) {
+            return Some(&owner.kind);
+        }
         let action = match state {
             READY_FOR_PLANNING | PLANNING => PLANNING,
             READY_FOR_PLAN_REVIEW | PLAN_REVIEW => PLAN_REVIEW,
@@ -310,6 +354,32 @@ impl ProfileOwners {
 }
 
 impl ProfileDefinition {
+    pub fn is_queue_state(&self, state: &str) -> bool {
+        if !self.queue_states.is_empty() {
+            return self.queue_states.iter().any(|candidate| candidate == state);
+        }
+        state.starts_with("ready_for_") || state == "ready_to_evaluate"
+    }
+
+    #[allow(dead_code)]
+    pub fn is_action_state(&self, state: &str) -> bool {
+        if !self.action_states.is_empty() {
+            return self.action_states.iter().any(|candidate| candidate == state);
+        }
+        self.owners.for_action_state(state).is_some() || state == "evaluating"
+    }
+
+    pub fn prompt_for_action_state(&self, state: &str) -> Option<&str> {
+        self.action_prompts.get(state).map(String::as_str)
+    }
+
+    pub fn acceptance_for_action_state(&self, state: &str) -> &[String] {
+        self.prompt_acceptance
+            .get(state)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+    }
+
     pub fn is_terminal_state(&self, state: &str) -> bool {
         self.terminal_states
             .iter()
@@ -317,12 +387,13 @@ impl ProfileDefinition {
     }
 
     pub fn require_state(&self, state: &str) -> Result<(), ProfileError> {
-        if self.states.iter().any(|candidate| candidate == state) {
+        let normalized = normalize_state_alias(state);
+        if self.states.iter().any(|candidate| candidate == normalized) {
             return Ok(());
         }
         Err(ProfileError::UnknownState {
             profile_id: self.id.clone(),
-            state: state.to_string(),
+            state: normalized.to_string(),
         })
     }
 
@@ -332,6 +403,8 @@ impl ProfileDefinition {
         to: &str,
         force: bool,
     ) -> Result<(), ProfileError> {
+        let from = normalize_state_alias(from);
+        let to = normalize_state_alias(to);
         self.require_state(from)?;
         self.require_state(to)?;
 
@@ -355,14 +428,14 @@ impl ProfileDefinition {
     }
 
     pub fn next_happy_path_state(&self, current: &str) -> Option<&str> {
-        let pos = self.states.iter().position(|s| s == current)?;
+        let current = normalize_state_alias(current);
+        let pos = self.states.iter().position(|state| state == current)?;
         for candidate in &self.states[pos + 1..] {
-            let valid = self
-                .transitions
-                .iter()
-                .any(|t| t.from == current && t.to == *candidate);
+            let valid = self.transitions.iter().any(|transition| {
+                transition.from == current && transition.to == *candidate
+            });
             if valid {
-                return Some(candidate);
+                return Some(candidate.as_str());
             }
         }
         None
@@ -371,6 +444,10 @@ impl ProfileDefinition {
 
 pub fn normalize_profile_id(raw: &str) -> Option<String> {
     normalize_scalar(raw)
+}
+
+fn builtin_workflow_id() -> String {
+    installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string()
 }
 
 fn normalize_profile_definition(
@@ -440,9 +517,62 @@ fn normalize_profile_definition(
     }
 
     let terminal_states = vec![SHIPPED.to_string(), ABANDONED.to_string()];
+    let queue_states = states
+        .iter()
+        .filter(|state| state.starts_with("ready_for_"))
+        .cloned()
+        .collect::<Vec<_>>();
+    let action_states = states
+        .iter()
+        .filter(|state| {
+            matches!(
+                state.as_str(),
+                PLANNING
+                    | PLAN_REVIEW
+                    | IMPLEMENTATION
+                    | IMPLEMENTATION_REVIEW
+                    | SHIPMENT
+                    | SHIPMENT_REVIEW
+            )
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut owner_states = BTreeMap::new();
+    owner_states.insert(READY_FOR_PLANNING.to_string(), raw.owners.planning.clone());
+    owner_states.insert(PLANNING.to_string(), raw.owners.planning.clone());
+    owner_states.insert(READY_FOR_PLAN_REVIEW.to_string(), raw.owners.plan_review.clone());
+    owner_states.insert(PLAN_REVIEW.to_string(), raw.owners.plan_review.clone());
+    owner_states.insert(
+        READY_FOR_IMPLEMENTATION.to_string(),
+        raw.owners.implementation.clone(),
+    );
+    owner_states.insert(IMPLEMENTATION.to_string(), raw.owners.implementation.clone());
+    owner_states.insert(
+        READY_FOR_IMPLEMENTATION_REVIEW.to_string(),
+        raw.owners.implementation_review.clone(),
+    );
+    owner_states.insert(
+        IMPLEMENTATION_REVIEW.to_string(),
+        raw.owners.implementation_review.clone(),
+    );
+    owner_states.insert(READY_FOR_SHIPMENT.to_string(), raw.owners.shipment.clone());
+    owner_states.insert(SHIPMENT.to_string(), raw.owners.shipment.clone());
+    owner_states.insert(
+        READY_FOR_SHIPMENT_REVIEW.to_string(),
+        raw.owners.shipment_review.clone(),
+    );
+    owner_states.insert(
+        SHIPMENT_REVIEW.to_string(),
+        raw.owners.shipment_review.clone(),
+    );
+    let owners = ProfileOwners {
+        states: owner_states,
+        ..raw.owners
+    };
 
     Ok(ProfileDefinition {
         id,
+        workflow_id: builtin_workflow_id(),
         aliases,
         description: raw
             .description
@@ -450,11 +580,15 @@ fn normalize_profile_definition(
         planning_mode: raw.planning_mode,
         implementation_review_mode: raw.implementation_review_mode,
         output: raw.output,
-        owners: raw.owners,
+        owners,
         initial_state,
         states,
+        queue_states,
+        action_states,
         terminal_states,
         transitions,
+        action_prompts: BTreeMap::new(),
+        prompt_acceptance: BTreeMap::new(),
     })
 }
 
@@ -464,6 +598,19 @@ fn normalize_scalar(raw: &str) -> Option<String> {
         None
     } else {
         Some(trimmed.to_ascii_lowercase())
+    }
+}
+
+fn normalize_state_alias(raw: &str) -> &str {
+    match raw.trim() {
+        "idea" => READY_FOR_PLANNING,
+        "work_item" => READY_FOR_IMPLEMENTATION,
+        "implementing" => IMPLEMENTATION,
+        "implemented" => READY_FOR_IMPLEMENTATION_REVIEW,
+        "reviewing" => IMPLEMENTATION_REVIEW,
+        "rejected" | "refining" => READY_FOR_IMPLEMENTATION,
+        "approved" => READY_FOR_SHIPMENT,
+        other => other,
     }
 }
 

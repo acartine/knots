@@ -1294,6 +1294,7 @@ mod tests {
             gate: None,
             lease: None,
             lease_id: None,
+            workflow_id: "compatibility".to_string(),
             profile_id: "default".to_string(),
             profile_etag: None,
             deferred_from_state: None,

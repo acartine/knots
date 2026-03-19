@@ -14,7 +14,7 @@ use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 10;
+pub const CURRENT_SCHEMA_VERSION: i64 = 11;
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
 const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
@@ -34,7 +34,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 10] = [
+const MIGRATIONS: [Migration; 11] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -197,6 +197,13 @@ ALTER TABLE knot_hot ADD COLUMN gate_data_json TEXT NOT NULL DEFAULT '{}';
         sql: r#"
 ALTER TABLE knot_hot ADD COLUMN lease_data_json TEXT NOT NULL DEFAULT '{}';
 ALTER TABLE knot_hot ADD COLUMN lease_id TEXT;
+"#,
+    },
+    Migration {
+        version: 11,
+        name: "knot_workflow_id_v2",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN workflow_id TEXT NOT NULL DEFAULT 'compatibility';
 "#,
     },
 ];
@@ -431,6 +438,8 @@ pub struct KnotCacheRecord {
     #[serde(default)]
     pub lease_data: LeaseData,
     pub lease_id: Option<String>,
+    #[serde(default = "default_workflow_id")]
+    pub workflow_id: String,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -468,6 +477,7 @@ pub struct UpsertKnotHot<'a> {
     pub gate_data: &'a GateData,
     pub lease_data: &'a LeaseData,
     pub lease_id: Option<&'a str>,
+    pub workflow_id: &'a str,
     pub profile_id: &'a str,
     pub profile_etag: Option<&'a str>,
     pub deferred_from_state: Option<&'a str>,
@@ -490,7 +500,7 @@ INSERT INTO knot_hot (
     knot_type, tags_json, notes_json, handoff_capsules_json,
     invariants_json, step_history_json, gate_data_json,
     lease_data_json, lease_id,
-    profile_id, profile_etag,
+    workflow_id, profile_id, profile_etag,
     deferred_from_state, created_at
 )
 VALUES (
@@ -498,8 +508,8 @@ VALUES (
     ?8, ?9, ?10, ?11,
     ?12, ?13, ?14,
     ?15, ?16,
-    ?17, ?18,
-    ?19, ?20
+    ?17, ?18, ?19,
+    ?20, ?21
 )
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
@@ -517,6 +527,7 @@ ON CONFLICT(id) DO UPDATE SET
     gate_data_json = excluded.gate_data_json,
     lease_data_json = excluded.lease_data_json,
     lease_id = excluded.lease_id,
+    workflow_id = excluded.workflow_id,
     profile_id = excluded.profile_id,
     profile_etag = excluded.profile_etag,
     deferred_from_state = excluded.deferred_from_state,
@@ -539,6 +550,7 @@ ON CONFLICT(id) DO UPDATE SET
                 gate_data_json.as_str(),
                 lease_data_json.as_str(),
                 args.lease_id,
+                args.workflow_id,
                 args.profile_id,
                 args.profile_etag,
                 args.deferred_from_state,
@@ -562,7 +574,7 @@ SELECT id, title, state, updated_at, body, description, priority,
        knot_type, tags_json, notes_json, handoff_capsules_json,
        invariants_json, step_history_json, gate_data_json,
        lease_data_json, lease_id,
-       profile_id, profile_etag,
+       workflow_id, profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 WHERE id = ?1
@@ -580,7 +592,7 @@ SELECT id, title, state, updated_at, body, description, priority,
        knot_type, tags_json, notes_json, handoff_capsules_json,
        invariants_json, step_history_json, gate_data_json,
        lease_data_json, lease_id,
-       profile_id, profile_etag,
+       workflow_id, profile_id, profile_etag,
        deferred_from_state, created_at
 FROM knot_hot
 ORDER BY updated_at DESC, id ASC
@@ -621,10 +633,11 @@ fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> 
         gate_data: from_json_text(gate_data_json, 13)?,
         lease_data: from_json_text(lease_data_json, 14)?,
         lease_id: row.get(15)?,
-        profile_id: row.get(16)?,
-        profile_etag: row.get(17)?,
-        deferred_from_state: row.get(18)?,
-        created_at: row.get(19)?,
+        workflow_id: row.get(16)?,
+        profile_id: row.get(17)?,
+        profile_etag: row.get(18)?,
+        deferred_from_state: row.get(19)?,
+        created_at: row.get(20)?,
     })
 }
 
@@ -708,6 +721,10 @@ ON CONFLICT(id) DO UPDATE SET
         Ok(())
     })?;
     Ok(())
+}
+
+fn default_workflow_id() -> String {
+    "compatibility".to_string()
 }
 
 pub fn get_cold_catalog(conn: &Connection, id: &str) -> Result<Option<ColdCatalogRecord>> {

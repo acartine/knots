@@ -28,7 +28,7 @@ pub(crate) fn run_profile_command_with_home(
             None => app,
         })
     };
-    let registry = workflow::ProfileRegistry::load()?;
+    let registry = workflow::ProfileRegistry::load_for_repo(repo_root)?;
     let palette = ProfilePalette::auto();
     match &args.command {
         ProfileSubcommands::List(list_args) => {

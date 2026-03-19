@@ -17,31 +17,43 @@ pub fn initial_state(knot_type: KnotType, profile: &ProfileDefinition) -> String
 }
 
 pub fn is_queue_state(state: &str) -> bool {
-    matches!(
-        state,
-        "ready_for_planning"
-            | "ready_for_plan_review"
-            | "ready_for_implementation"
-            | "ready_for_implementation_review"
-            | "ready_for_shipment"
-            | "ready_for_shipment_review"
-            | READY_TO_EVALUATE
-    )
+    state.starts_with("ready_for_") || state == READY_TO_EVALUATE || state == LEASE_READY
 }
 
 pub fn is_action_state(state: &str) -> bool {
-    matches!(
-        state,
-        "planning"
-            | "plan_review"
-            | "implementation"
-            | "implementation_review"
-            | "shipment"
-            | "shipment_review"
-            | EVALUATING
-    )
+    state == EVALUATING
+        || (!is_queue_state(state)
+            && !matches!(state, "shipped" | "abandoned" | "deferred" | LEASE_TERMINATED))
 }
 
+pub fn is_queue_state_for_profile(
+    registry: &ProfileRegistry,
+    profile_id: &str,
+    knot_type: KnotType,
+    state: &str,
+) -> Result<bool, ProfileError> {
+    Ok(match knot_type {
+        KnotType::Work => registry.require(profile_id)?.is_queue_state(state),
+        KnotType::Gate => is_queue_state(state),
+        KnotType::Lease => state == LEASE_READY,
+    })
+}
+
+#[allow(dead_code)]
+pub fn is_action_state_for_profile(
+    registry: &ProfileRegistry,
+    profile_id: &str,
+    knot_type: KnotType,
+    state: &str,
+) -> Result<bool, ProfileError> {
+    Ok(match knot_type {
+        KnotType::Work => registry.require(profile_id)?.is_action_state(state),
+        KnotType::Gate => is_action_state(state),
+        KnotType::Lease => state == LEASE_ACTIVE,
+    })
+}
+
+#[allow(dead_code)]
 pub fn queue_state_for_stage(raw: &str) -> Option<&'static str> {
     match raw.trim().to_ascii_lowercase().replace('-', "_").as_str() {
         "planning" | "plan" => Some("ready_for_planning"),

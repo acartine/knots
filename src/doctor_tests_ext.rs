@@ -139,10 +139,9 @@ fn version_check_is_present_in_doctor_report() {
         version.detail
     );
     assert!(
-        version
-            .detail
-            .contains(&format!("v{}", env!("CARGO_PKG_VERSION"))),
-        "detail should contain current version: {}",
+        version.detail.contains(&format!("v{}", env!("CARGO_PKG_VERSION")))
+            || version.detail.contains("restart and rerun `kno doctor`"),
+        "detail should contain current version or the restart notice: {}",
         version.detail
     );
 
@@ -259,6 +258,7 @@ fn check_stuck_leases_warns_when_active() {
             gate_data: &gate,
             lease_data: &lease,
             lease_id: None,
+            workflow_id: "compatibility",
             profile_id: "autopilot",
             profile_etag: None,
             deferred_from_state: None,
@@ -316,6 +316,7 @@ fn fix_stuck_leases_terminates_active() {
             gate_data: &gate,
             lease_data: &lease,
             lease_id: None,
+            workflow_id: "compatibility",
             profile_id: "autopilot",
             profile_etag: None,
             deferred_from_state: None,

@@ -3,7 +3,6 @@ use std::error::Error;
 use std::fmt;
 use std::fs;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use rusqlite::Connection;
@@ -25,6 +24,7 @@ use crate::events::{
 };
 use crate::fsck::{run_fsck, FsckError, FsckReport};
 use crate::hierarchy_alias::{build_alias_maps, AliasMaps};
+use crate::installed_workflows;
 use crate::knot_id::generate_knot_id;
 use crate::locks::{FileLock, LockError};
 use crate::perf::{run_perf_harness, PerfError, PerfReport};
@@ -70,6 +70,7 @@ pub struct KnotView {
     pub lease: Option<LeaseData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lease_id: Option<String>,
+    pub workflow_id: String,
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
@@ -204,7 +205,7 @@ impl App {
         }
         ensure_parent_dir(db_path)?;
         let conn = db::open_connection(db_path)?;
-        let profile_registry = ProfileRegistry::load()?;
+        let profile_registry = ProfileRegistry::load_for_repo(&repo_root)?;
         let writer = EventWriter::new(repo_root.clone());
         Ok(Self {
             conn,
@@ -303,8 +304,36 @@ impl App {
 
     fn resolve_config_profile(&self, raw: &Option<String>) -> Option<String> {
         let raw_id = raw.as_deref()?;
-        let profile = self.profile_registry.require(raw_id).ok()?;
-        Some(profile.id.clone())
+        self.resolve_profile_id(raw_id, None).ok()
+    }
+
+    fn current_workflow_id(&self) -> Result<String, AppError> {
+        let registry = installed_workflows::InstalledWorkflowRegistry::load(&self.repo_root)?;
+        Ok(registry.current_workflow_id().to_string())
+    }
+
+    fn resolve_profile_id(
+        &self,
+        raw_profile_id: &str,
+        workflow_id: Option<&str>,
+    ) -> Result<String, AppError> {
+        if let Ok(profile) = self.profile_registry.require(raw_profile_id) {
+            return Ok(profile.id.clone());
+        }
+        if let Some((_, suffix)) = raw_profile_id.rsplit_once('/') {
+            if let Ok(profile) = self.profile_registry.require(suffix) {
+                return Ok(profile.id.clone());
+            }
+        }
+        if let Some(workflow_id) = workflow_id {
+            if let Ok(profile) = self.profile_registry.require(raw_profile_id) {
+                if profile.workflow_id == workflow_id {
+                    return Ok(profile.id.clone());
+                }
+            }
+        }
+        let profile = self.profile_registry.require(raw_profile_id)?;
+        Ok(profile.id.clone())
     }
 
     pub fn default_profile_id(&self) -> Result<String, AppError> {
@@ -312,11 +341,26 @@ impl App {
         if let Some(id) = self.resolve_config_profile(&config.default_profile) {
             return Ok(id);
         }
+        if let Ok(registry) = installed_workflows::InstalledWorkflowRegistry::load(&self.repo_root) {
+            if let Some(current_profile) = registry.current_profile_id() {
+                if self.profile_registry.require(current_profile).is_ok() {
+                    return Ok(current_profile.to_string());
+                }
+            }
+            if let Ok(workflow) = registry.current_workflow() {
+                if let Some(default_profile) = workflow.default_profile.as_deref() {
+                    if self.profile_registry.require(default_profile).is_ok() {
+                        return Ok(default_profile.to_string());
+                    }
+                }
+            }
+        }
         self.fallback_profile_id()
     }
 
     pub fn set_default_profile_id(&self, profile_id: &str) -> Result<String, AppError> {
-        let profile = self.profile_registry.require(profile_id)?;
+        let resolved = self.resolve_profile_id(profile_id, None)?;
+        let profile = self.profile_registry.require(&resolved)?;
         let mut config = self.read_user_config()?;
         config.default_profile = Some(profile.id.clone());
         self.write_user_config(&config)?;
@@ -327,6 +371,9 @@ impl App {
         let config = self.read_user_config()?;
         if let Some(id) = self.resolve_config_profile(&config.default_quick_profile) {
             return Ok(id);
+        }
+        if self.current_workflow_id()? != installed_workflows::COMPATIBILITY_WORKFLOW_ID {
+            return self.default_profile_id();
         }
         // Fallback: first profile with planning_mode == Skipped
         let profiles = self.profile_registry.list();
@@ -339,11 +386,16 @@ impl App {
     }
 
     pub fn set_default_quick_profile_id(&self, profile_id: &str) -> Result<String, AppError> {
-        let profile = self.profile_registry.require(profile_id)?;
+        let resolved = self.resolve_profile_id(profile_id, None)?;
+        let profile = self.profile_registry.require(&resolved)?;
         let mut config = self.read_user_config()?;
         config.default_quick_profile = Some(profile.id.clone());
         self.write_user_config(&config)?;
         Ok(profile.id.clone())
+    }
+
+    pub(crate) fn profile_registry(&self) -> &ProfileRegistry {
+        &self.profile_registry
     }
 
     fn mark_sync_pending(&self) -> Result<(), AppError> {
@@ -557,9 +609,13 @@ impl App {
         } else {
             None
         };
+        let resolved_profile = match profile_id {
+            Some(raw) => Some(self.resolve_profile_id(raw, None)?),
+            None => default_profile.clone(),
+        };
         let profile = self
             .profile_registry
-            .resolve(profile_id.or(default_profile.as_deref()))?;
+            .resolve(resolved_profile.as_deref())?;
         let state = if let Some(requested) = non_empty(initial_state.unwrap_or("")) {
             normalize_state_input(&requested)?
         } else {
@@ -583,6 +639,7 @@ impl App {
             json!({
                 "title": title,
                 "state": state.as_str(),
+                "workflow_id": profile.workflow_id.as_str(),
                 "profile_id": profile.id.as_str(),
                 "body": body,
                 "type": options.knot_type.as_str(),
@@ -599,6 +656,7 @@ impl App {
                 knot_id: &knot_id,
                 title,
                 state: state.as_str(),
+                workflow_id: profile.workflow_id.as_str(),
                 profile_id: profile.id.as_str(),
                 updated_at: &occurred_at,
                 terminal,
@@ -639,6 +697,7 @@ impl App {
                 gate_data: &options.gate_data,
                 lease_data: &options.lease_data,
                 lease_id: None,
+                workflow_id: profile.workflow_id.as_str(),
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: None,
@@ -665,7 +724,20 @@ impl App {
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.clone()))?;
         ensure_profile_etag(&current, expected_profile_etag)?;
 
-        let profile = self.profile_registry.require(profile_id)?;
+        let current_profile = self.profile_registry.require(&current.profile_id)?;
+        let current_workflow_id = if current.workflow_id.trim().is_empty() {
+            current_profile.workflow_id.clone()
+        } else {
+            current.workflow_id.clone()
+        };
+        let resolved_profile_id = self.resolve_profile_id(profile_id, Some(&current_workflow_id))?;
+        let profile = self.profile_registry.require(&resolved_profile_id)?;
+        if profile.workflow_id != current_workflow_id {
+            return Err(AppError::InvalidArgument(format!(
+                "cannot change knot '{}' from workflow '{}' to '{}'",
+                current.id, current_workflow_id, profile.workflow_id
+            )));
+        }
         let next_state = normalize_state_input(state)?;
         require_state_for_knot_type(
             parse_knot_type(current.knot_type.as_deref()),
@@ -720,6 +792,7 @@ impl App {
                 knot_id: &id,
                 title: &current.title,
                 state: &next_state,
+                workflow_id: profile.workflow_id.as_str(),
                 profile_id: profile.id.as_str(),
                 updated_at: &occurred_at,
                 terminal,
@@ -755,6 +828,7 @@ impl App {
                 gate_data: &current.gate_data,
                 lease_data: &current.lease_data,
                 lease_id: current.lease_id.as_deref(),
+                workflow_id: &profile.workflow_id,
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -940,6 +1014,7 @@ impl App {
                     let state_event_data = build_state_event_data(
                         &current.state,
                         &state,
+                        &profile.workflow_id,
                         &profile_id,
                         patch.force,
                         deferred_from_state.as_deref(),
@@ -1211,6 +1286,7 @@ impl App {
                 knot_id: &id,
                 title: &title,
                 state: &state,
+                workflow_id: &profile.workflow_id,
                 profile_id: &profile_id,
                 updated_at: &occurred_at,
                 terminal,
@@ -1250,6 +1326,7 @@ impl App {
                 gate_data: &gate_data,
                 lease_data: &current.lease_data,
                 lease_id: current.lease_id.as_deref(),
+                workflow_id: &profile.workflow_id,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1391,6 +1468,7 @@ impl App {
         let state_event_data = build_state_event_data(
             &current.state,
             next_state,
+            &profile.workflow_id,
             &profile_id,
             force,
             deferred_from_state.as_deref(),
@@ -1423,6 +1501,7 @@ impl App {
                 knot_id: &current.id,
                 title: &current.title,
                 state: next_state,
+                workflow_id: &profile.workflow_id,
                 profile_id: &profile_id,
                 updated_at: &occurred_at,
                 terminal,
@@ -1466,6 +1545,7 @@ impl App {
                 gate_data: &current.gate_data,
                 lease_data: &current.lease_data,
                 lease_id: current.lease_id.as_deref(),
+                workflow_id: &profile.workflow_id,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
@@ -1623,6 +1703,7 @@ impl App {
                 knot_id: &current.id,
                 title: &current.title,
                 state: &current.state,
+                workflow_id: &profile.workflow_id,
                 profile_id: profile.id.as_str(),
                 updated_at: &occurred_at,
                 terminal,
@@ -1655,6 +1736,7 @@ impl App {
                 gate_data: &current.gate_data,
                 lease_data: &current.lease_data,
                 lease_id: current.lease_id.as_deref(),
+                workflow_id: &profile.workflow_id,
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -1697,6 +1779,7 @@ impl App {
                 gate_data: &record.gate_data,
                 lease_data: &record.lease_data,
                 lease_id,
+                workflow_id: &record.workflow_id,
                 profile_id: &record.profile_id,
                 profile_etag: record.profile_etag.as_deref(),
                 deferred_from_state: record.deferred_from_state.as_deref(),
@@ -1758,6 +1841,7 @@ impl App {
                 knot_id: &id,
                 title: &current.title,
                 state: &current.state,
+                workflow_id: &profile.workflow_id,
                 profile_id: profile.id.as_str(),
                 updated_at: &occurred_at,
                 terminal,
@@ -1787,6 +1871,7 @@ impl App {
                 gate_data: &current.gate_data,
                 lease_data: &current.lease_data,
                 lease_id: current.lease_id.as_deref(),
+                workflow_id: &profile.workflow_id,
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -2098,6 +2183,7 @@ impl App {
                 gate_data: &record.gate_data,
                 lease_data: &record.lease_data,
                 lease_id: record.lease_id.as_deref(),
+                workflow_id: &record.workflow_id,
                 profile_id: &record.profile_id,
                 profile_etag: record.profile_etag.as_deref(),
                 deferred_from_state: record.deferred_from_state.as_deref(),
@@ -2160,6 +2246,7 @@ impl App {
                 knot_id: src,
                 title: &current.title,
                 state: &current.state,
+                workflow_id: &profile.workflow_id,
                 profile_id: &profile_id,
                 updated_at: &occurred_at,
                 terminal,
@@ -2196,6 +2283,7 @@ impl App {
                 gate_data: &current.gate_data,
                 lease_data: &current.lease_data,
                 lease_id: current.lease_id.as_deref(),
+                workflow_id: &profile.workflow_id,
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
@@ -2239,12 +2327,27 @@ fn non_empty(raw: &str) -> Option<String> {
 }
 
 fn canonical_profile_id(raw: &str) -> String {
-    normalize_profile_id(raw).unwrap_or_else(|| raw.trim().to_ascii_lowercase())
+    let trimmed = raw.trim();
+    let unqualified = trimmed.rsplit('/').next().unwrap_or(trimmed);
+    normalize_profile_id(unqualified).unwrap_or_else(|| unqualified.to_ascii_lowercase())
 }
 
 fn normalize_state_input(raw: &str) -> Result<String, AppError> {
-    let parsed = crate::domain::state::KnotState::from_str(raw)?;
-    Ok(parsed.as_str().to_string())
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::InvalidArgument("state is required".to_string()));
+    }
+    let normalized = trimmed.to_ascii_lowercase().replace('-', "_");
+    Ok(match normalized.as_str() {
+        "idea" => "ready_for_planning".to_string(),
+        "work_item" => "ready_for_implementation".to_string(),
+        "implementing" => "implementation".to_string(),
+        "implemented" => "ready_for_implementation_review".to_string(),
+        "reviewing" => "implementation_review".to_string(),
+        "rejected" | "refining" => "ready_for_implementation".to_string(),
+        "approved" => "ready_for_shipment".to_string(),
+        _ => normalized,
+    })
 }
 
 fn normalize_tag(raw: &str) -> String {
@@ -2316,6 +2419,7 @@ struct KnotHeadData<'a> {
     knot_id: &'a str,
     title: &'a str,
     state: &'a str,
+    workflow_id: &'a str,
     profile_id: &'a str,
     updated_at: &'a str,
     terminal: bool,
@@ -2336,6 +2440,10 @@ fn build_knot_head_data(head: KnotHeadData<'_>) -> Value {
     payload.insert(
         "profile_id".to_string(),
         Value::String(head.profile_id.to_string()),
+    );
+    payload.insert(
+        "workflow_id".to_string(),
+        Value::String(head.workflow_id.to_string()),
     );
     payload.insert(
         "updated_at".to_string(),
@@ -2368,6 +2476,7 @@ fn build_knot_head_data(head: KnotHeadData<'_>) -> Value {
 fn build_state_event_data(
     from: &str,
     to: &str,
+    workflow_id: &str,
     profile_id: &str,
     force: bool,
     deferred_from_state: Option<&str>,
@@ -2377,6 +2486,10 @@ fn build_state_event_data(
     let mut payload = serde_json::Map::new();
     payload.insert("from".to_string(), Value::String(from.to_string()));
     payload.insert("to".to_string(), Value::String(to.to_string()));
+    payload.insert(
+        "workflow_id".to_string(),
+        Value::String(workflow_id.to_string()),
+    );
     payload.insert(
         "profile_id".to_string(),
         Value::String(profile_id.to_string()),
@@ -2543,6 +2656,7 @@ struct RehydrateProjection {
     gate_data: GateData,
     lease_data: LeaseData,
     lease_id: Option<String>,
+    workflow_id: String,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
@@ -2572,6 +2686,7 @@ fn rehydrate_from_events(
         gate_data: GateData::default(),
         lease_data: LeaseData::default(),
         lease_id: None,
+        workflow_id: String::new(),
         profile_id: String::new(),
         profile_etag: None,
         deferred_from_state: None,
@@ -2656,11 +2771,16 @@ fn rehydrate_from_events(
         if let Some(raw_type) = data.get("type").and_then(Value::as_str) {
             projection.knot_type = parse_knot_type(Some(raw_type));
         }
-        let raw_profile_id = data
+        if let Some(raw_workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
+            if let Some(workflow_id) = normalize_profile_id(raw_workflow_id) {
+                projection.workflow_id = workflow_id;
+            }
+        }
+        if let Some(raw_profile_id) = data
             .get("profile_id")
             .and_then(Value::as_str)
-            .or_else(|| data.get("workflow_id").and_then(Value::as_str));
-        if let Some(raw_profile_id) = raw_profile_id {
+            .or_else(|| data.get("workflow_id").and_then(Value::as_str))
+        {
             if let Some(profile_id) = normalize_profile_id(raw_profile_id) {
                 projection.profile_id = profile_id;
             }
@@ -2678,11 +2798,19 @@ fn rehydrate_from_events(
         projection.profile_etag = Some(event.event_id.clone());
     }
 
+    if projection.workflow_id.trim().is_empty() {
+        projection.workflow_id = installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string();
+    }
+
     if projection.profile_id.trim().is_empty() {
-        return Err(AppError::InvalidArgument(format!(
-            "rehydrate events for '{}' are missing profile_id",
-            knot_id
-        )));
+        if !projection.workflow_id.trim().is_empty() {
+            projection.profile_id = projection.workflow_id.clone();
+        } else {
+            return Err(AppError::InvalidArgument(format!(
+                "rehydrate events for '{}' are missing profile_id",
+                knot_id
+            )));
+        }
     }
 
     Ok(projection)
@@ -2701,11 +2829,12 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
             if let Some(state) = data.get("state").and_then(Value::as_str) {
                 projection.state = state.to_string();
             }
-            let raw_profile_id = data
-                .get("profile_id")
-                .and_then(Value::as_str)
-                .or_else(|| data.get("workflow_id").and_then(Value::as_str));
-            if let Some(raw_profile_id) = raw_profile_id {
+            if let Some(raw_workflow_id) = data.get("workflow_id").and_then(Value::as_str) {
+                if let Some(workflow_id) = normalize_profile_id(raw_workflow_id) {
+                    projection.workflow_id = workflow_id;
+                }
+            }
+            if let Some(raw_profile_id) = data.get("profile_id").and_then(Value::as_str) {
                 if let Some(profile_id) = normalize_profile_id(raw_profile_id) {
                     projection.profile_id = profile_id;
                 }
@@ -2743,11 +2872,19 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
                 .map(ToString::to_string);
         }
         "knot.profile_set" => {
+            let raw_workflow_id = data
+                .get("workflow_id")
+                .and_then(Value::as_str)
+                .or_else(|| data.get("profile_id").and_then(Value::as_str));
+            if let Some(raw_workflow_id) = raw_workflow_id {
+                if let Some(workflow_id) = normalize_profile_id(raw_workflow_id) {
+                    projection.workflow_id = workflow_id;
+                }
+            }
             let raw_profile_id = data
                 .get("to_profile_id")
                 .and_then(Value::as_str)
-                .or_else(|| data.get("profile_id").and_then(Value::as_str))
-                .or_else(|| data.get("workflow_id").and_then(Value::as_str));
+                .or_else(|| data.get("profile_id").and_then(Value::as_str));
             if let Some(raw_profile_id) = raw_profile_id {
                 if let Some(profile_id) = normalize_profile_id(raw_profile_id) {
                     projection.profile_id = profile_id;
@@ -2894,6 +3031,7 @@ impl From<KnotCacheRecord> for KnotView {
             gate,
             lease,
             lease_id: value.lease_id,
+            workflow_id: value.workflow_id,
             profile_id,
             profile_etag: value.profile_etag,
             deferred_from_state: value.deferred_from_state,

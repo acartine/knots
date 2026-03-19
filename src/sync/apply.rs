@@ -12,6 +12,7 @@ use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 use crate::events::{FullEvent, IndexEvent, IndexEventKind, WorkflowPrecondition};
+use crate::installed_workflows;
 use crate::snapshots::apply_latest_snapshots;
 use crate::tiering::{classify_knot_tier, CacheTier};
 
@@ -160,6 +161,7 @@ impl<'a> IncrementalApplier<'a> {
         let state = required_string(data, "state", &absolute_path)?;
         let updated_at = required_string(data, "updated_at", &absolute_path)?;
         let profile_id = required_profile_id(data, &absolute_path)?.to_ascii_lowercase();
+        let workflow_id = required_workflow_id(data, &profile_id);
 
         if is_stale_precondition(self.conn, &knot_id, event.precondition.as_ref())? {
             return Ok(false);
@@ -259,6 +261,7 @@ impl<'a> IncrementalApplier<'a> {
                         gate_data: &gate_data,
                         lease_data: &lease_data,
                         lease_id: lease_id.as_deref(),
+                        workflow_id: &workflow_id,
                         profile_id: &profile_id,
                         profile_etag: Some(&event.event_id),
                         deferred_from_state: deferred_from_state.as_deref(),
@@ -431,6 +434,7 @@ impl<'a> IncrementalApplier<'a> {
             gate_data: existing.gate_data,
             lease_data: existing.lease_data,
             lease_id: existing.lease_id,
+            workflow_id: existing.workflow_id,
             profile_id: existing.profile_id,
             profile_etag: existing.profile_etag,
             deferred_from_state: existing.deferred_from_state,
@@ -457,6 +461,7 @@ impl<'a> IncrementalApplier<'a> {
                 gate_data: &projection.gate_data,
                 lease_data: &projection.lease_data,
                 lease_id: projection.lease_id.as_deref(),
+                workflow_id: &projection.workflow_id,
                 profile_id: &projection.profile_id,
                 profile_etag: projection.profile_etag.as_deref(),
                 deferred_from_state: projection.deferred_from_state.as_deref(),
@@ -489,6 +494,7 @@ struct MetadataProjection {
     gate_data: GateData,
     lease_data: LeaseData,
     lease_id: Option<String>,
+    workflow_id: String,
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
@@ -535,6 +541,20 @@ fn required_profile_id(object: &Map<String, Value>, path: &Path) -> Result<Strin
         path,
         "missing 'profile_id' string field (or legacy 'workflow_id')",
     ))
+}
+
+fn required_workflow_id(object: &Map<String, Value>, profile_id: &str) -> String {
+    if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
+        let trimmed = value.trim();
+        if !trimmed.is_empty() {
+            return trimmed.to_ascii_lowercase();
+        }
+    }
+
+    profile_id
+        .split_once('/')
+        .map(|(workflow_id, _)| workflow_id.to_string())
+        .unwrap_or_else(|| installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string())
 }
 
 fn optional_string(value: Option<&Value>) -> Option<String> {

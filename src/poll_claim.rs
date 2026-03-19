@@ -1,4 +1,5 @@
 use crate::app::{App, AppError, KnotView, StateActorMetadata};
+use crate::dispatch::profile_lookup_id;
 use crate::cli::{ClaimArgs, PollArgs, ReadyArgs};
 use crate::domain::knot_type::KnotType;
 use crate::listing::{apply_filters, KnotListFilter};
@@ -64,14 +65,15 @@ pub fn run_claim(app: &App, args: ClaimArgs) -> Result<(), AppError> {
 }
 
 pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
-    let registry = ProfileRegistry::load()?;
+    let registry = app.profile_registry();
     let knot = app
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.to_string()))?;
-    require_queue_state(&knot)?;
+    require_queue_state(registry, &knot)?;
+    let profile_id = profile_lookup_id(&knot);
     let next_action = workflow_runtime::next_happy_path_state(
         &registry,
-        &knot.profile_id,
+        &profile_id,
         knot.knot_type,
         &knot.state,
     )?
@@ -81,12 +83,7 @@ pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
             knot.id, knot.state
         ))
     })?;
-    let skill = skills::skill_for_state(&next_action).ok_or_else(|| {
-        AppError::InvalidArgument(format!(
-            "next state '{}' is not an action state with a skill",
-            next_action
-        ))
-    })?;
+    let skill = prompt_body_for_state(registry, &profile_id, &next_action)?;
     let completion_cmd = completion_command(&knot.id, &next_action);
     Ok(PollResult {
         knot,
@@ -114,7 +111,7 @@ pub fn poll_queue(
     stage: Option<&str>,
     owner_filter: Option<&str>,
 ) -> Result<Option<PollResult>, AppError> {
-    let registry = ProfileRegistry::load()?;
+    let registry = app.profile_registry();
     let owner_kind = parse_owner_filter(owner_filter);
     let knots = list_queue_candidates(app, stage)?;
     for knot in knots {
@@ -126,14 +123,15 @@ pub fn poll_queue(
 }
 
 pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<PollResult, AppError> {
-    let registry = ProfileRegistry::load()?;
+    let registry = app.profile_registry();
     let knot = app
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.to_string()))?;
-    require_queue_state(&knot)?;
+    require_queue_state(registry, &knot)?;
+    let profile_id = profile_lookup_id(&knot);
     let next_action = workflow_runtime::next_happy_path_state(
         &registry,
-        &knot.profile_id,
+        &profile_id,
         knot.knot_type,
         &knot.state,
     )?
@@ -143,12 +141,7 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
             knot.id, knot.state
         ))
     })?;
-    let skill = skills::skill_for_state(&next_action).ok_or_else(|| {
-        AppError::InvalidArgument(format!(
-            "next state '{}' is not an action state with a skill",
-            next_action
-        ))
-    })?;
+    let skill = prompt_body_for_state(registry, &profile_id, &next_action)?;
     let claim_actor = StateActorMetadata {
         actor_kind: Some(actor.actor_kind.unwrap_or_else(|| "agent".to_string())),
         ..actor
@@ -228,17 +221,31 @@ pub fn run_ready(app: &App, args: ReadyArgs) -> Result<(), AppError> {
 }
 
 pub fn list_queue_candidates(app: &App, stage: Option<&str>) -> Result<Vec<KnotView>, AppError> {
-    let state_filter = stage.and_then(workflow_runtime::queue_state_for_stage);
     let filter = KnotListFilter {
         include_all: false,
-        state: state_filter.map(ToString::to_string),
+        state: None,
         knot_type: None,
         profile_id: None,
         tags: Vec::new(),
         query: None,
     };
     let mut knots = apply_filters(app.list_knots()?, &filter);
-    knots.retain(|k| workflow_runtime::is_queue_state(&k.state));
+    let registry = app.profile_registry();
+    knots.retain(|k| {
+        matches!(
+            workflow_runtime::is_queue_state_for_profile(
+                registry,
+                &k.profile_id,
+                k.knot_type,
+                &k.state
+            ),
+            Ok(true)
+        )
+    });
+    if let Some(stage) = stage {
+        let normalized = normalize_ready_type(Some(stage)).unwrap_or_else(|| stage.to_string());
+        knots.retain(|k| queue_stage_matches(registry, k, &normalized));
+    }
     knots.retain(|k| k.knot_type != KnotType::Lease);
     knots.sort_by(|a, b| {
         let pa = a.priority.unwrap_or(i64::MAX);
@@ -254,9 +261,10 @@ fn match_pollable(
     owner_kind: &OwnerKind,
 ) -> Result<Option<PollResult>, AppError> {
     let gate = knot.gate.clone().unwrap_or_default();
+    let profile_id = profile_lookup_id(knot);
     let next_action = match workflow_runtime::next_happy_path_state(
         registry,
-        &knot.profile_id,
+        &profile_id,
         knot.knot_type,
         &knot.state,
     )? {
@@ -265,7 +273,7 @@ fn match_pollable(
     };
     let step_owner = match workflow_runtime::owner_kind_for_state(
         registry,
-        &knot.profile_id,
+        &profile_id,
         knot.knot_type,
         &gate,
         &next_action,
@@ -276,9 +284,9 @@ fn match_pollable(
     if step_owner != *owner_kind {
         return Ok(None);
     }
-    let skill = match skills::skill_for_state(&next_action) {
-        Some(s) => s,
-        None => return Ok(None),
+    let skill = match prompt_body_for_state(registry, &profile_id, &next_action) {
+        Ok(skill) => skill,
+        Err(_) => return Ok(None),
     };
     let completion_cmd = completion_command(&knot.id, &next_action);
     Ok(Some(PollResult {
@@ -301,14 +309,29 @@ fn build_agent_info_from_actor(
     })
 }
 
-fn require_queue_state(knot: &KnotView) -> Result<(), AppError> {
+fn require_queue_state(registry: &ProfileRegistry, knot: &KnotView) -> Result<(), AppError> {
     if knot.knot_type == KnotType::Lease {
         return Err(AppError::InvalidArgument(format!(
             "knot '{}' is a lease and cannot be claimed",
             knot.id
         )));
     }
-    if !workflow_runtime::is_queue_state(&knot.state) {
+    if knot.knot_type == KnotType::Work {
+        if !workflow_runtime::is_queue_state(&knot.state) {
+            return Err(AppError::InvalidArgument(format!(
+                "knot '{}' is in state '{}', which is not a claimable queue state",
+                knot.id, knot.state
+            )));
+        }
+        return Ok(());
+    }
+    let profile_id = profile_lookup_id(knot);
+    if !workflow_runtime::is_queue_state_for_profile(
+        registry,
+        &profile_id,
+        knot.knot_type,
+        &knot.state,
+    )? {
         return Err(AppError::InvalidArgument(format!(
             "knot '{}' is in state '{}', which is not a claimable queue state",
             knot.id, knot.state
@@ -319,6 +342,57 @@ fn require_queue_state(knot: &KnotView) -> Result<(), AppError> {
 
 fn completion_command(knot_id: &str, current_state: &str) -> String {
     format!("kno next {knot_id} --expected-state {current_state} {AGENT_COMPLETION_METADATA_FLAGS}")
+}
+
+fn prompt_body_for_state(
+    registry: &ProfileRegistry,
+    profile_id: &str,
+    action_state: &str,
+) -> Result<&'static str, AppError> {
+    if let Ok(profile) = registry.require(profile_id) {
+        if let Some(prompt_body) = profile.prompt_for_action_state(action_state) {
+            let mut rendered = prompt_body.trim().to_string();
+            let acceptance = profile.acceptance_for_action_state(action_state);
+            if !acceptance.is_empty() {
+                if !rendered.is_empty() {
+                    rendered.push_str("\n\n");
+                }
+                rendered.push_str("## Acceptance Criteria\n\n");
+                for item in acceptance {
+                    rendered.push_str("- ");
+                    rendered.push_str(item);
+                    rendered.push('\n');
+                }
+            }
+            return Ok(Box::leak(rendered.into_boxed_str()));
+        }
+    }
+
+    skills::skill_for_state(action_state).ok_or_else(|| {
+        AppError::InvalidArgument(format!(
+            "next state '{}' is not an action state with a prompt",
+            action_state
+        ))
+    })
+}
+
+fn queue_stage_matches(registry: &ProfileRegistry, knot: &KnotView, normalized: &str) -> bool {
+    if knot.state == normalized {
+        return true;
+    }
+    if knot.state.trim_start_matches("ready_for_") == normalized {
+        return true;
+    }
+    if normalized == "evaluate" && knot.state == workflow_runtime::READY_TO_EVALUATE {
+        return true;
+    }
+    if let Ok(profile) = registry.require(&profile_lookup_id(knot)) {
+        return profile
+            .queue_states
+            .iter()
+            .any(|state| state == &knot.state && state.trim_start_matches("ready_for_") == normalized);
+    }
+    false
 }
 
 fn normalize_ready_type(raw: Option<&str>) -> Option<String> {

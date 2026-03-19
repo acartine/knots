@@ -2,6 +2,7 @@ mod app;
 mod cli;
 mod cli_help;
 mod cli_ops;
+mod cli_workflow;
 mod cli_skills;
 mod completions;
 mod db;
@@ -41,8 +42,10 @@ mod sync;
 mod tiering;
 mod ui;
 mod workflow;
+mod workflow_commands;
 mod workflow_diagram;
 mod workflow_runtime;
+mod installed_workflows;
 mod write_dispatch;
 mod write_queue;
 
@@ -100,6 +103,9 @@ fn run() -> Result<(), app::AppError> {
     if let Commands::Profile(args) = &cli.command {
         return profile_commands::run_profile_command(args, &cli.repo_root, &cli.db);
     }
+    if let Commands::Workflow(args) = &cli.command {
+        return workflow_commands::run_workflow_command(args, &cli.repo_root);
+    }
     if let Some(output) = write_dispatch::maybe_run_queued_command(&cli)? {
         print!("{output}");
         return Ok(());
@@ -152,6 +158,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Profile(_) => {
             unreachable!("profile commands are handled before app initialization")
         }
+        Commands::Workflow(_) => unreachable!("workflow commands are handled before app initialization"),
         Commands::Rollback(_) => {
             unreachable!("queued write commands are handled before app initialization")
         }
@@ -403,20 +410,50 @@ fn run() -> Result<(), app::AppError> {
             unreachable!("queued write commands are handled before app initialization")
         }
         Commands::Skill(args) => {
-            let content = match dispatch::resolve_next_state(&app, &args.id) {
-                Ok((_knot, next, _owner)) => skills::skill_for_state(&next),
-                Err(app::AppError::NotFound(_)) => {
+            let content = match app.show_knot(&args.id)? {
+                Some(knot) => {
+                    let (_knot, next, _owner) = dispatch::resolve_next_state(&app, &args.id)?;
+                    let profile = app
+                        .profile_registry()
+                        .require(&dispatch::profile_lookup_id(&knot))?;
+                    if let Some(prompt_body) = profile.prompt_for_action_state(&next) {
+                        let mut rendered = prompt_body.trim().to_string();
+                        let acceptance = profile.acceptance_for_action_state(&next);
+                        if !acceptance.is_empty() {
+                            if !rendered.is_empty() {
+                                rendered.push_str("\n\n");
+                            }
+                            rendered.push_str("## Acceptance Criteria\n\n");
+                            for item in acceptance {
+                                rendered.push_str("- ");
+                                rendered.push_str(item);
+                                rendered.push('\n');
+                            }
+                        }
+                        rendered
+                    } else {
+                        skills::skill_for_state(&next)
+                            .ok_or_else(|| {
+                                app::AppError::InvalidArgument(format!(
+                                    "'{}' is not a knot id or skill state name",
+                                    args.id
+                                ))
+                            })?
+                            .to_string()
+                    }
+                }
+                None => {
                     let normalized = args.id.trim().to_ascii_lowercase().replace('-', "_");
                     skills::skill_for_state(&normalized)
+                        .ok_or_else(|| {
+                            app::AppError::InvalidArgument(format!(
+                                "'{}' is not a knot id or skill state name",
+                                args.id
+                            ))
+                        })?
+                        .to_string()
                 }
-                Err(err) => return Err(err),
             };
-            let content = content.ok_or_else(|| {
-                app::AppError::InvalidArgument(format!(
-                    "'{}' is not a knot id or skill state name",
-                    args.id
-                ))
-            })?;
             print!("{content}");
         }
         Commands::Q(_) => {

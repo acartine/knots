@@ -40,6 +40,7 @@ fn sample_record() -> KnotCacheRecord {
         gate_data: crate::domain::gate::GateData::default(),
         lease_data: crate::domain::lease::LeaseData::default(),
         lease_id: None,
+        workflow_id: "compatibility".to_string(),
         profile_id: "default".to_string(),
         profile_etag: Some("etag-1".to_string()),
         deferred_from_state: None,
@@ -134,6 +135,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
         gate_data: crate::domain::gate::GateData::default(),
         lease_data: crate::domain::lease::LeaseData::default(),
         lease_id: None,
+        workflow_id: String::new(),
         profile_id: String::new(),
         profile_etag: None,
         deferred_from_state: None,
@@ -278,7 +280,9 @@ fn rehydrate_from_events_reports_missing_workflow_and_invalid_json() {
         "work_item".to_string(),
         "2026-02-25T10:00:00Z".to_string(),
     );
-    assert!(matches!(missing, Err(AppError::InvalidArgument(_))));
+    let missing = missing.expect("rehydrate should fall back to compatibility workflow");
+    assert_eq!(missing.workflow_id, "compatibility");
+    assert_eq!(missing.profile_id, "compatibility");
 
     let full_path = root
         .join(".knots")

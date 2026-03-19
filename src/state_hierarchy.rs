@@ -298,51 +298,84 @@ fn effective_record_rank(knot: &KnotCacheRecord) -> Result<u8, AppError> {
 }
 
 fn effective_state_rank(state: &str) -> Result<u8, AppError> {
-    let state = KnotState::from_str(state)?;
-    let rank = match state {
-        KnotState::ReadyForPlanning => 0,
-        KnotState::Planning => 1,
-        KnotState::ReadyForPlanReview => 2,
-        KnotState::PlanReview => 3,
-        KnotState::ReadyForImplementation => 4,
-        KnotState::Implementation => 5,
-        KnotState::ReadyForImplementationReview => 6,
-        KnotState::ImplementationReview => 7,
-        KnotState::ReadyForShipment => 8,
-        KnotState::Shipment => 9,
-        KnotState::ReadyForShipmentReview => 10,
-        KnotState::ShipmentReview => 11,
-        KnotState::ReadyToEvaluate => 12,
-        KnotState::Evaluating => 13,
-        KnotState::Shipped | KnotState::Abandoned => 14,
-        KnotState::LeaseReady | KnotState::LeaseActive | KnotState::LeaseTerminated => 14,
-        KnotState::Deferred => 255,
-    };
-    Ok(rank)
+    let normalized = state.trim().to_ascii_lowercase().replace('-', "_");
+    if let Ok(state) = KnotState::from_str(&normalized) {
+        let rank = match state {
+            KnotState::ReadyForPlanning => 0,
+            KnotState::Planning => 1,
+            KnotState::ReadyForPlanReview => 2,
+            KnotState::PlanReview => 3,
+            KnotState::ReadyForImplementation => 4,
+            KnotState::Implementation => 5,
+            KnotState::ReadyForImplementationReview => 6,
+            KnotState::ImplementationReview => 7,
+            KnotState::ReadyForShipment => 8,
+            KnotState::Shipment => 9,
+            KnotState::ReadyForShipmentReview => 10,
+            KnotState::ShipmentReview => 11,
+            KnotState::ReadyToEvaluate => 12,
+            KnotState::Evaluating => 13,
+            KnotState::Shipped | KnotState::Abandoned => 14,
+            KnotState::LeaseReady | KnotState::LeaseActive | KnotState::LeaseTerminated => 14,
+            KnotState::Deferred => 255,
+        };
+        return Ok(rank);
+    }
+    if normalized == "deferred" {
+        return Ok(255);
+    }
+    if matches!(normalized.as_str(), "shipped" | "abandoned") {
+        return Ok(250);
+    }
+    if normalized.starts_with("ready_for_") || normalized.starts_with("ready_") {
+        return Ok(100);
+    }
+    Ok(101)
 }
 
 pub fn is_terminal_state(state: &str) -> Result<bool, AppError> {
-    Ok(KnotState::from_str(state)?.is_terminal())
+    let normalized = state.trim().to_ascii_lowercase().replace('-', "_");
+    Ok(KnotState::from_str(&normalized)
+        .map(|state| state.is_terminal())
+        .unwrap_or(matches!(normalized.as_str(), "shipped" | "abandoned")))
 }
 
 pub fn is_terminal_resolution_state(state: &str) -> Result<bool, AppError> {
-    Ok(matches!(
-        KnotState::from_str(state)?,
-        KnotState::Shipped | KnotState::Deferred | KnotState::Abandoned
-    ))
+    let normalized = state.trim().to_ascii_lowercase().replace('-', "_");
+    Ok(KnotState::from_str(&normalized)
+        .map(|state| {
+            matches!(
+                state,
+                KnotState::Shipped | KnotState::Deferred | KnotState::Abandoned
+            )
+        })
+        .unwrap_or(matches!(
+            normalized.as_str(),
+            "shipped" | "deferred" | "abandoned"
+        )))
 }
 
 fn terminal_resolution_target(children: &[KnotCacheRecord]) -> Result<&'static str, AppError> {
     let mut saw_deferred = false;
     for child in children {
-        match KnotState::from_str(&child.state)? {
-            KnotState::Shipped => return Ok("shipped"),
-            KnotState::Deferred => saw_deferred = true,
-            KnotState::Abandoned => {}
-            other => {
+        let normalized = child.state.trim().to_ascii_lowercase().replace('-', "_");
+        match KnotState::from_str(&normalized) {
+            Ok(KnotState::Shipped) => return Ok("shipped"),
+            Ok(KnotState::Deferred) => saw_deferred = true,
+            Ok(KnotState::Abandoned) => {}
+            Ok(other) => {
                 return Err(AppError::InvalidArgument(format!(
                     "non-terminal child state '{}' cannot be reconciled",
                     other.as_str()
+                )));
+            }
+            Err(_) if normalized == "shipped" => return Ok("shipped"),
+            Err(_) if normalized == "deferred" => saw_deferred = true,
+            Err(_) if normalized == "abandoned" => {}
+            Err(_) => {
+                return Err(AppError::InvalidArgument(format!(
+                    "non-terminal child state '{}' cannot be reconciled",
+                    child.state
                 )));
             }
         }

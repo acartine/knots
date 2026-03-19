@@ -1,7 +1,7 @@
 use crate::app::{App, AppError, KnotView};
 use crate::domain::gate::GateData;
 use crate::knot_id;
-use crate::workflow::{self, OwnerKind};
+use crate::workflow::OwnerKind;
 use crate::workflow_runtime;
 
 pub fn knot_ref(knot: &KnotView) -> String {
@@ -18,6 +18,14 @@ pub fn owner_kind_label(kind: &OwnerKind) -> &'static str {
     }
 }
 
+pub fn profile_lookup_id(knot: &KnotView) -> String {
+    if knot.workflow_id != "compatibility" && !knot.profile_id.contains('/') {
+        format!("{}/{}", knot.workflow_id, knot.profile_id)
+    } else {
+        knot.profile_id.clone()
+    }
+}
+
 pub fn resolve_next_state(
     app: &App,
     id: &str,
@@ -25,18 +33,19 @@ pub fn resolve_next_state(
     let knot = app
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.into()))?;
-    let registry = workflow::ProfileRegistry::load()?;
+    let registry = app.profile_registry();
     let gate = knot.gate.clone().unwrap_or_else(GateData::default);
+    let profile_id = profile_lookup_id(&knot);
     let next = workflow_runtime::next_happy_path_state(
-        &registry,
-        &knot.profile_id,
+        registry,
+        &profile_id,
         knot.knot_type,
         &knot.state,
     )?
     .ok_or_else(|| AppError::InvalidArgument(format!("no next state from '{}'", knot.state)))?;
     let owner = workflow_runtime::owner_kind_for_state(
-        &registry,
-        &knot.profile_id,
+        registry,
+        &profile_id,
         knot.knot_type,
         &gate,
         &next,
