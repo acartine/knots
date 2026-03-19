@@ -30,7 +30,7 @@ pub fn resolve_rollback_state(app: &App, id: &str) -> Result<RollbackResolution,
         AppError::InvalidArgument(format!("no rollback target from '{}'", knot.state))
     })?;
     let requires_force = workflow_runtime::validate_transition(
-        &registry,
+        registry,
         &profile_id,
         knot.knot_type,
         &knot.state,
@@ -39,7 +39,7 @@ pub fn resolve_rollback_state(app: &App, id: &str) -> Result<RollbackResolution,
     )
     .is_err();
     let owner_kind = workflow_runtime::owner_kind_for_state(
-        &registry,
+        registry,
         &profile_id,
         knot.knot_type,
         &gate,

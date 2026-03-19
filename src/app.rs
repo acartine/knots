@@ -2473,6 +2473,7 @@ fn build_knot_head_data(head: KnotHeadData<'_>) -> Value {
     Value::Object(payload)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_state_event_data(
     from: &str,
     to: &str,

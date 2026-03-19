@@ -72,7 +72,7 @@ pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
     require_queue_state(registry, &knot)?;
     let profile_id = profile_lookup_id(&knot);
     let next_action = workflow_runtime::next_happy_path_state(
-        &registry,
+        registry,
         &profile_id,
         knot.knot_type,
         &knot.state,
@@ -115,7 +115,7 @@ pub fn poll_queue(
     let owner_kind = parse_owner_filter(owner_filter);
     let knots = list_queue_candidates(app, stage)?;
     for knot in knots {
-        if let Some(result) = match_pollable(&knot, &registry, &owner_kind)? {
+        if let Some(result) = match_pollable(&knot, registry, &owner_kind)? {
             return Ok(Some(result));
         }
     }
@@ -130,7 +130,7 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
     require_queue_state(registry, &knot)?;
     let profile_id = profile_lookup_id(&knot);
     let next_action = workflow_runtime::next_happy_path_state(
-        &registry,
+        registry,
         &profile_id,
         knot.knot_type,
         &knot.state,

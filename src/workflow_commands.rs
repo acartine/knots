@@ -50,13 +50,11 @@ pub(crate) fn run_workflow_command(
                     }))
                     .expect("json serialization should work")
                 );
+            } else if let Some(profile) = registry.current_profile_id() {
+                let profile = profile.rsplit('/').next().unwrap_or(profile);
+                println!("{} v{} profile={profile}", workflow.id, workflow.version);
             } else {
-                if let Some(profile) = registry.current_profile_id() {
-                    let profile = profile.rsplit('/').next().unwrap_or(profile);
-                    println!("{} v{} profile={profile}", workflow.id, workflow.version);
-                } else {
-                    println!("{} v{}", workflow.id, workflow.version);
-                }
+                println!("{} v{}", workflow.id, workflow.version);
             }
         }
         WorkflowSubcommands::List(list_args) => {
