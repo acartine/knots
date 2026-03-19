@@ -61,7 +61,31 @@ pub struct TestResult {
     pub scenarios: Vec<ScenarioResult>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProgressUpdateKind {
+    Started,
+    Succeeded,
+    Failed,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProgressUpdate {
+    pub kind: ProgressUpdateKind,
+    pub step_name: String,
+    pub detail: String,
+}
+
 pub fn run_compat_test(config: &CompatTestConfig) -> Result<TestResult, AppError> {
+    run_compat_test_with_progress(config, |_| {})
+}
+
+pub fn run_compat_test_with_progress<F>(
+    config: &CompatTestConfig,
+    mut reporter: F,
+) -> Result<TestResult, AppError>
+where
+    F: FnMut(ProgressUpdate),
+{
     let source = std::fs::canonicalize(&config.source).map_err(|err| {
         AppError::InvalidArgument(format!(
             "invalid Loom source '{}': {err}",
@@ -74,9 +98,10 @@ pub fn run_compat_test(config: &CompatTestConfig) -> Result<TestResult, AppError
             source.display()
         )));
     }
+    ensure_loom_package_source(&source)?;
 
     let workspace = unique_workspace();
-    let result = run_compat_test_inner(config, &source, &workspace);
+    let result = run_compat_test_inner(config, &source, &workspace, &mut reporter);
     if config.keep_artifacts {
         return result.map(|mut ok| {
             ok.workspace_path = Some(workspace);
@@ -94,6 +119,7 @@ fn run_compat_test_inner(
     config: &CompatTestConfig,
     source: &Path,
     workspace: &Path,
+    reporter: &mut dyn FnMut(ProgressUpdate),
 ) -> Result<TestResult, AppError> {
     let package_dir = workspace.join("package");
     std::fs::create_dir_all(&package_dir)?;
@@ -104,60 +130,61 @@ fn run_compat_test_inner(
         .unwrap_or("loom-compat");
 
     let mut steps = Vec::new();
-    steps.push(StepResult {
-        name: "check_loom".to_string(),
-        detail: run_loom(config.loom_bin.as_deref(), workspace, &["--version"])?,
-    });
+    steps.push(run_step("check_loom", reporter, || {
+        run_loom(config.loom_bin.as_deref(), workspace, &["--version"])
+    })?);
 
-    run_loom(
-        config.loom_bin.as_deref(),
-        &package_dir,
-        &["init", package_name],
-    )?;
-    copy_dir_contents(source, &package_dir)?;
-    steps.push(StepResult {
-        name: "prepare_package".to_string(),
-        detail: format!("copied {}", source.display()),
-    });
+    steps.push(run_step("prepare_package", reporter, || {
+        run_loom(
+            config.loom_bin.as_deref(),
+            &package_dir,
+            &["init", package_name],
+        )?;
+        copy_dir_contents(source, &package_dir)?;
+        Ok(format!("copied {}", source.display()))
+    })?);
 
-    steps.push(StepResult {
-        name: "validate".to_string(),
-        detail: run_loom(config.loom_bin.as_deref(), &package_dir, &["validate"])?,
-    });
+    steps.push(run_step("validate", reporter, || {
+        run_loom(config.loom_bin.as_deref(), &package_dir, &["validate"])
+    })?);
 
-    let bundle = run_loom(
-        config.loom_bin.as_deref(),
-        &package_dir,
-        &["build", "--emit", "knots-bundle"],
-    )?;
-    let bundle_path = workspace.join(if bundle.trim_start().starts_with('{') {
-        "bundle.json"
-    } else {
-        "bundle.toml"
-    });
-    std::fs::write(&bundle_path, &bundle)?;
-    steps.push(StepResult {
-        name: "build".to_string(),
-        detail: format!("wrote {}", bundle_path.display()),
-    });
+    let mut bundle = None;
+    steps.push(run_step("build", reporter, || {
+        let rendered = run_loom(
+            config.loom_bin.as_deref(),
+            &package_dir,
+            &["build", "--emit", "knots-bundle"],
+        )?;
+        let bundle_path = workspace.join(if rendered.trim_start().starts_with('{') {
+            "bundle.json"
+        } else {
+            "bundle.toml"
+        });
+        std::fs::write(&bundle_path, &rendered)?;
+        bundle = Some((rendered, bundle_path.clone()));
+        Ok(format!("wrote {}", bundle_path.display()))
+    })?);
+    let bundle_path = bundle.expect("build step should set bundle").1;
 
     let db_path = workspace.join(".knots/cache/state.sqlite");
     if let Some(parent) = db_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
     let _ = db::open_connection(&db_path.to_string_lossy())?;
-    let workflow_id = installed_workflows::install_bundle(workspace, &bundle_path)?;
-    let config_selection =
-        installed_workflows::set_current_workflow_selection(workspace, &workflow_id, None, None)?;
-    steps.push(StepResult {
-        name: "install_bundle".to_string(),
-        detail: format!(
+    let install_detail = run_step("install_bundle", reporter, || {
+        let installed_id = installed_workflows::install_bundle(workspace, &bundle_path)?;
+        let config_selection = installed_workflows::set_current_workflow_selection(
+            workspace,
+            &installed_id,
+            None,
+            None,
+        )?;
+        Ok(format!(
             "selected {}",
-            config_selection
-                .current_profile
-                .unwrap_or_else(|| workflow_id.clone())
-        ),
-    });
+            config_selection.current_profile.unwrap_or(installed_id)
+        ))
+    })?;
+    steps.push(install_detail);
 
     let app = App::open(&db_path.to_string_lossy(), workspace.to_path_buf())?;
     let installed = InstalledWorkflowRegistry::load(workspace)?;
@@ -200,10 +227,9 @@ fn run_compat_test_inner(
         &prompt,
         config.mode,
     )?;
-    steps.push(StepResult {
-        name: "exercise_runtime".to_string(),
-        detail: format!("{} scenario(s)", scenarios.len()),
-    });
+    steps.push(run_step("exercise_runtime", reporter, || {
+        Ok(format!("{} scenario(s)", scenarios.len()))
+    })?);
 
     Ok(TestResult {
         success: true,
@@ -214,6 +240,57 @@ fn run_compat_test_inner(
         steps,
         scenarios,
     })
+}
+
+fn ensure_loom_package_source(source: &Path) -> Result<(), AppError> {
+    let mut missing = Vec::new();
+    if !source.join("loom.toml").exists() {
+        missing.push("loom.toml");
+    }
+    if !source.join("workflow.loom").exists() {
+        missing.push("workflow.loom");
+    }
+    if missing.is_empty() {
+        return Ok(());
+    }
+    Err(AppError::InvalidArgument(format!(
+        "loom compat-test source '{}' is not a Loom package directory; missing {}",
+        source.display(),
+        missing.join(", ")
+    )))
+}
+
+fn run_step(
+    step_name: &str,
+    reporter: &mut dyn FnMut(ProgressUpdate),
+    action: impl FnOnce() -> Result<String, AppError>,
+) -> Result<StepResult, AppError> {
+    reporter(ProgressUpdate {
+        kind: ProgressUpdateKind::Started,
+        step_name: step_name.to_string(),
+        detail: String::new(),
+    });
+    match action() {
+        Ok(detail) => {
+            reporter(ProgressUpdate {
+                kind: ProgressUpdateKind::Succeeded,
+                step_name: step_name.to_string(),
+                detail: detail.clone(),
+            });
+            Ok(StepResult {
+                name: step_name.to_string(),
+                detail,
+            })
+        }
+        Err(err) => {
+            reporter(ProgressUpdate {
+                kind: ProgressUpdateKind::Failed,
+                step_name: step_name.to_string(),
+                detail: err.to_string(),
+            });
+            Err(err)
+        }
+    }
 }
 
 fn run_scenarios(
@@ -321,16 +398,18 @@ fn run_loom(loom_bin: Option<&Path>, cwd: &Path, args: &[&str]) -> Result<String
         }
         Err(err) => {
             return Err(AppError::InvalidArgument(format!(
-                "failed to execute loom {}: {err}",
-                args.join(" ")
+                "failed to execute loom {} in '{}': {err}",
+                args.join(" "),
+                cwd.display()
             )));
         }
     };
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         return Err(AppError::InvalidArgument(format!(
-            "loom {} failed{}",
+            "loom {} failed in '{}'{}",
             args.join(" "),
+            cwd.display(),
             if stderr.is_empty() {
                 String::new()
             } else {
@@ -339,7 +418,11 @@ fn run_loom(loom_bin: Option<&Path>, cwd: &Path, args: &[&str]) -> Result<String
         )));
     }
     let stdout = String::from_utf8(output.stdout).map_err(|_| {
-        AppError::InvalidArgument(format!("loom {} produced invalid UTF-8", args.join(" ")))
+        AppError::InvalidArgument(format!(
+            "loom {} produced invalid UTF-8 in '{}'",
+            args.join(" "),
+            cwd.display()
+        ))
     })?;
     Ok(match args {
         ["--version"] => stdout.trim().to_string(),

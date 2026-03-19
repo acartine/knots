@@ -225,6 +225,16 @@ EOF\n\
     bin_dir
 }
 
+fn create_loom_source(root: &Path) -> PathBuf {
+    let source = root.join("loom-source");
+    std::fs::create_dir_all(&source).expect("source dir should exist");
+    std::fs::write(source.join("loom.toml"), "name = \"compat\"\nversion = 1\n")
+        .expect("loom manifest should write");
+    std::fs::write(source.join("workflow.loom"), "workflow compat {}\n")
+        .expect("workflow file should write");
+    source
+}
+
 #[test]
 fn toplevel_help_uses_custom_help_path() {
     let root = unique_workspace("knots-main-help");
@@ -372,8 +382,7 @@ fn loom_compat_test_dispatches_through_main() {
     let root = unique_workspace("knots-main-loom-dispatch");
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
-    let source = root.join("loom-source");
-    std::fs::create_dir_all(&source).expect("source dir should exist");
+    let source = create_loom_source(&root);
     let bin_dir = install_stub_loom(&root);
 
     let output = run_knots_with_path(
@@ -424,7 +433,7 @@ fn loom_compat_test_resolves_relative_source_from_repo_root() {
     let root = unique_workspace("knots-main-loom-relative");
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
-    std::fs::create_dir_all(root.join("loom-source")).expect("source dir should exist");
+    create_loom_source(&root);
     let bin_dir = install_stub_loom(&root);
 
     let output = run_knots_with_path(

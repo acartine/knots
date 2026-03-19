@@ -1,8 +1,11 @@
+use std::io::IsTerminal;
 use std::path::Path;
 
 use crate::app::AppError;
 use crate::cli::{LoomArgs, LoomCompatModeArg, LoomSubcommands};
-use crate::loom_compat_harness::{self, CompatTestConfig, CompatTestMode, TestResult};
+use crate::loom_compat_harness::{
+    self, CompatTestConfig, CompatTestMode, ProgressUpdate, ProgressUpdateKind, TestResult,
+};
 
 pub(crate) fn run_loom_command(args: &LoomArgs, repo_root: &Path) -> Result<(), AppError> {
     match &args.command {
@@ -12,7 +15,7 @@ pub(crate) fn run_loom_command(args: &LoomArgs, repo_root: &Path) -> Result<(), 
             } else {
                 repo_root.join(&inner.source)
             };
-            let result = loom_compat_harness::run_compat_test(&CompatTestConfig {
+            let config = CompatTestConfig {
                 source,
                 mode: match inner.mode {
                     LoomCompatModeArg::Smoke => CompatTestMode::Smoke,
@@ -20,7 +23,16 @@ pub(crate) fn run_loom_command(args: &LoomArgs, repo_root: &Path) -> Result<(), 
                 },
                 keep_artifacts: inner.keep_artifacts,
                 loom_bin: std::env::var_os("KNOTS_LOOM_BIN").map(std::path::PathBuf::from),
-            })?;
+            };
+            let result = if inner.json {
+                loom_compat_harness::run_compat_test(&config)?
+            } else {
+                let color =
+                    std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none();
+                loom_compat_harness::run_compat_test_with_progress(&config, |update| {
+                    println!("{}", render_progress(&update, color));
+                })?
+            };
             if inner.json {
                 println!(
                     "{}",
@@ -32,6 +44,20 @@ pub(crate) fn run_loom_command(args: &LoomArgs, repo_root: &Path) -> Result<(), 
         }
     }
     Ok(())
+}
+
+fn render_progress(update: &ProgressUpdate, color: bool) -> String {
+    let status = match update.kind {
+        ProgressUpdateKind::Started => paint(color, "36", "…"),
+        ProgressUpdateKind::Succeeded => paint(color, "32", "✓"),
+        ProgressUpdateKind::Failed => paint(color, "31", "x"),
+    };
+    let step = update.step_name.replace('_', " ");
+    if update.detail.trim().is_empty() {
+        format!("{status} {step}")
+    } else {
+        format!("{status} {step}: {}", update.detail.trim())
+    }
 }
 
 fn render_text(result: &TestResult) -> String {
@@ -65,10 +91,19 @@ fn render_text(result: &TestResult) -> String {
     out
 }
 
+fn paint(color: bool, code: &str, text: &str) -> String {
+    if color {
+        format!("\u{1b}[{code}m{text}\u{1b}[0m")
+    } else {
+        text.to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::render_text;
+    use super::{render_progress, render_text};
     use crate::loom_compat_harness::{CompatTestMode, ScenarioResult, StepResult, TestResult};
+    use crate::loom_compat_harness::{ProgressUpdate, ProgressUpdateKind};
     use std::path::PathBuf;
 
     #[test]
@@ -113,5 +148,27 @@ mod tests {
         });
         assert!(!rendered.contains("workspace:"));
         assert!(rendered.contains("prompt-mismatch"));
+    }
+
+    #[test]
+    fn render_progress_uses_status_markers_and_step_labels() {
+        let started = render_progress(
+            &ProgressUpdate {
+                kind: ProgressUpdateKind::Started,
+                step_name: "check_loom".to_string(),
+                detail: String::new(),
+            },
+            false,
+        );
+        let failed = render_progress(
+            &ProgressUpdate {
+                kind: ProgressUpdateKind::Failed,
+                step_name: "validate".to_string(),
+                detail: "bad path".to_string(),
+            },
+            false,
+        );
+        assert_eq!(started, "… check loom");
+        assert_eq!(failed, "x validate: bad path");
     }
 }
