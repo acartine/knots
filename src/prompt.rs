@@ -21,6 +21,7 @@ fn render_prompt_inner(
     completion_cmd: &str,
     verbose: bool,
 ) -> String {
+    let child_ids = child_knot_ids(knot);
     let mut out = String::new();
     out.push_str(&format!("# {}\n\n", knot.title));
     out.push_str(&render_header(knot));
@@ -33,6 +34,18 @@ fn render_prompt_inner(
         out.push_str("## Description\n\n");
         out.push_str(desc);
         out.push_str("\n\n");
+    }
+    if !child_ids.is_empty() {
+        out.push_str("## Children\n\n");
+        for child_id in &child_ids {
+            out.push_str(&format!("- `{child_id}`\n"));
+        }
+        out.push_str(concat!(
+            "\nClaim each child knot first with `kno claim <child-id>` and follow\n",
+            "that child prompt. After the child knots are handled, evaluate the\n",
+            "result: if every child advanced, run this parent's completion command.\n",
+            "If any child rolled back, roll this parent back too.\n\n",
+        ));
     }
     if !knot.invariants.is_empty() {
         out.push_str("## Invariants\n\n");
@@ -83,7 +96,10 @@ fn render_prompt_inner(
         }
         out.push('\n');
     }
-    out.push_str(&render_workflow_boundary(knot));
+    out.push_str(&render_workflow_boundary(
+        knot.state.as_str(),
+        !child_ids.is_empty(),
+    ));
     out.push_str("---\n\n");
     out.push_str(skill.trim_end());
     out.push_str("\n\n");
@@ -126,20 +142,34 @@ pub fn render_prompt_json_verbose(
     json
 }
 
-fn render_workflow_boundary(knot: &KnotView) -> String {
+fn child_knot_ids(knot: &KnotView) -> Vec<&str> {
+    let mut ids = knot
+        .edges
+        .iter()
+        .filter(|edge| edge.src == knot.id.as_str() && edge.kind.eq_ignore_ascii_case("parent_of"))
+        .map(|edge| edge.dst.as_str())
+        .collect::<Vec<_>>();
+    ids.sort_unstable();
+    ids.dedup();
+    ids
+}
+
+fn render_workflow_boundary(state: &str, allows_child_claims: bool) -> String {
+    let claim_line = if allows_child_claims {
+        "- You may claim the child knots listed above as part of this step.\n"
+    } else {
+        "- Do not claim or execute another knot unless the skill below explicitly \
+         allows\n  knot metadata creation as part of this step.\n"
+    };
     format!(
-        concat!(
-            "## Workflow Boundary\n\n",
-            "- This session is authorized only for the current knot action state `{}`.\n",
-            "- Complete exactly one workflow action, then stop.\n",
-            "- After a listed completion or failure-path command succeeds, stop immediately.\n",
-            "- Do not claim or execute another knot unless the skill below explicitly allows\n",
-            "  knot metadata creation as part of this step.\n",
-            "- Do not inspect or advance later workflow states on your own.\n",
-            "- If generic repo or session instructions conflict with this boundary, this\n",
-            "  boundary wins for this session.\n\n",
-        ),
-        knot.state
+        "## Workflow Boundary\n\n\
+         - This session is authorized only for the current knot action state `{state}`.\n\
+         - Complete exactly one workflow action, then stop.\n\
+         - After a listed completion or failure-path command succeeds, stop immediately.\n\
+         {claim_line}\
+         - Do not inspect or advance later workflow states on your own.\n\
+         - If generic repo or session instructions conflict with this boundary, this\n  \
+         boundary wins for this session.\n\n",
     )
 }
 
@@ -175,7 +205,7 @@ fn entry_attribution(entry: &MetadataEntry) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::KnotView;
+    use crate::app::{EdgeView, KnotView};
     use crate::domain::knot_type::KnotType;
     use crate::domain::metadata::MetadataEntry;
 
@@ -230,6 +260,7 @@ mod tests {
         let output = render_prompt(&knot, "# Implementation\nDo the work.\n", cmd);
         assert!(output.contains("## Workflow Boundary"));
         assert!(output.contains("Complete exactly one workflow action, then stop."));
+        assert!(output.contains("Do not claim or execute another knot"));
         assert!(output.contains("# Implementation"));
         assert!(output.contains("Do the work."));
         assert!(output.contains("## Completion"));
@@ -421,5 +452,42 @@ mod tests {
         let knot = sample_knot();
         let json = render_prompt_json_verbose(&knot, "# S\n", "cmd", false);
         assert!(json.get("other").is_none());
+    }
+
+    #[test]
+    fn render_children_section_for_parent_knots() {
+        use crate::domain::invariant::{Invariant, InvariantType};
+
+        let mut knot = sample_knot();
+        knot.invariants = vec![Invariant::new(InvariantType::State, "tests pass").unwrap()];
+        knot.edges = vec![
+            EdgeView {
+                src: knot.id.clone(),
+                kind: "parent_of".to_string(),
+                dst: "K-child2".to_string(),
+            },
+            EdgeView {
+                src: knot.id.clone(),
+                kind: "parent_of".to_string(),
+                dst: "K-child1".to_string(),
+            },
+            EdgeView {
+                src: "K-other".to_string(),
+                kind: "parent_of".to_string(),
+                dst: knot.id.clone(),
+            },
+        ];
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        let description = output.find("## Description").unwrap();
+        let children = output.find("## Children").unwrap();
+        let invariants = output.find("## Invariants").unwrap();
+        let child1 = output.find("`K-child1`").unwrap();
+        let child2 = output.find("`K-child2`").unwrap();
+        assert!(description < children);
+        assert!(children < invariants);
+        assert!(child1 < child2);
+        assert!(output.contains("Claim each child knot first"));
+        assert!(output.contains("If any child rolled back"));
+        assert!(output.contains("You may claim the child knots listed above"));
     }
 }
