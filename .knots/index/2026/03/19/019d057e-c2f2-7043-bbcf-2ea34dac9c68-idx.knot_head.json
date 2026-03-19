@@ -1,0 +1,20 @@
+{
+  "event_id": "019d057e-c2f2-7043-bbcf-2ea34dac9c68",
+  "occurred_at": "2026-03-19T09:48:06.770197Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-892c",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "loom compat integration coverage and cleanup checks",
+    "type": "work",
+    "updated_at": "2026-03-19T09:48:06.770197Z",
+    "workflow_id": "compatibility"
+  }
+}

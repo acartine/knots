@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05b1-b623-77d1-b53b-c04d6d158d1e",
+  "occurred_at": "2026-03-19T10:43:45.827905Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Verified: (1) commits f634b31074d9 and 90762f445417 are on main; earlier commits 72bc39925e0a and 7672184b9e16 are on feature branches only (consistent with regression/retake). (2) All 4 CI workflows green on main (CI 23290961410, Repo Hygiene 23290961468, Release 23290961407, Changesets 23290961423). (3) No invariants defined. (4) Code review confirms: exactly 2 managed skills (knots, knots-e2e), proper eligibility logic, exact path output (not counts), comprehensive tests (17 unit + 5 integration), doctor integration with fix support. (5) Workspace clean, no regressions detected.",
+    "datetime": "2026-03-19T10:50:00Z",
+    "entry_id": "019d05b1-b623-77d1-b53b-c030e3080d64",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

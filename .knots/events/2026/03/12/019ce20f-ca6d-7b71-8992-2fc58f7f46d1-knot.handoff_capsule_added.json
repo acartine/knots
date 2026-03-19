@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce20f-ca6d-7b71-8992-2fc58f7f46d1",
+  "occurred_at": "2026-03-12T12:40:11.629611Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Approved in implementation review. Verified the branch diff is limited to rollback handling plus gate rollback dispatch coverage, confirmed gate rollback now rewinds evaluating to ready_to_evaluate through the real execute_operation path, and make sanity passed with 95.29% coverage and no review findings.",
+    "datetime": "2026-03-12T12:39:57Z",
+    "entry_id": "019ce20f-ca6d-7b71-8992-2fb2018c911e",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-12"
+  }
+}

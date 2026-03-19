@@ -1,0 +1,15 @@
+{
+  "event_id": "019d00dd-957e-7921-a89a-9884da7321fa",
+  "occurred_at": "2026-03-18T12:13:34.974093Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review rejected: make sanity fails on app::tests_hierarchy::deferred_descendant_is_cascaded_in_terminal_transition because a terminal cascade still rejects deferred descendants with 'deferred knots may only resume to implementation'. The cascade path in src/app.rs still calls write_state_change_locked for descendants without bypassing the deferred resume guard, so the parent terminal transition does not cascade to deferred children as required.",
+    "datetime": "2026-03-18T12:13:34.974093Z",
+    "entry_id": "019d00dd-957e-7921-a89a-987257441707",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

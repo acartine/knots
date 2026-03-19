@@ -1,0 +1,15 @@
+{
+  "event_id": "019d058d-4a32-7c52-bc14-f2098bb77e7b",
+  "occurred_at": "2026-03-19T10:03:58.898748Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implemented managed-skills doctor destination fallback so kno doctor reports missing managed skills even when the preferred root does not exist yet, and kno doctor --fix now installs them into the preferred location. Added unit and CLI regression coverage for missing-root doctor/fix flows and location resolution edge cases. Validation: make sanity passed in /Users/cartine/knots-18e9-doctor-skills-fix at 95.01% coverage. Branch: knots-18e9-doctor-skills-fix. Commit: 0678619e9b75. PR: #32.",
+    "datetime": "2026-03-19T10:01:29Z",
+    "entry_id": "019d058d-4a32-7c52-bc14-f1f064152174",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "codex-cli"
+  }
+}

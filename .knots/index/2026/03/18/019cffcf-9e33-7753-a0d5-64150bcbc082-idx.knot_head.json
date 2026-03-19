@@ -1,0 +1,22 @@
+{
+  "event_id": "019cffcf-9e33-7753-a0d5-64150bcbc082",
+  "occurred_at": "2026-03-18T07:18:42.483266Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-0fc6",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "kno doctor: identify parents whose children are all in terminal state and resolve them",
+    "type": "work",
+    "updated_at": "2026-03-18T07:18:42.483266Z"
+  },
+  "precondition": {
+    "profile_etag": "019cffcf-6e3d-7692-b4a7-d01cd0c727e9"
+  }
+}

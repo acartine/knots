@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0609-ea45-7c82-8a43-0394ff04c60a",
+  "occurred_at": "2026-03-19T12:20:06.341264Z",
+  "knot_id": "knots-1d8a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Implementation Plan\n\n### Problem\nWhen an agent claims a parent knot that has children, the skill prompts (knots_e2e.md, knots.md) give no guidance on how to handle the children. The hierarchy state guard already enforces that parent knots cannot advance past children, but agents don't know about this upfront and will hit confusing errors.\n\n### Changes\n\n#### 1. Add child knot rendering to prompt output (`src/prompt.rs`)\n- In `render_prompt_inner`, after the description section, render a **Children** section if the knot has `parent_of` edges.\n- Format: list each child knot ID so the agent knows what children exist.\n- Add tests for this rendering in the existing `prompt.rs` test module.\n\n#### 2. Add parent-child workflow guidance to `skills/knots_e2e.md`\n- Add a section after the main workflow sequence explaining:\n  - If the claimed knot has children listed, process children first.\n  - Claim and advance each child knot through its workflow.\n  - After all children are handled: if all advanced, advance the parent; if any rolled back, rollback the parent.\n- Keep wording concise and actionable.\n\n#### 3. Add parent-child workflow guidance to `skills/knots.md`\n- Add similar guidance in the \"Execute a knot\" section.\n\n#### 4. Update skill content tests (`src/skills.rs`)\n- If there are assertions on skill file content, update them to account for the new sections.\n\n### Test Strategy\n- Unit tests in `src/prompt.rs` for edge rendering (knot with parent_of edges shows Children section, knot without edges does not).\n- Verify `make sanity` passes.\n\n### Risks\n- Low. The changes are additive prompt text and a small rendering addition. The hierarchy state guard already enforces correctness at the CLI level — this just gives agents better guidance upfront.",
+    "datetime": "2026-03-19T12:20:06.341264Z",
+    "entry_id": "019d0609-ea45-7c82-8a43-03821a7f2cc8",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

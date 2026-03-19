@@ -1,0 +1,16 @@
+{
+  "event_id": "019cf5bc-f06e-7b20-a24f-a7ea18a6526d",
+  "occurred_at": "2026-03-16T08:22:06.190828Z",
+  "knot_id": "knots-c606",
+  "type": "knot.created",
+  "data": {
+    "body": "Add support for installing, uninstalling, and updating Knots-managed skills for Codex, Claude, and OpenCode. Prefer project-level skill injection when the target tool supports it; otherwise fall back to user-level installation. If a required skill is not detected during install or update flows, prompt the user to install it. Extend Doctor\nlock_health:  ✓ repo/cache locks are acquirable\n   worktree:  ✓ knots worktree is clean\n     remote:  ✓ origin reachable; knots branch exists\n    version:  ✓ v0.7.6 is up to date\n      hooks:  ⚠ missing sync hooks: post-merge (run `kno doctor --fix`) to verify that the expected skills are configured for the user and report missing setup clearly.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_with_pr",
+    "state": "ready_for_planning",
+    "title": "add kno skills install/uninstall",
+    "type": "work"
+  }
+}

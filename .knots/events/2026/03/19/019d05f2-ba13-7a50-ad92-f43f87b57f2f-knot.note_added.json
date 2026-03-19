@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05f2-ba13-7a50-ad92-f43f87b57f2f",
+  "occurred_at": "2026-03-19T11:54:46.675462Z",
+  "knot_id": "knots-c72e",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added src/loom_compat_harness.rs with compat config/result types, loom invocation, workflow install/use, runtime exercise, and cleanup behavior.",
+    "datetime": "2026-03-19T11:54:46.675462Z",
+    "entry_id": "019d05f2-ba13-7a50-ad92-f42122c193ae",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

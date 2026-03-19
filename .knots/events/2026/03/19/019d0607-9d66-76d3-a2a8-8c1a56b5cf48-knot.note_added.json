@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0607-9d66-76d3-a2a8-8c1a56b5cf48",
+  "occurred_at": "2026-03-19T12:17:35.590816Z",
+  "knot_id": "knots-ba78",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Adjusted the live loom harness for Loom 0.2.0 by passing init <NAME> and accepting JSON bundle output from loom build --emit knots-bundle.",
+    "datetime": "2026-03-19T12:17:35.590816Z",
+    "entry_id": "019d0607-9d66-76d3-a2a8-8c005b9c08a8",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

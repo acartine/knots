@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce1fd-5ee8-7ee0-bbd5-a31d20e9bbec",
+  "occurred_at": "2026-03-12T12:20:04.456822Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review rejected: rollback.rs regression. Commit 98f66e2 correctly added ready_to_evaluate recognition to is_queue_state via workflow_runtime::READY_TO_EVALUATE constant and included a test, but this change was lost (likely during the 3bf936c merge which only carried forward the state_hierarchy.rs fixes). The is_queue_state function at src/rollback.rs:110 still only checks starts_with(\"ready_for_\"), violating the requirement to remove hardcoded ready_for_* assumptions. Fix: re-apply the rollback.rs portion of 98f66e2 (add workflow_runtime import, update is_queue_state, restore the test).",
+    "datetime": "2026-03-12T12:20:00Z",
+    "entry_id": "019ce1fd-5ee8-7ee0-bbd5-a3051f18726c",
+    "model": "claude-opus-4-6",
+    "username": "agent",
+    "version": "4.6"
+  }
+}

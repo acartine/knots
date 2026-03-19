@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0592-b346-7e72-a7a1-f905fccb9ef5",
+  "occurred_at": "2026-03-19T10:09:53.478812Z",
+  "knot_id": "knots-b038",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Validated existing implementation for terminal cascade approval: descendants already in the target terminal state no longer require --cascade-terminal-descendants. Verified targeted hierarchy tests and make sanity; tarpaulin passed at 95.01% coverage. No additional code changes were required in this session.",
+    "datetime": "2026-03-19T10:09:45Z",
+    "entry_id": "019d0592-b346-7e72-a7a1-f8f96ea0b683",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-19"
+  }
+}

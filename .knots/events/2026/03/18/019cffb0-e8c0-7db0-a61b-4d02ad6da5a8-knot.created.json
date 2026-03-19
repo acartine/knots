@@ -1,0 +1,16 @@
+{
+  "event_id": "019cffb0-e8c0-7db0-a61b-4d02ad6da5a8",
+  "occurred_at": "2026-03-18T06:45:09.952487Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.created",
+  "data": {
+    "body": "similar to 0fc6, if a knot with parents reaches terminal state (via kno next or kno update, or any other state changing kno command), the parent knots should be evaluated for auto termination using the same logic as in 0fc6",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno automation: auto resolve parent knots if all child knots in terminal state",
+    "type": "work"
+  }
+}

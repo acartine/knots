@@ -1,0 +1,15 @@
+{
+  "event_id": "019cffaf-e83c-7e92-a338-123c3f729643",
+  "occurred_at": "2026-03-18T06:44:04.28497Z",
+  "knot_id": "knots-0fc6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning complete: implement a doctor check plus fix path for non-terminal parents whose direct children are all terminal, with shipped > deferred > abandoned precedence, localized doctor/doctor_fix changes, and unit plus CLI coverage.",
+    "datetime": "2026-03-18T06:43:36Z",
+    "entry_id": "019cffaf-e83c-7e92-a338-122d863ff5ca",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0570-3a46-76c1-9580-5bb8480306fc",
+  "occurred_at": "2026-03-19T09:32:14.278609Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. The existing managed-skills doctor check and doctor --fix code paths already handle the knot requirement. The implementation adds a focused CLI regression test (doctor_reports_missing_skills_and_fix_installs_for_preferred_root) covering the full detect-warn-fix-pass cycle including project-over-user root precedence. make sanity passes at 95.01% coverage. No code changes needed beyond the test and changeset. File lengths within limits, no security concerns.",
+    "datetime": "2026-03-19T12:00:00Z",
+    "entry_id": "019d0570-3a46-76c1-9580-5ba2fea429fa",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

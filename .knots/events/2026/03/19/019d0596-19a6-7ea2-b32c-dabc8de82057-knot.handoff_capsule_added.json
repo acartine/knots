@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0596-19a6-7ea2-b32c-dabc8de82057",
+  "occurred_at": "2026-03-19T10:13:36.294741Z",
+  "knot_id": "knots-b038",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude Code",
+    "content": "Shipment complete. Feature branch fix/b038-terminal-cascade-already-shipped was already merged to main (merge commit 7a94aabc0c9e). Main is pushed to remote and CI is green (all 3 workflows passed). Tagged knot with merge and fix commit hashes.",
+    "datetime": "2026-03-19T10:15:00Z",
+    "entry_id": "019d0596-19a6-7ea2-b32c-daaa597e4a1c",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

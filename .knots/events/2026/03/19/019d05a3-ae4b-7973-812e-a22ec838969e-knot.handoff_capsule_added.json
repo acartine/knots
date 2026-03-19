@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05a3-ae4b-7973-812e-a22ec838969e",
+  "occurred_at": "2026-03-19T10:28:26.315945Z",
+  "knot_id": "knots-6375",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented the initial Loom CLI surface for knot 562b: added src/cli_loom.rs with loom compat-test args and smoke/matrix/json/keep-artifacts parsing, wired Commands::Loom into src/cli.rs and early dispatch in src/main.rs with a clear placeholder error until the harness lands, added parser coverage plus a main-path integration test, and added a patch changeset required by the repo push guard. Validation passed with cargo test loom_compat_test_dispatches_through_main --test cli_main_paths -- --nocapture and make sanity (including coverage at 95.03% locally; 95.02% on push hook). Branch pushed: codex/562b-cli-scaffolding.",
+    "datetime": "2026-03-19T10:26:11Z",
+    "entry_id": "019d05a3-ae4b-7973-812e-a217d0d91695",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "codex"
+  }
+}

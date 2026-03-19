@@ -1,0 +1,15 @@
+{
+  "event_id": "019d057d-239e-7600-9d8d-1cd6b8c3c999",
+  "occurred_at": "2026-03-19T09:46:20.44605Z",
+  "knot_id": "knots-562b",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan needs revision: specify exactly how compat-test will exercise and assert a Loom bundle-defined failure transition. The current runtime only exposes happy-path transition selection via next_happy_path_state/profile.next_happy_path_state, while parsed prompt failure_targets are not consumed anywhere, so the proposed \"one failure path\" check is not implementable as written. Also make cleanup explicit for repo-local workflow state: either save and restore .knots/workflows/current plus any installed temp bundle dirs, or document why an isolated temp repo still satisfies the requirement.",
+    "datetime": "2026-03-19T09:46:20.44605Z",
+    "entry_id": "019d057d-239e-7600-9d8d-1cc53e853ab9",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

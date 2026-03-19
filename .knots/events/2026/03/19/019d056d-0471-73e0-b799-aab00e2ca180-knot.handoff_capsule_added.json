@@ -1,0 +1,15 @@
+{
+  "event_id": "019d056d-0471-73e0-b799-aab00e2ca180",
+  "occurred_at": "2026-03-19T09:28:43.889029Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implemented CLI regression coverage for managed-skill doctor checks and doctor --fix on branch knots-18e9-doctor-skills-fix. Added a patch changeset, pushed commit b6b3174d7fde, and opened PR #32: https://github.com/acartine/knots/pull/32. Validation: make sanity (95.01% coverage).",
+    "datetime": "2026-03-19T09:28:06Z",
+    "entry_id": "019d056d-0471-73e0-b799-aaa2915e5509",
+    "model": "gpt-5-codex",
+    "username": "cartine",
+    "version": "2026-03-19"
+  }
+}

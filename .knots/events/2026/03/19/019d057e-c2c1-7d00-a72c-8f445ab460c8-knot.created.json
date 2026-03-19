@@ -1,0 +1,17 @@
+{
+  "event_id": "019d057e-c2c1-7d00-a72c-8f445ab460c8",
+  "occurred_at": "2026-03-19T09:48:06.721032Z",
+  "knot_id": "knots-ba78",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement the reusable compatibility harness and the runtime/API seam needed to select Loom bundle-defined failure outcomes during compat testing.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "loom compat harness and failure transition runtime",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

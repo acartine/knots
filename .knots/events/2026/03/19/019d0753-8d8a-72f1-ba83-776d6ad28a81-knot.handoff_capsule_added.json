@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0753-8d8a-72f1-ba83-776d6ad28a81",
+  "occurred_at": "2026-03-19T18:20:09.482762Z",
+  "knot_id": "knots-1d8a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Merged knots-1d8a-parent-prompts to main with conflict resolution. Combined branch's improved child-first wording with main's child_summaries infrastructure. Children section now uses richer title/state display. Skills updated with detailed child-first workflow guidance. All 678 tests pass, 95.04% coverage. Pushed to remote.",
+    "datetime": "2026-03-19T18:20:00+01:00",
+    "entry_id": "019d0753-8d8a-72f1-ba83-775ad2003cfe",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

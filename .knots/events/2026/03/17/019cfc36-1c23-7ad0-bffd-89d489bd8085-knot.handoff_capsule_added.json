@@ -1,0 +1,15 @@
+{
+  "event_id": "019cfc36-1c23-7ad0-bffd-89d489bd8085",
+  "occurred_at": "2026-03-17T14:32:10.531081Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete: merged c606-managed-skills to main (merge commit 7672184b9e16), pushed to origin. CI green on run 23199371424. Coverage 95.06%. All sanity checks pass locally and remotely.",
+    "datetime": "2026-03-17T14:32:00Z",
+    "entry_id": "019cfc36-1c23-7ad0-bffd-89c67e24cb1c",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

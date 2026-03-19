@@ -1,0 +1,15 @@
+{
+  "event_id": "019d057d-239e-7600-9d8d-1cfe2574d1fc",
+  "occurred_at": "2026-03-19T09:46:20.44605Z",
+  "knot_id": "knots-562b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review requested revisions. The happy-path pieces align with existing workflow install/use and prompt rendering paths, but the plan does not yet close the failure-path requirement against current runtime behavior. Revise the plan to define the failure-path mechanism and the exact cleanup/restore strategy for temporary repo-local workflow state.",
+    "datetime": "2026-03-19T09:45:51Z",
+    "entry_id": "019d057d-239e-7600-9d8d-1ced64ea9821",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

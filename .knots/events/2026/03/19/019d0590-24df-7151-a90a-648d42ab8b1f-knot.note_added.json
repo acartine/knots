@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0590-24df-7151-a90a-648d42ab8b1f",
+  "occurred_at": "2026-03-19T10:07:05.95102Z",
+  "knot_id": "knots-b038",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review blocked: make sanity fails in coverage with cargo tarpaulin reporting '95.00% < 95.00%'. Review found no code/spec violations in the terminal-cascade change itself, but the required sanity gate does not pass.",
+    "datetime": "2026-03-19T10:07:05.95102Z",
+    "entry_id": "019d0590-24df-7151-a90a-64723698a516",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

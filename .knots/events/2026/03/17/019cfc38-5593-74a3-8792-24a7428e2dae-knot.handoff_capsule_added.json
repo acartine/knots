@@ -1,0 +1,15 @@
+{
+  "event_id": "019cfc38-5593-74a3-8792-24a7428e2dae",
+  "occurred_at": "2026-03-17T14:34:36.30793Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Verified: merge commit 7672184b9e16 live on main, both feature commits tagged (72bc39925e0a, 7672184b9e16), CI run 23199371424 green, make sanity passes (595 tests, 95.08% coverage), no invariants defined, no regressions detected.",
+    "datetime": "2026-03-17T14:35:00Z",
+    "entry_id": "019cfc38-5593-74a3-8792-2494d5b1a049",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

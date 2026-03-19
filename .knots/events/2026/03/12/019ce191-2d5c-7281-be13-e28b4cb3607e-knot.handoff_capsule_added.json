@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce191-2d5c-7281-be13-e28b4cb3607e",
+  "occurred_at": "2026-03-12T10:21:53.884624Z",
+  "knot_id": "knots-78d5",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete. Merged feature branch knots-78d5-push-pull-feedback to main (commit:5a5c32fd7f3d). Sanity passed locally (95.33% coverage). Pushed to remote. CI green (run 22997168629).",
+    "datetime": "2026-03-12T12:00:00Z",
+    "entry_id": "019ce191-2d5c-7281-be13-e27015aa8c66",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0607-9e17-7a33-88e3-4571ea05c6af",
+  "occurred_at": "2026-03-19T12:17:35.767785Z",
+  "knot_id": "knots-c72e",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Updated harness module to align with the real Loom 0.2.0 CLI contract and emitted bundle format observed during live verification.",
+    "datetime": "2026-03-19T12:17:35.767785Z",
+    "entry_id": "019d0607-9e17-7a33-88e3-456b13e55872",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

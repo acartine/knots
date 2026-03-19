@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce18c-817f-7a62-8b3c-a277110fd0bd",
+  "occurred_at": "2026-03-12T10:16:47.743928Z",
+  "knot_id": "knots-aa2c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. All 504 tests pass on main, 95.48% coverage, make sanity clean. The prior regression (invariant index test failure at merge 19ed01a) was resolved by commit 02f9490. Gate knot type with owner_kind and failure_modes persistence is live on main. No invariants defined for this knot. Commits tagged: 19ed01a10975 (merge), 02f94904d306 (regression fix).",
+    "datetime": "2026-03-12T19:00:00Z",
+    "entry_id": "019ce18c-817f-7a62-8b3c-a263be79875f",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "2026-03-12"
+  }
+}

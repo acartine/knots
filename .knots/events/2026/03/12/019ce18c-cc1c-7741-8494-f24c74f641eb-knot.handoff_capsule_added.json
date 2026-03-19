@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce18c-cc1c-7741-8494-f24c74f641eb",
+  "occurred_at": "2026-03-12T10:17:06.844492Z",
+  "knot_id": "knots-78d5",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Push/pull/sync now emit immediate colored progress via a shared ProgressReporter trait threaded through replication and sync internals. JSON output remains clean. CLI and UI tests cover progress output, color/plain fallback, and JSON suppression. Sanity passes at 95.31% coverage. Minor unrelated state hierarchy rank adjustments are bundled but harmless — all tests pass.",
+    "datetime": "2026-03-12T22:30:00Z",
+    "entry_id": "019ce18c-cc1c-7741-8494-f239ee16923d",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

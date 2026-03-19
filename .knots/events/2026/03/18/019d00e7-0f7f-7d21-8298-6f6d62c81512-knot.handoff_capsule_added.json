@@ -1,0 +1,15 @@
+{
+  "event_id": "019d00e7-0f7f-7d21-8298-6f6d62c81512",
+  "occurred_at": "2026-03-18T12:23:56.031867Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Approved implementation review: terminal transitions now trigger recursive parent terminal reconciliation from both set_state and update paths, deferred knots may transition directly to terminal states so cascades complete, and regression tests cover parent-chain auto-resolution plus deferred terminal cascade behavior. Validation: make sanity passed with 95.07% coverage.",
+    "datetime": "2026-03-18T12:23:35Z",
+    "entry_id": "019d00e7-0f7f-7d21-8298-6f5c783e2c1c",
+    "model": "GPT-5",
+    "username": "cartine",
+    "version": "GPT-5"
+  }
+}

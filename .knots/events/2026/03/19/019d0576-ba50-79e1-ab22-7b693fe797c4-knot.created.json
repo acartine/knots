@@ -1,0 +1,17 @@
+{
+  "event_id": "019d0576-ba50-79e1-ab22-7b693fe797c4",
+  "occurred_at": "2026-03-19T09:39:20.272205Z",
+  "knot_id": "knots-562b",
+  "type": "knot.created",
+  "data": {
+    "body": "A command like kno loom compat-test would give you one executable proof that the whole integration contract still works from a live installation.\n\n-generate a Loom workflow from a known template\n-validate it\n-build a Knots bundle\n-install it into a temp repo-local .knots/workflows\n-select it as current\n-create a knot against it\n-drive claim/next through at least one happy path and one failure path\n-verify prompt text came from the bundle\n-uninstall or clean the temp repo state\n-print a clear pass/fail summary\n\nthe shape should be something like:\n\n-kno loom compat-test\n-kno loom compat-test --template knots_sdlc\n-kno loom compat-test --keep-artifacts\n-kno loom compat-test --json\n\nWhat it should actually verify:\n\n-Loom CLI is discoverable\n-loom init --template ... works outside the repo checkout\n-loom validate passes\n-loom build --emit knots-bundle succeeds\n-kno workflow install ingests the bundle\n-kno workflow use sets repo default correctly\n-newly created knots persist the expected workflow_id\n-claim and next follow bundle-defined transitions, not compatibility defaults\n-prompt rendering comes from the Loom-authored prompt body\n-cleanup leaves no repo dirt unless --keep-artifacts is set\n\nImplementation-wise, I would not make it shell out to ad hoc commands internally if we can avoid it. Better:\n\n- create a Knots-side test harness module\n-use tempdirs\n-invoke Loom only where the real CLI boundary matters\n-call Knots app/runtime functions directly where possible\n-keep one top-level CLI command as a thin wrapper around that harness\n\nThat gives you both:\n\n-a user-facing smoke command\n-a reusable integration harness for automated tests\n\nI would also add two modes:\n\n-smoke: one template, one success path, one failure path\n-matrix: run all bundled templates\n\nThe main risk is brittleness if this becomes too end-to-end and too dependent on local environment. So I’d make it fail fast with explicit diagnostics:\n\n-missing loom\n-version mismatch (schema versions, not app versions)\n-bundle schema mismatch\n-transition mismatch\n-prompt mismatch",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "knots / loom integration cli test ",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

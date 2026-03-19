@@ -1,0 +1,20 @@
+{
+  "event_id": "019d0595-fe09-75f1-9982-fd2e7205b341",
+  "occurred_at": "2026-03-19T10:13:29.219412Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-b038",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "kno update doesn't allow parent to move to shipped even though all of it's children are shipped.",
+    "type": "work",
+    "updated_at": "2026-03-19T10:13:29.219412Z",
+    "workflow_id": "compatibility"
+  }
+}

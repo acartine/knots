@@ -1,0 +1,20 @@
+{
+  "event_id": "019d060c-e6fe-7f71-ac82-5faf7116ecfb",
+  "occurred_at": "2026-03-19T12:23:22.100092Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-562b",
+    "profile_id": "autopilot",
+    "state": "shipment",
+    "terminal": false,
+    "title": "knots / loom integration cli test ",
+    "type": "work",
+    "updated_at": "2026-03-19T12:23:22.100092Z",
+    "workflow_id": "compatibility"
+  }
+}

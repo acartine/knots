@@ -1,0 +1,15 @@
+{
+  "event_id": "019cffc9-765e-7d21-99b7-36895f440a1b",
+  "occurred_at": "2026-03-18T07:11:59.070957Z",
+  "knot_id": "knots-0fc6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Code correctly implements terminal parent detection in doctor with shipped>deferred>abandoned precedence. Recursive fix loop handles multi-level hierarchies. All files within 500-line limit. make sanity passes at 95.07% coverage. Tests cover unit (precedence logic, edge cases), integration (apply_fixes), and CLI (recursive grandparent resolution). No security concerns.",
+    "datetime": "2026-03-18T00:00:00Z",
+    "entry_id": "019cffc9-765e-7d21-99b7-367aff425415",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "event_id": "019d0254-d4c4-7110-bb7b-b6255f49b856",
+  "occurred_at": "2026-03-18T19:03:27.172648Z",
+  "knot_id": "knots-b038",
+  "type": "knot.created",
+  "data": {
+    "body": "While we should prevent changing parent knot states that are incompatible with children, this error message shows that the safety check is broken/incorrect.  this change should obviously not require terminal_cascade_approval, because all the children are shipped.\n\nerror: terminal_cascade_approval_required: moving 'maestro-1499' to 'shipped' requires approval because all descendants will also move to that terminal state; descendants: maestro-0466 [shipped], maestro-39f5 [shipped], maestro-68bf [shipped], maestro-81a5 [shipped], maestro-a86c [shipped], maestro-b9be [shipped], maestro-bb9d [shipped], maestro-c9ab [shipped], maestro-d428 [shipped]; rerun with --cascade-terminal-descendants or approve the interactive prompt",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "kno update doesn't allow parent to move to shipped even though all of it's children are shipped.",
+    "type": "work"
+  }
+}

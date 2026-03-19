@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0565-34f1-75a1-b615-8dcaf7e6324d",
+  "occurred_at": "2026-03-19T09:20:12.017386Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Plan review approved. Existing doctor/managed-skills infrastructure is well-wired (doctor.rs:87 extends checks, doctor_fix.rs:46-48 routes skills_* fixes). Plan correctly starts with reproduction, targets minimal semantic fix, and adds CLI regression coverage. File sizes are near limits but plan accounts for this. cli_skills.rs (96 lines) has room for new doctor integration tests. No invariants to check. Approved for implementation.",
+    "datetime": "2026-03-19T12:00:00Z",
+    "entry_id": "019d0565-34f1-75a1-b615-8dbc605c08ae",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

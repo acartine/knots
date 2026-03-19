@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0594-078d-7ce3-a5aa-730ec37defc9",
+  "occurred_at": "2026-03-19T10:11:20.589772Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete. Merged knots-18e9-doctor-skills-fix to main (679ac75b9bc3). Pre-push sanity passed locally. All CI checks green on remote: CI, Repo Hygiene, Changesets Version PR, Release all succeeded.",
+    "datetime": "2026-03-19T10:12:00Z",
+    "entry_id": "019d0594-078d-7ce3-a5aa-72f418dab89f",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

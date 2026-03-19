@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce205-14bc-7ae3-9d39-09243f62ae9f",
+  "occurred_at": "2026-03-12T12:28:29.756705Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation review rejected. 1. src/rollback.rs still calls profile.require_state(&knot.state) before computing the rollback target, but gate states such as evaluating are not part of profile-defined states, so gate rollback still fails before the new queue-state helper matters. 2. rollback_target still recognizes only planning, implementation, and shipment as non-review action states; evaluating is still excluded, so it has no rollback target back to ready_to_evaluate. 3. The added regression test only checks is_queue_state('ready_to_evaluate') and does not exercise resolve_rollback_state or a rollback of an evaluating gate, so the actual failure path remains untested.",
+    "datetime": "2026-03-12T12:27:33Z",
+    "entry_id": "019ce205-14bc-7ae3-9d39-09140b7cdfb1",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "codex"
+  }
+}

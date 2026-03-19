@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce212-96f7-7772-ae2a-35073b3b2c40",
+  "occurred_at": "2026-03-12T12:43:15.06349Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review failed on deployment verification. The tagged shipment commit 5a85cbddd8ae is not reachable from origin/main (origin/main is at 5a5c32fd7f3d), so the change is not live on main. Returned the knot to ready_for_shipment for a proper shipment before review can resume.",
+    "datetime": "2026-03-12T12:43:03Z",
+    "entry_id": "019ce212-96f7-7772-ae2a-34fdbb8a0bb2",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-12"
+  }
+}

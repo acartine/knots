@@ -1,0 +1,17 @@
+{
+  "event_id": "019d0605-1476-7e50-b09f-35658cd37607",
+  "occurred_at": "2026-03-19T12:14:49.462139Z",
+  "knot_id": "knots-1d8a",
+  "type": "knot.created",
+  "data": {
+    "body": "\"If this knot has children, claim the child knots first and follow their prompts.  After that, and after the child knots are handled accordingly, evaluate the result.  If all child knots have advanced, then advance this parent knot with 'kno next ...'.  If any child knots have rolled back, rollback this parent knot with 'kno next'.\"\n\nthat doesn't have to be the exact wording but you get the general idea.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "semiauto",
+    "state": "ready_for_planning",
+    "title": "Prompts: Improve wording to handle parent knots more elegantly",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

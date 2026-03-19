@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0590-24df-7151-a90a-64a541d6e375",
+  "occurred_at": "2026-03-19T10:07:05.95102Z",
+  "knot_id": "knots-b038",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "1. Required sanity gate failed: 'make sanity' exits non-zero in coverage because cargo tarpaulin reports '95.00% < 95.00%', so implementation_review cannot approve this branch. 2. Code review against the knot description found the behavior change itself is aligned: terminal cascade approval now ignores descendants already in any terminal state, matching cascade execution behavior, and added unit/CLI coverage covers all-terminal and mixed active/terminal cases. 3. No invariants were provided for this knot, and no security or regression issue was identified beyond the failing coverage gate.",
+    "datetime": "2026-03-19T10:06:40Z",
+    "entry_id": "019d0590-24df-7151-a90a-6498f96640dc",
+    "model": "GPT-5",
+    "username": "cartine",
+    "version": "gpt-5-codex"
+  }
+}

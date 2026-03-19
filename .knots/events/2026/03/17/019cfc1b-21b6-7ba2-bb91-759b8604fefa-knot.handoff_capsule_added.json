@@ -1,0 +1,15 @@
+{
+  "event_id": "019cfc1b-21b6-7ba2-bb91-759b8604fefa",
+  "occurred_at": "2026-03-17T14:02:42.48673Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Planned a modular implementation for managed skill install/uninstall/update plus doctor coverage: add a dedicated skill-management module and CLI subtree, encode per-tool path eligibility for Codex/Claude/OpenCode with project-level preference and user-level fallback, separate deployed skill assets from workflow prompt rendering, reuse existing interactive prompt behavior for missing prerequisite skills, and extend doctor via extracted helper modules and focused tests. Main risks are ambiguous path rules and further growth of already oversize files, so the recommended execution starts with table-driven path tests and module extraction.",
+    "datetime": "2026-03-17T14:02:08Z",
+    "entry_id": "019cfc1b-21b6-7ba2-bb91-758effb5265d",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "7c723908931c"
+  }
+}

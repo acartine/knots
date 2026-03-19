@@ -1,0 +1,15 @@
+{
+  "event_id": "019d060c-a2c4-7b03-ba22-2bea197956cf",
+  "occurred_at": "2026-03-19T12:23:04.644947Z",
+  "knot_id": "knots-a669",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Approved implementation review. The merged implementation matches the knot description, respects invariants, and passed sanity validation.",
+    "datetime": "2026-03-19T12:22:29Z",
+    "entry_id": "019d060c-a2c4-7b03-ba22-2bda3c55d369",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "5"
+  }
+}

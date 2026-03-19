@@ -1,0 +1,17 @@
+{
+  "event_id": "019d057a-0e4e-7c43-ae3f-a2ec10aff053",
+  "occurred_at": "2026-03-19T09:42:58.382583Z",
+  "knot_id": "knots-d705",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement loom_compat_commands.rs: run_loom_command() that delegates to harness, formats results as human-readable summary or JSON. Wire dispatch from main.rs.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Loom compat command handler and output formatting",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

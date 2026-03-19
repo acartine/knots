@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0051-d59b-70f3-ab75-20367feee253",
+  "occurred_at": "2026-03-18T09:40:56.347812Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Plan complete for auto-resolving parent knots when children reach terminal state. Key decisions: (1) Add targeted ancestor resolution function in state_hierarchy.rs rather than reusing global scan, (2) Hook into set_state_with_actor_and_options and update_knot_with_options after terminal transitions, (3) Loop upward through ancestor chain for multi-level cascades, (4) Need to handle lock reacquisition since reconcile_terminal_parent_state acquires its own locks. Test strategy covers unit, integration, and E2E levels with topology edge cases.",
+    "datetime": "2026-03-18T00:00:00Z",
+    "entry_id": "019d0051-d59b-70f3-ab75-20231b44c333",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

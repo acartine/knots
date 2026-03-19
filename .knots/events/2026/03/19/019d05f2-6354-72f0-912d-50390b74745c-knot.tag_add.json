@@ -1,0 +1,9 @@
+{
+  "event_id": "019d05f2-6354-72f0-912d-50390b74745c",
+  "occurred_at": "2026-03-19T11:54:24.468605Z",
+  "knot_id": "knots-ba78",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "commit:830335c"
+  }
+}

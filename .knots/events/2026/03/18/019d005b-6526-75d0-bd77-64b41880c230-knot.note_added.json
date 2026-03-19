@@ -1,0 +1,15 @@
+{
+  "event_id": "019d005b-6526-75d0-bd77-64b41880c230",
+  "occurred_at": "2026-03-18T09:51:22.918305Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review rejected: current tree still only resolves terminal parent knots via doctor --fix. Missing parent auto-resolution hooks after terminal state changes, no ancestor-scoped resolver for targeted evaluation, and no CLI coverage for kno next/kno update triggering parent resolution.",
+    "datetime": "2026-03-18T09:51:22.918305Z",
+    "entry_id": "019d005b-6526-75d0-bd77-64a018cc43a3",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

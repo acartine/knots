@@ -1,0 +1,15 @@
+{
+  "event_id": "019d060c-b6fc-7ee1-9b7f-23ebceba1915",
+  "occurred_at": "2026-03-19T12:23:09.820865Z",
+  "knot_id": "knots-892c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment completed. The implementation is merged to main in commit 514e786cc765 and remote validation is green.",
+    "datetime": "2026-03-19T12:22:29Z",
+    "entry_id": "019d060c-b6fc-7ee1-9b7f-23dbeaca6251",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "5"
+  }
+}

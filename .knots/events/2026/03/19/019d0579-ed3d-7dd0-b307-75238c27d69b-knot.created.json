@@ -1,0 +1,17 @@
+{
+  "event_id": "019d0579-ed3d-7dd0-b307-75238c27d69b",
+  "occurred_at": "2026-03-19T09:42:49.917111Z",
+  "knot_id": "knots-6375",
+  "type": "knot.created",
+  "data": {
+    "body": "Add LoomArgs/LoomSubcommands to cli_loom.rs, CompatTestArgs struct, wire into Commands enum in cli.rs and dispatch in main.rs",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "CLI scaffolding: kno loom compat-test subcommand",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

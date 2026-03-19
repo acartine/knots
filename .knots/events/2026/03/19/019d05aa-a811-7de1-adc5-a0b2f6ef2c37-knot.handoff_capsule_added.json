@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05aa-a811-7de1-adc5-a0b2f6ef2c37",
+  "occurred_at": "2026-03-19T10:36:03.473637Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Verified: (1) skills/knots.md and skills/knots_e2e.md match the exact content from the knot notes, (2) managed inventory correctly reduced to knots and knots-e2e only, (3) install/uninstall/update output now lists each exact SKILL.md path instead of opaque counts, (4) eligibility logic matches the knot description (install when tool root exists but SKILL.md absent; inverse for uninstall), (5) project-level preference for Claude/OpenCode with user-level fallback, (6) doctor reports missing skills with exact paths and remediation command, (7) interactive update prompts list missing paths and non-interactive fails clearly, (8) all tests updated to verify path-level output, (9) make sanity passes at 95.04% coverage, (10) all files under 500 lines, (11) no security issues.",
+    "datetime": "2026-03-19T10:40:00Z",
+    "entry_id": "019d05aa-a811-7de1-adc5-a0a24e8f228d",
+    "model": "opus",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

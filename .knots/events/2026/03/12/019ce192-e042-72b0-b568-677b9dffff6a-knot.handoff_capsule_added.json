@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce192-e042-72b0-b568-677b9dffff6a",
+  "occurred_at": "2026-03-12T10:23:45.218577Z",
+  "knot_id": "knots-78d5",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Both commits (cf7eb28d7cb7, 5a5c32fd7f3d) verified on main. CI green (runs 22997168629, 22997168706). make sanity passes with 95.31% coverage, no regressions. Implementation adds colored progress feedback to push/pull/sync commands via new progress module, with proper JSON-mode suppression and test coverage across 10 files (+417 lines).",
+    "datetime": "2026-03-12T00:00:00Z",
+    "entry_id": "019ce192-e042-72b0-b568-67644769e80d",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

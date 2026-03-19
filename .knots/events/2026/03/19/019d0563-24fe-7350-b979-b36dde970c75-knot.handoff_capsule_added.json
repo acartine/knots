@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0563-24fe-7350-b979-b36dde970c75",
+  "occurred_at": "2026-03-19T09:17:56.862966Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planned implementation around managed-skills doctor coverage and remediation. Existing code already wires managed-skills checks into doctor and routes `skills_*` checks through doctor fix, so the next step should start by reproducing the failing path with an end-to-end CLI test, then make the smallest semantic/code change needed, add regression coverage, and only update docs if user-visible behavior changes. No child knots were created.",
+    "datetime": "2026-03-19T09:17:20Z",
+    "entry_id": "019d0563-24fe-7350-b979-b35b71eb2d8b",
+    "model": "GPT-5",
+    "username": "cartine",
+    "version": "gpt-5-codex"
+  }
+}

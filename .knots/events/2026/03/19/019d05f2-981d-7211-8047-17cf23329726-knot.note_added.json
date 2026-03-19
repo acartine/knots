@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05f2-981d-7211-8047-17cf23329726",
+  "occurred_at": "2026-03-19T11:54:37.981875Z",
+  "knot_id": "knots-a669",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Completed the kno loom compat-test CLI surface and argument plumbing as part of the end-to-end loom compat implementation on this branch.",
+    "datetime": "2026-03-19T11:54:37.981875Z",
+    "entry_id": "019d05f2-981d-7211-8047-17b573453b7f",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

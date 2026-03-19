@@ -1,0 +1,15 @@
+{
+  "event_id": "019cffb0-eb88-7843-867d-1f00f306bac4",
+  "occurred_at": "2026-03-18T06:45:10.664191Z",
+  "knot_id": "knots-0fc6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Plan review approved. Plan is complete, correct, and feasible. Detection via parent_of edges with direct-children scope matches existing hierarchy patterns. Key implementation note: deferred is not covered by is_terminal() so a dedicated predicate is needed for this check. Precedence logic (shipped > deferred > abandoned) and test strategy (unit + CLI) are well-defined. No invariant violations found.",
+    "datetime": "2026-03-18T22:00:00Z",
+    "entry_id": "019cffb0-eb88-7843-867d-1ef851c4eb54",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "event_id": "019d0742-58bb-7b60-a337-c1d484c1a238",
+  "occurred_at": "2026-03-19T18:01:21.843341Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-1d8a",
+    "profile_id": "semiauto",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "Prompts: Improve wording to handle parent knots more elegantly",
+    "type": "work",
+    "updated_at": "2026-03-19T18:01:21.843341Z",
+    "workflow_id": "compatibility"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019cffd1-6e96-7f62-8fe8-dbe865ba830f",
+  "occurred_at": "2026-03-18T07:20:41.366856Z",
+  "knot_id": "knots-0fc6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. All 4 commits verified on main (bd8c49e..c084440). CI green (3/3 runs passed). make sanity passes with 95.07% coverage (+0.01%). Implementation correctly adds terminal_parents doctor check and --fix support with shipped>deferred>abandoned priority logic. Recursive resolution via loop handles grandparent chains. Comprehensive unit and CLI integration tests cover all cases. No regressions detected.",
+    "datetime": "2026-03-18T00:00:00Z",
+    "entry_id": "019cffd1-6e96-7f62-8fe8-dbd3e4b6dc8f",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

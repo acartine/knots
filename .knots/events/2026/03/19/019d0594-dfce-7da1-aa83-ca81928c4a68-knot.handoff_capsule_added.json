@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0594-dfce-7da1-aa83-ca81928c4a68",
+  "occurred_at": "2026-03-19T10:12:15.950279Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Verified: (1) merge commit 679ac75b9bc3 is on main, (2) all 4 CI pipelines (CI, Repo Hygiene, Changesets Version PR, Release) passed green, (3) all commit tags present (commit:b6b3174d7fde, commit:0678619e9b75, commit:679ac75b9bc3, commit:8c89222c279b), (4) no regressions — branch contained only the two implementation commits plus the merge. Approved for shipped.",
+    "datetime": "2026-03-19T10:30:00Z",
+    "entry_id": "019d0594-dfce-7da1-aa83-ca77f6e92db2",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

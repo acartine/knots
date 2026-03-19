@@ -1,0 +1,20 @@
+{
+  "event_id": "019d0579-ed3d-7dd0-b307-7532da819212",
+  "occurred_at": "2026-03-19T09:42:49.917111Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-6375",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "CLI scaffolding: kno loom compat-test subcommand",
+    "type": "work",
+    "updated_at": "2026-03-19T09:42:49.917111Z",
+    "workflow_id": "compatibility"
+  }
+}

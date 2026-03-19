@@ -1,0 +1,17 @@
+{
+  "event_id": "019d058d-6055-7f41-b00a-f10cddfa82db",
+  "occurred_at": "2026-03-19T10:04:04.565793Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.state_set",
+  "data": {
+    "actor_kind": "agent",
+    "agent_model": "gpt-5",
+    "agent_name": "Codex",
+    "agent_version": "codex-cli",
+    "force": false,
+    "from": "implementation",
+    "profile_id": "autopilot_with_pr",
+    "to": "ready_for_implementation_review",
+    "workflow_id": "compatibility"
+  }
+}

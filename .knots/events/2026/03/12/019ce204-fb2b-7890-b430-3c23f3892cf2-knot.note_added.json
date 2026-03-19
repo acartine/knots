@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce204-fb2b-7890-b430-3c23f3892cf2",
+  "occurred_at": "2026-03-12T12:28:23.211797Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review rejected: gate rollback is still broken for evaluating. resolve_rollback_state validates gate states against workflow profile states, rollback_target still excludes evaluating from actionable states, and the new regression test does not cover the actual gate rollback path.",
+    "datetime": "2026-03-12T12:28:23.211797Z",
+    "entry_id": "019ce204-fb2b-7890-b430-3c1b40a85081",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

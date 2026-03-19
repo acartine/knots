@@ -1,0 +1,16 @@
+{
+  "event_id": "019d00dc-1fce-7222-808b-f44f03cb1e8c",
+  "occurred_at": "2026-03-18T12:11:59.310942Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.state_set",
+  "data": {
+    "actor_kind": "agent",
+    "force": false,
+    "from": "ready_for_implementation_review",
+    "profile_id": "autopilot",
+    "to": "implementation_review"
+  },
+  "precondition": {
+    "profile_etag": "019d00db-7884-7ec0-a474-2c82f0f24f4a"
+  }
+}

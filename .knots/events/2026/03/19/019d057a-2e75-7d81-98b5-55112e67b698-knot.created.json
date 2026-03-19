@@ -1,0 +1,17 @@
+{
+  "event_id": "019d057a-2e75-7d81-98b5-55112e67b698",
+  "occurred_at": "2026-03-19T09:43:06.613682Z",
+  "knot_id": "knots-1cbe",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement tests/cli_loom_compat.rs: end-to-end test with fake loom binary stub, verify graceful failure when loom missing, verify JSON output, verify keep-artifacts flag.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Loom compat CLI integration test",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

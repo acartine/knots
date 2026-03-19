@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce187-10a4-73d2-953a-0d8937b9569d",
+  "occurred_at": "2026-03-12T10:10:51.17234Z",
+  "knot_id": "knots-8a97",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. All 3 commits (e7d7f2e30508, 3bf936cf038c, 02f94904d306) verified on main with correct tags. No invariants to check. make sanity passes: 504 tests green, 95.49% coverage. No regressions detected.",
+    "datetime": "2026-03-12T10:15:00Z",
+    "entry_id": "019ce187-10a4-73d2-953a-0d70f8f5bb0f",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

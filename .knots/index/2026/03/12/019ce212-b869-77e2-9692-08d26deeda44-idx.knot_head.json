@@ -1,0 +1,19 @@
+{
+  "event_id": "019ce212-b869-77e2-9692-08d26deeda44",
+  "occurred_at": "2026-03-12T12:43:23.619498Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-d7dd",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_shipment",
+    "terminal": false,
+    "title": "Generalize workflow support for gate evaluation states",
+    "type": "work",
+    "updated_at": "2026-03-12T12:43:23.619498Z"
+  }
+}

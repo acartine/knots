@@ -1,0 +1,15 @@
+{
+  "event_id": "019d00e4-79bb-7b11-b20d-b47b1c5e593d",
+  "occurred_at": "2026-03-18T12:21:06.619403Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Allowed terminal transitions from auto-deferred knots so parent auto-resolution and terminal cascades work together. Added a regression test for update-based abandonment after parent auto-resolution. Validation: make sanity (passed, 95.09% coverage).",
+    "datetime": "2026-03-18T12:21:02Z",
+    "entry_id": "019d00e4-79bb-7b11-b20d-b46f06a7156b",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-18"
+  }
+}

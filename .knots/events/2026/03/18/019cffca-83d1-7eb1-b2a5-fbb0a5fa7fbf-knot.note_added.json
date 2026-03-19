@@ -1,0 +1,15 @@
+{
+  "event_id": "019cffca-83d1-7eb1-b2a5-fbb0a5fa7fbf",
+  "occurred_at": "2026-03-18T07:13:08.049443Z",
+  "knot_id": "knots-0fc6",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review found that knots-0fc6 branch (3 commits: bd8c49e, 5fcc948, 9e0ef7b) has not been merged to main. No PR exists. Rolling back to ready_for_shipment so the merge can be completed.",
+    "datetime": "2026-03-18T07:13:08.049443Z",
+    "entry_id": "019cffca-83d1-7eb1-b2a5-fba2a7574b0b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce1fd-11d8-7110-9dc3-b223a35f415f",
+  "occurred_at": "2026-03-12T12:19:44.728725Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[implementation_review] Rollback regression: the rollback.rs fix from commit 98f66e2 was lost during subsequent merges. The is_queue_state function (src/rollback.rs:110-112) still uses only starts_with(\"ready_for_\") and does not recognize ready_to_evaluate as a queue state. The workflow_runtime import and the is_queue_state_recognizes_ready_to_evaluate test are both missing from the current HEAD. This means gate knots in evaluating state cannot correctly roll back to ready_to_evaluate. The state_hierarchy.rs rank fix (unique ranks 12/13 for gate states) is intact. Only the rollback.rs portion needs to be re-applied.",
+    "datetime": "2026-03-12T12:19:44.728725Z",
+    "entry_id": "019ce1fd-11d8-7110-9dc3-b21121e35ee7",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

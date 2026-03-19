@@ -1,0 +1,19 @@
+{
+  "event_id": "019cfc30-db9f-7e92-9b81-6090e1060688",
+  "occurred_at": "2026-03-17T14:26:26.328631Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-c606",
+    "profile_id": "autopilot_with_pr",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "add kno skills install/uninstall",
+    "type": "work",
+    "updated_at": "2026-03-17T14:26:26.328631Z"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0595-29b9-74a2-ac32-3eb7ade665f4",
+  "occurred_at": "2026-03-19T10:12:34.873152Z",
+  "knot_id": "knots-b038",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation review approved. The fix narrows terminal cascade approval to descendants not already in the requested terminal state, which matches the knot description and avoids the false approval requirement for already-shipped children. Regression coverage includes the exact parent-to-shipped case in state hierarchy tests, and make sanity passed with tarpaulin at 95.01%.",
+    "datetime": "2026-03-19T10:12:23Z",
+    "entry_id": "019d0595-29b9-74a2-ac32-3ea79d27469f",
+    "model": "GPT-5",
+    "username": "cartine",
+    "version": "gpt-5-codex"
+  }
+}

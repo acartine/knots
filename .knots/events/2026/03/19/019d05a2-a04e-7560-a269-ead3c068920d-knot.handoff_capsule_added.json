@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05a2-a04e-7560-a269-ead3c068920d",
+  "occurred_at": "2026-03-19T10:27:17.19817Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Replaced managed skills with the actual deployable knots/knots-e2e assets, listed exact SKILL.md paths in install/uninstall/update output and doctor warnings, removed unreachable update branches, and updated managed-skills docs/tests. Validation: cargo test managed_skills -- --nocapture; cargo test --test cli_skills -- --nocapture; make sanity (95.06% coverage).",
+    "datetime": "2026-03-19T10:26:36Z",
+    "entry_id": "019d05a2-a04e-7560-a269-eac37a763711",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

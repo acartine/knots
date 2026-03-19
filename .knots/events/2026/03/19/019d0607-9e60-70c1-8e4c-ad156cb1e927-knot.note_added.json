@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0607-9e60-70c1-8e4c-ad156cb1e927",
+  "occurred_at": "2026-03-19T12:17:35.840948Z",
+  "knot_id": "knots-562b",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Live verification against Loom 0.2.0 passed after follow-up harness fixes for init <NAME> and JSON bundle output.",
+    "datetime": "2026-03-19T12:17:35.840948Z",
+    "entry_id": "019d0607-9e60-70c1-8e4c-ad05e3f14473",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

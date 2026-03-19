@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05f2-fa6b-7431-8336-bebd621e3583",
+  "occurred_at": "2026-03-19T11:55:03.14731Z",
+  "knot_id": "knots-fe44",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added focused loom compat harness unit coverage for missing loom, invalid bundle, validate/build failures, cleanup behavior, nested inputs, and serialization stability.",
+    "datetime": "2026-03-19T11:55:03.14731Z",
+    "entry_id": "019d05f2-fa6b-7431-8336-bea5b6a93abb",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

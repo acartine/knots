@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0071-8b49-76b3-a733-34b3bcc91239",
+  "occurred_at": "2026-03-18T10:15:34.47291Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review failed: terminal cascade still breaks when a descendant is deferred. make sanity failed on app::tests_hierarchy::deferred_descendant_is_cascaded_in_terminal_transition because the cascade path hits the deferred resume guard instead of forcing the descendant into the approved terminal state.",
+    "datetime": "2026-03-18T10:15:34.47291Z",
+    "entry_id": "019d0071-8b48-79d2-b9fe-ef4eb55eacff",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

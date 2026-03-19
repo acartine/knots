@@ -1,0 +1,22 @@
+{
+  "event_id": "019d0183-0cd6-7400-b3d0-936c5b551f03",
+  "occurred_at": "2026-03-18T15:14:18.966636Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-bdfa",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "kno automation: auto resolve parent knots if all child knots in terminal state",
+    "type": "work",
+    "updated_at": "2026-03-18T15:14:18.966636Z"
+  },
+  "precondition": {
+    "profile_etag": "019d0182-d9a2-7790-9e2e-3ffac9dabff7"
+  }
+}

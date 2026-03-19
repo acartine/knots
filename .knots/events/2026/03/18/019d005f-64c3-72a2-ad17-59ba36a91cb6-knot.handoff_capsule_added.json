@@ -1,0 +1,15 @@
+{
+  "event_id": "019d005f-64c3-72a2-ad17-59ba36a91cb6",
+  "occurred_at": "2026-03-18T09:55:44.963744Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implemented ancestor-scoped terminal parent auto-resolution on the existing knots-bdfa branch, covering set_state/next, update, and terminal cascades. Validation passed with targeted app and CLI tests plus make sanity (607 unit tests, integration suite, 95.07% coverage). make install-hooks failed inside the Git worktree because the installer expects .git/hooks under a directory checkout, so I installed the managed pre-push hook from the primary checkout instead.",
+    "datetime": "2026-03-18T09:55:34Z",
+    "entry_id": "019d005f-64c3-72a2-ad17-59abda0e3d2e",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5"
+  }
+}

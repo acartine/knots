@@ -1,0 +1,15 @@
+{
+  "event_id": "019d058e-f316-7b83-a316-a39d161c0037",
+  "occurred_at": "2026-03-19T10:05:47.670571Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Code correctly splits location resolution into filtered (existing roots) and unfiltered (candidates) paths, with doctor_location() providing fallback logic for doctor checks and --fix. Tests cover unit and CLI integration for both project-preferred and missing-root flows. No security issues or regressions. CI enforce-changeset and required-public-files pass; sanity pending.",
+    "datetime": "2026-03-19T10:30:00Z",
+    "entry_id": "019d058e-f316-7b83-a316-a38d7a49aa06",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

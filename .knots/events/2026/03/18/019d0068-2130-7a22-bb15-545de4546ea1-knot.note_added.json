@@ -1,0 +1,18 @@
+{
+  "event_id": "019d0068-2130-7a22-bb15-545de4546ea1",
+  "occurred_at": "2026-03-18T10:05:17.488198Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment review blocked by dirty local workspace: main is behind origin/main and has unrelated working tree changes in .github/workflows/*, scripts/repo/pre-push-sanity.sh, and scripts/repo/require-changeset.sh, so a clean read-only verification of shipped main could not be completed from this checkout.",
+    "datetime": "2026-03-18T10:05:07Z",
+    "entry_id": "019d0068-2130-7a22-bb15-544012b0464f",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5"
+  },
+  "precondition": {
+    "profile_etag": "019d0067-a27a-73f3-87ef-4bee712c3672"
+  }
+}

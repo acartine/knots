@@ -1,0 +1,15 @@
+{
+  "event_id": "019d057a-82ed-7103-83ea-82fb106604b0",
+  "occurred_at": "2026-03-19T09:43:28.237186Z",
+  "knot_id": "knots-562b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Plan complete for kno loom compat-test. Architecture: test harness module (loom_compat_harness.rs) with reusable step functions, thin CLI wrapper (cli_loom.rs + loom_compat_commands.rs), smoke/matrix modes, fail-fast diagnostics. 5 child knots created: CLI scaffolding (6375), harness module (c72e), command handler (d705), unit tests (fe44), integration test (1cbe). Key risk mitigated: brittleness handled by fake loom scripts in tests (proven pattern from installed_workflows.rs). Loom is only shelled out to at the real CLI boundary.",
+    "datetime": "2026-03-19T00:00:00Z",
+    "entry_id": "019d057a-82ed-7103-83ea-82e21c68c32a",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

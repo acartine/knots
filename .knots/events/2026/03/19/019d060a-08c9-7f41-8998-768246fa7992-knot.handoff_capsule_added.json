@@ -1,0 +1,15 @@
+{
+  "event_id": "019d060a-08c9-7f41-8998-768246fa7992",
+  "occurred_at": "2026-03-19T12:20:14.153643Z",
+  "knot_id": "knots-1d8a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Plan covers 4 changes: (1) render parent_of edges in prompt.rs so agents see child knots on claim, (2) add parent-child workflow section to knots_e2e.md, (3) add same to knots.md, (4) update tests. Low risk — additive prompt text plus small rendering change. Hierarchy state guard already enforces correctness.",
+    "datetime": "2026-03-19T12:20:00Z",
+    "entry_id": "019d060a-08c9-7f41-8998-7673ce1d14f2",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "1m"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0581-9b94-7620-89e5-a42fabc00216",
+  "occurred_at": "2026-03-19T09:51:13.30064Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment blocked: pre-push hook fails because local tarpaulin coverage is 8870/9337 (94.998%), which is below the fail-under=95 threshold. This is pre-existing on the parent commit fd3945f. The merge was reverted on main. The feature branch knots-18e9-doctor-skills-fix is intact. Next step: add ~3 more covered lines to reliably pass the 95% boundary, then re-attempt shipment.",
+    "datetime": "2026-03-19T09:50:00Z",
+    "entry_id": "019d0581-9b94-7620-89e5-a41ecc227890",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

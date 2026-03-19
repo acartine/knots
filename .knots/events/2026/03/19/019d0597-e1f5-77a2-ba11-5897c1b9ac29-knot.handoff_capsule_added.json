@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0597-e1f5-77a2-ba11-5897c1b9ac29",
+  "occurred_at": "2026-03-19T10:15:33.109765Z",
+  "knot_id": "knots-b038",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment review approved on main. Verified merge commit 7a94aabc0c9e is on main, commit tags 216f449dc1ea/c2eecaf37c1b/069ce46bdc26/7a94aabc0c9e resolve, shipped code filters already-terminal descendants before cascade approval, and targeted regression coverage is present in src/state_hierarchy_tests.rs. Workspace was clean and no knot invariants were defined. Existing shipment metadata records green CI for the shipped merge.",
+    "datetime": "2026-03-19T10:14:26Z",
+    "entry_id": "019d0597-e1f5-77a2-ba11-588e4e9365d3",
+    "model": "GPT-5",
+    "username": "cartine",
+    "version": "gpt-5-codex"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05f3-190f-70c1-875c-f8da2b1cd35c",
+  "occurred_at": "2026-03-19T11:55:10.991352Z",
+  "knot_id": "knots-1cbe",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Covered loom compat main-path integration with stub loom execution, json output, and repo-root relative source resolution in cli integration tests.",
+    "datetime": "2026-03-19T11:55:10.991352Z",
+    "entry_id": "019d05f3-190f-70c1-875c-f8c9d841e7df",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

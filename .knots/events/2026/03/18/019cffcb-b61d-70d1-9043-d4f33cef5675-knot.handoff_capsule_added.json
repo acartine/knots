@@ -1,0 +1,15 @@
+{
+  "event_id": "019cffcb-b61d-70d1-9043-d4f33cef5675",
+  "occurred_at": "2026-03-18T07:14:26.461644Z",
+  "knot_id": "knots-0fc6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment blocked: merged knots-0fc6 into local main as c08444066e4d, but push to origin/main is denied by session policy. Resume shipment from a session that can push main, then verify remote CI before advancing.",
+    "datetime": "2026-03-18T07:13:47Z",
+    "entry_id": "019cffcb-b61d-70d1-9043-d4ed32d40392",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

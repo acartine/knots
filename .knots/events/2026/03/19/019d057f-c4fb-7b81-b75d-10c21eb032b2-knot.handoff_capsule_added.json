@@ -1,0 +1,15 @@
+{
+  "event_id": "019d057f-c4fb-7b81-b75d-10c21eb032b2",
+  "occurred_at": "2026-03-19T09:49:12.82766Z",
+  "knot_id": "knots-562b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan approved. The proposed split is feasible and aligned with the current code seams: a dedicated Loom compat harness, thin CLI plumbing, and targeted runtime changes to consume bundle-defined failure targets instead of only . Test coverage is appropriately scoped to include harness helpers, CLI/integration coverage for install/use/persisted workflow_id/prompt sourcing/happy and failure transitions/cleanup, and Loom-gated live coverage for the real CLI boundary. No invariant conflicts found; main watchpoints remain explicit diagnostics for missing or mismatched Loom/bundle schemas and deterministic restoration of repo-local workflow selection and installed artifacts.",
+    "datetime": "2026-03-19T10:00:00Z",
+    "entry_id": "019d057f-c4fb-7b81-b75d-10b4aebe8d0a",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5-codex"
+  }
+}

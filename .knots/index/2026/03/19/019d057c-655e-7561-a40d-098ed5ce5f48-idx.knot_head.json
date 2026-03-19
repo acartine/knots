@@ -1,0 +1,20 @@
+{
+  "event_id": "019d057c-655e-7561-a40d-098ed5ce5f48",
+  "occurred_at": "2026-03-19T09:45:31.732583Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-4c5d",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "customizable workflows and profiles",
+    "type": "work",
+    "updated_at": "2026-03-19T09:45:31.732583Z",
+    "workflow_id": "compatibility"
+  }
+}

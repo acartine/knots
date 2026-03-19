@@ -1,0 +1,20 @@
+{
+  "event_id": "019d05f3-1920-7bd2-90ef-d57320e31361",
+  "occurred_at": "2026-03-19T11:55:10.991352Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-1cbe",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation_review",
+    "terminal": false,
+    "title": "Loom compat CLI integration test",
+    "type": "work",
+    "updated_at": "2026-03-19T11:55:10.991352Z",
+    "workflow_id": "compatibility"
+  }
+}

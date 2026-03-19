@@ -1,0 +1,15 @@
+{
+  "event_id": "019cffc7-3cf8-7420-a747-c833b76ebabc",
+  "occurred_at": "2026-03-18T07:09:33.304018Z",
+  "knot_id": "knots-0fc6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented terminal-parent reconciliation for doctor: warns when a parent's direct children are all terminal, and --fix resolves parents recursively with shipped > deferred > abandoned precedence. Added unit and CLI coverage; make sanity passed at 95.06% coverage. Branch: knots-0fc6.",
+    "datetime": "2026-03-18T07:09:09Z",
+    "entry_id": "019cffc7-3cf8-7420-a747-c8266352dbf8",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

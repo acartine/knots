@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0581-62c2-74f3-950d-e63f6b7e2e92",
+  "occurred_at": "2026-03-19T09:50:58.754227Z",
+  "knot_id": "knots-18e9",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Pre-push hook fails: coverage 8870/9337 (94.998%) displayed as 95.00% but fails tarpaulin fail-under=95 due to floating-point comparison. This is pre-existing — same coverage on parent commit fd3945f. CI passes because remote runner gets slightly different coverage numbers. Need ~3 more covered lines or a coverage threshold adjustment to reliably pass local pre-push.",
+    "datetime": "2026-03-19T09:50:58.754227Z",
+    "entry_id": "019d0581-62c2-74f3-950d-e62626a65161",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

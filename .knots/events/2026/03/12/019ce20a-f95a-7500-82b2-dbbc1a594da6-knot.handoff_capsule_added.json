@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce20a-f95a-7500-82b2-dbbc1a594da6",
+  "occurred_at": "2026-03-12T12:34:55.962099Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Fixed gate rollback resolution so evaluating is validated and rewound via knot-type-aware workflow logic; added rollback coverage for evaluating -> ready_to_evaluate and the execute_operation gate rollback path; make sanity passed at 95.29% coverage.",
+    "datetime": "2026-03-12T12:34:11Z",
+    "entry_id": "019ce20a-f95a-7500-82b2-dbad3ec711e8",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5-codex"
+  }
+}

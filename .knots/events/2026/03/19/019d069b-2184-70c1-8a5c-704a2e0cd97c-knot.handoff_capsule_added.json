@@ -1,0 +1,15 @@
+{
+  "event_id": "019d069b-2184-70c1-8a5c-704a2e0cd97c",
+  "occurred_at": "2026-03-19T14:58:43.204938Z",
+  "knot_id": "knots-1d8a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implemented parent-knot prompt guidance from parent_of edges, updated the managed knots skills with child-first workflow wording, added regression tests, and passed make sanity at 95.04% coverage. install-hooks was run from the primary checkout because the installer expects a .git directory.",
+    "datetime": "2026-03-19T14:13:42Z",
+    "entry_id": "019d069b-2184-70c1-8a5c-70352246bb4f",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5"
+  }
+}

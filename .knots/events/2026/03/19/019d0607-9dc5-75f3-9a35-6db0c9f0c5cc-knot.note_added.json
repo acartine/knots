@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0607-9dc5-75f3-9a35-6db0c9f0c5cc",
+  "occurred_at": "2026-03-19T12:17:35.685715Z",
+  "knot_id": "knots-1cbe",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Extended CLI path coverage to the live-compatible init argument contract discovered during real command verification.",
+    "datetime": "2026-03-19T12:17:35.685715Z",
+    "entry_id": "019d0607-9dc5-75f3-9a35-6da485eeeb04",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

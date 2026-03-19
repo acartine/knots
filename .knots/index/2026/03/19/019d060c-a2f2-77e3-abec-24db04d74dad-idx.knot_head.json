@@ -1,0 +1,20 @@
+{
+  "event_id": "019d060c-a2f2-77e3-abec-24db04d74dad",
+  "occurred_at": "2026-03-19T12:23:04.690979Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a669",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_shipment",
+    "terminal": false,
+    "title": "loom compat-test cli surface",
+    "type": "work",
+    "updated_at": "2026-03-19T12:23:04.690979Z",
+    "workflow_id": "compatibility"
+  }
+}

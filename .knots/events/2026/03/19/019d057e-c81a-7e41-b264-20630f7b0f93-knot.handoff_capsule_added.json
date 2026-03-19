@@ -1,0 +1,15 @@
+{
+  "event_id": "019d057e-c81a-7e41-b264-20630f7b0f93",
+  "occurred_at": "2026-03-19T09:48:08.090197Z",
+  "knot_id": "knots-562b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning complete. Proposed split: (1) reusable Loom compat harness, (2) thin `kno loom compat-test` CLI surface with smoke/matrix and JSON/text outputs, (3) tests/diagnostics/cleanup coverage. Critical revision from prior review: add an explicit failure-path runtime/API seam, because current code parses bundle `failure_targets` but only advances via happy-path selection. Cleanup should snapshot/restore repo workflow selection and remove temp-installed workflow artifacts unless `--keep-artifacts` is set.",
+    "datetime": "2026-03-19T09:47:29Z",
+    "entry_id": "019d057e-c81a-7e41-b264-2057e75ad56e",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5-codex"
+  }
+}

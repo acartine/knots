@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0071-aa97-7b13-bcb9-5add21880434",
+  "occurred_at": "2026-03-18T10:15:42.487238Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "1. Rejected in implementation_review because the change introduces a regression in terminal cascades. 2. make sanity fails in app::tests_hierarchy::deferred_descendant_is_cascaded_in_terminal_transition (src/app/tests_hierarchy.rs:460-492): abandoning a parent with an approved cascade should also abandon a deferred child. 3. The failure comes from src/app.rs:1337-1373 calling write_state_change_locked for descendants with force=false, which then trips the deferred resume guard in src/app.rs:1283-1293 and returns InvalidArgument(\"deferred knots may only resume to 'implementation'\"). 4. The new parent auto-resolution hooks in src/app.rs:806-807, 855-856, and 1266-1267 are not safe to ship until the deferred-descendant cascade path is fixed and sanity is green again.",
+    "datetime": "2026-03-18T10:15:23Z",
+    "entry_id": "019d0071-aa97-7b13-bcb9-5acaa5fe3c61",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

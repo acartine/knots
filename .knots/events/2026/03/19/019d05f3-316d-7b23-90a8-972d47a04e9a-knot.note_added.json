@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05f3-316d-7b23-90a8-972d47a04e9a",
+  "occurred_at": "2026-03-19T11:55:17.229356Z",
+  "knot_id": "knots-892c",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added integration assertions for workflow-driven success and failure paths, prompt provenance, cleanup, and keep-artifacts diagnostics under the loom compat flow.",
+    "datetime": "2026-03-19T11:55:17.229356Z",
+    "entry_id": "019d05f3-316d-7b23-90a8-97138e67ffea",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

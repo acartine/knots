@@ -1,0 +1,16 @@
+{
+  "event_id": "019cffae-d2d6-7881-b0b9-c2d6482de01c",
+  "occurred_at": "2026-03-18T06:42:53.270161Z",
+  "knot_id": "knots-0fc6",
+  "type": "knot.created",
+  "data": {
+    "body": "as title says, if all children in terminal state for knot, kno doctor should provide warning and offer fix with --fix\n\nfor --fix logic\nif any of the children are shipped - set to shipped\nelse if any are deferred - set to deferred\nelse set to abandoned",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno doctor: identify parents whose children are all in terminal state and resolve them",
+    "type": "work"
+  }
+}

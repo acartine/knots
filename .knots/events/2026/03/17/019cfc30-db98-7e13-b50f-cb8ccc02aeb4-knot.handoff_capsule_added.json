@@ -1,0 +1,15 @@
+{
+  "event_id": "019cfc30-db98-7e13-b50f-cb8ccc02aeb4",
+  "occurred_at": "2026-03-17T14:26:26.328631Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. All requirements met: install/uninstall/update commands for Codex, Claude, and OpenCode with project-level preference and user-level fallback; eligibility detection based on root existence; interactive prompts for missing skills during update; doctor checks and fix wiring; README updates. Code is well-structured with clean module separation (all files under 500 lines). 17 unit tests + 3 integration tests provide thorough coverage. make sanity passes clean at 95.08% coverage. Minor note: SkillLocation.scope field is defined but unused — not a blocker.",
+    "datetime": "2026-03-17T14:30:00Z",
+    "entry_id": "019cfc30-db98-7e13-b50f-cb7863c318e7",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

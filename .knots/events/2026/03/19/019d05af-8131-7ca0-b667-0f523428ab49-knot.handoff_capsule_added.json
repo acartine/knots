@@ -1,0 +1,15 @@
+{
+  "event_id": "019d05af-8131-7ca0-b667-0f523428ab49",
+  "occurred_at": "2026-03-19T10:41:21.201011Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipped by fast-forwarding main to 90762f445417. Push to origin/main succeeded and remote workflows passed: CI 23290961410, Repo Hygiene 23290961468, Release 23290961407, Changesets Version PR 23290961423.",
+    "datetime": "2026-03-19T10:37:29Z",
+    "entry_id": "019d05af-8131-7ca0-b667-0f43ff1878b7",
+    "model": "gpt-5",
+    "username": "Knots Test",
+    "version": "gpt-5"
+  }
+}

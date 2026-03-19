@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce215-e939-7141-b9d0-311b6a36a427",
+  "occurred_at": "2026-03-12T12:46:52.729578Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete. Merged feature branch codex/knots-d7dd-gate-eval-states to main (merge commit 2f3fd59). Sanity checks passed (95.29% coverage). Pushed to origin/main. All CI workflows green (Changesets, Release, Repo Hygiene). Changes: generalized gate rollback evaluation states in src/rollback.rs and src/write_dispatch/tests_gate_ext.rs.",
+    "datetime": "2026-03-12T12:47:00Z",
+    "entry_id": "019ce215-e939-7141-b9d0-31005ed880c0",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

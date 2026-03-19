@@ -1,0 +1,20 @@
+{
+  "event_id": "019d075d-210c-7b41-8730-f92e2c487e21",
+  "occurred_at": "2026-03-19T18:30:37.060929Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-d705",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Loom compat command handler and output formatting",
+    "type": "work",
+    "updated_at": "2026-03-19T18:30:37.060929Z",
+    "workflow_id": "compatibility"
+  }
+}

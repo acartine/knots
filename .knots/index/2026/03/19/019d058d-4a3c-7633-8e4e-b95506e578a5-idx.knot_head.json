@@ -1,0 +1,20 @@
+{
+  "event_id": "019d058d-4a3c-7633-8e4e-b95506e578a5",
+  "occurred_at": "2026-03-19T10:03:58.898748Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-18e9",
+    "profile_id": "autopilot_with_pr",
+    "state": "implementation",
+    "terminal": false,
+    "title": "skills install should be checked by kno doctor, and be fixed as part of docker --fix",
+    "type": "work",
+    "updated_at": "2026-03-19T10:03:58.898748Z",
+    "workflow_id": "compatibility"
+  }
+}

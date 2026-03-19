@@ -1,0 +1,15 @@
+{
+  "event_id": "019cfc1d-83d9-7a43-8510-a32f3303cc22",
+  "occurred_at": "2026-03-17T14:05:18.681527Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Plan review approved. The 7-step implementation plan is complete, technically feasible, and well-scoped. It correctly addresses: CLI subtree split to manage cli.rs size, new module for per-tool path resolution with table-driven tests, separation of deployed skill assets from workflow prompts, interactive prompt reuse, doctor extraction and extension, and three-layer test strategy. Risks around path semantics and file coupling are adequately mitigated. No invariant violations found. Ready for implementation.",
+    "datetime": "2026-03-17T12:00:00Z",
+    "entry_id": "019cfc1d-83d9-7a43-8510-a31bf90ef1ce",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

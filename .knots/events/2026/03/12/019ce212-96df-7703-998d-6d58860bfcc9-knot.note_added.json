@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce212-96df-7703-998d-6d58860bfcc9",
+  "occurred_at": "2026-03-12T12:43:15.039064Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[shipment_review] Deployment issue: shipment commit 5a85cbddd8ae is not on origin/main. The branch is one commit ahead of origin/main, so this change is not live on main and cannot pass shipment review.",
+    "datetime": "2026-03-12T12:43:15.039064Z",
+    "entry_id": "019ce212-96df-7703-998d-6d4a739d9644",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

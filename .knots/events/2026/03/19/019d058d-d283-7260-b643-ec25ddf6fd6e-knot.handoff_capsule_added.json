@@ -1,0 +1,15 @@
+{
+  "event_id": "019d058d-d283-7260-b643-ec25ddf6fd6e",
+  "occurred_at": "2026-03-19T10:04:33.795446Z",
+  "knot_id": "knots-b038",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Fixed terminal cascade approval: changed plan_state_transition filter to exclude descendants in ANY terminal state (not just the exact target state), aligning with cascade_terminal_state_locked behavior. Added unit tests for mixed-terminal and mixed-active scenarios, CLI integration test, diamond ancestor test for coverage, and changeset.",
+    "datetime": "2026-03-19T10:00:00Z",
+    "entry_id": "019d058d-d283-7260-b643-ec1a5c2306d4",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

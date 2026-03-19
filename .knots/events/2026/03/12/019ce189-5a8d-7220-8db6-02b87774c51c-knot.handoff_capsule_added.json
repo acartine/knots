@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce189-5a8d-7220-8db6-02b87774c51c",
+  "occurred_at": "2026-03-12T10:13:21.165569Z",
+  "knot_id": "knots-aa2c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Gate knot type with owner_kind and failure_modes persistence is fully implemented across all layers (domain/db/events/app/sync/CLI/UI). All 504+ tests pass, 95.48% coverage. No invariants to verify. The single branch commit correctly fixes a test flake (hot_window_days=365). No security issues or regressions found.",
+    "datetime": "2026-03-12T18:30:00Z",
+    "entry_id": "019ce189-5a8d-7220-8db6-02a8d7faec38",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "2026-03-12"
+  }
+}

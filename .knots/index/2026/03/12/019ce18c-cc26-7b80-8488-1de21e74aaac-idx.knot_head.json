@@ -1,0 +1,19 @@
+{
+  "event_id": "019ce18c-cc26-7b80-8488-1de21e74aaac",
+  "occurred_at": "2026-03-12T10:17:06.844492Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-78d5",
+    "profile_id": "autopilot_with_pr",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "kno push/pull: provide immediate feedback to user, describing what you are doing.  use nice colors",
+    "type": "work",
+    "updated_at": "2026-03-12T10:17:06.844492Z"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce18a-b918-7d40-91cf-1eba9c671369",
+  "occurred_at": "2026-03-12T10:14:50.904168Z",
+  "knot_id": "knots-78d5",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented immediate, colored progress feedback for kno push/pull/sync via a shared reporter threaded through replication and sync internals. JSON output stays clean. Added CLI/UI coverage for progress output and fixed a time-sensitive invariant sync test by setting hot_window_days in the test. Verification: make sanity passed at 95.30% coverage. Branch: knots-78d5-push-pull-feedback. Commit: cf7eb28d7cb7. PR: https://github.com/acartine/knots/pull/27",
+    "datetime": "2026-03-12T10:14:40Z",
+    "entry_id": "019ce18a-b918-7d40-91cf-1ea2f919015d",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "codex"
+  }
+}

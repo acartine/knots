@@ -1,0 +1,20 @@
+{
+  "event_id": "019d060c-b998-7bb0-8b58-d4bbcb23a6c5",
+  "occurred_at": "2026-03-19T12:23:10.478163Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-fe44",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Loom compat harness unit tests",
+    "type": "work",
+    "updated_at": "2026-03-19T12:23:10.478163Z",
+    "workflow_id": "compatibility"
+  }
+}

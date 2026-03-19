@@ -1,0 +1,15 @@
+{
+  "event_id": "019cfc2c-58c7-7013-bb4a-dff8146de9c1",
+  "occurred_at": "2026-03-17T14:21:30.695289Z",
+  "knot_id": "knots-c606",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented managed skills support for Codex, Claude, and OpenCode with new kno skills install|uninstall|update commands, managed skill deployment path detection with project-first fallback, doctor verification/fix wiring, README/help updates, and unit/integration coverage. Validation passed via make install-hooks and make sanity (95.08% coverage). Branch: c606-managed-skills.",
+    "datetime": "2026-03-17T14:21:23Z",
+    "entry_id": "019cfc2c-58c7-7013-bb4a-dfefadb245a4",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "5"
+  }
+}

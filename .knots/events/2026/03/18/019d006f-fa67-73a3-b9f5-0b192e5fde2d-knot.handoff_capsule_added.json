@@ -1,0 +1,15 @@
+{
+  "event_id": "019d006f-fa67-73a3-b9f5-0b192e5fde2d",
+  "occurred_at": "2026-03-18T10:13:51.847111Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented parent auto-resolution triggers for state changes by using terminal-resolution states, and added regression coverage for set_state/update plus the deferred-descendant cascade fixture.",
+    "datetime": "2026-03-18T10:13:20Z",
+    "entry_id": "019d006f-fa67-73a3-b9f5-0b093e55ea9b",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-18"
+  }
+}

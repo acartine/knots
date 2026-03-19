@@ -1,0 +1,17 @@
+{
+  "event_id": "019d057a-1f7e-7a53-a13e-773851579408",
+  "occurred_at": "2026-03-19T09:43:02.782787Z",
+  "knot_id": "knots-fe44",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement loom_compat_harness_tests.rs with unit tests for each harness step, error diagnostics (missing loom, bad bundle, schema mismatch), keep-artifacts behavior, and JSON output format.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Loom compat harness unit tests",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

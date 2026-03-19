@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0183-d314-7000-8052-217b0df0e2f1",
+  "occurred_at": "2026-03-18T15:15:09.716556Z",
+  "knot_id": "knots-bdfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Approved shipment review. Merge commit c6c7657ffc24 is live on origin/main. All 4 CI workflows (CI, Repo Hygiene, Changesets Version PR, Release) passed green. 5 commits tagged on the knot. No invariants defined. Diff is well-scoped: 5 files changed (app.rs auto-resolve hooks, state_hierarchy ancestor resolver, plus 3 new test files). No regressions detected.",
+    "datetime": "2026-03-18T12:30:00Z",
+    "entry_id": "019d0183-d314-7000-8052-21659ecc3554",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

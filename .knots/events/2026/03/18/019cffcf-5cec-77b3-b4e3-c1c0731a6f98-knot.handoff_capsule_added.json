@@ -1,0 +1,15 @@
+{
+  "event_id": "019cffcf-5cec-77b3-b4e3-c1c0731a6f98",
+  "occurred_at": "2026-03-18T07:18:25.772617Z",
+  "knot_id": "knots-0fc6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete: pushed 4 commits (bd8c49e, 5fcc948, 9e0ef7b, c084440) to origin/main. CI green (run 23233428690). Feature adds doctor check for parent knots whose children are all in terminal state, with --fix support to resolve them.",
+    "datetime": "2026-03-18T07:19:00Z",
+    "entry_id": "019cffcf-5cec-77b3-b4e3-c1b885a5febd",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019ce201-2640-7b30-8b41-572fe5cfcdf1",
+  "occurred_at": "2026-03-12T12:24:12.096954Z",
+  "knot_id": "knots-d7dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Restored the rollback.rs portion of 98f66e2: rollback queue-state detection now treats ready_to_evaluate as a queue via workflow_runtime::READY_TO_EVALUATE, and the lost regression test is back. Verified with make sanity on branch knots-d7dd-gate-eval-rollback; tarpaulin reported 95.31% coverage.",
+    "datetime": "2026-03-12T12:23:16Z",
+    "entry_id": "019ce201-2640-7b30-8b41-571991b0b771",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-12"
+  }
+}

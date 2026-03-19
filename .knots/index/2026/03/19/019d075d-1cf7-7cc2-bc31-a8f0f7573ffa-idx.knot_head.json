@@ -1,0 +1,20 @@
+{
+  "event_id": "019d075d-1cf7-7cc2-bc31-a8f0f7573ffa",
+  "occurred_at": "2026-03-19T18:30:36.014274Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ba78",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "loom compat harness and failure transition runtime",
+    "type": "work",
+    "updated_at": "2026-03-19T18:30:36.014274Z",
+    "workflow_id": "compatibility"
+  }
+}
