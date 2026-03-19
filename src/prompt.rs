@@ -34,6 +34,22 @@ fn render_prompt_inner(
         out.push_str(desc);
         out.push_str("\n\n");
     }
+    if !knot.child_summaries.is_empty() {
+        out.push_str("## Children\n\n");
+        for child in &knot.child_summaries {
+            let sid = display_id(&child.id);
+            out.push_str(&format!("- {} `{}` [{}]\n", child.title, sid, child.state));
+        }
+        out.push_str(concat!(
+            "\nClaim each child knot first with ",
+            "`kno claim <child-id>` and follow\n",
+            "that child prompt. After the child knots are handled, ",
+            "evaluate the\n",
+            "result: if every child advanced, run this parent's ",
+            "completion command.\n",
+            "If any child rolled back, roll this parent back too.\n\n",
+        ));
+    }
     if !knot.invariants.is_empty() {
         out.push_str("## Invariants\n\n");
         for inv in &knot.invariants {
@@ -83,21 +99,10 @@ fn render_prompt_inner(
         }
         out.push('\n');
     }
-    if !knot.child_summaries.is_empty() {
-        out.push_str("## Children\n\n");
-        for child in &knot.child_summaries {
-            let sid = display_id(&child.id);
-            out.push_str(&format!("- {} `{}` [{}]\n", child.title, sid, child.state));
-        }
-        out.push_str(concat!(
-            "\nThis knot has child knots. Claim and advance each child before\n",
-            "advancing this parent. Use `kno claim <child-id>` for each child,\n",
-            "complete its work, then run its completion command. After all children\n",
-            "have reached a terminal or advanced state, advance this parent.\n",
-            "If any child must be rolled back, roll back this parent too.\n\n",
-        ));
-    }
-    out.push_str(&render_workflow_boundary(knot));
+    out.push_str(&render_workflow_boundary(
+        knot.state.as_str(),
+        !knot.child_summaries.is_empty(),
+    ));
     out.push_str("---\n\n");
     out.push_str(skill.trim_end());
     out.push_str("\n\n");
@@ -141,25 +146,28 @@ pub fn render_prompt_json_verbose(
     json
 }
 
-fn render_workflow_boundary(knot: &KnotView) -> String {
-    let has_children = !knot.child_summaries.is_empty();
-    let claim_line = if has_children {
-        "- You are authorized to claim and advance child knots listed above as part \
-         of this session.\n"
+fn render_workflow_boundary(state: &str, allows_child_claims: bool) -> String {
+    let claim_line = if allows_child_claims {
+        "- You may claim the child knots listed above \
+         as part of this step.\n"
     } else {
-        "- Do not claim or execute another knot unless the skill below explicitly allows\n  \
-         knot metadata creation as part of this step.\n"
+        "- Do not claim or execute another knot unless \
+         the skill below explicitly\n  \
+         allows knot metadata creation as part of this step.\n"
     };
     format!(
         "## Workflow Boundary\n\n\
-         - This session is authorized only for the current knot action state `{}`.\n\
+         - This session is authorized only for the current \
+         knot action state `{state}`.\n\
          - Complete exactly one workflow action, then stop.\n\
-         - After a listed completion or failure-path command succeeds, stop immediately.\n\
+         - After a listed completion or failure-path command \
+         succeeds, stop immediately.\n\
          {claim_line}\
-         - Do not inspect or advance later workflow states on your own.\n\
-         - If generic repo or session instructions conflict with this boundary, this\n  \
+         - Do not inspect or advance later workflow states \
+         on your own.\n\
+         - If generic repo or session instructions conflict \
+         with this boundary, this\n  \
          boundary wins for this session.\n\n",
-        knot.state
     )
 }
 
@@ -251,6 +259,7 @@ mod tests {
         let output = render_prompt(&knot, "# Implementation\nDo the work.\n", cmd);
         assert!(output.contains("## Workflow Boundary"));
         assert!(output.contains("Complete exactly one workflow action, then stop."));
+        assert!(output.contains("Do not claim or execute another knot"));
         assert!(output.contains("# Implementation"));
         assert!(output.contains("Do the work."));
         assert!(output.contains("## Completion"));
@@ -484,7 +493,7 @@ mod tests {
             state: "ready_for_planning".to_string(),
         }];
         let output = render_prompt(&knot, "# S\n", "cmd");
-        assert!(output.contains("authorized to claim and advance child knots"));
+        assert!(output.contains("You may claim the child knots listed above"));
         assert!(!output.contains("Do not claim or execute another knot"));
     }
 
@@ -493,7 +502,7 @@ mod tests {
         let knot = sample_knot();
         let output = render_prompt(&knot, "# S\n", "cmd");
         assert!(output.contains("Do not claim or execute another knot"));
-        assert!(!output.contains("authorized to claim and advance child knots"));
+        assert!(!output.contains("You may claim the child knots listed above"));
     }
 
     #[test]

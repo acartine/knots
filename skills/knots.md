@@ -42,8 +42,11 @@ kno next <id> --expected-state <current_state>
 kno rollback <id>
 ```
 
-If the claimed knot has children, claim and complete each child before
-advancing the parent.
+If the claimed knot lists children, handle the children first:
+- Claim each child knot and follow that child prompt to completion.
+- When the child knots are handled, evaluate the outcomes.
+- If every child advanced, advance the parent.
+- If any child rolled back, roll the parent back too.
 
 Do not invent alternate transition workflows. Prefer `claim`, `next`, and
 `rollback` over manual state mutation unless the user explicitly asks for it.
