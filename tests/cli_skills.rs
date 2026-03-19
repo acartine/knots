@@ -193,3 +193,30 @@ fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
     let claude = find_check(&report, "skills_claude");
     assert_eq!(claude["status"], "pass");
 }
+
+#[test]
+fn doctor_fix_creates_missing_codex_root_and_installs_skills() {
+    let root = unique_workspace("knots-cli-skills-doctor-fix-root");
+    let home = unique_workspace("knots-cli-skills-home");
+    setup_repo_with_remote(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let doctor = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    assert_success(&doctor);
+    let report: Value = serde_json::from_slice(&doctor.stdout).expect("doctor json should parse");
+    let codex = find_check(&report, "skills_codex");
+    assert_eq!(codex["status"], "warn");
+    let detail = codex["detail"].as_str().expect("detail should be a string");
+    assert!(detail.contains(".codex/skills"));
+    assert!(detail.contains("run `kno skills install codex`"));
+
+    let doctor_fix = run_knots(&root, &db, &home, &["doctor", "--fix"]);
+    assert_success(&doctor_fix);
+    assert!(home.join(".codex/skills/planning/SKILL.md").exists());
+
+    let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    assert_success(&after);
+    let report: Value = serde_json::from_slice(&after.stdout).expect("doctor json should parse");
+    let codex = find_check(&report, "skills_codex");
+    assert_eq!(codex["status"], "pass");
+}
