@@ -1,6 +1,7 @@
 mod app;
 mod cli;
 mod cli_help;
+mod cli_loom;
 mod cli_ops;
 mod cli_skills;
 mod cli_workflow;
@@ -23,6 +24,10 @@ mod list_layout;
 mod list_layout_tests_ext;
 mod listing;
 mod locks;
+mod loom_compat_commands;
+mod loom_compat_harness;
+#[cfg(test)]
+mod loom_compat_harness_tests;
 #[cfg(test)]
 mod main_tests;
 mod managed_skills;
@@ -106,6 +111,9 @@ fn run() -> Result<(), app::AppError> {
     if let Commands::Workflow(args) = &cli.command {
         return workflow_commands::run_workflow_command(args, &cli.repo_root);
     }
+    if let Commands::Loom(args) = &cli.command {
+        return loom_compat_commands::run_loom_command(args, &cli.repo_root);
+    }
     if let Some(output) = write_dispatch::maybe_run_queued_command(&cli)? {
         print!("{output}");
         return Ok(());
@@ -161,6 +169,7 @@ fn run() -> Result<(), app::AppError> {
         Commands::Workflow(_) => {
             unreachable!("workflow commands are handled before app initialization")
         }
+        Commands::Loom(_) => unreachable!("loom commands are handled before app initialization"),
         Commands::Rollback(_) => {
             unreachable!("queued write commands are handled before app initialization")
         }

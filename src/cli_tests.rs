@@ -1,6 +1,6 @@
 use clap::{CommandFactory, Parser};
 
-use super::{Cli, Commands, ProfileSubcommands};
+use super::{Cli, Commands, LoomCompatModeArg, LoomSubcommands, ProfileSubcommands};
 
 fn parse(args: &[&str]) -> Cli {
     Cli::parse_from(args)
@@ -48,6 +48,49 @@ fn profile_show_parses_with_id() {
         },
         other => panic!("expected Profile, got {:?}", other),
     }
+}
+
+#[test]
+fn loom_compat_test_parses() {
+    let cli = parse(&[
+        "kno",
+        "loom",
+        "compat-test",
+        "./pkg",
+        "--mode",
+        "matrix",
+        "--json",
+    ]);
+    match cli.command {
+        Commands::Loom(args) => match args.command {
+            LoomSubcommands::CompatTest(inner) => {
+                assert_eq!(inner.source, std::path::PathBuf::from("./pkg"));
+                assert_eq!(inner.mode, LoomCompatModeArg::Matrix);
+                assert!(inner.json);
+            }
+        },
+        other => panic!("expected Loom, got {:?}", other),
+    }
+}
+
+#[test]
+fn loom_help_mentions_compat_test() {
+    let mut root = Cli::command();
+    let loom = root
+        .find_subcommand_mut("loom")
+        .expect("loom subcommand should exist");
+    let compat = loom
+        .find_subcommand_mut("compat-test")
+        .expect("compat-test subcommand should exist");
+    let mut buf = Vec::new();
+    compat
+        .write_long_help(&mut buf)
+        .expect("loom help should render");
+    let help = String::from_utf8(buf).expect("utf-8");
+    assert!(
+        help.contains("--mode"),
+        "loom help should mention --mode: {help}"
+    );
 }
 
 #[test]

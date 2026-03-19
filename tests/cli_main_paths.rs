@@ -65,6 +65,15 @@ fn configure_coverage_env(command: &mut Command) {
 }
 
 fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
+    run_knots_with_path(repo_root, db_path, args, None)
+}
+
+fn run_knots_with_path(
+    repo_root: &Path,
+    db_path: &Path,
+    args: &[&str],
+    path_override: Option<&Path>,
+) -> Output {
     let mut command = Command::new(knots_binary());
     command
         .arg("--repo-root")
@@ -73,6 +82,9 @@ fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
         .arg(db_path)
         .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
         .args(args);
+    if let Some(path) = path_override {
+        command.env("KNOTS_LOOM_BIN", path.join("loom"));
+    }
     configure_coverage_env(&mut command);
     command.output().expect("knots command should run")
 }
@@ -102,6 +114,115 @@ fn parse_created_id(output: &Output) -> String {
         .nth(1)
         .expect("created output should include knot id")
         .to_string()
+}
+
+fn install_stub_loom(root: &Path) -> PathBuf {
+    let bin_dir = root.join("bin");
+    std::fs::create_dir_all(&bin_dir).expect("bin dir should exist");
+    let bundle = r#"
+[workflow]
+name = "custom_flow"
+version = 1
+default_profile = "autopilot"
+
+[states.ready_for_work]
+display_name = "Ready for Work"
+kind = "queue"
+
+[states.work]
+display_name = "Work"
+kind = "action"
+action_type = "produce"
+executor = "agent"
+prompt = "work"
+
+[states.ready_for_review]
+display_name = "Ready for Review"
+kind = "queue"
+
+[states.review]
+display_name = "Review"
+kind = "action"
+action_type = "gate"
+executor = "human"
+prompt = "review"
+
+[states.deferred]
+display_name = "Deferred"
+kind = "escape"
+
+[states.done]
+display_name = "Done"
+kind = "terminal"
+
+[steps.work_step]
+queue = "ready_for_work"
+action = "work"
+
+[steps.review_step]
+queue = "ready_for_review"
+action = "review"
+
+[phases.main]
+produce = "work_step"
+gate = "review_step"
+
+[profiles.autopilot]
+phases = ["main"]
+output = "remote_main"
+
+[prompts.work]
+accept = ["Working change"]
+body = """
+# Work
+
+Perform the work.
+"""
+
+[prompts.work.success]
+complete = "ready_for_review"
+
+[prompts.work.failure]
+blocked = "deferred"
+
+[prompts.review]
+accept = ["Reviewed change"]
+body = """
+# Review
+
+Review the work.
+"""
+
+[prompts.review.success]
+approved = "done"
+
+[prompts.review.failure]
+changes = "ready_for_work"
+"#;
+    let script = format!(
+        "#!/bin/sh\n\
+         if [ \"$1\" = \"--version\" ]; then echo 'loom 0.1.0'; exit 0; fi\n\
+         if [ \"$1\" = \"init\" ]; then touch loom.toml; exit 0; fi\n\
+         if [ \"$1\" = \"validate\" ]; then exit 0; fi\n\
+         if [ \"$1\" = \"build\" ]; then\n\
+           cat <<'EOF'\n\
+{bundle}\n\
+EOF\n\
+           exit 0\n\
+         fi\n\
+         echo 'unexpected args' >&2\n\
+         exit 1\n"
+    );
+    let loom = bin_dir.join("loom");
+    std::fs::write(&loom, script).expect("loom script should write");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = std::fs::metadata(&loom).expect("metadata").permissions();
+        perms.set_mode(0o755);
+        std::fs::set_permissions(&loom, perms).expect("permissions");
+    }
+    bin_dir
 }
 
 #[test]
@@ -242,6 +363,81 @@ fn hooks_status_command_dispatches_through_main() {
     assert_success(&output);
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("missing"), "stdout: {stdout}");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn loom_compat_test_dispatches_through_main() {
+    let root = unique_workspace("knots-main-loom-dispatch");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let source = root.join("loom-source");
+    std::fs::create_dir_all(&source).expect("source dir should exist");
+    let bin_dir = install_stub_loom(&root);
+
+    let output = run_knots_with_path(
+        &root,
+        &db,
+        &[
+            "loom",
+            "compat-test",
+            source.to_str().expect("utf8 path"),
+            "--mode",
+            "matrix",
+        ],
+        Some(&bin_dir),
+    );
+    assert_success(&output);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("loom compat-test custom_flow matrix"),
+        "stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("success -> ready_for_review"),
+        "stdout: {stdout}"
+    );
+    assert!(stdout.contains("blocked -> deferred"), "stdout: {stdout}");
+
+    let json = run_knots_with_path(
+        &root,
+        &db,
+        &[
+            "loom",
+            "compat-test",
+            source.to_str().expect("utf8 path"),
+            "--json",
+        ],
+        Some(&bin_dir),
+    );
+    assert_success(&json);
+    let parsed: Value = serde_json::from_slice(&json.stdout).expect("loom json should parse");
+    assert_eq!(parsed["workflow_id"], "custom_flow");
+    assert_eq!(parsed["mode"], "smoke");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn loom_compat_test_resolves_relative_source_from_repo_root() {
+    let root = unique_workspace("knots-main-loom-relative");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    std::fs::create_dir_all(root.join("loom-source")).expect("source dir should exist");
+    let bin_dir = install_stub_loom(&root);
+
+    let output = run_knots_with_path(
+        &root,
+        &db,
+        &["loom", "compat-test", "loom-source", "--json"],
+        Some(&bin_dir),
+    );
+    assert_success(&output);
+    let parsed: Value = serde_json::from_slice(&output.stdout).expect("loom json should parse");
+    let expected_source = std::fs::canonicalize(root.join("loom-source"))
+        .expect("relative source should canonicalize");
+    assert_eq!(parsed["source"], expected_source.to_string_lossy().as_ref());
 
     let _ = std::fs::remove_dir_all(root);
 }
