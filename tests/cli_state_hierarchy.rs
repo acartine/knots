@@ -466,3 +466,24 @@ fn update_terminal_cascade_flag_cascades_descendants() {
     assert_eq!(show_state(&root, &db, &parent), "abandoned");
     assert_eq!(show_state(&root, &db, &child), "abandoned");
 }
+
+#[test]
+fn update_to_terminal_allowed_when_all_descendants_already_terminal() {
+    let root = unique_workspace("knots-cli-hierarchy-all-terminal");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let parent = create_knot(&root, &db, "Parent", "implementation");
+    let shipped = create_knot(&root, &db, "Shipped", "shipped");
+    let abandoned = create_knot(&root, &db, "Abandoned", "abandoned");
+    add_parent_edge(&root, &db, &parent, &shipped);
+    add_parent_edge(&root, &db, &parent, &abandoned);
+
+    let output = run_knots(
+        &root,
+        &db,
+        &["update", &parent, "--status", "shipped", "--force"],
+    );
+    assert_success(&output);
+    assert_eq!(show_state(&root, &db, &parent), "shipped");
+}

@@ -382,3 +382,83 @@ fn terminal_plan_allowed_when_all_descendants_already_in_target_state() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn terminal_plan_allowed_when_all_descendants_in_any_terminal_state() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let shipped_child = app
+        .create_knot("Shipped", None, Some("shipped"), Some("default"))
+        .expect("child should be created");
+    let abandoned_child = app
+        .create_knot("Abandoned", None, Some("abandoned"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&parent.id, "parent_of", &shipped_child.id)
+        .expect("edge should be added");
+    app.add_edge(&parent.id, "parent_of", &abandoned_child.id)
+        .expect("edge should be added");
+    let conn =
+        crate::db::open_connection(db.to_str().expect("db path should be utf8")).expect("db");
+    let parent = crate::db::get_knot_hot(&conn, &parent.id)
+        .expect("db lookup should succeed")
+        .expect("parent should exist");
+
+    let plan = plan_state_transition(&conn, &parent, "shipped", true, false)
+        .expect("should be allowed when all descendants are terminal");
+    assert!(matches!(plan, TransitionPlan::Allowed));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn terminal_plan_requires_approval_when_mix_of_terminal_and_active() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let parent = app
+        .create_knot("Parent", None, Some("implementation"), Some("default"))
+        .expect("parent should be created");
+    let shipped_child = app
+        .create_knot("Shipped", None, Some("shipped"), Some("default"))
+        .expect("child should be created");
+    let active_child = app
+        .create_knot("Active", None, Some("planning"), Some("default"))
+        .expect("child should be created");
+    app.add_edge(&parent.id, "parent_of", &shipped_child.id)
+        .expect("edge should be added");
+    app.add_edge(&parent.id, "parent_of", &active_child.id)
+        .expect("edge should be added");
+    let conn =
+        crate::db::open_connection(db.to_str().expect("db path should be utf8")).expect("db");
+    let parent = crate::db::get_knot_hot(&conn, &parent.id)
+        .expect("db lookup should succeed")
+        .expect("parent should exist");
+
+    let err = plan_state_transition(&conn, &parent, "abandoned", true, false)
+        .expect_err("approval needed for active descendants");
+    match err {
+        AppError::TerminalCascadeApprovalRequired { descendants, .. } => {
+            assert_eq!(descendants.len(), 1);
+            assert_eq!(descendants[0].id, active_child.id);
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn effective_state_rank_handles_unknown_state_fallbacks() {
+    assert_eq!(
+        effective_state_rank("custom_state").expect("unknown state should rank"),
+        101
+    );
+    assert_eq!(
+        effective_state_rank("ready_for_custom").expect("ready_for prefix should rank"),
+        100
+    );
+}

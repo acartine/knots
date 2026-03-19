@@ -232,6 +232,8 @@ fn ancestor_terminal_resolutions_walk_parents_once_and_sort_results() {
 
     app.add_edge(&grandparent.id, "parent_of", &parent.id)
         .expect("edge should be added");
+    app.add_edge(&grandparent.id, "parent_of", &sibling_parent.id)
+        .expect("edge should be added");
     app.add_edge(&parent.id, "parent_of", &child.id)
         .expect("edge should be added");
     app.add_edge(&sibling_parent.id, "parent_of", &child.id)

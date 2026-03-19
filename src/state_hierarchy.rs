@@ -63,7 +63,7 @@ pub fn plan_state_transition(
     if target_is_terminal {
         let descendants: Vec<HierarchyKnot> = collect_descendants(&child_graph, conn, &knot.id)?
             .into_iter()
-            .filter(|d| d.state != target_state)
+            .filter(|d| d.state != target_state && !is_terminal_state(&d.state).unwrap_or(false))
             .collect();
         if descendants.is_empty() {
             return Ok(TransitionPlan::Allowed);
