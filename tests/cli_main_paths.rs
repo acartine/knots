@@ -245,3 +245,20 @@ fn hooks_status_command_dispatches_through_main() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn loom_compat_test_dispatches_through_main() {
+    let root = unique_workspace("knots-main-loom-dispatch");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let loom = run_knots(&root, &db, &["loom", "compat-test"]);
+    assert_failure(&loom);
+    assert!(
+        String::from_utf8_lossy(&loom.stderr)
+            .contains("kno loom compat-test is not implemented yet"),
+        "loom compat dispatch should return the placeholder error"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}

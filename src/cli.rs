@@ -5,6 +5,7 @@ use clap::{Args, Parser, Subcommand};
 
 use clap::CommandFactory;
 
+pub use crate::cli_loom::*;
 pub use crate::cli_ops::*;
 pub use crate::cli_skills::*;
 pub use crate::cli_workflow::*;
@@ -70,6 +71,8 @@ pub enum Commands {
     Show(ShowArgs),
     #[command(about = "Inspect and manage workflow profiles.")]
     Profile(ProfileArgs),
+    #[command(about = "Run Loom compatibility tooling.")]
+    Loom(LoomArgs),
     #[command(about = "Manage installed workflows.")]
     Workflow(WorkflowArgs),
     #[command(about = "Pull knot updates from the remote knots branch.")]

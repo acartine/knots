@@ -1,6 +1,7 @@
 mod app;
 mod cli;
 mod cli_help;
+mod cli_loom;
 mod cli_ops;
 mod cli_skills;
 mod cli_workflow;
@@ -103,6 +104,13 @@ fn run() -> Result<(), app::AppError> {
     if let Commands::Profile(args) = &cli.command {
         return profile_commands::run_profile_command(args, &cli.repo_root, &cli.db);
     }
+    if let Commands::Loom(args) = &cli.command {
+        return match &args.command {
+            cli::LoomSubcommands::CompatTest(_) => Err(app::AppError::InvalidArgument(
+                "kno loom compat-test is not implemented yet".to_string(),
+            )),
+        };
+    }
     if let Commands::Workflow(args) = &cli.command {
         return workflow_commands::run_workflow_command(args, &cli.repo_root);
     }
@@ -157,6 +165,9 @@ fn run() -> Result<(), app::AppError> {
         },
         Commands::Profile(_) => {
             unreachable!("profile commands are handled before app initialization")
+        }
+        Commands::Loom(_) => {
+            unreachable!("loom commands are handled before app initialization")
         }
         Commands::Workflow(_) => {
             unreachable!("workflow commands are handled before app initialization")
