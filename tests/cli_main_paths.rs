@@ -68,6 +68,26 @@ fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
     run_knots_with_path(repo_root, db_path, args, None)
 }
 
+fn run_knots_with_current_dir(
+    current_dir: &Path,
+    repo_root: &Path,
+    db_path: Option<&Path>,
+    args: &[&str],
+) -> Output {
+    let mut command = Command::new(knots_binary());
+    command
+        .current_dir(current_dir)
+        .arg("-C")
+        .arg(repo_root)
+        .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1");
+    if let Some(db_path) = db_path {
+        command.arg("--db").arg(db_path);
+    }
+    command.args(args);
+    configure_coverage_env(&mut command);
+    command.output().expect("knots command should run")
+}
+
 fn run_knots_with_path(
     repo_root: &Path,
     db_path: &Path,
@@ -448,5 +468,41 @@ fn loom_compat_test_resolves_relative_source_from_repo_root() {
         .expect("relative source should canonicalize");
     assert_eq!(parsed["source"], expected_source.to_string_lossy().as_ref());
 
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn repo_root_flag_resolves_default_db_relative_to_repo() {
+    let root = unique_workspace("knots-main-repo-root-db");
+    let outside = unique_workspace("knots-main-repo-root-db-outside");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Repo root default db",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&created);
+    let id = parse_created_id(&created);
+
+    let shown = run_knots_with_current_dir(&outside, &root, None, &["show", &id, "--json"]);
+    assert_success(&shown);
+    let parsed: Value = serde_json::from_slice(&shown.stdout).expect("show json should parse");
+    assert_eq!(parsed["title"], "Repo root default db");
+    let shown_id = parsed["id"].as_str().expect("show should return string id");
+    assert!(
+        shown_id.ends_with(&format!("-{id}")),
+        "show id {shown_id} should end with created suffix {id}"
+    );
+
+    let _ = std::fs::remove_dir_all(outside);
     let _ = std::fs::remove_dir_all(root);
 }

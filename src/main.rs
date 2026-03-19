@@ -71,6 +71,15 @@ fn print_json(val: &impl serde::Serialize) {
     println!("{s}");
 }
 
+fn resolve_db_path(repo_root: &std::path::Path, db_path: &str) -> String {
+    let db = std::path::Path::new(db_path);
+    if db.is_absolute() {
+        db.display().to_string()
+    } else {
+        repo_root.join(db).display().to_string()
+    }
+}
+
 fn progress_reporter(enabled: bool) -> Option<ui::StdoutProgressReporter> {
     enabled.then(ui::StdoutProgressReporter::auto)
 }
@@ -81,18 +90,20 @@ fn run() -> Result<(), app::AppError> {
 
     let cli = cli::Cli::from_arg_matches_mut(&mut cli::styled_command().get_matches())
         .expect("arg matches should be valid");
+    let db_path = resolve_db_path(&cli.repo_root, &cli.db);
+
     if let Some(outcome) = self_manage::maybe_run_self_command(&cli.command)? {
         println!("{outcome}");
         return Ok(());
     }
 
     if let Commands::Init = &cli.command {
-        init::init_all(&cli.repo_root, &cli.db)?;
+        init::init_all(&cli.repo_root, &db_path)?;
         println!("kno init completed");
         return Ok(());
     }
     if let Commands::Uninit = &cli.command {
-        init::uninit_all(&cli.repo_root, &cli.db)?;
+        init::uninit_all(&cli.repo_root, &db_path)?;
         println!("kno uninit completed");
         return Ok(());
     }
@@ -106,7 +117,7 @@ fn run() -> Result<(), app::AppError> {
         return run_skills_command(&cli.repo_root, args);
     }
     if let Commands::Profile(args) = &cli.command {
-        return profile_commands::run_profile_command(args, &cli.repo_root, &cli.db);
+        return profile_commands::run_profile_command(args, &cli.repo_root, &db_path);
     }
     if let Commands::Workflow(args) = &cli.command {
         return workflow_commands::run_workflow_command(args, &cli.repo_root);
@@ -119,7 +130,7 @@ fn run() -> Result<(), app::AppError> {
         return Ok(());
     }
 
-    let app = app::App::open(&cli.db, cli.repo_root)?;
+    let app = app::App::open(&db_path, cli.repo_root)?;
 
     match cli.command {
         Commands::New(_) => {
