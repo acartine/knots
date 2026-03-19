@@ -18,6 +18,24 @@ fn knots_binary() -> PathBuf {
     if configured.exists() {
         return std::fs::canonicalize(&configured).unwrap_or(configured);
     }
+    if let Ok(current_exe) = std::env::current_exe() {
+        if !configured.is_absolute() {
+            for ancestor in current_exe.ancestors().skip(1) {
+                let candidate = ancestor.join(&configured);
+                if candidate.exists() {
+                    return std::fs::canonicalize(&candidate).unwrap_or(candidate);
+                }
+            }
+        }
+        if let Some(debug_dir) = current_exe.parent().and_then(|deps| deps.parent()) {
+            for name in ["knots", "knots.exe"] {
+                let candidate = debug_dir.join(name);
+                if candidate.exists() {
+                    return candidate;
+                }
+            }
+        }
+    }
     configured
 }
 

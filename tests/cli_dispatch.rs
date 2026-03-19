@@ -90,7 +90,7 @@ fn knots_binary() -> PathBuf {
             for name in ["knots", "knots.exe"] {
                 let candidate = debug_dir.join(name);
                 if candidate.exists() {
-                    return candidate;
+                    return std::fs::canonicalize(&candidate).unwrap_or(candidate);
                 }
             }
         }
