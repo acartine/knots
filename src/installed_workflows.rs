@@ -695,10 +695,12 @@ fn parse_bundle_toml(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
         let success_target = match prompt.success.len() {
             0 => None,
             1 => Some(prompt.success.values().next().cloned().unwrap_or_default()),
-            _ => return Err(ProfileError::InvalidBundle(format!(
+            _ => {
+                return Err(ProfileError::InvalidBundle(format!(
                 "prompt '{}' has multiple success outcomes; Knots requires one happy-path target",
                 prompt_name
-            ))),
+            )))
+            }
         };
         let params = prompt
             .params
