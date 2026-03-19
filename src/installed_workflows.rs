@@ -360,7 +360,8 @@ pub fn set_current_workflow_selection(
 
 fn read_bundle_source(source: &Path) -> Result<(String, BundleFormat), ProfileError> {
     if source.is_dir() && source.join("loom.toml").exists() {
-        let output = Command::new("loom")
+        let loom_bin = std::env::var("KNOTS_LOOM_BIN").unwrap_or_else(|_| "loom".to_string());
+        let output = Command::new(loom_bin)
             .arg("build")
             .arg(source)
             .arg("--emit")
@@ -656,25 +657,36 @@ fn render_json_bundle_from_toml(raw: &str) -> Result<String, ProfileError> {
             .map(|(name, prompt)| {
                 let mut outcomes = prompt
                     .success
-                    .into_values()
-                    .map(|target| JsonPromptOutcome {
+                    .into_iter()
+                    .map(|(name, target)| JsonPromptOutcome {
+                        name,
                         target,
                         is_success: true,
                     })
                     .collect::<Vec<_>>();
-                outcomes.extend(
-                    prompt
-                        .failure
-                        .into_values()
-                        .map(|target| JsonPromptOutcome {
-                            target,
-                            is_success: false,
-                        }),
-                );
+                outcomes.extend(prompt.failure.into_iter().map(|(name, target)| {
+                    JsonPromptOutcome {
+                        name,
+                        target,
+                        is_success: false,
+                    }
+                }));
                 JsonPromptSection {
                     name,
                     accept: prompt.accept,
                     body: prompt.body,
+                    params: prompt
+                        .params
+                        .into_iter()
+                        .map(|(name, value)| JsonPromptParamSection {
+                            name,
+                            param_type: value.param_type,
+                            values: value.values,
+                            required: value.required,
+                            default: value.default,
+                            description: value.description,
+                        })
+                        .collect(),
                     outcomes,
                 }
             })
@@ -844,13 +856,32 @@ struct JsonPromptSection {
     #[serde(default)]
     body: String,
     #[serde(default)]
+    params: Vec<JsonPromptParamSection>,
+    #[serde(default)]
     outcomes: Vec<JsonPromptOutcome>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonPromptOutcome {
+    #[serde(default)]
+    name: String,
     target: String,
     is_success: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonPromptParamSection {
+    name: String,
+    #[serde(rename = "type")]
+    param_type: String,
+    #[serde(default)]
+    values: Vec<String>,
+    #[serde(default)]
+    required: bool,
+    #[serde(default)]
+    default: Option<String>,
+    #[serde(default)]
+    description: Option<String>,
 }
 
 fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
@@ -890,6 +921,54 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
         .prompts
         .iter()
         .map(|prompt| (prompt.name.as_str(), prompt))
+        .collect::<BTreeMap<_, _>>();
+    let mut prompts = parsed
+        .prompts
+        .iter()
+        .map(|prompt| {
+            let success_target = prompt
+                .outcomes
+                .iter()
+                .find(|outcome| outcome.is_success)
+                .map(|outcome| outcome.target.clone());
+            (
+                prompt.name.clone(),
+                PromptDefinition {
+                    prompt_name: prompt.name.clone(),
+                    action_state: String::new(),
+                    accept: prompt.accept.clone(),
+                    success_target,
+                    failure_targets: prompt
+                        .outcomes
+                        .iter()
+                        .filter(|outcome| !outcome.is_success)
+                        .map(|outcome| {
+                            (
+                                if outcome.name.trim().is_empty() {
+                                    outcome.target.clone()
+                                } else {
+                                    outcome.name.clone()
+                                },
+                                outcome.target.clone(),
+                            )
+                        })
+                        .collect(),
+                    params: prompt
+                        .params
+                        .iter()
+                        .map(|param| PromptParamDefinition {
+                            name: param.name.clone(),
+                            param_type: param.param_type.clone(),
+                            values: param.values.clone(),
+                            required: param.required,
+                            default: param.default.clone(),
+                            description: param.description.clone(),
+                        })
+                        .collect(),
+                    body: prompt.body.clone(),
+                },
+            )
+        })
         .collect::<BTreeMap<_, _>>();
 
     let mut profiles = BTreeMap::new();
@@ -1019,6 +1098,12 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
         );
     }
 
+    for (action_state, prompt_name) in &action_prompts {
+        if let Some(prompt) = prompts.get_mut(prompt_name) {
+            prompt.action_state = action_state.clone();
+        }
+    }
+
     Ok(WorkflowDefinition {
         id: workflow_id,
         version: parsed.workflow.version,
@@ -1030,7 +1115,7 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
             .and_then(normalize_profile_id),
         builtin: false,
         profiles,
-        prompts: BTreeMap::new(),
+        prompts,
         action_prompts,
     })
 }
