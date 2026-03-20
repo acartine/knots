@@ -68,7 +68,8 @@ fn next_terminates_lease() {
         agent_model: Some("test-model".to_string()),
         agent_version: Some("1.0".to_string()),
     };
-    let claimed = poll_claim::claim_knot(&app, &work.id, actor).expect("claim should succeed");
+    let claimed =
+        poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim should succeed");
 
     // Verify lease was created and bound
     let knot_after_claim = app
@@ -91,6 +92,7 @@ fn next_terminates_lease() {
         agent_name: Some("test-agent".to_string()),
         agent_model: Some("test-model".to_string()),
         agent_version: Some("1.0".to_string()),
+        lease_id: None,
     });
     execute_operation(&app, &next_op).expect("next should succeed");
 
@@ -586,4 +588,156 @@ fn operation_from_update_includes_lease_id() {
         }
         other => panic!("expected Update, got {:?}", other),
     }
+}
+
+#[test]
+fn operation_from_claim_includes_lease_id() {
+    let cli = parse(&["kno", "claim", "knot-xyz", "--lease", "lease-abc"]);
+    let op = operation_from_command(&cli.command);
+    match op {
+        Some(WriteOperation::Claim(c)) => {
+            assert_eq!(c.lease_id.as_deref(), Some("lease-abc"));
+        }
+        other => panic!("expected Claim, got {:?}", other),
+    }
+}
+
+#[test]
+fn operation_from_next_includes_lease_id() {
+    let cli = parse(&[
+        "kno",
+        "next",
+        "knot-xyz",
+        "--expected-state",
+        "implementation",
+        "--lease",
+        "lease-abc",
+    ]);
+    let op = operation_from_command(&cli.command);
+    match op {
+        Some(WriteOperation::Next(n)) => {
+            assert_eq!(n.lease_id.as_deref(), Some("lease-abc"));
+        }
+        other => panic!("expected Next, got {:?}", other),
+    }
+}
+
+#[test]
+fn next_with_matching_lease_succeeds() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot(
+            "Matching lease next",
+            None,
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("create knot");
+
+    let actor = StateActorMetadata {
+        actor_kind: Some("agent".to_string()),
+        agent_name: Some("test-agent".to_string()),
+        agent_model: Some("test-model".to_string()),
+        agent_version: Some("1.0".to_string()),
+    };
+    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
+    let lease_id = claimed.knot.lease_id.clone().expect("should have lease");
+
+    let next_op = WriteOperation::Next(NextOperation {
+        id: work.id.clone(),
+        expected_state: Some(claimed.knot.state.clone()),
+        json: false,
+        approve_terminal_cascade: false,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        lease_id: Some(lease_id),
+    });
+    let result = execute_operation(&app, &next_op);
+    assert!(result.is_ok(), "next with matching lease should succeed");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn next_with_wrong_lease_fails() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot("Wrong lease next", None, Some("work_item"), Some("default"))
+        .expect("create knot");
+
+    let actor = StateActorMetadata {
+        actor_kind: Some("agent".to_string()),
+        agent_name: Some("test-agent".to_string()),
+        agent_model: Some("test-model".to_string()),
+        agent_version: Some("1.0".to_string()),
+    };
+    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
+
+    let next_op = WriteOperation::Next(NextOperation {
+        id: work.id.clone(),
+        expected_state: Some(claimed.knot.state.clone()),
+        json: false,
+        approve_terminal_cascade: false,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        lease_id: Some("wrong-lease-id".to_string()),
+    });
+    let result = execute_operation(&app, &next_op);
+    assert!(result.is_err(), "next with wrong lease should fail");
+    let err_msg = result.unwrap_err().to_string();
+    assert!(
+        err_msg.contains("lease mismatch"),
+        "error should mention lease mismatch: {}",
+        err_msg
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn next_without_lease_still_works() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot("No lease next", None, Some("work_item"), Some("default"))
+        .expect("create knot");
+
+    let actor = StateActorMetadata {
+        actor_kind: Some("agent".to_string()),
+        agent_name: Some("test-agent".to_string()),
+        agent_model: Some("test-model".to_string()),
+        agent_version: Some("1.0".to_string()),
+    };
+    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
+
+    let next_op = WriteOperation::Next(NextOperation {
+        id: work.id.clone(),
+        expected_state: Some(claimed.knot.state.clone()),
+        json: false,
+        approve_terminal_cascade: false,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        lease_id: None,
+    });
+    let result = execute_operation(&app, &next_op);
+    assert!(
+        result.is_ok(),
+        "next without lease should still work (backwards compat)"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
 }

@@ -236,3 +236,35 @@ fn new_parses_lease_flag() {
         other => panic!("expected New, got {:?}", other),
     }
 }
+
+#[test]
+fn claim_with_lease_flag() {
+    let cli = parse(&["kno", "claim", "K-1", "--lease", "L-abc"]);
+    match cli.command {
+        Commands::Claim(args) => {
+            assert_eq!(args.id, "K-1");
+            assert_eq!(args.lease.as_deref(), Some("L-abc"));
+        }
+        _ => panic!("expected Claim"),
+    }
+}
+
+#[test]
+fn next_with_lease_flag() {
+    let cli = parse(&[
+        "kno",
+        "next",
+        "K-1",
+        "--expected-state",
+        "implementation",
+        "--lease",
+        "L-abc",
+    ]);
+    match cli.command {
+        Commands::Next(args) => {
+            assert_eq!(args.id, "K-1");
+            assert_eq!(args.lease.as_deref(), Some("L-abc"));
+        }
+        _ => panic!("expected Next"),
+    }
+}

@@ -122,6 +122,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             agent_name: args.agent_name.clone(),
             agent_model: args.agent_model.clone(),
             agent_version: args.agent_version.clone(),
+            lease_id: args.lease.clone(),
         })),
         Commands::Rollback(args) => Some(WriteOperation::Rollback(RollbackOperation {
             id: args.id.clone(),
@@ -138,6 +139,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             agent_name: args.agent_name.clone(),
             agent_model: args.agent_model.clone(),
             agent_version: args.agent_version.clone(),
+            lease_id: args.lease.clone(),
         })),
         Commands::Poll(args) if args.claim => Some(WriteOperation::PollClaim(PollClaimOperation {
             stage: args.stage.clone(),
@@ -416,6 +418,26 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                     )));
                 }
             }
+            // Lease ownership validation
+            if let Some(ref provided_lease) = args.lease_id {
+                match &knot.lease_id {
+                    Some(knot_lease) if knot_lease == provided_lease => {
+                        // Lease matches — proceed
+                    }
+                    Some(knot_lease) => {
+                        return Err(AppError::InvalidArgument(format!(
+                            "lease mismatch: knot has '{}', caller provided '{}'",
+                            knot_lease, provided_lease
+                        )));
+                    }
+                    None => {
+                        return Err(AppError::InvalidArgument(format!(
+                            "knot has no active lease but caller provided '{}'",
+                            provided_lease
+                        )));
+                    }
+                }
+            }
             let (knot, next, owner_kind) = resolve_next_state(app, &knot.id)?;
             let previous_state = knot.state.clone();
             let updated = execute_with_terminal_cascade_prompt(
@@ -488,7 +510,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 agent_model: args.agent_model.clone(),
                 agent_version: args.agent_version.clone(),
             };
-            let claimed = poll_claim::claim_knot(app, &args.id, actor)?;
+            let claimed = poll_claim::claim_knot(app, &args.id, actor, args.lease_id.as_deref())?;
             if args.json {
                 let value = poll_claim::render_json_verbose(&claimed, args.verbose);
                 Ok(format_json(&value))
@@ -509,7 +531,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 agent_model: args.agent_model.clone(),
                 agent_version: args.agent_version.clone(),
             };
-            let claimed = poll_claim::claim_knot(app, &polled.knot.id, actor)?;
+            let claimed = poll_claim::claim_knot(app, &polled.knot.id, actor, None)?;
             if args.json {
                 let value = poll_claim::render_json(&claimed);
                 Ok(format_json(&value))
@@ -971,6 +993,7 @@ mod tests {
             agent_name: None,
             agent_model: None,
             agent_version: None,
+            lease_id: None,
         });
 
         let err = execute_operation(&app, &operation).expect_err("state mismatch should fail");

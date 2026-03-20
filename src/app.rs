@@ -1336,6 +1336,7 @@ impl App {
                     &state,
                     &occurred_at,
                     &patch.state_actor,
+                    current.lease_id.as_deref(),
                 ),
                 gate_data: &gate_data,
                 lease_data: &current.lease_data,
@@ -1541,6 +1542,7 @@ impl App {
             next_state,
             &occurred_at,
             state_actor,
+            current.lease_id.as_deref(),
         );
 
         db::upsert_knot_hot(
@@ -2618,6 +2620,7 @@ fn apply_step_transition(
     to_state: &str,
     occurred_at: &str,
     actor: &StateActorMetadata,
+    lease_id: Option<&str>,
 ) -> Vec<StepRecord> {
     let mut history: Vec<StepRecord> = existing.to_vec();
     if from_state != to_state {
@@ -2635,6 +2638,7 @@ fn apply_step_transition(
             agent_name: actor.agent_name.clone(),
             agent_model: actor.agent_model.clone(),
             agent_version: actor.agent_version.clone(),
+            lease_id: lease_id.map(|s| s.to_string()),
             ..Default::default()
         };
         let phase = derive_phase(to_state);

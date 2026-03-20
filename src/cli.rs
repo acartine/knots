@@ -539,6 +539,9 @@ pub struct NextArgs {
         help = "Approve cascading a terminal state to all descendants."
     )]
     pub cascade_terminal_descendants: bool,
+
+    #[arg(long, help = "Validate lease ownership before advancing.")]
+    pub lease: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -625,6 +628,9 @@ pub struct ClaimArgs {
 
     #[arg(short = 'v', long, help = "Show all notes and handoff capsules.")]
     pub verbose: bool,
+
+    #[arg(long, help = "Bind an existing lease instead of creating a new one.")]
+    pub lease: Option<String>,
 }
 
 #[derive(Debug, Args)]

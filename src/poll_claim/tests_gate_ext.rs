@@ -95,8 +95,8 @@ fn peek_and_claim_gate_follow_gate_workflow_states() {
         .completion_cmd
         .contains("--expected-state evaluating"));
 
-    let claimed =
-        claim_knot(&app, &gate.id, StateActorMetadata::default()).expect("claim should succeed");
+    let claimed = claim_knot(&app, &gate.id, StateActorMetadata::default(), None)
+        .expect("claim should succeed");
     assert_eq!(claimed.knot.state, crate::workflow_runtime::EVALUATING);
     assert!(claimed.skill.contains("# Evaluating"));
 
@@ -172,6 +172,7 @@ fn run_poll_and_claim_cover_json_and_text_rendering_paths() {
             agent_version: Some("1.0".to_string()),
             peek: false,
             verbose: false,
+            lease: None,
         },
     )
     .expect("claim should succeed");
@@ -186,6 +187,7 @@ fn run_poll_and_claim_cover_json_and_text_rendering_paths() {
             agent_version: None,
             peek: true,
             verbose: true,
+            lease: None,
         },
     )
     .expect("peek claim should succeed");

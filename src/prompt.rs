@@ -133,6 +133,7 @@ pub fn render_prompt_json_verbose(
         "invariants": knot.invariants,
         "gate": knot.gate,
         "child_summaries": knot.child_summaries,
+        "lease_id": knot.lease_id,
         "prompt": prompt_text,
     });
     if !verbose {

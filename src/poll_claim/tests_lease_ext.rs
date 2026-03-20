@@ -74,7 +74,7 @@ fn claim_rejects_lease_knot() {
         agent_version: None,
     };
 
-    let result = claim_knot(&app, &lease.id, actor);
+    let result = claim_knot(&app, &lease.id, actor, None);
     let err = match result {
         Err(e) => e.to_string(),
         Ok(_) => panic!("claim should reject lease knot"),
@@ -103,7 +103,7 @@ fn claim_creates_lease_on_claim() {
         agent_version: Some("4".to_string()),
     };
 
-    let _result = claim_knot(&app, &work.id, actor).expect("claim should succeed");
+    let _result = claim_knot(&app, &work.id, actor, None).expect("claim should succeed");
     let knot = app
         .show_knot(&work.id)
         .expect("show should succeed")
@@ -147,7 +147,7 @@ fn claim_without_agent_name_skips_lease_creation() {
         agent_version: None,
     };
 
-    claim_knot(&app, &work.id, actor).expect("claim should succeed");
+    claim_knot(&app, &work.id, actor, None).expect("claim should succeed");
     let knot = app
         .show_knot(&work.id)
         .expect("show should succeed")
@@ -180,6 +180,165 @@ fn run_poll_with_claim_creates_lease() {
     };
 
     run_poll(&app, args).expect("run_poll with claim should succeed");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+fn create_agent_info() -> crate::domain::lease::AgentInfo {
+    crate::domain::lease::AgentInfo {
+        agent_type: "cli".to_string(),
+        provider: "test".to_string(),
+        agent_name: "test-agent".to_string(),
+        model: "test-model".to_string(),
+        model_version: "1.0".to_string(),
+    }
+}
+
+#[test]
+fn claim_with_external_lease_binds_it() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot(
+            "External lease test",
+            None,
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("create work knot");
+
+    let lease = crate::lease::create_lease(
+        &app,
+        "test-external-lease",
+        crate::domain::lease::LeaseType::Agent,
+        Some(create_agent_info()),
+    )
+    .expect("create lease");
+    let _ = crate::lease::activate_lease(&app, &lease.id);
+
+    let actor = StateActorMetadata {
+        actor_kind: Some("agent".to_string()),
+        agent_name: Some("test-agent".to_string()),
+        agent_model: Some("test-model".to_string()),
+        agent_version: Some("1.0".to_string()),
+    };
+    let result = claim_knot(&app, &work.id, actor, Some(&lease.id)).expect("claim should succeed");
+
+    // Verify the external lease is bound (not a new one)
+    assert_eq!(result.knot.lease_id.as_deref(), Some(lease.id.as_str()));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn claim_with_terminated_lease_rejects() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot(
+            "Terminated lease test",
+            None,
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("create work knot");
+
+    let lease = crate::lease::create_lease(
+        &app,
+        "terminated-lease",
+        crate::domain::lease::LeaseType::Agent,
+        Some(create_agent_info()),
+    )
+    .expect("create lease");
+    let _ = crate::lease::activate_lease(&app, &lease.id);
+    let _ = crate::lease::terminate_lease(&app, &lease.id);
+
+    let actor = StateActorMetadata {
+        actor_kind: Some("agent".to_string()),
+        agent_name: Some("test-agent".to_string()),
+        ..Default::default()
+    };
+    let result = claim_knot(&app, &work.id, actor, Some(&lease.id));
+    assert!(
+        result.is_err(),
+        "claiming with terminated lease should fail"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn claim_without_lease_creates_one() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot(
+            "No external lease",
+            None,
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("create work knot");
+
+    let actor = StateActorMetadata {
+        actor_kind: Some("agent".to_string()),
+        agent_name: Some("test-agent".to_string()),
+        agent_model: Some("test-model".to_string()),
+        agent_version: Some("1.0".to_string()),
+    };
+    let result = claim_knot(&app, &work.id, actor, None).expect("claim should succeed");
+
+    assert!(
+        result.knot.lease_id.is_some(),
+        "should have auto-created a lease"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn completion_command_includes_lease() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot(
+            "Completion cmd test",
+            None,
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("create knot");
+
+    let lease = crate::lease::create_lease(
+        &app,
+        "test-completion-lease",
+        crate::domain::lease::LeaseType::Agent,
+        Some(create_agent_info()),
+    )
+    .expect("create lease");
+    let _ = crate::lease::activate_lease(&app, &lease.id);
+
+    let actor = StateActorMetadata {
+        actor_kind: Some("agent".to_string()),
+        agent_name: Some("test-agent".to_string()),
+        agent_model: Some("test-model".to_string()),
+        agent_version: Some("1.0".to_string()),
+    };
+    let result =
+        claim_knot(&app, &work.id, actor, Some(&lease.id)).expect("claim with external lease");
+
+    assert!(
+        result.completion_cmd.contains("--lease"),
+        "completion command should include --lease flag"
+    );
+    assert!(
+        result.completion_cmd.contains(&lease.id),
+        "completion command should include the lease ID"
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

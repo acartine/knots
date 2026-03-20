@@ -38,7 +38,7 @@ pub fn run_poll(app: &App, args: PollArgs) -> Result<(), AppError> {
                     agent_model: args.agent_model,
                     agent_version: args.agent_version,
                 };
-                let claimed = claim_knot(app, &result.knot.id, actor)?;
+                let claimed = claim_knot(app, &result.knot.id, actor, None)?;
                 print_result(&claimed, args.json);
             } else {
                 print_result(&result, args.json);
@@ -58,7 +58,7 @@ pub fn run_claim(app: &App, args: ClaimArgs) -> Result<(), AppError> {
             agent_model: args.agent_model,
             agent_version: args.agent_version,
         };
-        claim_knot(app, &args.id, actor)?
+        claim_knot(app, &args.id, actor, args.lease.as_deref())?
     };
     print_result_verbose(&result, args.json, args.verbose);
     Ok(())
@@ -84,7 +84,7 @@ pub fn peek_knot(app: &App, id: &str) -> Result<PollResult, AppError> {
         ))
     })?;
     let skill = prompt_body_for_state(registry, &profile_id, &next_action)?;
-    let completion_cmd = completion_command(&knot.id, &next_action);
+    let completion_cmd = completion_command(&knot.id, &next_action, None);
     Ok(PollResult {
         knot,
         skill,
@@ -122,7 +122,12 @@ pub fn poll_queue(
     Ok(None)
 }
 
-pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<PollResult, AppError> {
+pub fn claim_knot(
+    app: &App,
+    id: &str,
+    actor: StateActorMetadata,
+    external_lease: Option<&str>,
+) -> Result<PollResult, AppError> {
     let registry = app.profile_registry();
     let knot = app
         .show_knot(id)?
@@ -156,26 +161,68 @@ pub fn claim_knot(app: &App, id: &str, actor: StateActorMetadata) -> Result<Poll
         false,
         true,
     )?;
-    // Create and bind lease (silent - no CLI output)
-    if let Some(info) = agent_info {
-        let lease = crate::lease::create_lease(
-            app,
-            &format!("claim-{}", &claimed.id),
-            crate::domain::lease::LeaseType::Agent,
-            Some(info),
-        )?;
-        let _ = crate::lease::activate_lease(app, &lease.id);
-        let _ = crate::lease::bind_lease(app, &claimed.id, &lease.id);
-    }
+
+    // Lease handling: use external lease or create a new one
+    let bound_lease_id = if let Some(lid) = external_lease {
+        bind_external_lease(app, &claimed.id, lid)?
+    } else if let Some(info) = agent_info {
+        create_and_bind_lease(app, &claimed.id, info)?
+    } else {
+        None
+    };
+
     let bound = app
         .show_knot(&claimed.id)?
         .ok_or_else(|| AppError::NotFound(claimed.id.clone()))?;
-    let completion_cmd = completion_command(&bound.id, &bound.state);
+    let completion_cmd = completion_command(&bound.id, &bound.state, bound_lease_id.as_deref());
     Ok(PollResult {
         knot: bound,
         skill,
         completion_cmd,
     })
+}
+
+fn bind_external_lease(app: &App, knot_id: &str, lid: &str) -> Result<Option<String>, AppError> {
+    let lease_knot = app
+        .show_knot(lid)?
+        .ok_or_else(|| AppError::NotFound(format!("lease {}", lid)))?;
+    if lease_knot.knot_type != KnotType::Lease {
+        return Err(AppError::InvalidArgument(format!(
+            "'{}' is not a lease (type: {})",
+            lid,
+            lease_knot.knot_type.as_str()
+        )));
+    }
+    match lease_knot.state.as_str() {
+        "lease_active" => { /* already active */ }
+        "lease_ready" => {
+            let _ = crate::lease::activate_lease(app, lid);
+        }
+        other => {
+            return Err(AppError::InvalidArgument(format!(
+                "lease '{}' is in state '{}' -- expected lease_active or lease_ready",
+                lid, other
+            )));
+        }
+    }
+    crate::lease::bind_lease(app, knot_id, lid)?;
+    Ok(Some(lid.to_string()))
+}
+
+fn create_and_bind_lease(
+    app: &App,
+    knot_id: &str,
+    info: crate::domain::lease::AgentInfo,
+) -> Result<Option<String>, AppError> {
+    let lease = crate::lease::create_lease(
+        app,
+        &format!("claim-{}", knot_id),
+        crate::domain::lease::LeaseType::Agent,
+        Some(info),
+    )?;
+    let _ = crate::lease::activate_lease(app, &lease.id);
+    let _ = crate::lease::bind_lease(app, knot_id, &lease.id);
+    Ok(Some(lease.id))
 }
 
 pub fn render_text(result: &PollResult) -> String {
@@ -290,7 +337,7 @@ fn match_pollable(
         Ok(skill) => skill,
         Err(_) => return Ok(None),
     };
-    let completion_cmd = completion_command(&knot.id, &next_action);
+    let completion_cmd = completion_command(&knot.id, &next_action, None);
     Ok(Some(PollResult {
         knot: knot.clone(),
         skill,
@@ -342,8 +389,15 @@ fn require_queue_state(registry: &ProfileRegistry, knot: &KnotView) -> Result<()
     Ok(())
 }
 
-fn completion_command(knot_id: &str, current_state: &str) -> String {
-    format!("kno next {knot_id} --expected-state {current_state} {AGENT_COMPLETION_METADATA_FLAGS}")
+fn completion_command(knot_id: &str, current_state: &str, lease_id: Option<&str>) -> String {
+    match lease_id {
+        Some(lid) => format!(
+            "kno next {knot_id} --expected-state {current_state} --lease {lid} {AGENT_COMPLETION_METADATA_FLAGS}"
+        ),
+        None => format!(
+            "kno next {knot_id} --expected-state {current_state} {AGENT_COMPLETION_METADATA_FLAGS}"
+        ),
+    }
 }
 
 fn prompt_body_for_state(
@@ -544,7 +598,7 @@ mod tests {
 
     #[test]
     fn completion_command_includes_agent_metadata_flags() {
-        let cmd = completion_command("knots-27ef", "implementation");
+        let cmd = completion_command("knots-27ef", "implementation", None);
         assert_eq!(
             cmd,
             "kno next knots-27ef --expected-state implementation --actor-kind agent \
@@ -570,7 +624,7 @@ mod tests {
         let result = peek_knot(&app, &created.id).expect("peek_knot should succeed");
         assert_eq!(
             result.completion_cmd,
-            completion_command(&created.id, "implementation")
+            completion_command(&created.id, "implementation", None)
         );
         let _ = std::fs::remove_dir_all(root);
     }
@@ -598,7 +652,7 @@ mod tests {
         };
         app.set_state_with_actor(&created.id, "implementation", false, None, actor.clone())
             .expect("advance should succeed");
-        let result = claim_knot(&app, &created.id, actor);
+        let result = claim_knot(&app, &created.id, actor, None);
         let err = match result {
             Err(e) => e.to_string(),
             Ok(_) => panic!("claim should reject action state"),

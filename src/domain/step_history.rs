@@ -24,6 +24,8 @@ pub struct StepRecord {
     pub agent_command: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lease_id: Option<String>,
     pub started_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ended_at: Option<String>,
@@ -62,6 +64,7 @@ impl StepRecord {
             agent_version: actor.agent_version.clone(),
             agent_command: actor.agent_command.clone(),
             session_id: actor.session_id.clone(),
+            lease_id: actor.lease_id.clone(),
             started_at: started_at.to_string(),
             ended_at: None,
             metadata: None,
@@ -82,6 +85,7 @@ pub struct StepActorInfo {
     pub agent_version: Option<String>,
     pub agent_command: Option<String>,
     pub session_id: Option<String>,
+    pub lease_id: Option<String>,
 }
 
 pub fn derive_phase(state: &str) -> &str {

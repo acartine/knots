@@ -299,7 +299,7 @@ fn run_single_scenario(
             .accept
             .iter()
             .all(|item| prompt_view.skill.contains(item));
-    let claimed = poll_claim::claim_knot(app, &knot.id, compat_actor())?;
+    let claimed = poll_claim::claim_knot(app, &knot.id, compat_actor(), None)?;
     if claimed.knot.state != action_state {
         return Err(AppError::InvalidArgument(format!(
             "claim moved knot '{}' to '{}' instead of '{}'",

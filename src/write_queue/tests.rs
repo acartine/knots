@@ -92,6 +92,7 @@ fn enqueue_and_wait_round_trips_response() {
             agent_name: None,
             agent_model: None,
             agent_version: None,
+            lease_id: None,
         }),
         |request| QueuedWriteResponse::success(request.request_id.clone()),
     )
@@ -168,6 +169,7 @@ fn enqueue_and_wait_spins_until_worker_lock_is_released() {
             agent_name: None,
             agent_model: None,
             agent_version: None,
+            lease_id: None,
         }),
         |request| QueuedWriteResponse::success(request.request_id.clone()),
     )
