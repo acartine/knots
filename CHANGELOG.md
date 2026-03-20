@@ -1,5 +1,45 @@
 # kno
 
+## 0.8.0
+
+### Minor Changes
+
+- 2129bcf: Enforce hierarchy state progression: parent knots cannot advance
+  past the state of any child knot. Attempts return an error with
+  the list of blocking descendants.
+- 514e786: Add `kno loom compat-test` with a Loom workflow compatibility harness, bundle failure-path
+  runtime support, and JSON bundle metadata preservation for named prompt outcomes.
+- f53ea7c: Add Lease knot type for agent session tracking with `--lease` flag, note
+  auto-stamp, and `--json` output. Add Gate knot type with evaluation flow,
+  failure reopen, and generalized rollback evaluation states. Add `kno rollback`
+  and `kno rb` commands for action states. Add colored sync progress feedback.
+  Display relationships grouped by kind in `kno show`. Auto-resolve terminal
+  parent knots with doctor fix. Install Loom workflow bundles. Add worktree
+  guidance to managed skill prompts.
+
+### Patch Changes
+
+- efa1290: Stabilize CLI integration tests under tarpaulin by using robust binary lookup.
+- 423747b: Fix terminal parent auto-resolution when a child is deferred, and allow
+  deferred knots to move directly into terminal states during approved
+  hierarchy cascades.
+- b6b3174: Add a CLI regression test covering managed-skill doctor checks and `kno doctor --fix`.
+- 10d7281: Fix upgraded installs that still have legacy `{}` lease cache payloads so
+  commands like `show --json` continue to work after the lease metadata schema
+  expands.
+- 71e5e12: Make `kno loom compat-test` self-contained by embedding the knots_sdlc loom template and
+  removing the source path argument. Fix JSON bundle param deserialization for loom 0.2.0.
+- 5e02e81: Improve `kno loom compat-test` text feedback and directory-aware diagnostics.
+- 90762f4: Fix managed skill installation so `kno skills` deploys the `knots` and
+  `knots-e2e` skills with exact path reporting and doctor guidance.
+- 009f6cf: Improve parent-knot prompts and managed skill guidance so agents handle child
+  knots before advancing or rolling back the parent.
+- a3eb406: Pin the Rust toolchain used by CI and local sanity checks so pre-push formatting runs are deterministic.
+- fe4b069: Resolve the default cache database path relative to `--repo-root` so
+  `kno -C <repo> show <id>` works from outside the target repository.
+- 069ce46: Allow parent to move to a terminal state without cascade approval when
+  all descendants are already in the target state.
+
 ## 0.7.6
 
 ### Patch Changes
