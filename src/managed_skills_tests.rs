@@ -125,11 +125,15 @@ fn render_skill_uses_hyphenated_deploy_name() {
 #[test]
 fn managed_skills_describe_parent_child_workflow() {
     let knots = render_skill(managed_skills()[0]);
+    assert!(knots.contains("kno -C <path_to_repo>"));
+    assert!(knots.contains("Knots is installed for the repo root"));
     assert!(knots.contains("If the claimed knot lists children"));
     assert!(knots.contains("If every child advanced"));
     assert!(knots.contains("If any child rolled back"));
 
     let knots_e2e = render_skill(managed_skills()[1]);
+    assert!(knots_e2e.contains("kno -C <path_to_repo>"));
+    assert!(knots_e2e.contains("Knots is installed for the repo root"));
     assert!(knots_e2e.contains("If the claimed knot lists children"));
     assert!(knots_e2e.contains("advance the parent and continue the loop"));
     assert!(knots_e2e.contains("roll the parent back and stop"));
