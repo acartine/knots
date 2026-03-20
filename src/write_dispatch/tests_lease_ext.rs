@@ -741,3 +741,45 @@ fn next_without_lease_still_works() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn next_with_lease_on_unleasedknot_fails() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot("No lease on knot", None, Some("work_item"), Some("default"))
+        .expect("create knot");
+
+    // Claim without creating a lease (no agent_name)
+    let actor = StateActorMetadata {
+        actor_kind: Some("agent".to_string()),
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+    };
+    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
+    assert!(claimed.knot.lease_id.is_none(), "should not have a lease");
+
+    let next_op = WriteOperation::Next(NextOperation {
+        id: work.id.clone(),
+        expected_state: Some(claimed.knot.state.clone()),
+        json: false,
+        approve_terminal_cascade: false,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        lease_id: Some("fake-lease".to_string()),
+    });
+    let result = execute_operation(&app, &next_op);
+    assert!(result.is_err(), "should fail when knot has no lease");
+    let err = result.unwrap_err().to_string();
+    assert!(
+        err.contains("no active lease"),
+        "error should mention no active lease: {err}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
