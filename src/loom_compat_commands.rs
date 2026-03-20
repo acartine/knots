@@ -7,16 +7,10 @@ use crate::loom_compat_harness::{
     self, CompatTestConfig, CompatTestMode, ProgressUpdate, ProgressUpdateKind, TestResult,
 };
 
-pub(crate) fn run_loom_command(args: &LoomArgs, repo_root: &Path) -> Result<(), AppError> {
+pub(crate) fn run_loom_command(args: &LoomArgs, _repo_root: &Path) -> Result<(), AppError> {
     match &args.command {
         LoomSubcommands::CompatTest(inner) => {
-            let source = if inner.source.is_absolute() {
-                inner.source.clone()
-            } else {
-                repo_root.join(&inner.source)
-            };
             let config = CompatTestConfig {
-                source,
                 mode: match inner.mode {
                     LoomCompatModeArg::Smoke => CompatTestMode::Smoke,
                     LoomCompatModeArg::Matrix => CompatTestMode::Matrix,
@@ -111,7 +105,7 @@ mod tests {
         let rendered = render_text(&TestResult {
             success: true,
             mode: CompatTestMode::Matrix,
-            source: PathBuf::from("/tmp/pkg"),
+            source: PathBuf::from("<builtin:knots_sdlc>"),
             workflow_id: "custom_flow".to_string(),
             workspace_path: Some(PathBuf::from("/tmp/workspace")),
             steps: vec![StepResult {
@@ -135,7 +129,7 @@ mod tests {
         let rendered = render_text(&TestResult {
             success: true,
             mode: CompatTestMode::Smoke,
-            source: PathBuf::from("/tmp/pkg"),
+            source: PathBuf::from("<builtin:knots_sdlc>"),
             workflow_id: "custom_flow".to_string(),
             workspace_path: None,
             steps: Vec::new(),

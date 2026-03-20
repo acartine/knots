@@ -30,7 +30,6 @@ impl fmt::Display for CompatTestMode {
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct CompatTestConfig {
-    pub source: PathBuf,
     pub mode: CompatTestMode,
     pub keep_artifacts: bool,
     pub loom_bin: Option<PathBuf>,
@@ -86,22 +85,8 @@ pub fn run_compat_test_with_progress<F>(
 where
     F: FnMut(ProgressUpdate),
 {
-    let source = std::fs::canonicalize(&config.source).map_err(|err| {
-        AppError::InvalidArgument(format!(
-            "invalid Loom source '{}': {err}",
-            config.source.display()
-        ))
-    })?;
-    if !source.is_dir() {
-        return Err(AppError::InvalidArgument(format!(
-            "loom compat-test source must be a directory: {}",
-            source.display()
-        )));
-    }
-    ensure_loom_package_source(&source)?;
-
     let workspace = unique_workspace();
-    let result = run_compat_test_inner(config, &source, &workspace, &mut reporter);
+    let result = run_compat_test_inner(config, &workspace, &mut reporter);
     if config.keep_artifacts {
         return result.map(|mut ok| {
             ok.workspace_path = Some(workspace);
@@ -117,17 +102,12 @@ where
 
 fn run_compat_test_inner(
     config: &CompatTestConfig,
-    source: &Path,
     workspace: &Path,
     reporter: &mut dyn FnMut(ProgressUpdate),
 ) -> Result<TestResult, AppError> {
     let package_dir = workspace.join("package");
     std::fs::create_dir_all(&package_dir)?;
-    let package_name = source
-        .file_name()
-        .and_then(|name| name.to_str())
-        .filter(|name| !name.is_empty())
-        .unwrap_or("loom-compat");
+    let package_name = "knots_sdlc";
 
     let mut steps = Vec::new();
     steps.push(run_step("check_loom", reporter, || {
@@ -140,8 +120,8 @@ fn run_compat_test_inner(
             &package_dir,
             &["init", package_name],
         )?;
-        copy_dir_contents(source, &package_dir)?;
-        Ok(format!("copied {}", source.display()))
+        crate::loom_compat_bundle::write_builtin_loom_package(&package_dir)?;
+        Ok("embedded knots_sdlc".to_string())
     })?);
 
     steps.push(run_step("validate", reporter, || {
@@ -234,30 +214,12 @@ fn run_compat_test_inner(
     Ok(TestResult {
         success: true,
         mode: config.mode,
-        source: source.to_path_buf(),
+        source: PathBuf::from("<builtin:knots_sdlc>"),
         workflow_id: workflow.id.clone(),
         workspace_path: Some(workspace.to_path_buf()),
         steps,
         scenarios,
     })
-}
-
-fn ensure_loom_package_source(source: &Path) -> Result<(), AppError> {
-    let mut missing = Vec::new();
-    if !source.join("loom.toml").exists() {
-        missing.push("loom.toml");
-    }
-    if !source.join("workflow.loom").exists() {
-        missing.push("workflow.loom");
-    }
-    if missing.is_empty() {
-        return Ok(());
-    }
-    Err(AppError::InvalidArgument(format!(
-        "loom compat-test source '{}' is not a Loom package directory; missing {}",
-        source.display(),
-        missing.join(", ")
-    )))
 }
 
 fn run_step(
@@ -429,22 +391,6 @@ fn run_loom(loom_bin: Option<&Path>, cwd: &Path, args: &[&str]) -> Result<String
         _ if stdout.trim().is_empty() => "ok".to_string(),
         _ => stdout,
     })
-}
-
-fn copy_dir_contents(src: &Path, dst: &Path) -> Result<(), AppError> {
-    for entry in std::fs::read_dir(src)? {
-        let entry = entry?;
-        let path = entry.path();
-        let target = dst.join(entry.file_name());
-        let file_type = entry.file_type()?;
-        if file_type.is_dir() {
-            std::fs::create_dir_all(&target)?;
-            copy_dir_contents(&path, &target)?;
-        } else if file_type.is_file() {
-            std::fs::copy(&path, &target)?;
-        }
-    }
-    Ok(())
 }
 
 fn unique_workspace() -> PathBuf {

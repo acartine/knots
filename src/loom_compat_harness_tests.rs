@@ -96,25 +96,6 @@ fn unique_workspace(prefix: &str) -> PathBuf {
     path
 }
 
-fn source_dir(prefix: &str) -> PathBuf {
-    let root = unique_workspace(prefix);
-    std::fs::write(root.join("loom.toml"), "name = \"compat\"\nversion = 1\n")
-        .expect("loom manifest should write");
-    std::fs::write(root.join("workflow.loom"), "workflow compat {}\n")
-        .expect("workflow file should write");
-    std::fs::write(root.join("README.md"), "# compat\n").expect("source file should write");
-    root
-}
-
-fn source_dir_with_nested_file(prefix: &str) -> PathBuf {
-    let root = source_dir(prefix);
-    let nested = root.join("nested");
-    std::fs::create_dir_all(&nested).expect("nested dir should exist");
-    std::fs::write(nested.join("workflow.md"), "nested\n")
-        .expect("nested source file should write");
-    root
-}
-
 fn install_stub_loom(root: &Path, bundle: &str, validate_failure: Option<&str>) -> PathBuf {
     let bin_dir = root.join("bin");
     std::fs::create_dir_all(&bin_dir).expect("bin dir should exist");
@@ -181,47 +162,27 @@ fn invalid_argument_helper_formats_non_argument_errors() {
 #[test]
 fn compat_harness_reports_missing_loom() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
-    let source = source_dir("knots-loom-missing");
+    let root = unique_workspace("knots-loom-missing");
 
     let err = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
         mode: CompatTestMode::Smoke,
         keep_artifacts: false,
-        loom_bin: Some(source.join("missing-loom")),
+        loom_bin: Some(root.join("missing-loom")),
     })
     .expect_err("missing loom should fail");
     assert!(invalid_argument(err).contains("loom is not discoverable"));
 
-    let _ = std::fs::remove_dir_all(source);
-}
-
-#[test]
-fn compat_harness_rejects_missing_source_path() {
-    let source = std::env::temp_dir().join(format!(
-        "knots-loom-missing-source-{}",
-        uuid::Uuid::now_v7()
-    ));
-
-    let err = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
-        mode: CompatTestMode::Smoke,
-        keep_artifacts: true,
-        loom_bin: None,
-    })
-    .expect_err("missing source should fail");
-    assert!(invalid_argument(err).contains("invalid Loom source"));
+    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn compat_harness_reports_loom_execution_errors() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
     let root = unique_workspace("knots-loom-exec-error");
-    let source = source_dir("knots-loom-exec-error-src");
     let bin_dir = root.join("bin");
     std::fs::create_dir_all(&bin_dir).expect("bin dir should exist");
 
     let err = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
         mode: CompatTestMode::Smoke,
         keep_artifacts: false,
         loom_bin: Some(bin_dir),
@@ -230,18 +191,15 @@ fn compat_harness_reports_loom_execution_errors() {
     assert!(invalid_argument(err).contains("failed to execute loom --version"));
 
     let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(source);
 }
 
 #[test]
 fn compat_harness_reports_invalid_bundle_output() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
     let root = unique_workspace("knots-loom-invalid-bundle");
-    let source = source_dir("knots-loom-invalid-bundle-src");
     let bin_dir = install_stub_loom(&root, "not valid toml", None);
 
     let err = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
         mode: CompatTestMode::Smoke,
         keep_artifacts: false,
         loom_bin: Some(loom_bin(&bin_dir)),
@@ -250,18 +208,15 @@ fn compat_harness_reports_invalid_bundle_output() {
     assert!(err.to_string().contains("invalid workflow bundle"));
 
     let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(source);
 }
 
 #[test]
 fn compat_harness_preserves_workspace_when_requested() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
     let root = unique_workspace("knots-loom-keep");
-    let source = source_dir("knots-loom-keep-src");
     let bin_dir = install_stub_loom(&root, SAMPLE_BUNDLE, None);
 
     let result = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
         mode: CompatTestMode::Matrix,
         keep_artifacts: true,
         loom_bin: Some(loom_bin(&bin_dir)),
@@ -280,38 +235,6 @@ fn compat_harness_preserves_workspace_when_requested() {
         .exists());
 
     let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(source);
-    if let Some(workspace) = result.workspace_path {
-        let _ = std::fs::remove_dir_all(workspace);
-    }
-}
-
-#[test]
-fn compat_harness_copies_nested_source_files_into_workspace() {
-    let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
-    let root = unique_workspace("knots-loom-nested");
-    let source = source_dir_with_nested_file("knots-loom-nested-src");
-    let bin_dir = install_stub_loom(&root, SAMPLE_BUNDLE, None);
-
-    let result = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
-        mode: CompatTestMode::Matrix,
-        keep_artifacts: true,
-        loom_bin: Some(loom_bin(&bin_dir)),
-    })
-    .expect("compat run should succeed");
-    let workspace = result
-        .workspace_path
-        .as_deref()
-        .expect("workspace should be kept");
-    assert!(workspace.join("package/nested/workflow.md").exists());
-    assert!(result
-        .scenarios
-        .iter()
-        .any(|scenario| scenario.outcome == "blocked" && scenario.actual_state == "deferred"));
-
-    let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(source);
     if let Some(workspace) = result.workspace_path {
         let _ = std::fs::remove_dir_all(workspace);
     }
@@ -321,11 +244,9 @@ fn compat_harness_copies_nested_source_files_into_workspace() {
 fn compat_harness_uses_stable_serializable_output() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
     let root = unique_workspace("knots-loom-json");
-    let source = source_dir("knots-loom-json-src");
     let bin_dir = install_stub_loom(&root, SAMPLE_BUNDLE, None);
 
     let result = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
         mode: CompatTestMode::Smoke,
         keep_artifacts: false,
         loom_bin: Some(loom_bin(&bin_dir)),
@@ -338,55 +259,15 @@ fn compat_harness_uses_stable_serializable_output() {
     assert_eq!(json["scenarios"][0]["actual_state"], "ready_for_review");
 
     let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(source);
-}
-
-#[test]
-fn compat_harness_rejects_file_source() {
-    let source = unique_workspace("knots-loom-file-source").join("bundle.toml");
-    std::fs::write(&source, SAMPLE_BUNDLE).expect("source file should write");
-
-    let err = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
-        mode: CompatTestMode::Smoke,
-        keep_artifacts: false,
-        loom_bin: None,
-    })
-    .expect_err("file source should fail");
-    assert!(invalid_argument(err).contains("must be a directory"));
-
-    let _ = std::fs::remove_file(source);
-}
-
-#[test]
-fn compat_harness_rejects_non_package_directory() {
-    let source = unique_workspace("knots-loom-non-package");
-
-    let err = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
-        mode: CompatTestMode::Smoke,
-        keep_artifacts: false,
-        loom_bin: None,
-    })
-    .expect_err("non-package source should fail");
-    let message = invalid_argument(err);
-    assert!(message.contains("is not a Loom package directory"));
-    assert!(message.contains(source.to_string_lossy().as_ref()));
-    assert!(message.contains("loom.toml"));
-    assert!(message.contains("workflow.loom"));
-
-    let _ = std::fs::remove_dir_all(source);
 }
 
 #[test]
 fn compat_harness_drops_workspace_when_keep_artifacts_is_disabled() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
     let root = unique_workspace("knots-loom-clean");
-    let source = source_dir("knots-loom-clean-src");
     let bin_dir = install_stub_loom(&root, SAMPLE_BUNDLE, None);
 
     let result = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
         mode: CompatTestMode::Smoke,
         keep_artifacts: false,
         loom_bin: Some(loom_bin(&bin_dir)),
@@ -397,18 +278,15 @@ fn compat_harness_drops_workspace_when_keep_artifacts_is_disabled() {
     assert_eq!(result.scenarios.len(), 1);
 
     let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(source);
 }
 
 #[test]
 fn compat_harness_reports_validate_command_failures() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
     let root = unique_workspace("knots-loom-validate-fail");
-    let source = source_dir("knots-loom-validate-fail-src");
     let bin_dir = install_stub_loom(&root, SAMPLE_BUNDLE, Some("validate exploded"));
 
     let err = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
         mode: CompatTestMode::Smoke,
         keep_artifacts: false,
         loom_bin: Some(loom_bin(&bin_dir)),
@@ -420,14 +298,12 @@ fn compat_harness_reports_validate_command_failures() {
     assert!(message.contains("/package"));
 
     let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(source);
 }
 
 #[test]
 fn compat_harness_reports_validate_failures_without_stderr() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
     let root = unique_workspace("knots-loom-validate-empty");
-    let source = source_dir("knots-loom-validate-empty-src");
     let bin_dir = root.join("bin");
     std::fs::create_dir_all(&bin_dir).expect("bin dir should exist");
     install_script(
@@ -441,7 +317,6 @@ fn compat_harness_reports_validate_failures_without_stderr() {
     );
 
     let err = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
         mode: CompatTestMode::Smoke,
         keep_artifacts: false,
         loom_bin: Some(loom_bin(&bin_dir)),
@@ -452,14 +327,12 @@ fn compat_harness_reports_validate_failures_without_stderr() {
     assert!(!message.contains("failed:"));
 
     let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(source);
 }
 
 #[test]
 fn compat_harness_reports_invalid_utf8_from_build_output() {
     let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
     let root = unique_workspace("knots-loom-invalid-utf8");
-    let source = source_dir("knots-loom-invalid-utf8-src");
     let bin_dir = root.join("bin");
     std::fs::create_dir_all(&bin_dir).expect("bin dir should exist");
     install_script(
@@ -473,7 +346,6 @@ fn compat_harness_reports_invalid_utf8_from_build_output() {
     );
 
     let err = run_compat_test(&CompatTestConfig {
-        source: source.clone(),
         mode: CompatTestMode::Smoke,
         keep_artifacts: false,
         loom_bin: Some(loom_bin(&bin_dir)),
@@ -482,5 +354,21 @@ fn compat_harness_reports_invalid_utf8_from_build_output() {
     assert!(invalid_argument(err).contains("produced invalid UTF-8"));
 
     let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(source);
+}
+
+#[test]
+fn compat_harness_reports_builtin_source_in_result() {
+    let _guard = env_lock().lock().unwrap_or_else(|err| err.into_inner());
+    let root = unique_workspace("knots-loom-builtin-source");
+    let bin_dir = install_stub_loom(&root, SAMPLE_BUNDLE, None);
+
+    let result = run_compat_test(&CompatTestConfig {
+        mode: CompatTestMode::Smoke,
+        keep_artifacts: false,
+        loom_bin: Some(loom_bin(&bin_dir)),
+    })
+    .expect("compat run should succeed");
+    assert_eq!(result.source, PathBuf::from("<builtin:knots_sdlc>"));
+
+    let _ = std::fs::remove_dir_all(root);
 }

@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use clap::{Args, Subcommand, ValueEnum};
 
 #[derive(Debug, Args)]
@@ -24,13 +22,6 @@ pub enum LoomCompatModeArg {
 #[derive(Debug, Args)]
 #[command(about = "Run the Loom compatibility harness.")]
 pub struct LoomCompatTestArgs {
-    #[arg(
-        value_name = "SOURCE",
-        default_value = ".",
-        help = "Loom package directory to validate."
-    )]
-    pub source: PathBuf,
-
     #[arg(
         long,
         value_enum,

@@ -1,0 +1,5 @@
+profile autopilot_with_pr_no_planning "Autopilot with PR (no planning)" {
+    description "Agent-owned flow with PR output and no planning"
+    phases [implementation_phase, shipment_phase]
+    output pr
+}

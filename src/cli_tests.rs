@@ -52,19 +52,10 @@ fn profile_show_parses_with_id() {
 
 #[test]
 fn loom_compat_test_parses() {
-    let cli = parse(&[
-        "kno",
-        "loom",
-        "compat-test",
-        "./pkg",
-        "--mode",
-        "matrix",
-        "--json",
-    ]);
+    let cli = parse(&["kno", "loom", "compat-test", "--mode", "matrix", "--json"]);
     match cli.command {
         Commands::Loom(args) => match args.command {
             LoomSubcommands::CompatTest(inner) => {
-                assert_eq!(inner.source, std::path::PathBuf::from("./pkg"));
                 assert_eq!(inner.mode, LoomCompatModeArg::Matrix);
                 assert!(inner.json);
             }

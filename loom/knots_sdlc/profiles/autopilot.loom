@@ -1,0 +1,5 @@
+profile autopilot "Autopilot" {
+    description "Agent-owned full flow with remote main output"
+    phases [planning_phase, implementation_phase, shipment_phase]
+    output remote_main
+}

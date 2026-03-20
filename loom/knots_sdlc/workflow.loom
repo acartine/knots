@@ -1,0 +1,115 @@
+workflow knots_sdlc v1 {
+
+    // -- Queue States --
+
+    queue ready_for_planning              "Ready for Planning"
+    queue ready_for_plan_review           "Ready for Plan Review"
+    queue ready_for_implementation        "Ready for Implementation"
+    queue ready_for_implementation_review "Ready for Implementation Review"
+    queue ready_for_shipment              "Ready for Shipment"
+    queue ready_for_shipment_review       "Ready for Shipment Review"
+
+    // -- Action States --
+
+    action planning "Planning" {
+        produce agent
+        prompt planning
+    }
+
+    action plan_review "Plan Review" {
+        gate review agent
+        prompt plan_review
+        constraint read_only
+        constraint no_git_write
+        constraint metadata_only
+    }
+
+    action implementation "Implementation" {
+        produce agent
+        prompt implementation
+    }
+
+    action implementation_review "Implementation Review" {
+        gate review agent
+        prompt implementation_review
+        constraint read_only
+        constraint no_git_write
+        constraint metadata_only
+    }
+
+    action shipment "Shipment" {
+        produce agent
+        prompt shipment
+    }
+
+    action shipment_review "Shipment Review" {
+        gate review agent
+        prompt shipment_review
+        constraint read_only
+        constraint no_git_write
+        constraint metadata_only
+    }
+
+    // -- Terminal & Escape States --
+
+    terminal shipped   "Shipped"
+    terminal abandoned "Abandoned"
+    escape   deferred  "Deferred"
+
+    // -- Wildcard Transitions --
+
+    * -> abandoned
+    * -> deferred
+
+    // -- Steps --
+
+    step plan {
+        ready_for_planning -> planning
+    }
+
+    step plan_rev {
+        ready_for_plan_review -> plan_review
+    }
+
+    step impl {
+        ready_for_implementation -> implementation
+    }
+
+    step impl_rev {
+        ready_for_implementation_review -> implementation_review
+    }
+
+    step ship {
+        ready_for_shipment -> shipment
+    }
+
+    step ship_rev {
+        ready_for_shipment_review -> shipment_review
+    }
+
+    // -- Phases --
+
+    phase planning_phase {
+        produce plan
+        gate plan_rev
+    }
+
+    phase implementation_phase {
+        produce impl
+        gate impl_rev
+    }
+
+    phase shipment_phase {
+        produce ship
+        gate ship_rev
+    }
+
+    // -- Profiles --
+
+    include "profiles/autopilot.loom"
+    include "profiles/autopilot_with_pr.loom"
+    include "profiles/semiauto.loom"
+    include "profiles/autopilot_no_planning.loom"
+    include "profiles/autopilot_with_pr_no_planning.loom"
+    include "profiles/semiauto_no_planning.loom"
+}

@@ -1,0 +1,5 @@
+profile autopilot_no_planning "Autopilot (no planning)" {
+    description "Agent-owned flow starting at implementation"
+    phases [implementation_phase, shipment_phase]
+    output remote_main
+}

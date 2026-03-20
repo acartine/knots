@@ -872,7 +872,7 @@ struct JsonPromptOutcome {
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonPromptParamSection {
     name: String,
-    #[serde(rename = "type")]
+    #[serde(alias = "type", alias = "param_type", rename = "type")]
     param_type: String,
     #[serde(default)]
     values: Vec<String>,

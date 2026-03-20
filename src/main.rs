@@ -24,6 +24,7 @@ mod list_layout;
 mod list_layout_tests_ext;
 mod listing;
 mod locks;
+mod loom_compat_bundle;
 mod loom_compat_commands;
 mod loom_compat_harness;
 #[cfg(test)]

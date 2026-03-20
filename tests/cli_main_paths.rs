@@ -256,16 +256,6 @@ EOF\n\
     bin_dir
 }
 
-fn create_loom_source(root: &Path) -> PathBuf {
-    let source = root.join("loom-source");
-    std::fs::create_dir_all(&source).expect("source dir should exist");
-    std::fs::write(source.join("loom.toml"), "name = \"compat\"\nversion = 1\n")
-        .expect("loom manifest should write");
-    std::fs::write(source.join("workflow.loom"), "workflow compat {}\n")
-        .expect("workflow file should write");
-    source
-}
-
 #[test]
 fn toplevel_help_uses_custom_help_path() {
     let root = unique_workspace("knots-main-help");
@@ -413,19 +403,12 @@ fn loom_compat_test_dispatches_through_main() {
     let root = unique_workspace("knots-main-loom-dispatch");
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
-    let source = create_loom_source(&root);
     let bin_dir = install_stub_loom(&root);
 
     let output = run_knots_with_path(
         &root,
         &db,
-        &[
-            "loom",
-            "compat-test",
-            source.to_str().expect("utf8 path"),
-            "--mode",
-            "matrix",
-        ],
+        &["loom", "compat-test", "--mode", "matrix"],
         Some(&bin_dir),
     );
     assert_success(&output);
@@ -443,41 +426,13 @@ fn loom_compat_test_dispatches_through_main() {
     let json = run_knots_with_path(
         &root,
         &db,
-        &[
-            "loom",
-            "compat-test",
-            source.to_str().expect("utf8 path"),
-            "--json",
-        ],
+        &["loom", "compat-test", "--json"],
         Some(&bin_dir),
     );
     assert_success(&json);
     let parsed: Value = serde_json::from_slice(&json.stdout).expect("loom json should parse");
     assert_eq!(parsed["workflow_id"], "custom_flow");
     assert_eq!(parsed["mode"], "smoke");
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn loom_compat_test_resolves_relative_source_from_repo_root() {
-    let root = unique_workspace("knots-main-loom-relative");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-    create_loom_source(&root);
-    let bin_dir = install_stub_loom(&root);
-
-    let output = run_knots_with_path(
-        &root,
-        &db,
-        &["loom", "compat-test", "loom-source", "--json"],
-        Some(&bin_dir),
-    );
-    assert_success(&output);
-    let parsed: Value = serde_json::from_slice(&output.stdout).expect("loom json should parse");
-    let expected_source = std::fs::canonicalize(root.join("loom-source"))
-        .expect("relative source should canonicalize");
-    assert_eq!(parsed["source"], expected_source.to_string_lossy().as_ref());
 
     let _ = std::fs::remove_dir_all(root);
 }

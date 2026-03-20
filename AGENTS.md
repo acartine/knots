@@ -19,6 +19,11 @@
   - `kno update <knot-id> --status <state>`
   - `kno sync`
 
+## Git Workflow
+- Unless you are working on a specific knot step (where a worktree branch is expected), always
+  commit your changes, push them, and make sure they are merged to main.
+- Do not leave uncommitted or unpushed work at the end of a task.
+
 ## Pre-Push Sanity (Required)
 - Install the managed pre-push hook with `make install-hooks`.
 - Do not push unless `make sanity` passes.
