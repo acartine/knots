@@ -11,7 +11,10 @@ mod inventory;
 use inventory::managed_skills;
 #[path = "managed_skills_output.rs"]
 mod output;
-use output::{format_changed_paths, format_existing_skills, format_missing_detail, skill_paths};
+use output::{format_changed_paths, format_existing_skills, format_skill_detail, skill_paths};
+#[path = "managed_skills_state.rs"]
+mod state;
+use state::{inspect_location, reconcile_skills};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SkillTool {
@@ -146,7 +149,10 @@ pub fn fix_doctor_check(repo_root: &Path, check_name: &str) {
         return;
     };
     let home = std::env::var_os("HOME").map(PathBuf::from);
-    let _ = install_missing(repo_root, home.as_deref(), tool);
+    let Ok(destination) = preferred_location(repo_root, home.as_deref(), tool) else {
+        return;
+    };
+    let _ = reconcile_skills(&destination);
 }
 
 fn doctor_checks_with_home(repo_root: &Path, home: Option<&Path>) -> Vec<DoctorCheck> {
@@ -160,8 +166,8 @@ fn doctor_check(repo_root: &Path, home: Option<&Path>, tool: SkillTool) -> Docto
     let preferred = doctor_location(repo_root, home, tool);
     let (status, detail) = match preferred {
         Some(location) => {
-            let missing = missing_skills(&location);
-            if missing.is_empty() {
+            let state = inspect_location(&location);
+            if state.is_current() {
                 (
                     DoctorStatus::Pass,
                     format!(
@@ -173,7 +179,7 @@ fn doctor_check(repo_root: &Path, home: Option<&Path>, tool: SkillTool) -> Docto
             } else {
                 (
                     DoctorStatus::Warn,
-                    format_missing_detail(tool, &location, &missing),
+                    format_skill_detail(tool, &location, &state.missing, &state.drifted),
                 )
             }
         }
@@ -214,7 +220,7 @@ fn install_missing(
     tool: SkillTool,
 ) -> Result<String, AppError> {
     let destination = preferred_location(repo_root, home, tool)?;
-    let missing = missing_skills(&destination);
+    let missing = inspect_location(&destination).missing;
     if missing.is_empty() {
         return Ok(format_existing_skills(tool, &destination));
     }
@@ -252,7 +258,7 @@ fn update_managed(
     tool: SkillTool,
 ) -> Result<String, AppError> {
     let destination = preferred_location(repo_root, home, tool)?;
-    let missing = missing_skills(&destination);
+    let missing = inspect_location(&destination).missing;
     if !missing.is_empty() {
         if !interactive {
             return Err(AppError::InvalidArgument(format!(
@@ -339,14 +345,6 @@ fn installed_skills(location: &SkillLocation) -> Vec<ManagedSkill> {
         .iter()
         .copied()
         .filter(|skill| skill_path(location, *skill).exists())
-        .collect()
-}
-
-fn missing_skills(location: &SkillLocation) -> Vec<ManagedSkill> {
-    managed_skills()
-        .iter()
-        .copied()
-        .filter(|skill| !skill_path(location, *skill).exists())
         .collect()
 }
 

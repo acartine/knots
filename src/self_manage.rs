@@ -28,7 +28,10 @@ pub fn run_update(options: &SelfUpdateOptions) -> io::Result<()> {
     let mut command = Command::new("sh");
     command
         .arg("-c")
-        .arg("curl -fsSL \"$1\" | sh")
+        .arg(
+            "script=$(mktemp) && trap 'rm -f \"$script\"' EXIT && \
+             curl -fsSL \"$1\" >\"$script\" && sh \"$script\"",
+        )
         .arg("knots-self-update")
         .arg(&options.script_url);
     apply_update_env(&mut command, options);
@@ -342,6 +345,15 @@ mod tests {
             script_url: format!("file://{}", installer.display()),
         });
         assert!(result.is_err());
+
+        let missing_installer = dir.join("missing-installer.sh");
+        let missing_result = run_update(&SelfUpdateOptions {
+            version: None,
+            repo: None,
+            install_dir: Some(dir.clone()),
+            script_url: format!("file://{}", missing_installer.display()),
+        });
+        assert!(missing_result.is_err());
 
         let current = resolve_binary_path(None).expect("current executable path should resolve");
         // Under coverage tools the test binary may be a temporary path that
