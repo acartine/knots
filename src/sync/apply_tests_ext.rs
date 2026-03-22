@@ -62,6 +62,7 @@ fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
             updated_at: "2026-02-25T10:00:00Z",
             body: None,
             description: None,
+            acceptance: None,
             priority: None,
             knot_type: None,
             tags: &[],

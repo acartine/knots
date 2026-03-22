@@ -14,7 +14,7 @@ use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 11;
+pub const CURRENT_SCHEMA_VERSION: i64 = 12;
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
 const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
@@ -34,7 +34,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 11] = [
+const MIGRATIONS: [Migration; 12] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -204,6 +204,13 @@ ALTER TABLE knot_hot ADD COLUMN lease_id TEXT;
         name: "knot_workflow_id_v2",
         sql: r#"
 ALTER TABLE knot_hot ADD COLUMN workflow_id TEXT NOT NULL DEFAULT 'compatibility';
+"#,
+    },
+    Migration {
+        version: 12,
+        name: "knot_acceptance_v1",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN acceptance TEXT;
 "#,
     },
 ];
@@ -424,6 +431,7 @@ pub struct KnotCacheRecord {
     pub updated_at: String,
     pub body: Option<String>,
     pub description: Option<String>,
+    pub acceptance: Option<String>,
     pub priority: Option<i64>,
     pub knot_type: Option<String>,
     pub tags: Vec<String>,
@@ -467,6 +475,7 @@ pub struct UpsertKnotHot<'a> {
     pub updated_at: &'a str,
     pub body: Option<&'a str>,
     pub description: Option<&'a str>,
+    pub acceptance: Option<&'a str>,
     pub priority: Option<i64>,
     pub knot_type: Option<&'a str>,
     pub tags: &'a [String],
@@ -496,20 +505,20 @@ pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()
         conn.execute(
             r#"
 INSERT INTO knot_hot (
-    id, title, state, updated_at, body, description, priority,
-    knot_type, tags_json, notes_json, handoff_capsules_json,
-    invariants_json, step_history_json, gate_data_json,
-    lease_data_json, lease_id,
+    id, title, state, updated_at, body, description, acceptance,
+    priority, knot_type, tags_json, notes_json,
+    handoff_capsules_json, invariants_json, step_history_json,
+    gate_data_json, lease_data_json, lease_id,
     workflow_id, profile_id, profile_etag,
     deferred_from_state, created_at
 )
 VALUES (
     ?1, ?2, ?3, ?4, ?5, ?6, ?7,
     ?8, ?9, ?10, ?11,
-    ?12, ?13, ?14,
-    ?15, ?16,
-    ?17, ?18, ?19,
-    ?20, ?21
+    ?12, ?13, ?14, ?15,
+    ?16, ?17,
+    ?18, ?19, ?20,
+    ?21, ?22
 )
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
@@ -517,6 +526,7 @@ ON CONFLICT(id) DO UPDATE SET
     updated_at = excluded.updated_at,
     body = excluded.body,
     description = excluded.description,
+    acceptance = excluded.acceptance,
     priority = excluded.priority,
     knot_type = excluded.knot_type,
     tags_json = excluded.tags_json,
@@ -540,6 +550,7 @@ ON CONFLICT(id) DO UPDATE SET
                 args.updated_at,
                 args.body,
                 args.description,
+                args.acceptance,
                 args.priority,
                 args.knot_type,
                 tags_json.as_str(),
@@ -570,9 +581,9 @@ ON CONFLICT(id) DO UPDATE SET
 pub fn get_knot_hot(conn: &Connection, id: &str) -> Result<Option<KnotCacheRecord>> {
     conn.query_row(
         r#"
-SELECT id, title, state, updated_at, body, description, priority,
-       knot_type, tags_json, notes_json, handoff_capsules_json,
-       invariants_json, step_history_json, gate_data_json,
+SELECT id, title, state, updated_at, body, description, acceptance,
+       priority, knot_type, tags_json, notes_json,
+       handoff_capsules_json, invariants_json, step_history_json, gate_data_json,
        lease_data_json, lease_id,
        workflow_id, profile_id, profile_etag,
        deferred_from_state, created_at
@@ -588,9 +599,9 @@ WHERE id = ?1
 pub fn list_knot_hot(conn: &Connection) -> Result<Vec<KnotCacheRecord>> {
     let mut stmt = conn.prepare(
         r#"
-SELECT id, title, state, updated_at, body, description, priority,
-       knot_type, tags_json, notes_json, handoff_capsules_json,
-       invariants_json, step_history_json, gate_data_json,
+SELECT id, title, state, updated_at, body, description, acceptance,
+       priority, knot_type, tags_json, notes_json,
+       handoff_capsules_json, invariants_json, step_history_json, gate_data_json,
        lease_data_json, lease_id,
        workflow_id, profile_id, profile_etag,
        deferred_from_state, created_at
@@ -609,13 +620,13 @@ ORDER BY updated_at DESC, id ASC
 }
 
 fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> {
-    let tags_json: String = row.get(8)?;
-    let notes_json: String = row.get(9)?;
-    let handoff_capsules_json: String = row.get(10)?;
-    let invariants_json: String = row.get(11)?;
-    let step_history_json: String = row.get(12)?;
-    let gate_data_json: String = row.get(13)?;
-    let lease_data_json: String = row.get(14)?;
+    let tags_json: String = row.get(9)?;
+    let notes_json: String = row.get(10)?;
+    let handoff_capsules_json: String = row.get(11)?;
+    let invariants_json: String = row.get(12)?;
+    let step_history_json: String = row.get(13)?;
+    let gate_data_json: String = row.get(14)?;
+    let lease_data_json: String = row.get(15)?;
     Ok(KnotCacheRecord {
         id: row.get(0)?,
         title: row.get(1)?,
@@ -623,21 +634,22 @@ fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> 
         updated_at: row.get(3)?,
         body: row.get(4)?,
         description: row.get(5)?,
-        priority: row.get(6)?,
-        knot_type: row.get(7)?,
-        tags: from_json_text(tags_json, 8)?,
-        notes: from_json_text(notes_json, 9)?,
-        handoff_capsules: from_json_text(handoff_capsules_json, 10)?,
-        invariants: from_json_text(invariants_json, 11)?,
-        step_history: from_json_text(step_history_json, 12)?,
-        gate_data: from_json_text(gate_data_json, 13)?,
-        lease_data: from_json_text(lease_data_json, 14)?,
-        lease_id: row.get(15)?,
-        workflow_id: row.get(16)?,
-        profile_id: row.get(17)?,
-        profile_etag: row.get(18)?,
-        deferred_from_state: row.get(19)?,
-        created_at: row.get(20)?,
+        acceptance: row.get(6)?,
+        priority: row.get(7)?,
+        knot_type: row.get(8)?,
+        tags: from_json_text(tags_json, 9)?,
+        notes: from_json_text(notes_json, 10)?,
+        handoff_capsules: from_json_text(handoff_capsules_json, 11)?,
+        invariants: from_json_text(invariants_json, 12)?,
+        step_history: from_json_text(step_history_json, 13)?,
+        gate_data: from_json_text(gate_data_json, 14)?,
+        lease_data: from_json_text(lease_data_json, 15)?,
+        lease_id: row.get(16)?,
+        workflow_id: row.get(17)?,
+        profile_id: row.get(18)?,
+        profile_etag: row.get(19)?,
+        deferred_from_state: row.get(20)?,
+        created_at: row.get(21)?,
     })
 }
 

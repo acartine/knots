@@ -18,6 +18,7 @@ const WAIT_POLL_INTERVAL: Duration = Duration::from_millis(20);
 pub struct NewOperation {
     pub title: String,
     pub description: Option<String>,
+    pub acceptance: Option<String>,
     pub state: Option<String>,
     pub profile: Option<String>,
     pub fast: bool,
@@ -52,6 +53,7 @@ pub struct UpdateOperation {
     pub id: String,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub acceptance: Option<String>,
     pub priority: Option<i64>,
     pub status: Option<String>,
     pub knot_type: Option<String>,

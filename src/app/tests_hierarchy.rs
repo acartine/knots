@@ -120,6 +120,7 @@ fn deferred_child_blocks_using_deferred_from_state_progress() {
     let patch = UpdateKnotPatch {
         title: None,
         description: None,
+        acceptance: None,
         priority: None,
         status: Some("ready_for_implementation_review".to_string()),
         knot_type: None,
@@ -424,6 +425,7 @@ fn update_knot_terminal_cascade_with_approval_succeeds() {
     let patch = UpdateKnotPatch {
         title: None,
         description: None,
+        acceptance: None,
         priority: None,
         status: Some("abandoned".to_string()),
         knot_type: None,

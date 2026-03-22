@@ -198,6 +198,7 @@ mod tests {
             updated_at: "2026-02-23T10:00:00Z".to_string(),
             body: None,
             description: description.map(|value| value.to_string()),
+            acceptance: None,
             priority: None,
             knot_type: crate::domain::knot_type::parse_knot_type(knot_type),
             tags: tags.iter().map(|value| (*value).to_string()).collect(),

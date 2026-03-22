@@ -34,6 +34,7 @@ pub enum FullEventKind {
     KnotTitleSet,
     KnotBodySet,
     KnotDescriptionSet,
+    KnotAcceptanceSet,
     KnotStateSet,
     KnotPrioritySet,
     KnotTypeSet,
@@ -59,6 +60,7 @@ impl FullEventKind {
             FullEventKind::KnotTitleSet => "knot.title_set",
             FullEventKind::KnotBodySet => "knot.body_set",
             FullEventKind::KnotDescriptionSet => "knot.description_set",
+            FullEventKind::KnotAcceptanceSet => "knot.acceptance_set",
             FullEventKind::KnotStateSet => "knot.state_set",
             FullEventKind::KnotPrioritySet => "knot.priority_set",
             FullEventKind::KnotTypeSet => "knot.type_set",
@@ -423,6 +425,14 @@ mod tests {
         assert_eq!(
             path.to_string_lossy(),
             ".knots/index/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-idx.knot_head.json"
+        );
+    }
+
+    #[test]
+    fn acceptance_event_kind_uses_expected_string() {
+        assert_eq!(
+            FullEventKind::KnotAcceptanceSet.as_str(),
+            "knot.acceptance_set"
         );
     }
 

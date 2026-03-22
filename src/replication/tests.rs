@@ -365,6 +365,7 @@ fn push_blocks_with_active_leases() {
             updated_at: "2026-03-12T00:00:00Z",
             body: None,
             description: None,
+            acceptance: None,
             priority: None,
             knot_type: Some("lease"),
             tags: &[],

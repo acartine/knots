@@ -172,6 +172,9 @@ pub struct NewArgs {
     #[arg(short = 'd', long = "desc", help = "Optional description text.")]
     pub desc: Option<String>,
 
+    #[arg(long, help = "Optional acceptance criteria.")]
+    pub acceptance: Option<String>,
+
     #[arg(
         short = 's',
         long,
@@ -257,6 +260,9 @@ pub struct UpdateArgs {
 
     #[arg(short = 'd', long, help = "Set description.")]
     pub description: Option<String>,
+
+    #[arg(long, help = "Set acceptance criteria.")]
+    pub acceptance: Option<String>,
 
     #[arg(short = 'p', long, help = "Set priority (0-4).")]
     pub priority: Option<i64>,

@@ -227,6 +227,7 @@ fn execute_operation_gate_evaluate_covers_text_and_json_output() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,

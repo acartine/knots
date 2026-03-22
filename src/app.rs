@@ -56,6 +56,7 @@ pub struct KnotView {
     pub updated_at: String,
     pub body: Option<String>,
     pub description: Option<String>,
+    pub acceptance: Option<String>,
     pub priority: Option<i64>,
     #[serde(rename = "type")]
     pub knot_type: KnotType,
@@ -98,6 +99,7 @@ struct StateCascadeMetadata<'a> {
 pub struct UpdateKnotPatch {
     pub title: Option<String>,
     pub description: Option<String>,
+    pub acceptance: Option<String>,
     pub priority: Option<i64>,
     pub status: Option<String>,
     pub knot_type: Option<KnotType>,
@@ -121,6 +123,7 @@ pub struct CreateKnotOptions {
     pub knot_type: KnotType,
     pub gate_data: GateData,
     pub lease_data: LeaseData,
+    pub acceptance: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -186,6 +189,7 @@ impl UpdateKnotPatch {
     fn has_changes(&self) -> bool {
         self.title.is_some()
             || self.description.is_some()
+            || self.acceptance.is_some()
             || self.priority.is_some()
             || self.status.is_some()
             || self.knot_type.is_some()
@@ -638,6 +642,7 @@ impl App {
             options.knot_type,
             &state,
         )?;
+        let acceptance = options.acceptance.as_deref().and_then(non_empty);
 
         let full_event = FullEvent::with_identity(
             new_event_id(),
@@ -676,6 +681,16 @@ impl App {
         );
 
         self.writer.write(&EventRecord::full(full_event))?;
+        if let Some(acceptance) = acceptance.as_deref() {
+            let acceptance_event = FullEvent::with_identity(
+                new_event_id(),
+                occurred_at.clone(),
+                knot_id.clone(),
+                FullEventKind::KnotAcceptanceSet.as_str(),
+                json!({ "acceptance": acceptance }),
+            );
+            self.writer.write(&EventRecord::full(acceptance_event))?;
+        }
         if options.knot_type == KnotType::Lease {
             let lease_event = FullEvent::new(
                 knot_id.clone(),
@@ -695,6 +710,7 @@ impl App {
                 updated_at: &occurred_at,
                 body,
                 description: body,
+                acceptance: acceptance.as_deref(),
                 priority: None,
                 knot_type: Some(options.knot_type.as_str()),
                 tags: &[],
@@ -827,6 +843,7 @@ impl App {
                 updated_at: &occurred_at,
                 body: current.body.as_deref(),
                 description: current.description.as_deref(),
+                acceptance: current.acceptance.as_deref(),
                 priority: current.priority,
                 knot_type: current.knot_type.as_deref(),
                 tags: &current.tags,
@@ -966,6 +983,7 @@ impl App {
         let mut state = current.state.clone();
         let mut description = current.description.clone();
         let mut body = current.body.clone();
+        let mut acceptance = current.acceptance.clone();
         let mut priority = current.priority;
         let mut knot_type = parse_knot_type(current.knot_type.as_deref());
         let profile = self.resolve_profile_for_record(&current)?;
@@ -1058,6 +1076,7 @@ impl App {
                     state = current.state.clone();
                     description = current.description.clone();
                     body = current.body.clone();
+                    acceptance = current.acceptance.clone();
                     priority = current.priority;
                     knot_type = parse_knot_type(current.knot_type.as_deref());
                     deferred_from_state = current.deferred_from_state.clone();
@@ -1106,6 +1125,22 @@ impl App {
                 ));
                 description = next_description;
                 body = description.clone();
+            }
+        }
+
+        if let Some(next_acceptance_raw) = patch.acceptance.as_deref() {
+            let next_acceptance = non_empty(next_acceptance_raw).map(|value| value.to_string());
+            if next_acceptance != acceptance {
+                full_events.push(FullEvent::with_identity(
+                    new_event_id(),
+                    occurred_at.clone(),
+                    id.to_string(),
+                    FullEventKind::KnotAcceptanceSet.as_str(),
+                    json!({
+                        "acceptance": next_acceptance,
+                    }),
+                ));
+                acceptance = next_acceptance;
             }
         }
 
@@ -1324,6 +1359,7 @@ impl App {
                 updated_at: &occurred_at,
                 body: body.as_deref(),
                 description: description.as_deref(),
+                acceptance: acceptance.as_deref(),
                 priority,
                 knot_type: Some(knot_type.as_str()),
                 tags: &tags,
@@ -1554,6 +1590,7 @@ impl App {
                 updated_at: &occurred_at,
                 body: current.body.as_deref(),
                 description: current.description.as_deref(),
+                acceptance: current.acceptance.as_deref(),
                 priority: current.priority,
                 knot_type: current.knot_type.as_deref(),
                 tags: &current.tags,
@@ -1745,6 +1782,7 @@ impl App {
                 updated_at: &occurred_at,
                 body: current.body.as_deref(),
                 description: current.description.as_deref(),
+                acceptance: current.acceptance.as_deref(),
                 priority: current.priority,
                 knot_type: current.knot_type.as_deref(),
                 tags: &current.tags,
@@ -1788,6 +1826,7 @@ impl App {
                 updated_at: &record.updated_at,
                 body: record.body.as_deref(),
                 description: record.description.as_deref(),
+                acceptance: record.acceptance.as_deref(),
                 priority: record.priority,
                 knot_type: record.knot_type.as_deref(),
                 tags: &record.tags,
@@ -1895,6 +1934,7 @@ impl App {
                 updated_at: &occurred_at,
                 body: current.body.as_deref(),
                 description: current.description.as_deref(),
+                acceptance: current.acceptance.as_deref(),
                 priority: current.priority,
                 knot_type: current.knot_type.as_deref(),
                 tags: &current.tags,
@@ -2243,6 +2283,7 @@ impl App {
                 updated_at: &record.updated_at,
                 body: record.body.as_deref(),
                 description: record.description.as_deref(),
+                acceptance: record.acceptance.as_deref(),
                 priority: record.priority,
                 knot_type: Some(record.knot_type.as_str()),
                 tags: &record.tags,
@@ -2343,6 +2384,7 @@ impl App {
                 updated_at: &occurred_at,
                 body: current.body.as_deref(),
                 description: current.description.as_deref(),
+                acceptance: current.acceptance.as_deref(),
                 priority: current.priority,
                 knot_type: current.knot_type.as_deref(),
                 tags: &current.tags,
@@ -2719,6 +2761,7 @@ struct RehydrateProjection {
     updated_at: String,
     body: Option<String>,
     description: Option<String>,
+    acceptance: Option<String>,
     priority: Option<i64>,
     knot_type: KnotType,
     tags: Vec<String>,
@@ -2749,6 +2792,7 @@ fn rehydrate_from_events(
         updated_at: updated_at.clone(),
         body: None,
         description: None,
+        acceptance: None,
         priority: None,
         knot_type: KnotType::default(),
         tags: Vec::new(),
@@ -2983,6 +3027,15 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
             projection.body = next;
             projection.updated_at = event.occurred_at.clone();
         }
+        "knot.acceptance_set" => {
+            projection.acceptance = data
+                .get("acceptance")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToString::to_string);
+            projection.updated_at = event.occurred_at.clone();
+        }
         "knot.priority_set" => {
             projection.priority = data.get("priority").and_then(Value::as_i64);
             projection.updated_at = event.occurred_at.clone();
@@ -3094,6 +3147,7 @@ impl From<KnotCacheRecord> for KnotView {
             updated_at: value.updated_at,
             body: value.body,
             description: value.description,
+            acceptance: value.acceptance,
             priority: value.priority,
             knot_type,
             tags: value.tags,
@@ -3322,6 +3376,9 @@ impl From<InvalidStateTransition> for AppError {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+#[path = "app/tests_acceptance_ext.rs"]
+mod tests_acceptance_ext;
 #[cfg(test)]
 #[path = "app/tests_coverage_ext.rs"]
 mod tests_coverage_ext;

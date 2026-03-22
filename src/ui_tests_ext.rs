@@ -19,6 +19,7 @@ fn sample_knot() -> KnotView {
         updated_at: "2026-02-25T10:00:00Z".to_string(),
         body: Some("Long body for wrapping".to_string()),
         description: Some("Description".to_string()),
+        acceptance: None,
         priority: Some(2),
         knot_type: crate::domain::knot_type::KnotType::Work,
         tags: vec!["alpha".to_string(), "beta".to_string()],

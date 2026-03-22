@@ -46,6 +46,7 @@ fn update_can_abandon_deferred_parent_after_auto_resolution() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: Some("abandoned".to_string()),
                 knot_type: None,
