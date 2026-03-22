@@ -1,5 +1,6 @@
 use super::{App, CreateKnotOptions, UpdateKnotPatch};
 use crate::db;
+use serde_json::Value;
 use uuid::Uuid;
 
 fn unique_workspace() -> std::path::PathBuf {
@@ -140,6 +141,125 @@ fn rehydrate_restores_acceptance_from_events() {
     assert_eq!(
         rehydrated.acceptance.as_deref(),
         Some("Recovered from events")
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn json_shape_acceptance_null_when_unset() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let created = app
+        .create_knot(
+            "No acceptance",
+            Some("desc"),
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("create should succeed");
+
+    let view = app
+        .show_knot(&created.id)
+        .expect("show should succeed")
+        .expect("knot should exist");
+    let json: Value = serde_json::to_value(&view).expect("serialize should succeed");
+
+    assert!(
+        json.get("acceptance").is_some(),
+        "acceptance key must be present in JSON output"
+    );
+    assert!(
+        json["acceptance"].is_null(),
+        "acceptance must serialize as null when unset, got: {}",
+        json["acceptance"]
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn json_shape_acceptance_string_when_set() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let created = app
+        .create_knot_with_options(
+            "With acceptance",
+            Some("desc"),
+            Some("ready_for_implementation"),
+            Some("autopilot"),
+            CreateKnotOptions {
+                acceptance: Some("Tests pass and coverage met".to_string()),
+                ..CreateKnotOptions::default()
+            },
+        )
+        .expect("create should succeed");
+
+    let view = app
+        .show_knot(&created.id)
+        .expect("show should succeed")
+        .expect("knot should exist");
+    let json: Value = serde_json::to_value(&view).expect("serialize should succeed");
+
+    assert_eq!(
+        json["acceptance"].as_str(),
+        Some("Tests pass and coverage met"),
+        "acceptance must serialize as a string when set"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn json_shape_acceptance_null_after_clear() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let created = app
+        .create_knot_with_options(
+            "Clear test",
+            Some("desc"),
+            Some("ready_for_implementation"),
+            Some("autopilot"),
+            CreateKnotOptions {
+                acceptance: Some("Initial criteria".to_string()),
+                ..CreateKnotOptions::default()
+            },
+        )
+        .expect("create should succeed");
+
+    let cleared = app
+        .update_knot(
+            &created.id,
+            UpdateKnotPatch {
+                acceptance: Some(String::new()),
+                ..UpdateKnotPatch::default()
+            },
+        )
+        .expect("clear should succeed");
+
+    let view = app
+        .show_knot(&cleared.id)
+        .expect("show should succeed")
+        .expect("knot should exist");
+    let json: Value = serde_json::to_value(&view).expect("serialize should succeed");
+
+    assert!(
+        json.get("acceptance").is_some(),
+        "acceptance key must remain present after clearing"
+    );
+    assert!(
+        json["acceptance"].is_null(),
+        "acceptance must be null after clearing, got: {}",
+        json["acceptance"]
     );
 
     let _ = std::fs::remove_dir_all(root);
