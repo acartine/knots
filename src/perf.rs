@@ -133,6 +133,7 @@ fn benchmark_write_path(app: &App, iterations: u32) -> Result<f64, PerfError> {
                 UpdateKnotPatch {
                     title: None,
                     description: Some("updated".to_string()),
+                    acceptance: None,
                     priority: Some(1),
                     status: Some("implementing".to_string()),
                     knot_type: Some(crate::domain::knot_type::KnotType::Work),

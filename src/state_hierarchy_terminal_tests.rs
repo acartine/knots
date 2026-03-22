@@ -27,6 +27,7 @@ fn sample_record(id: &str, state: &str, deferred_from_state: Option<&str>) -> Kn
         updated_at: "2026-03-10T00:00:00Z".to_string(),
         body: None,
         description: None,
+        acceptance: None,
         priority: None,
         knot_type: None,
         tags: Vec::new(),

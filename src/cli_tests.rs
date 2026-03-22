@@ -127,6 +127,17 @@ fn new_desc_flag_parses() {
 }
 
 #[test]
+fn new_acceptance_flag_parses() {
+    let cli = parse(&["kno", "new", "My title", "--acceptance", "Ship with tests"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert_eq!(args.acceptance.as_deref(), Some("Ship with tests"));
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}
+
+#[test]
 fn new_short_d_flag_parses() {
     let cli = parse(&["kno", "new", "Title", "-d", "Short desc"]);
     match cli.command {
@@ -167,6 +178,24 @@ fn update_parses_invariant_flags() {
             assert_eq!(args.add_invariants.len(), 1);
             assert_eq!(args.remove_invariants.len(), 1);
             assert!(args.clear_invariants);
+        }
+        other => panic!("expected Update, got {:?}", other),
+    }
+}
+
+#[test]
+fn update_acceptance_flag_parses() {
+    let cli = parse(&[
+        "kno",
+        "update",
+        "abc123",
+        "--acceptance",
+        "Match backend output",
+    ]);
+    match cli.command {
+        Commands::Update(args) => {
+            assert_eq!(args.id, "abc123");
+            assert_eq!(args.acceptance.as_deref(), Some("Match backend output"));
         }
         other => panic!("expected Update, got {:?}", other),
     }

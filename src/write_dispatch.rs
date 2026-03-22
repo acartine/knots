@@ -50,6 +50,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
         Commands::New(args) => Some(WriteOperation::New(NewOperation {
             title: args.title.clone(),
             description: args.desc.clone(),
+            acceptance: args.acceptance.clone(),
             state: args.state.clone(),
             profile: args.profile.clone(),
             fast: args.fast,
@@ -78,6 +79,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             id: args.id.clone(),
             title: args.title.clone(),
             description: args.description.clone(),
+            acceptance: args.acceptance.clone(),
             priority: args.priority,
             status: args.status.clone(),
             knot_type: args.knot_type.clone(),
@@ -245,6 +247,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 args.state.as_deref(),
                 profile,
                 CreateKnotOptions {
+                    acceptance: args.acceptance.clone(),
                     knot_type,
                     gate_data,
                     ..CreateKnotOptions::default()
@@ -349,6 +352,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
             let patch = UpdateKnotPatch {
                 title: args.title.clone(),
                 description: args.description.clone(),
+                acceptance: args.acceptance.clone(),
                 priority: args.priority,
                 status: args.status.clone(),
                 knot_type: args
@@ -907,6 +911,7 @@ mod tests {
             operation: WriteOperation::New(NewOperation {
                 title: "queued".to_string(),
                 description: None,
+                acceptance: None,
                 state: None,
                 profile: None,
                 fast: false,
@@ -1312,6 +1317,7 @@ mod tests {
             updated_at: "2026-03-10T00:00:00Z".to_string(),
             body: None,
             description: None,
+            acceptance: None,
             priority: None,
             knot_type: KnotType::Work,
             tags: vec![],

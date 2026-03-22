@@ -34,6 +34,11 @@ fn render_prompt_inner(
         out.push_str(desc);
         out.push_str("\n\n");
     }
+    if let Some(acceptance) = knot.acceptance.as_deref().filter(|value| !value.is_empty()) {
+        out.push_str("## Acceptance Criteria\n\n");
+        out.push_str(acceptance);
+        out.push_str("\n\n");
+    }
     if !knot.child_summaries.is_empty() {
         out.push_str("## Children\n\n");
         for child in &knot.child_summaries {
@@ -130,6 +135,7 @@ pub fn render_prompt_json_verbose(
         "type": knot.knot_type.as_str(),
         "workflow_id": knot.workflow_id,
         "profile_id": knot.profile_id,
+        "acceptance": knot.acceptance.clone(),
         "invariants": knot.invariants,
         "gate": knot.gate,
         "child_summaries": knot.child_summaries,
@@ -217,6 +223,7 @@ mod tests {
             updated_at: "2026-02-27T10:00:00Z".to_string(),
             body: Some("Implement kno poll and kno claim".to_string()),
             description: None,
+            acceptance: None,
             priority: Some(1),
             knot_type: KnotType::default(),
             tags: vec![],
@@ -291,6 +298,15 @@ mod tests {
         knot.description = Some("short desc".to_string());
         let output = render_prompt(&knot, "# S\n", "cmd");
         assert!(output.contains("short desc"));
+    }
+
+    #[test]
+    fn render_includes_acceptance_section() {
+        let mut knot = sample_knot();
+        knot.acceptance = Some("Must preserve round-trip reads.".to_string());
+        let output = render_prompt(&knot, "# S\n", "cmd");
+        assert!(output.contains("## Acceptance Criteria"));
+        assert!(output.contains("Must preserve round-trip reads."));
     }
 
     #[test]

@@ -230,6 +230,7 @@ fn stripped_ids_resolve_for_show_state_update_and_edges() {
             UpdateKnotPatch {
                 title: Some("Source updated".to_string()),
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,
@@ -429,6 +430,7 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
             UpdateKnotPatch {
                 title: Some("Parity updated".to_string()),
                 description: Some("full description".to_string()),
+                acceptance: None,
                 priority: Some(1),
                 status: Some("implementing".to_string()),
                 knot_type: Some(crate::domain::knot_type::KnotType::Work),
@@ -543,6 +545,7 @@ fn update_knot_can_remove_and_clear_invariants() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,
@@ -570,6 +573,7 @@ fn update_knot_can_remove_and_clear_invariants() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,
@@ -597,6 +601,7 @@ fn update_knot_can_remove_and_clear_invariants() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,
@@ -636,6 +641,7 @@ fn update_knot_requires_at_least_one_change() {
         UpdateKnotPatch {
             title: None,
             description: None,
+            acceptance: None,
             priority: None,
             status: None,
             knot_type: None,
@@ -679,6 +685,7 @@ fn update_knot_rejects_stale_if_match() {
             UpdateKnotPatch {
                 title: Some("OCC 2".to_string()),
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,
@@ -705,6 +712,7 @@ fn update_knot_rejects_stale_if_match() {
         UpdateKnotPatch {
             title: Some("OCC 3".to_string()),
             description: None,
+            acceptance: None,
             priority: None,
             status: None,
             knot_type: None,

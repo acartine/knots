@@ -191,6 +191,9 @@ impl<'a> IncrementalApplier<'a> {
         let description = existing
             .as_ref()
             .and_then(|record| record.description.clone());
+        let acceptance = existing
+            .as_ref()
+            .and_then(|record| record.acceptance.clone());
         let priority = existing.as_ref().and_then(|record| record.priority);
         let knot_type = existing
             .as_ref()
@@ -251,6 +254,7 @@ impl<'a> IncrementalApplier<'a> {
                         updated_at: &updated_at,
                         body: body.as_deref(),
                         description: description.as_deref(),
+                        acceptance: acceptance.as_deref(),
                         priority,
                         knot_type: knot_type.as_deref(),
                         tags: &tags,
@@ -313,6 +317,12 @@ impl<'a> IncrementalApplier<'a> {
                 self.apply_metadata_update(&event.knot_id, |record| {
                     record.description = optional_string(data.get("description"));
                     record.body = record.description.clone();
+                })?;
+                Ok(FullApplyOutcome::Ignored)
+            }
+            "knot.acceptance_set" => {
+                self.apply_metadata_update(&event.knot_id, |record| {
+                    record.acceptance = optional_string(data.get("acceptance"));
                 })?;
                 Ok(FullApplyOutcome::Ignored)
             }
@@ -424,6 +434,7 @@ impl<'a> IncrementalApplier<'a> {
             updated_at: existing.updated_at,
             body: existing.body,
             description: existing.description,
+            acceptance: existing.acceptance,
             priority: existing.priority,
             knot_type: existing.knot_type,
             tags: existing.tags,
@@ -451,6 +462,7 @@ impl<'a> IncrementalApplier<'a> {
                 updated_at: &projection.updated_at,
                 body: projection.body.as_deref(),
                 description: projection.description.as_deref(),
+                acceptance: projection.acceptance.as_deref(),
                 priority: projection.priority,
                 knot_type: projection.knot_type.as_deref(),
                 tags: &projection.tags,
@@ -484,6 +496,7 @@ struct MetadataProjection {
     updated_at: String,
     body: Option<String>,
     description: Option<String>,
+    acceptance: Option<String>,
     priority: Option<i64>,
     knot_type: Option<String>,
     tags: Vec<String>,
@@ -648,3 +661,7 @@ mod tests_ext;
 #[cfg(test)]
 #[path = "apply_tests_invariant.rs"]
 mod tests_invariant;
+
+#[cfg(test)]
+#[path = "apply_tests_acceptance_ext.rs"]
+mod tests_acceptance_ext;

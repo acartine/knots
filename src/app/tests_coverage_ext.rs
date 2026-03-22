@@ -71,6 +71,7 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
         UpdateKnotPatch {
             title: Some("   ".to_string()),
             description: None,
+            acceptance: None,
             priority: None,
             status: None,
             knot_type: None,
@@ -96,6 +97,7 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
         UpdateKnotPatch {
             title: None,
             description: None,
+            acceptance: None,
             priority: Some(9),
             status: None,
             knot_type: None,
@@ -122,6 +124,7 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,
@@ -149,6 +152,7 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,
@@ -176,6 +180,7 @@ fn update_knot_covers_title_priority_and_tag_normalization_branches() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,
@@ -561,6 +566,7 @@ fn update_knot_state_change_writes_actor_metadata() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: Some("planning".to_string()),
                 knot_type: None,
@@ -682,6 +688,7 @@ fn evaluate_gate_failure_reopens_linked_knots_and_adds_metadata() {
             UpdateKnotPatch {
                 title: None,
                 description: None,
+                acceptance: None,
                 priority: None,
                 status: None,
                 knot_type: None,

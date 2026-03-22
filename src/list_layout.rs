@@ -386,6 +386,7 @@ mod tests {
             updated_at: "2026-02-24T10:00:00Z".to_string(),
             body: None,
             description: None,
+            acceptance: None,
             priority: None,
             knot_type: crate::domain::knot_type::KnotType::default(),
             tags: Vec::new(),
