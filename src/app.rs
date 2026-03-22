@@ -30,7 +30,7 @@ use crate::locks::{FileLock, LockError};
 use crate::perf::{run_perf_harness, PerfError, PerfReport};
 use crate::progress::ProgressReporter;
 use crate::remote_init::{init_remote_knots_branch, RemoteInitError};
-use crate::replication::{PushSummary, ReplicationService, ReplicationSummary};
+use crate::replication::{PushSummary, ReplicationService, ReplicationSummary, SyncOutcome};
 use crate::snapshots::{write_snapshots, SnapshotError, SnapshotWriteSummary};
 use crate::state_hierarchy::{self, HierarchyKnot, TransitionPlan};
 use crate::sync::{SyncError, SyncSummary};
@@ -2084,6 +2084,7 @@ impl App {
         Ok(service.sync()?)
     }
 
+    #[allow(dead_code)]
     pub fn sync_with_progress(
         &self,
         reporter: Option<&mut dyn ProgressReporter>,
@@ -2094,6 +2095,41 @@ impl App {
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let service = ReplicationService::new(&self.conn, self.repo_root.clone());
         Ok(service.sync_with_progress(&mut reporter)?)
+    }
+
+    /// Like `sync_with_progress` but defers instead of erroring on active
+    /// leases. Marks `sync_pending` so the sync runs when leases end.
+    pub fn sync_or_defer_with_progress(
+        &self,
+        reporter: Option<&mut dyn ProgressReporter>,
+    ) -> Result<SyncOutcome, AppError> {
+        let mut reporter = reporter;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        let outcome = service.sync_or_defer_with_progress(&mut reporter)?;
+        if matches!(outcome, SyncOutcome::Deferred { .. }) {
+            self.mark_sync_pending()?;
+        }
+        Ok(outcome)
+    }
+
+    /// Best-effort sync triggered after the last active lease is terminated.
+    /// Returns `Ok(true)` if a sync ran, `Ok(false)` if nothing was pending
+    /// or leases still exist. Never surfaces sync failures.
+    pub fn trigger_queued_sync(&self) -> Result<bool, AppError> {
+        let pending = db::get_meta(&self.conn, "sync_pending")?;
+        if pending.as_deref() != Some("true") {
+            return Ok(false);
+        }
+        if db::count_active_leases(&self.conn)? > 0 {
+            return Ok(false);
+        }
+        match self.sync() {
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false), // best-effort: leave sync_pending for retry
+        }
     }
 
     pub fn init_remote(&self) -> Result<(), AppError> {
@@ -3289,6 +3325,9 @@ mod tests;
 #[cfg(test)]
 #[path = "app/tests_coverage_ext.rs"]
 mod tests_coverage_ext;
+#[cfg(test)]
+#[path = "app/tests_deferred_sync.rs"]
+mod tests_deferred_sync;
 #[cfg(test)]
 #[path = "app/tests_error_paths.rs"]
 mod tests_error_paths;

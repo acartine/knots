@@ -242,30 +242,47 @@ fn run() -> Result<(), app::AppError> {
             }
         }
         Commands::Sync(args) => {
+            use crate::replication::SyncOutcome;
             let mut reporter = progress_reporter(!args.json);
-            let summary = app.sync_with_progress(
+            let outcome = app.sync_or_defer_with_progress(
                 reporter
                     .as_mut()
                     .map(|reporter| reporter as &mut dyn progress::ProgressReporter),
             )?;
-            if args.json {
-                print_json(&summary);
-            } else {
-                println!(
-                    "sync push(local_event_files={} copied_files={} committed={} pushed={}) \
-                     pull(head={} index_files={} full_files={} knot_updates={} \
-                     edge_adds={} edge_removes={})",
-                    summary.push.local_event_files,
-                    summary.push.copied_files,
-                    summary.push.committed,
-                    summary.push.pushed,
-                    summary.pull.target_head,
-                    summary.pull.index_files,
-                    summary.pull.full_files,
-                    summary.pull.knot_updates,
-                    summary.pull.edge_adds,
-                    summary.pull.edge_removes
-                );
+            match outcome {
+                SyncOutcome::Completed(summary) => {
+                    if args.json {
+                        print_json(&summary);
+                    } else {
+                        println!(
+                            "sync push(local_event_files={} copied_files={} \
+                             committed={} pushed={}) \
+                             pull(head={} index_files={} full_files={} \
+                             knot_updates={} edge_adds={} edge_removes={})",
+                            summary.push.local_event_files,
+                            summary.push.copied_files,
+                            summary.push.committed,
+                            summary.push.pushed,
+                            summary.pull.target_head,
+                            summary.pull.index_files,
+                            summary.pull.full_files,
+                            summary.pull.knot_updates,
+                            summary.pull.edge_adds,
+                            summary.pull.edge_removes
+                        );
+                    }
+                }
+                SyncOutcome::Deferred { active_leases } => {
+                    if args.json {
+                        print_json(&outcome);
+                    } else {
+                        println!(
+                            "sync deferred: {} active lease(s); \
+                             sync will run when leases are terminated",
+                            active_leases
+                        );
+                    }
+                }
             }
         }
         Commands::Init => unreachable!("init is handled before app initialization"),
