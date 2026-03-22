@@ -404,5 +404,12 @@ fn push_blocks_with_active_leases() {
         .expect_err("sync should fail with active leases");
     assert!(sync_err.is_active_leases());
 
+    // sync_or_defer returns Deferred instead of erroring
+    let mut reporter = None;
+    let outcome = service
+        .sync_or_defer_with_progress(&mut reporter)
+        .expect("sync_or_defer should succeed");
+    assert_eq!(outcome, super::SyncOutcome::Deferred { active_leases: 1 });
+
     let _ = std::fs::remove_dir_all(root);
 }

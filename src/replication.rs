@@ -21,6 +21,16 @@ pub struct ReplicationSummary {
     pub pull: SyncSummary,
 }
 
+/// Result of a `kno sync` that gracefully handles active leases.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(tag = "status")]
+pub enum SyncOutcome {
+    #[serde(rename = "completed")]
+    Completed(ReplicationSummary),
+    #[serde(rename = "deferred")]
+    Deferred { active_leases: i64 },
+}
+
 pub struct ReplicationService<'a> {
     conn: &'a Connection,
     repo_root: PathBuf,
@@ -203,6 +213,22 @@ impl<'a> ReplicationService<'a> {
         let push = self.push_with_progress(reporter)?;
         let pull = self.pull_with_progress(reporter)?;
         Ok(ReplicationSummary { push, pull })
+    }
+
+    /// Like `sync_with_progress` but returns `Deferred` instead of erroring
+    /// when active leases exist.
+    pub fn sync_or_defer_with_progress(
+        &self,
+        reporter: &mut Option<&mut dyn ProgressReporter>,
+    ) -> Result<SyncOutcome, SyncError> {
+        let count = crate::db::count_active_leases(self.conn)?;
+        if count > 0 {
+            return Ok(SyncOutcome::Deferred {
+                active_leases: count,
+            });
+        }
+        let summary = self.sync_with_progress(reporter)?;
+        Ok(SyncOutcome::Completed(summary))
     }
 
     pub fn count_unpushed_event_files(&self) -> Result<u64, SyncError> {

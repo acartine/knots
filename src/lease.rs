@@ -75,5 +75,8 @@ pub fn unbind_lease(app: &App, knot_id: &str) -> Result<(), AppError> {
     if let Some(lid) = &knot.lease_id {
         let _ = terminate_lease(app, lid);
     }
-    app.set_lease_id(knot_id, None)
+    app.set_lease_id(knot_id, None)?;
+    // Best-effort: run any queued sync now that a lease has ended.
+    let _ = app.trigger_queued_sync();
+    Ok(())
 }

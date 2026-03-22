@@ -652,6 +652,8 @@ fn execute_lease_create(app: &App, op: &LeaseCreateOperation) -> Result<String, 
 
 fn execute_lease_terminate(app: &App, op: &LeaseTerminateOperation) -> Result<String, AppError> {
     let view = crate::lease::terminate_lease(app, &op.id)?;
+    // Best-effort: run any queued sync now that a lease has ended.
+    let _ = app.trigger_queued_sync();
     let palette = ui::Palette::auto();
     Ok(format!(
         "terminated lease {} -> {}\n",
