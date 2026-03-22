@@ -221,6 +221,43 @@ fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
 }
 
 #[test]
+fn doctor_reports_drifted_skills_and_update_reconciles_them() {
+    let root = unique_workspace("knots-cli-skills-doctor-drift");
+    let home = unique_workspace("knots-cli-skills-home");
+    setup_repo_with_remote(&root);
+    let codex_root = home.join(".codex");
+    std::fs::create_dir_all(&codex_root).expect("codex root should exist");
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let install = run_knots(&root, &db, &home, &["skills", "install", "codex"]);
+    assert_success(&install);
+    let knots = codex_root.join("skills/knots/SKILL.md");
+    std::fs::write(&knots, "stale").expect("knots skill should be writable");
+
+    let doctor = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    assert_success(&doctor);
+    let report: Value = serde_json::from_slice(&doctor.stdout).expect("doctor json should parse");
+    let codex = find_check(&report, "skills_codex");
+    assert_eq!(codex["status"], "warn");
+    let detail = codex["detail"].as_str().expect("detail should be a string");
+    assert!(detail.contains("drift"));
+    assert!(detail.contains("run `kno skills update codex`"));
+    assert!(detail.contains("knots/SKILL.md"));
+
+    let update = run_knots(&root, &db, &home, &["skills", "update", "codex"]);
+    assert_success(&update);
+    assert!(std::fs::read_to_string(&knots)
+        .expect("knots skill should exist")
+        .contains("---"));
+
+    let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    assert_success(&after);
+    let report: Value = serde_json::from_slice(&after.stdout).expect("doctor json should parse");
+    let codex = find_check(&report, "skills_codex");
+    assert_eq!(codex["status"], "pass");
+}
+
+#[test]
 fn doctor_fix_creates_missing_codex_root_and_installs_skills() {
     let root = unique_workspace("knots-cli-skills-doctor-fix-root");
     let home = unique_workspace("knots-cli-skills-home");
