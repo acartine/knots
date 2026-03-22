@@ -46,46 +46,28 @@
 ## Output
 - Approved:
   `kno update <id> --add-handoff-capsule "<review summary>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
   `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`
   `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
 - Needs revision:
   `kno update <id> --status ready_for_implementation`
   `--add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<revision needed>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
 - Critical regression:
   `kno update <id> --status ready_for_implementation`
   `--add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<critical regression>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
 
 ## Failure Modes
 - Deployment issue:
   `kno update <id> --status ready_for_shipment`
   `--add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<deployment issue>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
 - Regression detected:
   `kno update <id> --status ready_for_implementation`
   `--add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<regression details>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
 - Unable to complete review due to dirty workspace:
   Roll status back to Ready For Impl before handoff.
   `kno update <id> --status ready_for_implementation`
   `--add-note "<dirty workspace details>"`
   `kno update <id> --add-handoff-capsule "<dirty workspace handoff>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`

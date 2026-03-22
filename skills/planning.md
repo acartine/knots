@@ -40,9 +40,6 @@
 - Hierarchy of knots created
 - Add a handoff capsule summarizing the plan:
   `kno update <id> --add-handoff-capsule "<handoff_capsule>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
 - Transition:
   `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`
   `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
@@ -51,12 +48,6 @@
 - Insufficient context:
   `kno update <id> --status ready_for_planning --add-note "<note>"`
   `kno update <id> --add-handoff-capsule "<reason for deferral>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
 - Out of scope / too complex:
   `kno update <id> --status ready_for_planning --add-note "<note>"`
   `kno update <id> --add-handoff-capsule "<reason out of scope>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`

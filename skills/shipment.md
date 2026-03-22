@@ -38,9 +38,6 @@
 - CI green on remote
 - Add a handoff capsule summarizing shipment:
   `kno update <id> --add-handoff-capsule "<handoff_capsule>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
 - Transition:
   `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`
   `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`
@@ -50,13 +47,7 @@
   `kno update <id> --status ready_for_implementation`
   `--add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<merge conflict details>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
 - CI failure after merge:
   `kno update <id> --status ready_for_implementation`
   `--add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<CI failure details>"`
-  `--handoff-username <username> --handoff-datetime <date RFC3339>`
-  `--handoff-agentname <agentname> --handoff-model <model>`
-  `--handoff-version <model_version>`
