@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1aa2-2802-70e3-83b4-491ea06890f7",
+  "occurred_at": "2026-03-23T12:18:47.938541Z",
+  "knot_id": "knots-c642",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Implementation review approved. Change is minimal and correct: 2 lines in src/self_manage.rs replace the post-upgrade hint from 'kno hooks install' to 'kno doctor', and the corresponding test assertion is updated. No stale references remain. All 708 tests pass, sanity checks green, coverage unchanged at 95.26%.",
+    "datetime": "2026-03-23T12:18:47.938541Z",
+    "entry_id": "019d1aa2-2802-70e3-83b4-490184ebe255",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}

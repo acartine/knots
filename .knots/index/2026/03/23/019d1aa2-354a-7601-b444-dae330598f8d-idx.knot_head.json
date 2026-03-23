@@ -1,0 +1,20 @@
+{
+  "event_id": "019d1aa2-354a-7601-b444-dae330598f8d",
+  "occurred_at": "2026-03-23T12:18:51.338252Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-c642",
+    "profile_id": "autopilot",
+    "state": "ready_for_shipment",
+    "terminal": false,
+    "title": "kno upgrade - replace \"hint:  run `kno hooks install` to update hook templates\"",
+    "type": "work",
+    "updated_at": "2026-03-23T12:18:51.338252Z",
+    "workflow_id": "compatibility"
+  }
+}
