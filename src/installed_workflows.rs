@@ -1294,11 +1294,7 @@ fn build_profile_definition(
         to: "abandoned".to_string(),
     });
 
-    let outputs = build_outputs_from_toml_profile(
-        &profile_section.outputs,
-        &action_states,
-        states,
-    );
+    let outputs = build_outputs_from_toml_profile(&profile_section.outputs, &action_states, states);
     let owners = ProfileOwners {
         planning: default_owner(OwnerKind::Agent),
         plan_review: default_owner(OwnerKind::Human),
@@ -1788,7 +1784,10 @@ changes = "ready_for_work"
         let profile = workflow
             .require_profile("autopilot")
             .expect("profile should exist");
-        let work_output = profile.outputs.get("work").expect("work output should exist");
+        let work_output = profile
+            .outputs
+            .get("work")
+            .expect("work output should exist");
         assert_eq!(work_output.artifact_type, "branch");
         assert_eq!(work_output.access_hint.as_deref(), Some("git log"));
         let review_output = profile
@@ -2419,9 +2418,6 @@ changes = "ready_for_work"
             params.get("audience").map(String::as_str),
             Some("operators")
         );
-        assert_eq!(
-            params.get("output").map(String::as_str),
-            Some("branch")
-        );
+        assert_eq!(params.get("output").map(String::as_str), Some("branch"));
     }
 }
