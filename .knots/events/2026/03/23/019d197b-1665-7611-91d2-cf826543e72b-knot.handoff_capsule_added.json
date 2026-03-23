@@ -1,0 +1,15 @@
+{
+  "event_id": "019d197b-1665-7611-91d2-cf826543e72b",
+  "occurred_at": "2026-03-23T06:56:30.309217Z",
+  "knot_id": "knots-5204",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review approved: main is at merge commit 9682cd32f8da and origin/main matches. Verified knot tags commit:4bd3194cfc6a, commit:f1a082a3a8b2, and commit:9682cd32f8da. No invariants defined. Confirmed shipped behavior in src/managed_skills.rs updates only the preferred destination, and test update_only_writes_to_preferred_location_not_user_level passed locally. GitHub Actions completed successfully for CI, Release, Repo Hygiene, and Changesets Version PR on 9682cd32f8da; no regressions found in dependent checks.",
+    "datetime": "2026-03-23T06:56:30.309217Z",
+    "entry_id": "019d197b-1665-7611-91d2-cf7bccdf0db0",
+    "model": "opus/claude",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}
