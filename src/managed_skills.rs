@@ -279,12 +279,8 @@ fn update_managed(
         write_skills(&destination, &missing)?;
     }
 
-    let installed_locations = installed_locations(repo_root, home, tool);
-    let mut updated_paths = Vec::new();
-    for location in &installed_locations {
-        let installed = installed_skills(location);
-        updated_paths.extend(write_skills(location, &installed)?);
-    }
+    let installed = installed_skills(&destination);
+    let updated_paths = write_skills(&destination, &installed)?;
     Ok(format_changed_paths(tool, "updated", &updated_paths))
 }
 
@@ -329,6 +325,7 @@ fn preferred_location(
     })
 }
 
+#[cfg(test)]
 fn installed_locations(
     repo_root: &Path,
     home: Option<&Path>,
