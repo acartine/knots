@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1609-fc9d-7091-8a7e-fdbe3be0d102",
+  "occurred_at": "2026-03-22T14:54:06.49313Z",
+  "knot_id": "knots-2aa3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Approved implementation_review: foolery knots.ts exposes acceptance on KnotRecord and update/create inputs and serializes --acceptance on newKnot/updateKnot CLI calls. Focused backend coverage passed.",
+    "datetime": "2026-03-22T14:54:06.49313Z",
+    "entry_id": "019d1609-fc9d-7091-8a7e-fdaead0cc3ca",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

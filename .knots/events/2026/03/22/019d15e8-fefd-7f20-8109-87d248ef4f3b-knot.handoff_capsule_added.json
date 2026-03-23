@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15e8-fefd-7f20-8109-87d248ef4f3b",
+  "occurred_at": "2026-03-22T14:18:04.413974Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Planning complete (v4). Key revision from prior reviews: added legacy note compatibility strategy. Foolery toBeat() will check native knot.acceptance first, falling back to extractAcceptanceFromNotes() for old knots that still have shimmed notes. No backfill needed. Write path switches to --acceptance flag, eliminating the secondary addNote call. ACCEPTANCE_MARKER helpers retained as deprecated fallback. Seven existing child knots cover: e071 schema/model, 2bc3 events/rehydration/sync, 09f2 CLI+write path+CreateKnotOptions, 93c9 prompt+UI, 2aa3 foolery knots.ts, ed42 foolery backend migration, 28b1 comprehensive tests including legacy fallback and precedence tests. Execution order: e071→2bc3→09f2→93c9→2aa3→ed42→28b1.",
+    "datetime": "2026-03-22T14:18:04.413974Z",
+    "entry_id": "019d15e8-fefd-7f20-8109-87cf693670c2",
+    "knot_state": "planning",
+    "knot_step": "planning",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

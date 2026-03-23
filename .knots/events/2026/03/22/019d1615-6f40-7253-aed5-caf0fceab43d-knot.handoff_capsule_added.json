@@ -1,0 +1,16 @@
+{
+  "event_id": "019d1615-6f40-7253-aed5-caf0fceab43d",
+  "occurred_at": "2026-03-22T15:06:36.736901Z",
+  "knot_id": "knots-ed42",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Approved implementation review in ../foolery. Reviewed commit 55706664f98f on branch knots-2412-acceptance-field: toBeat() now uses native acceptance when present and falls back to legacy acceptance notes when knots core returns acceptance:null. Verified regression coverage for both null-with-note and null-without-note cases, and ran corepack pnpm -C ../foolery test -- --runInBand src/lib/__tests__/knots-backend-coverage.test.ts with the unit suite passing (157 files, 2161 tests passed).",
+    "datetime": "2026-03-22T15:06:36.736901Z",
+    "entry_id": "019d1615-6f40-7253-aed5-cae7dea6c08d",
+    "knot_state": "ready_for_shipment",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

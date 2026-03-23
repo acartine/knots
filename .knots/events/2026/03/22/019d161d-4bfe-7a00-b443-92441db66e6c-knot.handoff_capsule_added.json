@@ -1,0 +1,17 @@
+{
+  "event_id": "019d161d-4bfe-7a00-b443-92441db66e6c",
+  "occurred_at": "2026-03-22T15:15:11.998775Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "1. Parent cannot move to ready_for_shipment while direct child knots-28b1 is behind. 2. knots-28b1 was returned to ready_for_implementation because the remaining foolery coverage changes are not present in this repository, so the required acceptance:null backward-compat behavior could not be reviewed from code. 3. Re-run parent implementation review after the child test coverage diff is available and approved.",
+    "datetime": "2026-03-22T15:15:11.998775Z",
+    "entry_id": "019d161d-4bfe-7a00-b443-923df151f7b7",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

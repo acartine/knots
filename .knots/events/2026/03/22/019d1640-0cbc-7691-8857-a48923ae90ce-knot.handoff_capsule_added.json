@@ -1,0 +1,16 @@
+{
+  "event_id": "019d1640-0cbc-7691-8857-a48923ae90ce",
+  "occurred_at": "2026-03-22T15:53:09.564968Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "1. Core acceptance-field work is implemented and validated: temporary checkout of knots-2412-acceptance-field passed make sanity with 95.18% coverage. 2. The parent knot description also requires foolery knots-backend changes to replace the Acceptance Criteria note shim and read acceptance back in toBeat(). 3. No foolery/knots-backend sources or shim replacement exist in this repository/branch, so the reviewed implementation does not satisfy the full knot description and cannot be approved at implementation_review.",
+    "datetime": "2026-03-22T15:52:58Z",
+    "entry_id": "019d1640-0cbc-7691-8857-a475ee0a113a",
+    "knot_state": "ready_for_implementation",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5-codex"
+  }
+}

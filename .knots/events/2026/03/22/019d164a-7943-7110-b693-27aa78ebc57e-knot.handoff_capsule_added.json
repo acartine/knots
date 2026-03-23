@@ -1,0 +1,17 @@
+{
+  "event_id": "019d164a-7943-7110-b693-27aa78ebc57e",
+  "occurred_at": "2026-03-22T16:04:32.707736Z",
+  "knot_id": "knots-e071",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipped on knots main via merge commit 3fc70a7b0542. Merged knots-2412-acceptance-field into main, pushed origin/main, local make sanity passed at 95.24% coverage, and remote workflows CI, Repo Hygiene, Release, and Changesets Version PR all completed successfully for 3fc70a7b054257bb899aa1016c9fe554f36d075b.",
+    "datetime": "2026-03-22T16:04:32Z",
+    "entry_id": "019d164a-7943-7110-b693-2799d5423aae",
+    "knot_state": "shipment",
+    "knot_step": "shipment",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

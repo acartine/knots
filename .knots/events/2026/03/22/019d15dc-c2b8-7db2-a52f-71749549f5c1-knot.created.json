@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15dc-c2b8-7db2-a52f-71749549f5c1",
+  "occurred_at": "2026-03-22T14:04:42.552093Z",
+  "knot_id": "knots-2bc3",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Core events: add KnotAcceptanceSet event kind with rehydration and sync handlers",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

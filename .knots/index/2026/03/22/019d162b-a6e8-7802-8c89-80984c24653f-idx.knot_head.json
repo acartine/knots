@@ -1,0 +1,23 @@
+{
+  "event_id": "019d162b-a6e8-7802-8c89-80984c24653f",
+  "occurred_at": "2026-03-22T15:30:52.776235Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-2412",
+    "profile_id": "autopilot",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "Add acceptance criteria as a first-class knot field",
+    "type": "work",
+    "updated_at": "2026-03-22T15:30:52.776235Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d162b-59be-73e1-ad09-ff5dfe2b078a"
+  }
+}

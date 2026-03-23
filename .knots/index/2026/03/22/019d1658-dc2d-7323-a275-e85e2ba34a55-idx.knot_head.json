@@ -1,0 +1,20 @@
+{
+  "event_id": "019d1658-dc2d-7323-a275-e85e2ba34a55",
+  "occurred_at": "2026-03-22T16:20:15.533853Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-93c9",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Core prompt: render acceptance criteria section in prompt output",
+    "type": "work",
+    "updated_at": "2026-03-22T16:20:15.533853Z",
+    "workflow_id": "compatibility"
+  }
+}

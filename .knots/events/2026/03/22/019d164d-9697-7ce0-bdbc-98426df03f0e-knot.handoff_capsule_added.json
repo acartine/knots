@@ -1,0 +1,17 @@
+{
+  "event_id": "019d164d-9697-7ce0-bdbc-98426df03f0e",
+  "occurred_at": "2026-03-22T16:07:56.823718Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Approved implementation review. Verified core adds the knot_hot acceptance column, --acceptance CLI flags, KnotAcceptanceSet write and rehydration paths, sync handling, and prompt acceptance rendering. Verified foolery backend create/update use the native acceptance field and toBeat reads it back with legacy note fallback coverage. Validation passed with knots make sanity at 95.28% coverage and foolery corepack pnpm test -- --runInBand src/lib/__tests__/knots-backend-coverage.test.ts.",
+    "datetime": "2026-03-22T16:07:28Z",
+    "entry_id": "019d164d-9697-7ce0-bdbc-983d1fb481e9",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-22"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d162e-e949-7491-ad76-bdc27853914c",
+  "occurred_at": "2026-03-22T15:34:26.377636Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "All 7 child knots have advanced past implementation. 6 children (knots-09f2, knots-2aa3, knots-2bc3, knots-93c9, knots-e071, knots-ed42) are in ready_for_shipment. 1 child (knots-28b1, tests) is in ready_for_implementation_review. Parent implementation is complete — all sub-tasks covering core schema, events, CLI, prompt rendering, foolery backend, foolery CLI serialization, and test coverage have been implemented.",
+    "datetime": "2026-03-22T15:34:26.377636Z",
+    "entry_id": "019d162e-e949-7491-ad76-bdb07e105a95",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

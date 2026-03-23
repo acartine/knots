@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15ee-8c1c-72d0-8678-6ff15abed044",
+  "occurred_at": "2026-03-22T14:24:08.220087Z",
+  "knot_id": "knots-97eb",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Shipment review approved. Merge commit f4461ffb57cd live on main. All 4 CI workflows green. All 4 commits tagged. No invariants to check. Files changed match plan scope (managed_skills.rs, managed_skills_output.rs, managed_skills_state.rs, managed_skills_tests.rs, cli_skills.rs, self_manage.rs, changeset). All files under 500-line limit. No regressions detected.",
+    "datetime": "2026-03-22T14:24:08.220087Z",
+    "entry_id": "019d15ee-8c1c-72d0-8678-6fef6ce1d9f6",
+    "knot_state": "shipment_review",
+    "knot_step": "shipment_review",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

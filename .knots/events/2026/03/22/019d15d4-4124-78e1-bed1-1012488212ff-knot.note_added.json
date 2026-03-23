@@ -1,0 +1,15 @@
+{
+  "event_id": "019d15d4-4124-78e1-bed1-1012488212ff",
+  "occurred_at": "2026-03-22T13:55:25.092247Z",
+  "knot_id": "knots-25b6",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation plan\n\n- Scope: change explicit `kno sync` only. `kno push` and `kno pull` should remain blocked by active leases. Reuse the existing `sync_pending` metadata as the queue marker instead of introducing a second queue store.\n- Service/API changes:\n  1. Update `src/replication.rs` so `ReplicationService::sync_with_progress` detects active leases before starting push/pull, marks the sync as queued, emits a deferred message, and returns success instead of `SyncError::ActiveLeasesExist`.\n  2. Extend the explicit sync result shape used by `src/app.rs`/`src/main.rs` so text and `--json` output can represent a deferred sync without inventing fake push/pull numbers. Keep `push` and `pull` behavior unchanged.\n  3. Add small helpers around `sync_pending` in `src/db.rs` and/or `src/app.rs` so lease teardown can reliably detect whether an explicit sync is waiting.\n- Lease-trigger changes:\n  1. Add a helper in `src/lease.rs` (or an adjacent app-level helper) that checks `sync_pending` after lease termination paths complete.\n  2. Call that helper from both direct lease termination and the `next` path that silently unbinds/terminates a bound lease in `src/write_dispatch.rs`, so the queued sync runs when the last active lease is gone.\n  3. Make the trigger best-effort: if the follow-up sync fails for network/git reasons, preserve the successful lease termination, leave `sync_pending=true`, and avoid surfacing a new failure from `kno next` / `kno lease terminate`.\n- Files expected to change:\n  - `src/replication.rs`\n  - `src/lease.rs`\n  - `src/app.rs`\n  - `src/db.rs`\n  - `src/main.rs`\n  - `src/replication/tests.rs`\n  - `tests/cli_dispatch.rs`\n  - `README.md`\n- Test strategy:\n  1. Update `src/replication/tests.rs` so `sync` with active leases succeeds in a deferred state and records queue metadata, while `push`/`pull` still fail.\n  2. Add lease teardown coverage to verify terminating the last active lease consumes the queued sync, while terminating one of several active leases does not.\n  3. Add CLI coverage for deferred `kno sync` in text and JSON modes so the message/flag is user-visible and machine-parseable.\n  4. Add a failure-path test to confirm a triggered sync that still cannot complete leaves the queue pending for a later retry.\n- Risks / design constraints:\n  - The JSON shape for `kno sync --json` needs a stable way to encode a deferred result.\n  - The deferred trigger must run only after lease state changes are durable and locks are released enough to avoid self-deadlock.\n  - Auto-triggered sync should not turn a successful lease termination into a failed command.\n- Complexity: moderate, single focused implementation; no child knots are needed for planning.",
+    "datetime": "2026-03-22T13:54:29Z",
+    "entry_id": "019d15d4-4124-78e1-bed1-100d03e21040",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

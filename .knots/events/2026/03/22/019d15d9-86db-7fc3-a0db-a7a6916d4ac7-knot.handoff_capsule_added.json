@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15d9-86db-7fc3-a0db-a7a6916d4ac7",
+  "occurred_at": "2026-03-22T14:01:10.619745Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan review requested revision. Clarify that create must emit a dedicated knot.acceptance_set event or equivalently expand created-event projection across sync/rehydration, and extend the plan to cover foolery wrapper serialization plus test updates for the first-class acceptance field.",
+    "datetime": "2026-03-22T14:01:02Z",
+    "entry_id": "019d15d9-86db-7fc3-a0db-a790267f0bea",
+    "knot_state": "plan_review",
+    "knot_step": "plan_review",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "unknown"
+  }
+}

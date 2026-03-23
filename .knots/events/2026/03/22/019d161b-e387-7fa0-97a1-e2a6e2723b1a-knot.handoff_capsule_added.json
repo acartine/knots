@@ -1,0 +1,17 @@
+{
+  "event_id": "019d161b-e387-7fa0-97a1-e2a6e2723b1a",
+  "occurred_at": "2026-03-22T15:13:39.719369Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Approved implementation review. Verified the acceptance field is first-class across schema/cache upserts, create/update CLI/write-dispatch plumbing, knot.acceptance_set event emission plus rehydration and sync application, and prompt rendering so acceptance criteria appear in action prompts. Acceptance-focused tests cover create/update round-trip, rehydrate from events, sync application, and CLI flag parsing. make sanity passed on 2026-03-22 with fmt, clippy, full test suite, and 95.18% coverage.",
+    "datetime": "2026-03-22T15:13:39.719369Z",
+    "entry_id": "019d161b-e387-7fa0-97a1-e291b46e0e92",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

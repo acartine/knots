@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1603-e916-7273-9bd4-879474e3a62e",
+  "occurred_at": "2026-03-22T14:47:28.278023Z",
+  "knot_id": "knots-93c9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Exposed acceptance on KnotView and prompt rendering so execution prompts now show a dedicated Acceptance Criteria section when a knot carries acceptance text.",
+    "datetime": "2026-03-22T14:47:28Z",
+    "entry_id": "019d1603-e916-7273-9bd4-87850cbba9a1",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

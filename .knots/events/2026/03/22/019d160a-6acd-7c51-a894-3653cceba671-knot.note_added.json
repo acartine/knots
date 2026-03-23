@@ -1,0 +1,15 @@
+{
+  "event_id": "019d160a-6acd-7c51-a894-3653cceba671",
+  "occurred_at": "2026-03-22T14:54:34.70129Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Needs changes: child reviews ed42 and 28b1 failed. The foolery read path drops legacy acceptance notes when knots core returns acceptance:null, and the added coverage does not test that real JSON shape.",
+    "datetime": "2026-03-22T14:54:34.70129Z",
+    "entry_id": "019d160a-6acd-7c51-a894-364f76e595d4",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1636-2ff6-72e0-9d89-ea84c8e073e4",
+  "occurred_at": "2026-03-22T15:42:23.222909Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implementation blocked on 2026-03-22 after child knot 28b1 failed review. Core Rust acceptance-field work exists on knots-2412-acceptance-field and passes make sanity, but this repository does not contain the foolery knots-backend sources/tests required to complete and verify the full acceptance-field scope.",
+    "datetime": "2026-03-22T15:42:23.222909Z",
+    "entry_id": "019d1636-2ff6-72e0-9d89-ea702787fc1b",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

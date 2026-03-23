@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1603-e84c-72c2-bb93-288557b47cf1",
+  "occurred_at": "2026-03-22T14:47:28.07621Z",
+  "knot_id": "knots-e071",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented native acceptance storage in knots core by adding the knot_hot acceptance column, wiring cache and upsert structs, and updating snapshot and test fixtures for the new field.",
+    "datetime": "2026-03-22T14:47:28Z",
+    "entry_id": "019d1603-e84c-72c2-bb93-28789f58e113",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

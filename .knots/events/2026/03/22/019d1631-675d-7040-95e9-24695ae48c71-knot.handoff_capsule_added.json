@@ -1,0 +1,16 @@
+{
+  "event_id": "019d1631-675d-7040-95e9-24695ae48c71",
+  "occurred_at": "2026-03-22T15:37:09.725457Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "1. The knot_hot schema, KnotCacheRecord, and UpsertKnotHot do not include an acceptance field, so the required first-class persistence layer is missing. 2. The CLI only exposes --desc/--description and has no --acceptance flag for create or update. 3. Full event handling defines knot.description_set but no knot.acceptance_set, and sync/rehydration project only description/body. 4. Workflow prompt acceptance rendering exists, but it is profile prompt acceptance, not knot acceptance criteria persisted on knots. 5. The foolery knots-backend migration required by the knot description cannot be verified in this repository because there are no foolery backend files such as knots.ts, toBeat, or addNote. 6. make sanity passed during review, so the rejection is based on specification drift rather than failing gates.",
+    "datetime": "2026-03-22T15:37:09.725457Z",
+    "entry_id": "019d1631-675d-7040-95e9-245a3a21bf34",
+    "knot_state": "ready_for_implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

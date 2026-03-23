@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15cb-f0d2-7dd0-99d8-9900eb76ef36",
+  "occurred_at": "2026-03-22T13:46:20.242083Z",
+  "knot_id": "knots-2412",
+  "type": "knot.created",
+  "data": {
+    "body": "Acceptance criteria is currently shimmed in the foolery knots-backend by appending it as a note with an 'Acceptance Criteria:' prefix. This is write-only — toBeat() does not extract it back from notes on read, so acceptance criteria is lost on round-trip through the knots backend.\n\nAdd a dedicated acceptance field (Option<String>) to the knot data model, parallel to description/body. This requires:\n\n1. knots core: Add 'acceptance' column to knot_hot schema, add field to KnotCacheRecord/UpsertKnotHot, add --acceptance CLI flag to create/update, add knot.acceptance_set event kind, update rehydration and sync.\n2. foolery knots-backend: Switch from addNote shim to the new acceptance field on create/update, and read it back in toBeat().\n3. Workflow prompts: Include acceptance criteria in skill prompts so agents see them during execution.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_with_pr",
+    "state": "ready_for_planning",
+    "title": "Add acceptance criteria as a first-class knot field",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

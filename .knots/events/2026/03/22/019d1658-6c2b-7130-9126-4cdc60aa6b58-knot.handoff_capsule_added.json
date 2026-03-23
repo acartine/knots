@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1658-6c2b-7130-9126-4cdc60aa6b58",
+  "occurred_at": "2026-03-22T16:19:46.859455Z",
+  "knot_id": "knots-93c9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review approved. Acceptance Criteria section rendered in prompt output when acceptance is present. KnotView wired from KnotCacheRecord. Tests cover prompt rendering. Code verified on main (3fc70a7b0542), CI green, make sanity passes at 95.23%.",
+    "datetime": "2026-03-22T16:19:46.859455Z",
+    "entry_id": "019d1658-6c2b-7130-9126-4cce3192745b",
+    "knot_state": "shipment_review",
+    "knot_step": "shipment_review",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

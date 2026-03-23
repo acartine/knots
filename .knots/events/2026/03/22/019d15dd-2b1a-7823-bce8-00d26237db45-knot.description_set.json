@@ -1,0 +1,9 @@
+{
+  "event_id": "019d15dd-2b1a-7823-bce8-00d26237db45",
+  "occurred_at": "2026-03-22T14:05:09.274342Z",
+  "knot_id": "knots-2aa3",
+  "type": "knot.description_set",
+  "data": {
+    "description": "In ../foolery/src/lib/knots.ts: add acceptance?: string to KnotRecord. Add acceptance to KnotUpdateInput/KnotCreateInput. Serialize as --acceptance flag in newKnot() and updateKnot() CLI calls. Parse from kno show --json output."
+  }
+}

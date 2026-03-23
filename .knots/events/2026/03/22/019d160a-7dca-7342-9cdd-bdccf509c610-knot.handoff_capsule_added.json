@@ -1,0 +1,16 @@
+{
+  "event_id": "019d160a-7dca-7342-9cdd-bdccf509c610",
+  "occurred_at": "2026-03-22T14:54:39.56271Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "1. Child review ed42 found that ../foolery/src/lib/backends/knots-backend.ts only falls back to legacy acceptance notes when the acceptance property is absent. The new knots core serializes acceptance as null when unset, so old note-backed acceptance is still lost on read. 2. Child review 28b1 found the foolery coverage does not exercise that acceptance:null shape, so the backward-compat regression is not caught by the added tests.",
+    "datetime": "2026-03-22T14:54:39.56271Z",
+    "entry_id": "019d160a-7dca-7342-9cdd-bdb5afa530e0",
+    "knot_state": "ready_for_implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

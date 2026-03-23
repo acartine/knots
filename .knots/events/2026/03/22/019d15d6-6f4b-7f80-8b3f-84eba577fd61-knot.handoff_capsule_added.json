@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15d6-6f4b-7f80-8b3f-84eba577fd61",
+  "occurred_at": "2026-03-22T13:57:47.97948Z",
+  "knot_id": "knots-25b6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Plan review approved. All referenced code structures confirmed to exist (SyncError::ActiveLeasesExist, sync_pending metadata, termination paths in lease.rs and write_dispatch.rs). No lock/reentrancy risks. Reusing sync_pending is the right call. Notes for implementer: (1) target files already exceed 500-line limit, minimize additions; (2) JSON shape extension should use optional field for backward compat; (3) best-effort trigger must not fail the lease termination command.",
+    "datetime": "2026-03-22T13:57:47.97948Z",
+    "entry_id": "019d15d6-6f4b-7f80-8b3f-84d9e538f0c4",
+    "knot_state": "plan_review",
+    "knot_step": "plan_review",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

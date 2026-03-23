@@ -1,0 +1,23 @@
+{
+  "event_id": "019d15ee-5ce3-74e2-8a13-e0c6afd4698f",
+  "occurred_at": "2026-03-22T14:23:56.131964Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-e071",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation",
+    "terminal": false,
+    "title": "Core schema & data model: add acceptance column and cache struct fields",
+    "type": "work",
+    "updated_at": "2026-03-22T14:23:56.131964Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d15dd-1538-7ef3-a09e-1dd411634c95"
+  }
+}

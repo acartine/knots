@@ -1,0 +1,16 @@
+{
+  "event_id": "019d160a-322c-7af2-834d-82321e0a476d",
+  "occurred_at": "2026-03-22T14:54:20.204307Z",
+  "knot_id": "knots-ed42",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "1. ../foolery/src/lib/backends/knots-backend.ts toBeat() only falls back to note extraction when the acceptance property is absent. The new knots core serializes KnotView.acceptance as null when unset, so legacy note-backed acceptance disappears on read. This violates the requirement to read knot.acceptance directly with note-extraction fallback for old data.",
+    "datetime": "2026-03-22T14:54:20.204307Z",
+    "entry_id": "019d160a-322c-7af2-834d-822328917a97",
+    "knot_state": "ready_for_implementation",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

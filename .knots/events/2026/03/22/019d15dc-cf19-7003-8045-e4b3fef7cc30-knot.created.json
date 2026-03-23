@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15dc-cf19-7003-8045-e4b3fef7cc30",
+  "occurred_at": "2026-03-22T14:04:45.721855Z",
+  "knot_id": "knots-ed42",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Foolery knots-backend: replace addNote shim with native acceptance field",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "event_id": "019d1655-a656-7b53-970d-63a94ce8d088",
+  "occurred_at": "2026-03-22T16:16:45.142283Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-28b1",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "Tests: acceptance field coverage across knots core and foolery",
+    "type": "work",
+    "updated_at": "2026-03-22T16:16:45.142283Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d1650-463b-7362-9665-ae25254d8969"
+  }
+}

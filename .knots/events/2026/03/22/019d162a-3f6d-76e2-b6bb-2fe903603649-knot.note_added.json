@@ -1,0 +1,15 @@
+{
+  "event_id": "019d162a-3f6d-76e2-b6bb-2fe903603649",
+  "occurred_at": "2026-03-22T15:29:20.748976Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation review rejected: knots-core acceptance-field changes on branch knots-2412-acceptance-field passed make sanity, but the parent spec also requires foolery knots-backend create/update/toBeat acceptance support. This repository contains no foolery backend files or diffs to review, so the parent knot is incomplete against its description.",
+    "datetime": "2026-03-22T15:28:59Z",
+    "entry_id": "019d162a-3f6d-76e2-b6bb-2fd15437d93c",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "2026-03-22"
+  }
+}

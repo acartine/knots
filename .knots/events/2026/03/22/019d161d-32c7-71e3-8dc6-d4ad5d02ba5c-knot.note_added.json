@@ -1,0 +1,15 @@
+{
+  "event_id": "019d161d-32c7-71e3-8dc6-d4ad5d02ba5c",
+  "occurred_at": "2026-03-22T15:15:05.543886Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Needs changes: review cannot verify the foolery acceptance coverage from this repository because the cited commits (ca6ed9a32fe4, 55706664f98f) are not present here, so the acceptance:null legacy-fallback behavior remains unreviewed against code.",
+    "datetime": "2026-03-22T15:15:05.543886Z",
+    "entry_id": "019d161d-32c7-71e3-8dc6-d492221338eb",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

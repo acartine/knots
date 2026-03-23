@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1635-5520-72b0-94cb-97ebc1cfddcb",
+  "occurred_at": "2026-03-22T15:41:27.200329Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Needs changes: core acceptance tests and make sanity pass on knots-2412-acceptance-field, but the required foolery coverage from the knot description is still not present or reviewable in this repository. No foolery backend sources or knots-backend-coverage.test.ts files exist here, so the native-field read path and backward-compat note fallback remain unverified.",
+    "datetime": "2026-03-22T15:41:27.200329Z",
+    "entry_id": "019d1635-5520-72b0-94cb-97d1ec1fdd8a",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

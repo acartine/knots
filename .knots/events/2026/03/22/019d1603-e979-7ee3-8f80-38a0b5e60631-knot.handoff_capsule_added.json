@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1603-e979-7ee3-8f80-38a0b5e60631",
+  "occurred_at": "2026-03-22T14:47:28.377033Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Added regression coverage for acceptance round trip behavior in knots core and foolery, then verified with make sanity at 95.04 percent coverage and the targeted foolery backend test.",
+    "datetime": "2026-03-22T14:47:28Z",
+    "entry_id": "019d1603-e979-7ee3-8f80-389e8cbf3c96",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

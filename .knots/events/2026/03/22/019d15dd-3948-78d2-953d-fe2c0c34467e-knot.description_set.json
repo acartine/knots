@@ -1,0 +1,9 @@
+{
+  "event_id": "019d15dd-3948-78d2-953d-fe2c0c34467e",
+  "occurred_at": "2026-03-22T14:05:12.904806Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Add tests for: acceptance round-trip create→rehydrate→KnotView, update→event→sync, prompt rendering with acceptance section, CLI integration with --acceptance flag. Update foolery knots-backend-coverage.test.ts for native field read path and backward-compat note fallback."
+  }
+}

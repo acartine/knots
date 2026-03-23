@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1654-f054-79d1-ab6b-ad77f8e46b43",
+  "occurred_at": "2026-03-22T16:15:58.548624Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review blocked on child workflow completion. Verified knots main merge 3fc70a7b0542 with successful GitHub Actions (CI, Repo Hygiene, Release, Changesets Version PR) and foolery main merge 3afbd2f70345 with successful GitHub Actions (CI, Coverage Badge), but the parent prompt requires child knots to be handled first. Current child states are: knots-09f2 shipment_review, knots-e071 shipment_review, and knots-28b1, knots-2aa3, knots-2bc3, knots-93c9, knots-ed42 ready_for_shipment_review.",
+    "datetime": "2026-03-22T16:15:58.548624Z",
+    "entry_id": "019d1654-f054-79d1-ab6b-ad690fa3c52f",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

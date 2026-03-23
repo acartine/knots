@@ -1,0 +1,16 @@
+{
+  "event_id": "019d160a-5684-7bd0-b0c1-a0cf81383eee",
+  "occurred_at": "2026-03-22T14:54:29.508488Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "1. The foolery coverage exercises only the omitted-acceptance fallback, not the actual kno show shape where acceptance is present as null. Because of that gap, the tests do not catch the required backward-compat note fallback regression.",
+    "datetime": "2026-03-22T14:54:29.508488Z",
+    "entry_id": "019d160a-5684-7bd0-b0c1-a0ba82fae7d3",
+    "knot_state": "ready_for_implementation",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

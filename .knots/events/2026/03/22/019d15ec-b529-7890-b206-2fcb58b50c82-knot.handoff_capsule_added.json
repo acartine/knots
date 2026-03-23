@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15ec-b529-7890-b206-2fcb58b50c82",
+  "occurred_at": "2026-03-22T14:22:07.65694Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan review approved. The decomposition matches the code paths that need to change: knot_hot schema/cache, create and update event emission, rehydration and sync application, queued CLI write plumbing, KnotView/prompt/show rendering, and the foolery knots.ts plus knots-backend bridge. The legacy compatibility fallback in toBeat() is the right migration strategy and the test plan covers native field reads, legacy note fallback, precedence, and round-trip behavior. Implementation note: keep knot-level acceptance clearly distinguished from the existing profile-level prompt acceptance section so execution prompts do not end up with two ambiguous headings.",
+    "datetime": "2026-03-22T14:21:17Z",
+    "entry_id": "019d15ec-b529-7890-b206-2fb5341396c6",
+    "knot_state": "plan_review",
+    "knot_step": "plan_review",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

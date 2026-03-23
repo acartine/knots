@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15d5-f67b-7b20-b35b-b3d84c4dcd2f",
+  "occurred_at": "2026-03-22T13:57:17.051789Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan complete. Adds acceptance (Option<String>) as a first-class knot field across all layers: v12 schema migration, KnotCacheRecord/UpsertKnotHot/KnotView structs, KnotAcceptanceSet event kind, --acceptance CLI flag on new/update, rehydration, sync, UI show, and prompt rendering. Follows existing description/body patterns exactly. Medium complexity, ~12 files, all mechanical. Knot-level acceptance renders separately from profile-level acceptance in prompts.",
+    "datetime": "2026-03-22T13:57:17.051789Z",
+    "entry_id": "019d15d5-f67b-7b20-b35b-b3cc1612e105",
+    "knot_state": "planning",
+    "knot_step": "planning",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

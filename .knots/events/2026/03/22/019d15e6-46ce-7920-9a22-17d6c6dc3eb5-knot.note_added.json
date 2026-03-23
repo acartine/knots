@@ -1,0 +1,15 @@
+{
+  "event_id": "019d15e6-46ce-7920-9a22-17d6c6dc3eb5",
+  "occurred_at": "2026-03-22T14:15:06.19013Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan review requested revision: the current plan drops the earlier legacy acceptance-note fallback without replacing it with a migration/backfill strategy. Re-plan to preserve existing note-backed acceptance data during rollout, and specify tests for legacy note compatibility plus the new native acceptance field.",
+    "datetime": "2026-03-22T14:15:06.19013Z",
+    "entry_id": "019d15e6-46ce-7920-9a22-17c8434ad43a",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

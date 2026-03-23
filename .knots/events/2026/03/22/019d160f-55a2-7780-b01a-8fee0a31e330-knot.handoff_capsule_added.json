@@ -1,0 +1,17 @@
+{
+  "event_id": "019d160f-55a2-7780-b01a-8fee0a31e330",
+  "occurred_at": "2026-03-22T14:59:56.962091Z",
+  "knot_id": "knots-ed42",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Fixed toBeat() backward-compat: replaced hasOwnProperty+ternary with nullish coalescing (nativeAcceptance ?? extractAcceptanceFromNotes) so that acceptance:null from knots core correctly falls back to legacy note extraction. Commit 55706664f98f on knots-2412-acceptance-field branch in foolery.",
+    "datetime": "2026-03-22T14:59:56.962091Z",
+    "entry_id": "019d160f-55a2-7780-b01a-8fd8e7da81ef",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

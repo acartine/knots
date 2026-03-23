@@ -1,0 +1,17 @@
+{
+  "event_id": "019d164a-994c-7d03-ac7e-7ef69dbc070c",
+  "occurred_at": "2026-03-22T16:04:40.908491Z",
+  "knot_id": "knots-2aa3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipped on foolery main via merge commit 3afbd2f70345. Merged knots-2412-acceptance-field into main, synced with the latest remote main during shipment, reran the merged backend suite in a clean shipment worktree, pushed origin/main, and remote workflows CI and Coverage Badge completed successfully for 3afbd2f703455067ec9a38275b604e124465b144.",
+    "datetime": "2026-03-22T16:04:40Z",
+    "entry_id": "019d164a-994c-7d03-ac7e-7ee5c65ede27",
+    "knot_state": "shipment",
+    "knot_step": "shipment",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

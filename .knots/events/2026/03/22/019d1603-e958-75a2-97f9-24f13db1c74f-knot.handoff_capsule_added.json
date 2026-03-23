@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1603-e958-75a2-97f9-24f13db1c74f",
+  "occurred_at": "2026-03-22T14:47:28.344372Z",
+  "knot_id": "knots-ed42",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Updated foolery knots-backend to read native acceptance, preserve legacy note fallback for older knots, and stop writing acceptance through addNote shims on create and update.",
+    "datetime": "2026-03-22T14:47:28Z",
+    "entry_id": "019d1603-e958-75a2-97f9-24ebd9c8b381",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

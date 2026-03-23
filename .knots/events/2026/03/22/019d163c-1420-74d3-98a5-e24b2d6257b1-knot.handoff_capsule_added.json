@@ -1,0 +1,17 @@
+{
+  "event_id": "019d163c-1420-74d3-98a5-e24b2d6257b1",
+  "occurred_at": "2026-03-22T15:48:49.312563Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implementation complete for core Rust acceptance-field tests. Branch knots-2412-acceptance-field rebased on main (21bd738), make sanity passes at 95.22% coverage (707 tests). Test files: tests_acceptance_ext.rs (round-trip create/rehydrate, update/event, JSON shape, clear), sync/apply_tests_acceptance_ext.rs (sync handlers), cli_tests.rs (--acceptance flag parsing). The foolery knots-backend-coverage.test.ts tests referenced in the description cannot be implemented in this repository as foolery sources are not present here — that coverage should be addressed in the foolery repository separately.",
+    "datetime": "2026-03-22T15:48:49.312563Z",
+    "entry_id": "019d163c-1420-74d3-98a5-e231a7a20e40",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

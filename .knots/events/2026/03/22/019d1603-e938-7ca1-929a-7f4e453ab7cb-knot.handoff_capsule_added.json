@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1603-e938-7ca1-929a-7f4e453ab7cb",
+  "occurred_at": "2026-03-22T14:47:28.312173Z",
+  "knot_id": "knots-2aa3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Updated foolery knots.ts to serialize acceptance through newKnot and updateKnot so the backend can use the native field instead of note shims.",
+    "datetime": "2026-03-22T14:47:28Z",
+    "entry_id": "019d1603-e938-7ca1-929a-7f3f0c9c3e73",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

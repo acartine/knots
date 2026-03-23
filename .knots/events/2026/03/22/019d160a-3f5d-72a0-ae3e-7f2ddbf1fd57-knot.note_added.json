@@ -1,0 +1,15 @@
+{
+  "event_id": "019d160a-3f5d-72a0-ae3e-7f2ddbf1fd57",
+  "occurred_at": "2026-03-22T14:54:23.58166Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Needs changes: the foolery coverage misses the real acceptance:null JSON shape from knots core, so it does not catch the backward-compat regression in legacy note fallback.",
+    "datetime": "2026-03-22T14:54:23.58166Z",
+    "entry_id": "019d160a-3f5d-72a0-ae3e-7f1b1e79a819",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

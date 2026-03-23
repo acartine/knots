@@ -1,0 +1,9 @@
+{
+  "event_id": "019d15dd-3552-7983-9d3c-8daa0c8a72e3",
+  "occurred_at": "2026-03-22T14:05:11.890555Z",
+  "knot_id": "knots-ed42",
+  "type": "knot.description_set",
+  "data": {
+    "description": "In ../foolery/src/lib/backends/knots-backend.ts: update toBeat() to read knot.acceptance directly (with note-extraction fallback for old data). Update create/update to pass acceptance to knots API instead of addNote shim. Keep ACCEPTANCE_MARKER as deprecated fallback."
+  }
+}

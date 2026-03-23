@@ -1,0 +1,16 @@
+{
+  "event_id": "019d1655-03b0-7861-aa64-9f309c0950ab",
+  "occurred_at": "2026-03-22T16:16:03.504981Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review rolled back to ready_for_shipment. The shipped code is on main in both repos: knots merge 3fc70a7b0542 is at origin/main with successful GitHub Actions (CI, Repo Hygiene, Release, Changesets Version PR), and foolery merge 3afbd2f70345 has successful GitHub Actions (CI, Coverage Badge). I am not approving the parent yet because its prompt requires child knots to be handled first, and all children remain unreviewed: 09f2/e071 in shipment_review and 28b1/2aa3/2bc3/93c9/ed42 in ready_for_shipment_review.",
+    "datetime": "2026-03-22T16:16:03.504981Z",
+    "entry_id": "019d1655-03b0-7861-aa64-9f25fc51fc40",
+    "knot_state": "ready_for_shipment",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

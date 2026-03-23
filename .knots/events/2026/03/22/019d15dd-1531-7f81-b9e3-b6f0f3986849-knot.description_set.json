@@ -1,0 +1,9 @@
+{
+  "event_id": "019d15dd-1531-7f81-b9e3-b6f0f3986849",
+  "occurred_at": "2026-03-22T14:05:03.665552Z",
+  "knot_id": "knots-e071",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Add acceptance TEXT column via migration v12 in src/db.rs. Add acceptance: Option<String> to KnotCacheRecord and acceptance: Option<&str> to UpsertKnotHot. Wire through upsert_knot_hot() INSERT/UPDATE SQL and row_to_knot_cache_record() SELECT. Bump SCHEMA_VERSION to 12."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1658-88de-7191-bcd0-6b4809af5beb",
+  "occurred_at": "2026-03-22T16:19:54.206907Z",
+  "knot_id": "knots-ed42",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review approved. toBeat() reads knot.acceptance natively with nullish coalescing fallback to extractAcceptanceFromNotes for legacy data. Fix commit 55706664 addresses the acceptance:null fallback issue noted by cartine. Create/update pass acceptance to knots CLI. Code verified on foolery main (3afbd2f70345), CI green.",
+    "datetime": "2026-03-22T16:19:54.206907Z",
+    "entry_id": "019d1658-88de-7191-bcd0-6b3f45df8cf1",
+    "knot_state": "shipment_review",
+    "knot_step": "shipment_review",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1618-706d-72c3-8d0a-70c0a7c80508",
+  "occurred_at": "2026-03-22T15:09:53.645464Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Validated branch knots-2412-acceptance-field at commits 3615af16914b and 3d4181f1029e. Acceptance is now first-class in knot_hot, CLI create/update, events/rehydration/sync, and prompt rendering. Added acceptance-focused app and sync tests. make sanity passed on 2026-03-22, including fmt, clippy, 700 unit tests, integration tests, and 95.05% coverage.",
+    "datetime": "2026-03-22T15:09:53.645464Z",
+    "entry_id": "019d1618-706d-72c3-8d0a-70b707d80c73",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

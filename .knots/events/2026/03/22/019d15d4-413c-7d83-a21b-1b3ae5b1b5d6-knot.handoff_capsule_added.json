@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15d4-413c-7d83-a21b-1b3ae5b1b5d6",
+  "occurred_at": "2026-03-22T13:55:25.116504Z",
+  "knot_id": "knots-25b6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan captured for a focused implementation: make explicit `kno sync` queue via `sync_pending` when leases are active, keep `push`/`pull` blocking, and trigger a best-effort queued sync from lease termination/unbind paths once the last active lease is gone. Main risks are the deferred sync result schema and avoiding lock/reentrancy issues during the post-lease trigger.",
+    "datetime": "2026-03-22T13:54:29Z",
+    "entry_id": "019d15d4-413c-7d83-a21b-1b2f381aa84c",
+    "knot_state": "planning",
+    "knot_step": "planning",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

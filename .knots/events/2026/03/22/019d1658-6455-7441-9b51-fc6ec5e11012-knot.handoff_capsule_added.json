@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1658-6455-7441-9b51-fc6ec5e11012",
+  "occurred_at": "2026-03-22T16:19:44.853868Z",
+  "knot_id": "knots-2bc3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review approved. KnotAcceptanceSet event kind added mapping to knot.acceptance_set string. Rehydration and sync handlers present. Code verified on main (3fc70a7b0542), CI green, make sanity passes at 95.23%.",
+    "datetime": "2026-03-22T16:19:44.853868Z",
+    "entry_id": "019d1658-6455-7441-9b51-fc5d8ad76875",
+    "knot_state": "shipment_review",
+    "knot_step": "shipment_review",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

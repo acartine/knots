@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1640-0c9f-70a1-8bdd-c90d120d7b4e",
+  "occurred_at": "2026-03-22T15:53:09.535161Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implementation review rejected: the reviewed branch passes make sanity for knots core, but the parent knot description is still incomplete because the required foolery knots-backend acceptance-field migration is not present in the reviewed code.",
+    "datetime": "2026-03-22T15:53:09.535161Z",
+    "entry_id": "019d1640-0c9f-70a1-8bdd-c8f572726173",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

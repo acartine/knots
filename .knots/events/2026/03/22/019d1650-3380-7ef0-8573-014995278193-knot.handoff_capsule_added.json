@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1650-3380-7ef0-8573-014995278193",
+  "occurred_at": "2026-03-22T16:10:48.064078Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment complete: acceptance field test coverage merged to main via 3fc70a7b0542. make sanity passes at 95.24% coverage. Tests include JSON shape tests for acceptance field serialization (7cb33baa0c33) and acceptance round-trip/rehydrate/sync coverage in the main implementation commit.",
+    "datetime": "2026-03-22T16:10:48.064078Z",
+    "entry_id": "019d1650-3380-7ef0-8573-01378978482d",
+    "knot_state": "shipment",
+    "knot_step": "shipment",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

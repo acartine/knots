@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1625-3201-77f0-8d1f-7c34cb5baf16",
+  "occurred_at": "2026-03-22T15:23:49.633938Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Added 3 JSON shape tests for acceptance field serialization contract: (1) acceptance serializes as null when unset, (2) acceptance serializes as string when set, (3) acceptance reverts to null after clearing. These tests verify the backward-compat JSON shape that foolery consumes via kno show --json. All 703 tests pass, 95.05% coverage. Commit 43fee5599c13 on knots-2412-acceptance-field.",
+    "datetime": "2026-03-22T15:23:49.633938Z",
+    "entry_id": "019d1625-3201-77f0-8d1f-7c295d8852c5",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

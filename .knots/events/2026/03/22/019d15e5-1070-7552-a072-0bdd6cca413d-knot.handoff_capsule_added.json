@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15e5-1070-7552-a072-0bdd6cca413d",
+  "occurred_at": "2026-03-22T14:13:46.73616Z",
+  "knot_id": "knots-25b6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Implementation complete on branch worktree-knots-25b6-deferred-sync. Changes: (1) Added SyncOutcome enum to replication.rs with Completed/Deferred variants, (2) Added sync_or_defer_with_progress to ReplicationService and App that returns Deferred instead of erroring on active leases and marks sync_pending, (3) Added trigger_queued_sync to App that best-effort runs queued sync when no active leases remain, (4) Hooked trigger into lease unbind_lease and execute_lease_terminate in write_dispatch.rs, (5) Updated main.rs Sync handler to use sync_or_defer and display deferred message in text/JSON, (6) Added 4 unit tests for trigger_queued_sync and 1 replication test for sync_or_defer. Push/pull remain blocked by active leases. Make sanity passes at 95.22% coverage.",
+    "datetime": "2026-03-22T14:13:46.73616Z",
+    "entry_id": "019d15e5-1070-7552-a072-0bc517f65aac",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

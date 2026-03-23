@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15dc-c7e0-7af3-8cfa-4c78fe66b962",
+  "occurred_at": "2026-03-22T14:04:43.872658Z",
+  "knot_id": "knots-93c9",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Core prompt: render acceptance criteria section in prompt output",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

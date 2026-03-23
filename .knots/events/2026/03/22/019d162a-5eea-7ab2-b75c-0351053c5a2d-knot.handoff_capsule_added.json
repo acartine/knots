@@ -1,0 +1,16 @@
+{
+  "event_id": "019d162a-5eea-7ab2-b75c-0351053c5a2d",
+  "occurred_at": "2026-03-22T15:29:28.810148Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "1. The parent knot description requires foolery knots-backend changes to replace the addNote acceptance shim and read acceptance back in toBeat(); no foolery backend files or diffs are present in this repository, so that required behavior is not implemented or reviewable from the code under review. 2. Knots-core validation passed in an isolated checkout of branch knots-2412-acceptance-field with make sanity and 95.19% coverage, but that does not satisfy the missing backend scope, so the parent knot cannot be approved as complete.",
+    "datetime": "2026-03-22T15:28:59Z",
+    "entry_id": "019d162a-5eea-7ab2-b75c-0341a169f6b4",
+    "knot_state": "ready_for_implementation",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "2026-03-22"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1650-bf6f-74b1-b2aa-f38e65ffd241",
+  "occurred_at": "2026-03-22T16:11:23.887303Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "foolery",
+    "content": "Foolery take-loop: rolled back from shipment to ready_for_shipment — agent \"Claude\" left knot in action state",
+    "datetime": "2026-03-22T16:11:23.887303Z",
+    "entry_id": "019d1650-bf6f-74b1-b2aa-f37d7be55c9f",
+    "model": "opus/claude",
+    "username": "foolery",
+    "version": "4.6"
+  }
+}

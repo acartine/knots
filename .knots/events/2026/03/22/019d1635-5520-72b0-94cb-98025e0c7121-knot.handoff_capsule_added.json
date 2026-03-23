@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1635-5520-72b0-94cb-98025e0c7121",
+  "occurred_at": "2026-03-22T15:41:27.200329Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implementation review rejected. 1. Core Rust acceptance coverage is present and make sanity passes on commit 43fee5599c13. 2. The knot description also requires foolery knots-backend coverage for the native acceptance field read path and backward-compat note fallback. 3. This repository does not contain foolery backend sources or knots-backend-coverage.test.ts, so that required behavior cannot be reviewed or approved from the code under review.",
+    "datetime": "2026-03-22T15:41:27.200329Z",
+    "entry_id": "019d1635-5520-72b0-94cb-97f004dd5c17",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

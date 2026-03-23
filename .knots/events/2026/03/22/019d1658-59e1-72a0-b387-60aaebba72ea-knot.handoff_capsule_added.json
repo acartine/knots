@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1658-59e1-72a0-b387-60aaebba72ea",
+  "occurred_at": "2026-03-22T16:19:42.177315Z",
+  "knot_id": "knots-e071",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review approved. acceptance TEXT column added to knot_hot schema via migration knot_acceptance_v1. KnotCacheRecord and UpsertKnotHot structs have acceptance field. SELECT/UPSERT queries updated. Code verified on main (3fc70a7b0542), CI green, make sanity passes at 95.23%.",
+    "datetime": "2026-03-22T16:19:42.177315Z",
+    "entry_id": "019d1658-59e1-72a0-b387-6097eedda224",
+    "knot_state": "shipment_review",
+    "knot_step": "shipment_review",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15e6-46af-7752-a5cf-c99852b17391",
+  "occurred_at": "2026-03-22T14:15:06.159847Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Revision needed: the plan now covers schema, write path, events, prompts, UI, foolery, and tests, but it no longer explains how existing acceptance data already stored as Acceptance Criteria notes will be preserved. Without either legacy-note fallback or an explicit migration/backfill, rollout risks losing acceptance on old beats or exposing raw marker notes. Re-plan with a compatibility strategy and corresponding test coverage.",
+    "datetime": "2026-03-22T14:15:06.159847Z",
+    "entry_id": "019d15e6-46af-7752-a5cf-c98d83cee7a9",
+    "knot_state": "plan_review",
+    "knot_step": "plan_review",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

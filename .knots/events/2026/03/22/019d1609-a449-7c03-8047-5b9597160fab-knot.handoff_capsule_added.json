@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1609-a449-7c03-8047-5b9597160fab",
+  "occurred_at": "2026-03-22T14:53:43.88145Z",
+  "knot_id": "knots-09f2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Approved implementation_review: --acceptance is threaded through CLI parsing, queued writes, create/update app paths, and clear semantics, emitting knot.acceptance_set as specified. make sanity passed.",
+    "datetime": "2026-03-22T14:53:43.88145Z",
+    "entry_id": "019d1609-a449-7c03-8047-5b8ec5dc8b3d",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

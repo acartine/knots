@@ -1,0 +1,17 @@
+{
+  "event_id": "019d161d-32c7-71e3-8dc6-d4c3579156fc",
+  "occurred_at": "2026-03-22T15:15:05.543886Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "1. This child requires coverage for the foolery native acceptance read path and backward-compatible legacy-note fallback. 2. The remaining foolery implementation under review is not available in this repository: commits ca6ed9a32fe4 and 55706664f98f are not valid objects here. 3. Implementation review must be based on the code plus spec, so the acceptance:null fallback tests cannot be approved until the relevant diff is available for review.",
+    "datetime": "2026-03-22T15:15:05.543886Z",
+    "entry_id": "019d161d-32c7-71e3-8dc6-d4bfbf4ba7cd",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

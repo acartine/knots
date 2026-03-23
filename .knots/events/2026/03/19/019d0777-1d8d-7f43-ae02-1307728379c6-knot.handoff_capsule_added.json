@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0777-1d8d-7f43-ae02-1307728379c6",
+  "occurred_at": "2026-03-19T18:59:00.109705Z",
+  "knot_id": "knots-969c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment complete. Feature branch knots-969c-worktree-guidance merged to main via no-ff merge (3b8647fbc396). make sanity passed (95.02% coverage). Pushed to origin/main. Changes: added worktree guidance to skills/knots.md and skills/knots_e2e.md instructing agents to use kno -C <path_to_repo> inside worktrees.",
+    "datetime": "2026-03-19T00:00:00Z",
+    "entry_id": "019d0777-1d8d-7f43-ae02-12f27130ebeb",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

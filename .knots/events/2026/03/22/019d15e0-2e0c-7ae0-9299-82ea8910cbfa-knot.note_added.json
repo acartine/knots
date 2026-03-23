@@ -1,0 +1,15 @@
+{
+  "event_id": "019d15e0-2e0c-7ae0-9299-82ea8910cbfa",
+  "occurred_at": "2026-03-22T14:08:26.636263Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan review requested revisions. The plan must include the queued write path in src/write_queue.rs and src/write_dispatch.rs; otherwise adding --acceptance to clap will not propagate into executed new/update operations. It must also thread acceptance through CreateKnotOptions/create_knot_with_options, not only App::create_knot, because kno new currently uses create_knot_with_options. Confirm whether first-class acceptance should also appear in human-readable kno show output in src/ui.rs in addition to JSON/prompt rendering.",
+    "datetime": "2026-03-22T14:08:26.636263Z",
+    "entry_id": "019d15e0-2e0c-7ae0-9299-82db28ee534f",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

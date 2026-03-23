@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1658-779a-7fe0-97cb-f2b611bc6b3b",
+  "occurred_at": "2026-03-22T16:19:49.786829Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review approved. Acceptance field test coverage includes JSON shape tests (7cb33baa0c33), round-trip/rehydrate/sync coverage, prompt rendering test. Core make sanity passes at 95.23%. Foolery coverage verified via CI badge workflow. Code on main in both repos.",
+    "datetime": "2026-03-22T16:19:49.786829Z",
+    "entry_id": "019d1658-779a-7fe0-97cb-f2afe853159a",
+    "knot_state": "shipment_review",
+    "knot_step": "shipment_review",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

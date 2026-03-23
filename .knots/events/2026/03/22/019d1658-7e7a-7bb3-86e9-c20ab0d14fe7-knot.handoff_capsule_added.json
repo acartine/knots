@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1658-7e7a-7bb3-86e9-c20ab0d14fe7",
+  "occurred_at": "2026-03-22T16:19:51.546036Z",
+  "knot_id": "knots-2aa3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review approved. acceptance field added to KnotRecord, KnotUpdateInput, KnotCreateInput. Serialized as --acceptance flag in newKnot() and updateKnot(). Code verified on foolery main (3afbd2f70345), CI green.",
+    "datetime": "2026-03-22T16:19:51.546036Z",
+    "entry_id": "019d1658-7e7a-7bb3-86e9-c1ffcff91757",
+    "knot_state": "shipment_review",
+    "knot_step": "shipment_review",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

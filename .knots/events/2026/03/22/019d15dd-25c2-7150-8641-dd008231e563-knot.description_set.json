@@ -1,0 +1,9 @@
+{
+  "event_id": "019d15dd-25c2-7150-8641-dd008231e563",
+  "occurred_at": "2026-03-22T14:05:07.906014Z",
+  "knot_id": "knots-09f2",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Add --acceptance Option<String> flag to NewArgs and UpdateArgs in src/cli.rs. In App::create_knot, emit knot.acceptance_set event after knot.created when acceptance is provided. Add acceptance to UpdateKnotPatch and emit event in update flow."
+  }
+}

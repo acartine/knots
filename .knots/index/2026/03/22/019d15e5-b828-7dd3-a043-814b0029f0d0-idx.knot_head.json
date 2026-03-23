@@ -1,0 +1,23 @@
+{
+  "event_id": "019d15e5-b828-7dd3-a043-814b0029f0d0",
+  "occurred_at": "2026-03-22T14:14:29.672751Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-97eb",
+    "profile_id": "autopilot",
+    "state": "shipment",
+    "terminal": false,
+    "title": "kno doctor: content-aware skill deployment check",
+    "type": "work",
+    "updated_at": "2026-03-22T14:14:29.672751Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d15e5-4b84-7d01-8b40-9c29d18dc454"
+  }
+}

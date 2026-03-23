@@ -1,0 +1,16 @@
+{
+  "event_id": "019d1659-09e5-7d42-ad44-486039a09d9c",
+  "occurred_at": "2026-03-22T16:20:27.237406Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment complete. All 7 child knots reviewed and shipped. Knots core: acceptance column in schema (e071), --acceptance CLI flag (09f2), KnotAcceptanceSet event kind (2bc3), prompt rendering (93c9), test coverage at 95.23% (28b1). Foolery: knots.ts serialization (2aa3), knots-backend native field with legacy fallback (ed42, fix 55706664). Knots main merge 3fc70a7b0542, foolery main merge 3afbd2f70345, CI green on both repos.",
+    "datetime": "2026-03-22T16:20:27.237406Z",
+    "entry_id": "019d1659-09e5-7d42-ad44-48583465ac63",
+    "knot_state": "shipped",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

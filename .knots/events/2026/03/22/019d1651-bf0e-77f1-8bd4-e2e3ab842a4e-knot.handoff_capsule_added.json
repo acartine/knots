@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1651-bf0e-77f1-8bd4-e2e3ab842a4e",
+  "occurred_at": "2026-03-22T16:12:29.326081Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment completed on main via merge commit 3fc70a7b0542. Local main matches origin/main, and remote GitHub Actions succeeded for CI, Repo Hygiene, Release, and Changesets Version PR on head 3fc70a7b054257bb899aa1016c9fe554f36d075b.",
+    "datetime": "2026-03-22T16:12:16Z",
+    "entry_id": "019d1651-bf0e-77f1-8bd4-e2dd26c483ec",
+    "knot_state": "shipment",
+    "knot_step": "shipment",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-22"
+  }
+}

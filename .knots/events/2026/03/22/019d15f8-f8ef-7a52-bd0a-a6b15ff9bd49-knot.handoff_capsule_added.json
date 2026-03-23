@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15f8-f8ef-7a52-bd0a-a6b15ff9bd49",
+  "occurred_at": "2026-03-22T14:35:31.43911Z",
+  "knot_id": "knots-25b6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Shipment review approved. Verified: merge commit 21bd738e2783 live on main, all 3 commits tagged, CI run 23405200612 green, local make sanity passes at 95.19% coverage, no regressions detected.",
+    "datetime": "2026-03-22T14:35:31.43911Z",
+    "entry_id": "019d15f8-f8ef-7a52-bd0a-a6a9420a8bb0",
+    "knot_state": "shipment_review",
+    "knot_step": "shipment_review",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

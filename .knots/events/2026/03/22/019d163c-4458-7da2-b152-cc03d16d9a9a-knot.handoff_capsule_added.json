@@ -1,0 +1,17 @@
+{
+  "event_id": "019d163c-4458-7da2-b152-cc03d16d9a9a",
+  "occurred_at": "2026-03-22T15:49:01.656005Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "All child knots advanced. 6/7 children at ready_for_shipment, child 28b1 (tests) now at ready_for_implementation_review after rebasing branch knots-2412-acceptance-field on main (21bd738). Make sanity passes at 95.22% coverage, 707 tests green. Core Rust acceptance field fully implemented: schema, data model, events, CLI flags, prompt rendering, sync handlers, and comprehensive tests. Foolery knots-backend tests are out of scope for this repository.",
+    "datetime": "2026-03-22T15:49:01.656005Z",
+    "entry_id": "019d163c-4458-7da2-b152-cbf1bc61ee79",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

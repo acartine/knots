@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1609-bba9-7083-8b5a-e9e6b1167278",
+  "occurred_at": "2026-03-22T14:53:49.865501Z",
+  "knot_id": "knots-2bc3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Approved implementation_review: FullEventKind exposes knot.acceptance_set and both rehydration and sync projections carry acceptance through replay and cache updates. make sanity passed.",
+    "datetime": "2026-03-22T14:53:49.865501Z",
+    "entry_id": "019d1609-bba9-7083-8b5a-e9d290f99819",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

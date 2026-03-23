@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1971-c6c5-7360-9e27-7af0a84fbc39",
+  "occurred_at": "2026-03-23T06:46:20.101415Z",
+  "knot_id": "knots-5204",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Changed update_managed() to only write skills to the preferred (destination) location instead of iterating all installed locations. For Claude, this means project-level .claude/skills/ is updated but user-level ~/.claude/skills/ is left untouched. Added test update_only_writes_to_preferred_location_not_user_level. installed_locations() gated behind #[cfg(test)] since it is no longer used in production code. Branch: worktree-knots-5204-update-project-only. All sanity checks pass, 95.23% coverage.",
+    "datetime": "2026-03-23T06:46:20.101415Z",
+    "entry_id": "019d1971-c6c5-7360-9e27-7aee63dcdbaa",
+    "model": "opus/claude",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}

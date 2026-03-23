@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15e3-9930-7fe3-8c3d-bf694c959dfc",
+  "occurred_at": "2026-03-22T14:12:10.67272Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning complete. Cover the acceptance field end to end across Rust and foolery: schema/data model, queued write path (`src/cli.rs`, `src/write_queue.rs`, `src/write_dispatch.rs`, `CreateKnotOptions/create_knot_with_options`), new `knot.acceptance_set` event with rehydration and sync handling, prompt plus human-readable show rendering, and foolery CLI/backend migration off the acceptance-note shim. Keep acceptance independent of description/body. No new child knots required; fold `src/ui.rs` into child `93c9` and use `28b1` for round-trip/coverage tests in both repos.",
+    "datetime": "2026-03-22T14:10:16Z",
+    "entry_id": "019d15e3-9930-7fe3-8c3d-bf50679478b6",
+    "knot_state": "planning",
+    "knot_step": "planning",
+    "model": "GPT-5",
+    "username": "codex",
+    "version": "2026-03-22"
+  }
+}

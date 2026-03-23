@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1643-be24-7883-a1db-a53ebe3fa468",
+  "occurred_at": "2026-03-22T15:57:11.588254Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Approved implementation_review: acceptance coverage is present across the knots feature branch and foolery backend tests. Verified core round-trip/rehydrate, sync, JSON shape, and --acceptance CLI parsing on /Users/cartine/knots-2412-acceptance-field with make sanity passing at 95.23% coverage, and verified native acceptance plus legacy note fallback behavior in ../foolery/src/lib/__tests__/knots-backend-coverage.test.ts with the focused unit suite passing.",
+    "datetime": "2026-03-22T15:57:11Z",
+    "entry_id": "019d1643-be24-7883-a1db-a52bfdde7506",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

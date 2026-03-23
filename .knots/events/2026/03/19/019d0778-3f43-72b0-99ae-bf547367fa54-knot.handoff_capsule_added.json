@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0778-3f43-72b0-99ae-bf547367fa54",
+  "occurred_at": "2026-03-19T19:00:14.275818Z",
+  "knot_id": "knots-969c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Shipment review approved. Verified: (1) commits 33e450240015 and 3b8647fbc396 are on main, (2) skills/knots.md and skills/knots_e2e.md both contain worktree guidance instructing agents to use kno -C <path_to_repo>, (3) changes are minimal and scoped correctly — 3 lines added to each file, (4) no invariants defined, (5) pre-existing flaky test in self_manage unrelated to this change. No regressions from these changes.",
+    "datetime": "2026-03-19T20:00:00+01:00",
+    "entry_id": "019d0778-3f43-72b0-99ae-bf4be542ada9",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1609-e26c-72f1-ab94-b63ef099ac58",
+  "occurred_at": "2026-03-22T14:53:59.788885Z",
+  "knot_id": "knots-93c9",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Approved implementation_review: KnotView now carries acceptance and prompt rendering adds a dedicated Acceptance Criteria section between Description and Children. make sanity passed.",
+    "datetime": "2026-03-22T14:53:59.788885Z",
+    "entry_id": "019d1609-e26c-72f1-ab94-b6287d8b7353",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

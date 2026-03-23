@@ -1,0 +1,15 @@
+{
+  "event_id": "019d161d-4bfe-7a00-b443-92250361a79f",
+  "occurred_at": "2026-03-22T15:15:11.998775Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Needs changes: parent review is blocked because child knots-28b1 was returned to ready_for_implementation; its foolery acceptance coverage is not reviewable from the current repository.",
+    "datetime": "2026-03-22T15:15:11.998775Z",
+    "entry_id": "019d161d-4bfe-7a00-b443-9210f0ecc79d",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

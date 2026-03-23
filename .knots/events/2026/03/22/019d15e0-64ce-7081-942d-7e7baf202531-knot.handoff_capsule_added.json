@@ -1,0 +1,16 @@
+{
+  "event_id": "019d15e0-64ce-7081-942d-7e7baf202531",
+  "occurred_at": "2026-03-22T14:08:40.654411Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review rejected for incompleteness. The current plan misses the queued write layer (src/write_queue.rs and src/write_dispatch.rs) and the actual kno new path (CreateKnotOptions/create_knot_with_options), so --acceptance would not be fully wired. Re-plan with those files included and confirm whether src/ui.rs should render acceptance in human-readable show output.",
+    "datetime": "2026-03-22T14:07:59Z",
+    "entry_id": "019d15e0-64ce-7081-942d-7e68066a7e07",
+    "knot_state": "ready_for_planning",
+    "model": "GPT-5",
+    "username": "codex",
+    "version": "2026-03-22"
+  }
+}

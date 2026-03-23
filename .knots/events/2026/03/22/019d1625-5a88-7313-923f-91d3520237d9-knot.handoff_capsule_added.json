@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1625-5a88-7313-923f-91d3520237d9",
+  "occurred_at": "2026-03-22T15:24:00.008746Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Child knots-28b1 (test coverage) re-implemented with 3 JSON shape tests for acceptance field serialization contract (null when unset, string when set, null after clear). All 7 children now at ready_for_shipment or ready_for_implementation_review. Commit 43fee5599c13. All 703 tests pass, 95.05% coverage.",
+    "datetime": "2026-03-22T15:24:00.008746Z",
+    "entry_id": "019d1625-5a88-7313-923f-91c2ba3a389d",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15d0-7832-76b0-a58f-a678f20b7878",
+  "occurred_at": "2026-03-22T13:51:17.04217Z",
+  "knot_id": "knots-25b6",
+  "type": "knot.created",
+  "data": {
+    "body": "as title says, it's not an error to have active leases - just tell the user that the sync is deferred until the leases are terminated.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_with_pr",
+    "state": "ready_for_planning",
+    "title": "kno sync shouldn't error out when there are active leasees.  it should queue the sync operation and trigger it when the leases are terminated.",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

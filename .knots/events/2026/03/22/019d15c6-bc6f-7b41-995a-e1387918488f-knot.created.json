@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15c6-bc6f-7b41-995a-e1387918488f",
+  "occurred_at": "2026-03-22T13:40:39.151191Z",
+  "knot_id": "knots-97eb",
+  "type": "knot.created",
+  "data": {
+    "body": "The doctor check for managed skills currently only verifies that skill files exist at the expected paths (missing_skills uses .exists()). It does not compare the deployed content against what would be generated from the source templates. This means stale or outdated skill files pass the doctor check silently. Change the doctor check to compare deployed skill file content against the expected content and report a warning (e.g. 'outdated' or 'drift detected') when they diverge, prompting the user to run kno skills update.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_with_pr",
+    "state": "ready_for_planning",
+    "title": "kno doctor: content-aware skill deployment check",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

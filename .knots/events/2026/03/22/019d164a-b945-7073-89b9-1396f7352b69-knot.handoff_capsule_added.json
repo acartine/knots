@@ -1,0 +1,17 @@
+{
+  "event_id": "019d164a-b945-7073-89b9-1396f7352b69",
+  "occurred_at": "2026-03-22T16:04:49.093676Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Completed the implementation step for acceptance as a first-class knot field by advancing every child knot one authorized workflow step. Approved 28b1 after validating core acceptance tests on /Users/cartine/knots-2412-acceptance-field with make sanity passing at 95.23% coverage and foolery backend coverage in ../foolery. Shipped the knots-side children on main commit 3fc70a7b0542 with local make sanity at 95.24% coverage plus green remote CI, Repo Hygiene, Release, and Changesets Version PR runs. Shipped the foolery-side children on main commit 3afbd2f70345 after syncing remote main, rerunning the merged backend suite, and confirming green remote CI and Coverage Badge runs.",
+    "datetime": "2026-03-22T16:04:49Z",
+    "entry_id": "019d164a-b945-7073-89b9-1381949207b7",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

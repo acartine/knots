@@ -1,0 +1,15 @@
+{
+  "event_id": "019d15d9-86db-7fc3-a0db-a7800c19355b",
+  "occurred_at": "2026-03-22T14:01:10.619745Z",
+  "knot_id": "knots-2412",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan review feedback: 1. The create-path step is too ambiguous. Do not put acceptance only in knot.created. Current sync/rehydration only reduce explicit metadata events like knot.description_set; knot.created data is not projected into acceptance/body fields, so acceptance would be lost on create/pull/rehydrate unless create emits a dedicated knot.acceptance_set event or the created-event reducers are expanded. 2. The plan omits required foolery integration files and tests. Switching the knots backend off the addNote shim also requires ../foolery/src/lib/knots.ts to model/serialize acceptance for kno new/update, and existing foolery tests that currently assert note-shim behavior must be updated to assert the first-class field instead.",
+    "datetime": "2026-03-22T14:01:10.619745Z",
+    "entry_id": "019d15d9-86db-7fc3-a0db-a77e6ed0f87b",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

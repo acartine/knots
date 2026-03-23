@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15f6-dd41-7282-8609-c24c83f64dfd",
+  "occurred_at": "2026-03-22T14:33:13.281574Z",
+  "knot_id": "knots-25b6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment complete: merged worktree-knots-25b6-deferred-sync to main as 21bd738e2783, pushed origin/main, local make sanity passed at 95.18% coverage, and remote CI run 23405200612 passed.",
+    "datetime": "2026-03-22T14:33:06Z",
+    "entry_id": "019d15f6-dd41-7282-8609-c23dc53b0999",
+    "knot_state": "shipment",
+    "knot_step": "shipment",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "event_id": "019d1658-7e83-7b01-a49b-6a585ae1404c",
+  "occurred_at": "2026-03-22T16:19:51.546036Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-2aa3",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "Foolery knots.ts: serialize acceptance field in CLI commands",
+    "type": "work",
+    "updated_at": "2026-03-22T16:19:51.546036Z",
+    "workflow_id": "compatibility"
+  }
+}

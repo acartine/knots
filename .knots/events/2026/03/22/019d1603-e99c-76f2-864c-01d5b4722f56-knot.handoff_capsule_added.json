@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1603-e99c-76f2-864c-01d5b4722f56",
+  "occurred_at": "2026-03-22T14:47:28.412405Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented first class acceptance criteria across knots core and foolery with native storage, event replay and sync, CLI support, prompt rendering, legacy note fallback on read, and regression coverage. Verified with make sanity at 95.04 percent coverage and bun run test -- src/lib/__tests__/knots-backend-coverage.test.ts.",
+    "datetime": "2026-03-22T14:47:28Z",
+    "entry_id": "019d1603-e99c-76f2-864c-01cc8cb6fe6f",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

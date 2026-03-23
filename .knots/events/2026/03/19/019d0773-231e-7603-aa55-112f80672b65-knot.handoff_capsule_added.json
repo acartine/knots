@@ -1,0 +1,15 @@
+{
+  "event_id": "019d0773-231e-7603-aa55-112f80672b65",
+  "occurred_at": "2026-03-19T18:54:39.390418Z",
+  "knot_id": "knots-969c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "Implementation review approved. Both skills/knots.md and skills/knots_e2e.md add identical worktree guidance instructing agents to use kno -C <path_to_repo> when running inside a git worktree. Changes are correctly placed after the kno claim block, concise, and consistent across both files. Sanity passes with 95.02% coverage, no regressions.",
+    "datetime": "2026-03-19T00:00:00Z",
+    "entry_id": "019d0773-231e-7603-aa55-111406062e0c",
+    "model": "claude-opus-4-6",
+    "username": "cartine",
+    "version": "claude-opus-4-6"
+  }
+}

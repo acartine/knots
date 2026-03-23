@@ -1,0 +1,15 @@
+{
+  "event_id": "019d160a-19ba-75f0-90c9-fa5a6ea9a9bc",
+  "occurred_at": "2026-03-22T14:54:13.946641Z",
+  "knot_id": "knots-ed42",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Needs changes: toBeat() skips legacy note fallback when kno show returns acceptance:null, so old note-backed acceptance is dropped instead of preserved.",
+    "datetime": "2026-03-22T14:54:13.946641Z",
+    "entry_id": "019d160a-19ba-75f0-90c9-fa443574d71a",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

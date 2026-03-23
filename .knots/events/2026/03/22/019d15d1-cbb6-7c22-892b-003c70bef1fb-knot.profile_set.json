@@ -1,0 +1,16 @@
+{
+  "event_id": "019d15d1-cbb6-7c22-892b-003c70bef1fb",
+  "occurred_at": "2026-03-22T13:52:43.958189Z",
+  "knot_id": "knots-2412",
+  "type": "knot.profile_set",
+  "data": {
+    "deferred_from_state": null,
+    "from_profile_id": "autopilot_with_pr",
+    "from_state": "ready_for_planning",
+    "to_profile_id": "autopilot",
+    "to_state": "ready_for_planning"
+  },
+  "precondition": {
+    "profile_etag": "019d15cb-f0d2-7dd0-99d8-991e6c33846d"
+  }
+}

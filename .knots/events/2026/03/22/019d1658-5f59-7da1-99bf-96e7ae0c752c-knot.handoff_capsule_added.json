@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1658-5f59-7da1-99bf-96e7ae0c752c",
+  "occurred_at": "2026-03-22T16:19:43.577836Z",
+  "knot_id": "knots-09f2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review approved. --acceptance flag added to both new and update CLI commands with proper help text. Code verified on main (3fc70a7b0542), CI green, make sanity passes at 95.23%.",
+    "datetime": "2026-03-22T16:19:43.577836Z",
+    "entry_id": "019d1658-5f59-7da1-99bf-96d5aac6fe1f",
+    "knot_state": "shipment_review",
+    "knot_step": "shipment_review",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

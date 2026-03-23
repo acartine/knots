@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15ef-a820-7ea3-b589-06b3af8d5b5f",
+  "occurred_at": "2026-03-22T14:25:20.928369Z",
+  "knot_id": "knots-25b6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Implementation review: APPROVED. Verified: (1) sync_or_defer_with_progress correctly returns Deferred instead of erroring on active leases, (2) trigger_queued_sync is best-effort and never fails lease termination, (3) sync_pending lifecycle is sound (set on defer, cleared by sync/apply.rs on successful sync), (4) push/pull remain blocked by active leases (unchanged), (5) JSON output is backward-compatible for Completed and clean for Deferred, (6) 4 unit tests cover key paths (noop/skip/best-effort/multi-lease), (7) make sanity passes: 694 tests, 0 failures, 95.22% coverage (threshold 95%).",
+    "datetime": "2026-03-22T14:25:20.928369Z",
+    "entry_id": "019d15ef-a820-7ea3-b589-06a94589bcfe",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

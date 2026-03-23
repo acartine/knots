@@ -1,0 +1,23 @@
+{
+  "event_id": "019d1607-ea73-7621-b890-9cff960a159b",
+  "occurred_at": "2026-03-22T14:51:50.771568Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-09f2",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation_review",
+    "terminal": false,
+    "title": "Core CLI: add --acceptance flag to new and update commands",
+    "type": "work",
+    "updated_at": "2026-03-22T14:51:50.771568Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d1604-16fa-7583-a86f-eff9e46a9fd2"
+  }
+}

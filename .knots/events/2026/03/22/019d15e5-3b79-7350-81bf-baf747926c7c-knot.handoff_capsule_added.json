@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15e5-3b79-7350-81bf-baf747926c7c",
+  "occurred_at": "2026-03-22T14:13:57.75375Z",
+  "knot_id": "knots-97eb",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Implementation review: APPROVED. The content-aware skill drift detection is well-structured. New managed_skills_state.rs cleanly separates state inspection (Current/Missing/Drifted) from the doctor check logic. Output formatting handles all four state combinations (missing-only, drift-only, mixed, current) with appropriate remediation guidance. fix_doctor_check uses reconcile_skills to handle both missing and drifted files in one pass. Edge cases covered: unreadable files treated as drift, mixed states tested. All files under 500 lines. make sanity passes with 95.01% coverage. The self_manage.rs curl hardening is a small bonus fix that doesn't affect the main feature.",
+    "datetime": "2026-03-22T14:13:57.75375Z",
+    "entry_id": "019d15e5-3b79-7350-81bf-bae52016ad40",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

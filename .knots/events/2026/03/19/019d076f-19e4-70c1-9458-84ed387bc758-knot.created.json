@@ -1,0 +1,17 @@
+{
+  "event_id": "019d076f-19e4-70c1-9458-84ed387bc758",
+  "occurred_at": "2026-03-19T18:50:14.884807Z",
+  "knot_id": "knots-969c",
+  "type": "knot.created",
+  "data": {
+    "body": "Explain that within a worktree, the agent should use the -C <path_to_repo> option for knots commands, since it is installed in the repo branch and not a worktree",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Improve knots and knots-e2e prompts to provide guidance for worktrees",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "event_id": "019d076f-1c37-7db2-a478-88e99cddb7d0",
+  "occurred_at": "2026-03-19T18:50:15.470699Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-969c",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "Improve knots and knots-e2e prompts to provide guidance for worktrees",
+    "type": "work",
+    "updated_at": "2026-03-19T18:50:15.470699Z",
+    "workflow_id": "compatibility"
+  }
+}

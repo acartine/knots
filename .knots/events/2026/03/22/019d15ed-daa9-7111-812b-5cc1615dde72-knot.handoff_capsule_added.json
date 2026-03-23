@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15ed-daa9-7111-812b-5cc1615dde72",
+  "occurred_at": "2026-03-22T14:23:22.793216Z",
+  "knot_id": "knots-97eb",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment complete: merged knots-97eb-content-aware-skill-check to main as f4461ffb57cd and pushed to origin/main. make sanity passed locally at 95.00% coverage. Remote workflows CI, Repo Hygiene, Release, and Changesets Version PR all completed successfully for f4461ffb57cd.",
+    "datetime": "2026-03-22T14:23:22Z",
+    "entry_id": "019d15ed-daa9-7111-812b-5cb298042c43",
+    "knot_state": "shipment",
+    "knot_step": "shipment",
+    "model": "gpt-5",
+    "username": "acartine",
+    "version": "1"
+  }
+}

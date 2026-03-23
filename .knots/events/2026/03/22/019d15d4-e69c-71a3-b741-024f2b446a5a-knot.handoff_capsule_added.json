@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15d4-e69c-71a3-b741-024f2b446a5a",
+  "occurred_at": "2026-03-22T13:56:07.45279Z",
+  "knot_id": "knots-97eb",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Plan is to add content-drift detection for managed skills by comparing deployed `SKILL.md` files in the preferred tool root against `render_skill()` output, update doctor messaging for missing versus drifted files, and align the `skills_*` doctor fix path so stale files can be reconciled instead of only installing missing ones. Expected touch points are `src/managed_skills.rs`, `src/managed_skills_output.rs`, `src/managed_skills_tests.rs`, and `tests/cli_skills.rs`, with care to keep `src/managed_skills.rs` under the 500-line limit. Validate with targeted managed-skills and CLI tests, then `make sanity`.",
+    "datetime": "2026-03-22T13:56:07.45279Z",
+    "entry_id": "019d15d4-e69c-71a3-b741-023fc0c219be",
+    "knot_state": "planning",
+    "knot_step": "planning",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

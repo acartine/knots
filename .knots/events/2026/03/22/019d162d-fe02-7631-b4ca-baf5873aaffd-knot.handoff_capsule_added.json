@@ -1,0 +1,16 @@
+{
+  "event_id": "019d162d-fe02-7631-b4ca-baf5873aaffd",
+  "occurred_at": "2026-03-22T15:33:26.146172Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "1. The core knot data model is still missing a first-class acceptance field: knot_hot migrations, KnotCacheRecord, UpsertKnotHot, KnotView, and rehydration only carry body/description and do not define or round-trip acceptance. 2. The CLI/write path is still missing acceptance support: UpdateArgs and queued write operations expose description fields but no --acceptance flag or acceptance patch field. 3. The event/sync path is still missing acceptance support: FullEventKind has knot.description_set but no knot.acceptance_set, and app/sync rehydration only apply description updates. 4. The parent spec also requires the foolery knots-backend migration, but this repository contains no non-node_modules TypeScript files and no toBeat/addNote/foolery backend implementation to review for that requirement. 5. Validation passed: make sanity succeeded on 2026-03-22 with 95.18% coverage, so the rejection is on spec drift and missing scope rather than broken gates.",
+    "datetime": "2026-03-22T15:33:00Z",
+    "entry_id": "019d162d-fe02-7631-b4ca-bae61a965a60",
+    "knot_state": "ready_for_implementation",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "2026-03-22"
+  }
+}

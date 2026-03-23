@@ -1,0 +1,17 @@
+{
+  "event_id": "019d160f-5a23-7083-bfbc-23f6af28fe07",
+  "occurred_at": "2026-03-22T14:59:58.11588Z",
+  "knot_id": "knots-28b1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Added two tests for acceptance:null JSON shape: (1) falls back to legacy notes when acceptance is null, (2) returns undefined when acceptance is null and no legacy notes exist. These tests catch the backward-compat regression. Commit 55706664f98f on knots-2412-acceptance-field branch in foolery.",
+    "datetime": "2026-03-22T14:59:58.11588Z",
+    "entry_id": "019d160f-5a23-7083-bfbc-23e9ebbcf2c8",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "opus/claude",
+    "username": "cartine",
+    "version": "4.6"
+  }
+}

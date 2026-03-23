@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1609-82bd-73e0-bb47-ba8dbee7c226",
+  "occurred_at": "2026-03-22T14:53:35.293146Z",
+  "knot_id": "knots-e071",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Approved implementation_review: migration v12 adds knot_hot.acceptance and wires it through KnotCacheRecord, UpsertKnotHot, SQL upsert/select, snapshots, and fixtures. make sanity passed.",
+    "datetime": "2026-03-22T14:53:35.293146Z",
+    "entry_id": "019d1609-82bd-73e0-bb47-ba7930aed20e",
+    "knot_state": "implementation_review",
+    "knot_step": "implementation_review",
+    "model": "unknown",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

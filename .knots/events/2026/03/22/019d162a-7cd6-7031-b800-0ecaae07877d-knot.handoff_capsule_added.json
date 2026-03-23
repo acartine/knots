@@ -1,0 +1,16 @@
+{
+  "event_id": "019d162a-7cd6-7031-b800-0ecaae07877d",
+  "occurred_at": "2026-03-22T15:29:36.470244Z",
+  "knot_id": "knots-2412",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "1. The reviewed branch implements the knots-core side of the acceptance field, including schema, CLI, event, prompt, sync, rehydration, and tests, and `make sanity` passes in an isolated checkout (703 tests, 95.05% coverage).\n2. The parent knot description also requires the foolery knots-backend to replace the addNote shim and read acceptance back in toBeat().\n3. This repository/branch contains no foolery backend implementation to review for that requirement, so the parent knot is incomplete against its stated specification and cannot be approved at implementation_review.",
+    "datetime": "2026-03-22T15:29:25Z",
+    "entry_id": "019d162a-7cd6-7031-b800-0ebf048ad610",
+    "knot_state": "ready_for_implementation",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5"
+  }
+}

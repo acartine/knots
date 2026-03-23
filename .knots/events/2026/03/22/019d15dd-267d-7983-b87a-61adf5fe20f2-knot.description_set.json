@@ -1,0 +1,9 @@
+{
+  "event_id": "019d15dd-267d-7983-b87a-61adf5fe20f2",
+  "occurred_at": "2026-03-22T14:05:08.093854Z",
+  "knot_id": "knots-93c9",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Add acceptance: Option<String> to KnotView in src/app.rs. Wire from KnotCacheRecord. In src/prompt.rs render_prompt/render_prompt_verbose, add '## Acceptance Criteria' section between Description and Children when acceptance.is_some()."
+  }
+}

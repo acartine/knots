@@ -1,0 +1,23 @@
+{
+  "event_id": "019d15d1-b06e-7693-9abd-a6631a2c7ac0",
+  "occurred_at": "2026-03-22T13:52:36.974178Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-25b6",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "kno sync shouldn't error out when there are active leasees.  it should queue the sync operation and trigger it when the leases are terminated.",
+    "type": "work",
+    "updated_at": "2026-03-22T13:52:36.974178Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d15d0-7832-76b0-a58f-a684882b57d0"
+  }
+}

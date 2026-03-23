@@ -1,0 +1,17 @@
+{
+  "event_id": "019d15dc-c723-72b2-979e-9199d5f4e495",
+  "occurred_at": "2026-03-22T14:04:43.683162Z",
+  "knot_id": "knots-97eb",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented content-aware managed skill doctor checks. Doctor now warns on drifted or unreadable SKILL.md files, doctor --fix reconciles missing and drifted files, and new unit plus CLI coverage exercises drift-only, mixed-state, and remediation paths.",
+    "datetime": "2026-03-22T14:04:22Z",
+    "entry_id": "019d15dc-c723-72b2-979e-9185f9a0f1d3",
+    "knot_state": "implementation",
+    "knot_step": "implementation",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-22"
+  }
+}
