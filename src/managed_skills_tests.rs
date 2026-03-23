@@ -339,6 +339,47 @@ fn update_rewrites_existing_skills_when_install_is_complete() {
 }
 
 #[test]
+fn update_only_writes_to_preferred_location_not_user_level() {
+    let repo_root = unique_root("managed-skills-update-scope");
+    let home = unique_root("managed-skills-home");
+    fs::create_dir_all(repo_root.join(".claude")).expect("project root");
+    fs::create_dir_all(home.join(".claude")).expect("user root");
+
+    // Install skills at both project and user level.
+    let project_loc = SkillLocation {
+        scope: LocationScope::Project,
+        tool_root: repo_root.join(".claude"),
+        skills_root: repo_root.join(".claude/skills"),
+    };
+    let user_loc = SkillLocation {
+        scope: LocationScope::User,
+        tool_root: home.join(".claude"),
+        skills_root: home.join(".claude/skills"),
+    };
+    write_skills(&project_loc, managed_skills()).expect("project install");
+    write_skills(&user_loc, managed_skills()).expect("user install");
+
+    // Make both stale.
+    let project_knots = repo_root.join(".claude/skills/knots/SKILL.md");
+    let user_knots = home.join(".claude/skills/knots/SKILL.md");
+    fs::write(&project_knots, "stale").expect("project stale");
+    fs::write(&user_knots, "stale").expect("user stale");
+
+    let output = update_managed(&repo_root, Some(&home), false, SkillTool::Claude).expect("update");
+
+    assert!(output.contains("updated"));
+    // Project-level should be refreshed.
+    assert!(fs::read_to_string(&project_knots)
+        .expect("project knots")
+        .contains("---"));
+    // User-level should remain stale (untouched).
+    assert_eq!(
+        fs::read_to_string(&user_knots).expect("user knots"),
+        "stale"
+    );
+}
+
+#[test]
 fn prompt_install_missing_accepts_yes_and_rejects_no() {
     let destination = SkillLocation {
         scope: LocationScope::User,
