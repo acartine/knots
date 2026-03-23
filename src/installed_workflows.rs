@@ -7,7 +7,7 @@ use std::process::Command;
 use serde::{Deserialize, Serialize};
 
 use crate::profile::{
-    normalize_profile_id, GateMode, OutputMode, OwnerKind, ProfileDefinition, ProfileError,
+    normalize_profile_id, ActionOutputDef, GateMode, OwnerKind, ProfileDefinition, ProfileError,
     ProfileOwners, StepOwner, WorkflowTransition,
 };
 
@@ -535,6 +535,10 @@ struct BundleStateSection {
     executor: Option<String>,
     #[serde(default)]
     prompt: Option<String>,
+    #[serde(default)]
+    output: Option<String>,
+    #[serde(default)]
+    output_hint: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -555,9 +559,16 @@ struct BundleProfileSection {
     description: Option<String>,
     phases: Vec<String>,
     #[serde(default)]
-    output: Option<String>,
+    outputs: BTreeMap<String, BundleOutputEntry>,
     #[serde(default)]
     overrides: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct BundleOutputEntry {
+    artifact_type: String,
+    #[serde(default)]
+    access_hint: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -606,7 +617,7 @@ fn render_json_bundle_from_toml(raw: &str) -> Result<String, ProfileError> {
         toml::from_str(raw).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
     let bundle = JsonKnotsBundle {
         format: "knots-bundle".to_string(),
-        format_version: 1,
+        format_version: 2,
         workflow: JsonWorkflowSection {
             name: parsed.workflow.name,
             version: parsed.workflow.version,
@@ -619,6 +630,8 @@ fn render_json_bundle_from_toml(raw: &str) -> Result<String, ProfileError> {
                 id,
                 kind: state.kind,
                 prompt: state.prompt,
+                output: state.output,
+                output_hint: state.output_hint,
             })
             .collect(),
         steps: parsed
@@ -647,7 +660,19 @@ fn render_json_bundle_from_toml(raw: &str) -> Result<String, ProfileError> {
                 description: profile.description,
                 display_name: None,
                 phases: profile.phases,
-                output: profile.output,
+                outputs: profile
+                    .outputs
+                    .into_iter()
+                    .map(|(k, v)| {
+                        (
+                            k,
+                            JsonOutputEntry {
+                                artifact_type: v.artifact_type,
+                                access_hint: v.access_hint,
+                            },
+                        )
+                    })
+                    .collect(),
                 executors: profile.overrides,
             })
             .collect(),
@@ -821,6 +846,10 @@ struct JsonStateSection {
     id: String,
     kind: String,
     prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    output: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    output_hint: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -843,9 +872,17 @@ struct JsonProfileSection {
     description: Option<String>,
     display_name: Option<String>,
     phases: Vec<String>,
-    output: Option<String>,
+    #[serde(default)]
+    outputs: BTreeMap<String, JsonOutputEntry>,
     #[serde(default)]
     executors: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonOutputEntry {
+    artifact_type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    access_hint: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -893,7 +930,7 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
             parsed.format
         )));
     }
-    if parsed.format_version != 1 {
+    if parsed.format_version != 1 && parsed.format_version != 2 {
         return Err(ProfileError::InvalidBundle(format!(
             "unsupported bundle format version '{}'",
             parsed.format_version
@@ -1082,7 +1119,11 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
                     .or_else(|| profile.display_name.clone()),
                 planning_mode: GateMode::Required,
                 implementation_review_mode: GateMode::Required,
-                output: parse_output_mode(profile.output.as_deref())?,
+                outputs: build_outputs_from_json_profile(
+                    &profile.outputs,
+                    &action_states,
+                    &states_by_id,
+                ),
                 owners,
                 initial_state: first_queue.ok_or_else(|| {
                     ProfileError::InvalidBundle("profile has no initial queue state".to_string())
@@ -1253,7 +1294,11 @@ fn build_profile_definition(
         to: "abandoned".to_string(),
     });
 
-    let output = parse_output_mode(profile_section.output.as_deref())?;
+    let outputs = build_outputs_from_toml_profile(
+        &profile_section.outputs,
+        &action_states,
+        states,
+    );
     let owners = ProfileOwners {
         planning: default_owner(OwnerKind::Agent),
         plan_review: default_owner(OwnerKind::Human),
@@ -1291,7 +1336,7 @@ fn build_profile_definition(
         description: profile_section.description.clone(),
         planning_mode: GateMode::Required,
         implementation_review_mode: GateMode::Required,
-        output,
+        outputs,
         owners,
         initial_state: first_queue.ok_or_else(|| {
             ProfileError::InvalidBundle(format!(
@@ -1335,17 +1380,54 @@ fn default_owner(kind: OwnerKind) -> StepOwner {
     }
 }
 
-fn parse_output_mode(raw: Option<&str>) -> Result<OutputMode, ProfileError> {
-    match raw.unwrap_or("local").trim().to_ascii_lowercase().as_str() {
-        "local" => Ok(OutputMode::Local),
-        "remote" => Ok(OutputMode::Remote),
-        "pr" => Ok(OutputMode::Pr),
-        "remote_main" => Ok(OutputMode::RemoteMain),
-        other => Err(ProfileError::InvalidBundle(format!(
-            "unsupported output mode '{}'",
-            other
-        ))),
+fn build_outputs_from_toml_profile(
+    profile_outputs: &BTreeMap<String, BundleOutputEntry>,
+    action_states: &[String],
+    states: &BTreeMap<String, BundleStateSection>,
+) -> BTreeMap<String, ActionOutputDef> {
+    let mut outputs = BTreeMap::new();
+    for action in action_states {
+        let def = if let Some(entry) = profile_outputs.get(action) {
+            ActionOutputDef {
+                artifact_type: entry.artifact_type.clone(),
+                access_hint: entry.access_hint.clone(),
+            }
+        } else if let Some(state) = states.get(action) {
+            ActionOutputDef {
+                artifact_type: state.output.clone().unwrap_or_default(),
+                access_hint: state.output_hint.clone(),
+            }
+        } else {
+            continue;
+        };
+        outputs.insert(action.clone(), def);
     }
+    outputs
+}
+
+fn build_outputs_from_json_profile(
+    profile_outputs: &BTreeMap<String, JsonOutputEntry>,
+    action_states: &[String],
+    states_by_id: &BTreeMap<&str, &JsonStateSection>,
+) -> BTreeMap<String, ActionOutputDef> {
+    let mut outputs = BTreeMap::new();
+    for action in action_states {
+        let def = if let Some(entry) = profile_outputs.get(action) {
+            ActionOutputDef {
+                artifact_type: entry.artifact_type.clone(),
+                access_hint: entry.access_hint.clone(),
+            }
+        } else if let Some(state) = states_by_id.get(action.as_str()) {
+            ActionOutputDef {
+                artifact_type: state.output.clone().unwrap_or_default(),
+                access_hint: state.output_hint.clone(),
+            }
+        } else {
+            continue;
+        };
+        outputs.insert(action.clone(), def);
+    }
+    outputs
 }
 
 fn push_unique(items: &mut Vec<String>, value: String) {
@@ -1363,10 +1445,12 @@ fn build_prompt_params(
     let mut params = BTreeMap::new();
     params.insert("workflow_id".to_string(), workflow.id.clone());
     params.insert("profile_id".to_string(), profile.id.clone());
-    params.insert(
-        "output_kind".to_string(),
-        output_mode_slug(&profile.output).to_string(),
-    );
+    if let Some(output_def) = profile.outputs.get(&prompt.action_state) {
+        params.insert("output".to_string(), output_def.artifact_type.clone());
+        if let Some(hint) = &output_def.access_hint {
+            params.insert("output_hint".to_string(), hint.clone());
+        }
+    }
     for param in &prompt.params {
         if let Some(default) = param.default.as_deref() {
             params
@@ -1410,16 +1494,6 @@ fn render_prompt_template(
     rendered
 }
 
-#[cfg(test)]
-fn output_mode_slug(mode: &OutputMode) -> &'static str {
-    match mode {
-        OutputMode::Local => "local",
-        OutputMode::Remote => "remote",
-        OutputMode::Pr => "pr",
-        OutputMode::RemoteMain => "remote_main",
-    }
-}
-
 impl fmt::Display for WorkflowDefinition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} v{}", self.id, self.version)
@@ -1449,6 +1523,8 @@ kind = "action"
 action_type = "produce"
 executor = "agent"
 prompt = "work"
+output = "branch"
+output_hint = "git log"
 
 [states.review]
 display_name = "Review"
@@ -1456,6 +1532,7 @@ kind = "action"
 action_type = "gate"
 executor = "human"
 prompt = "review"
+output = "note"
 
 [states.ready_for_review]
 display_name = "Ready for Review"
@@ -1488,12 +1565,11 @@ gate = "rev"
 [profiles.autopilot]
 description = "Custom profile"
 phases = ["main"]
-output = "remote_main"
 
 [prompts.work]
 accept = ["Built output"]
 body = """
-Ship {{ output_kind }} output.
+Ship {{ output }} output.
 """
 
 [prompts.work.success]
@@ -1538,7 +1614,7 @@ changes = "ready_for_work"
             .prompt_for_action_state("work")
             .expect("prompt should exist");
         let rendered = prompt.render(&workflow, profile);
-        assert!(rendered.contains("Ship remote_main output."));
+        assert!(rendered.contains("Ship branch output."));
         assert!(rendered.contains("Built output"));
     }
 
@@ -1707,10 +1783,20 @@ changes = "ready_for_work"
     }
 
     #[test]
-    fn parse_bundle_toml_rejects_unsupported_output_mode() {
-        let invalid = SAMPLE_BUNDLE.replace("output = \"remote_main\"", "output = \"saturn\"");
-        let err = parse_bundle_toml(&invalid).expect_err("unsupported output should fail");
-        assert!(err.to_string().contains("unsupported output mode"));
+    fn parse_bundle_toml_reads_per_action_outputs() {
+        let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
+        let profile = workflow
+            .require_profile("autopilot")
+            .expect("profile should exist");
+        let work_output = profile.outputs.get("work").expect("work output should exist");
+        assert_eq!(work_output.artifact_type, "branch");
+        assert_eq!(work_output.access_hint.as_deref(), Some("git log"));
+        let review_output = profile
+            .outputs
+            .get("review")
+            .expect("review output should exist");
+        assert_eq!(review_output.artifact_type, "note");
+        assert!(review_output.access_hint.is_none());
     }
 
     #[test]
@@ -1847,8 +1933,8 @@ changes = "ready_for_work"
         assert!(err.to_string().contains("must define one success target"));
 
         let overridden = SAMPLE_BUNDLE.replace(
-            "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\noutput = \"remote_main\"\n",
-            "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\noutput = \"remote_main\"\noverrides.work = \"human\"\n",
+            "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\n",
+            "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\noverrides.work = \"human\"\n",
         );
         let workflow = parse_bundle_toml(&overridden).expect("override bundle should parse");
         let profile = workflow
@@ -1865,18 +1951,11 @@ changes = "ready_for_work"
     }
 
     #[test]
-    fn helper_functions_cover_prompt_rendering_and_output_modes() {
+    fn helper_functions_cover_prompt_rendering_and_utilities() {
         assert_eq!(
             namespaced_profile_id("custom", "autopilot"),
             "custom/autopilot"
         );
-        assert!(matches!(parse_output_mode(None), Ok(OutputMode::Local)));
-        assert!(matches!(
-            parse_output_mode(Some("remote")),
-            Ok(OutputMode::Remote)
-        ));
-        assert!(matches!(parse_output_mode(Some("pr")), Ok(OutputMode::Pr)));
-        assert_eq!(output_mode_slug(&OutputMode::RemoteMain), "remote_main");
 
         let mut values = vec!["a".to_string()];
         push_unique(&mut values, "a".to_string());
@@ -2077,8 +2156,8 @@ changes = "ready_for_work"
         let bundle = SAMPLE_BUNDLE
             .replace("default_profile = \"autopilot\"\n", "")
             .replace(
-                "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\noutput = \"remote_main\"\n",
-                "[profiles.beta]\ndescription = \"Beta\"\nphases = [\"main\"]\noutput = \"remote_main\"\n\n[profiles.alpha]\ndescription = \"Alpha\"\nphases = [\"main\"]\noutput = \"remote_main\"\n",
+                "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\n",
+                "[profiles.beta]\ndescription = \"Beta\"\nphases = [\"main\"]\n\n[profiles.alpha]\ndescription = \"Alpha\"\nphases = [\"main\"]\n",
             );
         std::fs::write(&source, bundle).expect("bundle should write");
         install_bundle(&root, &source).expect("bundle should install");
@@ -2160,6 +2239,8 @@ changes = "ready_for_work"
                 kind: "queue".to_string(),
                 executor: None,
                 prompt: None,
+                output: None,
+                output_hint: None,
             },
         );
         states.insert(
@@ -2168,6 +2249,8 @@ changes = "ready_for_work"
                 kind: "action".to_string(),
                 executor: None,
                 prompt: Some("work".to_string()),
+                output: None,
+                output_hint: None,
             },
         );
         let mut steps = BTreeMap::new();
@@ -2201,7 +2284,7 @@ changes = "ready_for_work"
         let empty_profile = BundleProfileSection {
             description: None,
             phases: Vec::new(),
-            output: None,
+            outputs: BTreeMap::new(),
             overrides: BTreeMap::new(),
         };
         let err = build_profile_definition(
@@ -2236,7 +2319,7 @@ changes = "ready_for_work"
             &BundleProfileSection {
                 description: None,
                 phases: vec!["broken".to_string()],
-                output: None,
+                outputs: BTreeMap::new(),
                 overrides: BTreeMap::new(),
             },
             &states,
@@ -2253,7 +2336,7 @@ changes = "ready_for_work"
             &BundleProfileSection {
                 description: None,
                 phases: vec!["broken".to_string()],
-                output: None,
+                outputs: BTreeMap::new(),
                 overrides: BTreeMap::new(),
             },
             &states,
@@ -2282,6 +2365,8 @@ changes = "ready_for_work"
                 kind: "action".to_string(),
                 executor: None,
                 prompt: None,
+                output: None,
+                output_hint: None,
             },
         );
         let err = build_profile_definition(
@@ -2290,7 +2375,7 @@ changes = "ready_for_work"
             &BundleProfileSection {
                 description: None,
                 phases: vec!["broken".to_string()],
-                output: None,
+                outputs: BTreeMap::new(),
                 overrides: BTreeMap::new(),
             },
             &states,
@@ -2315,11 +2400,11 @@ changes = "ready_for_work"
     }
 
     #[test]
-    fn prompt_defaults_and_output_mode_slug_cover_remaining_variants() {
+    fn prompt_defaults_cover_param_and_output_injection() {
         let workflow = parse_bundle_toml(
             &SAMPLE_BUNDLE.replace(
-                "[prompts.work]\naccept = [\"Built output\"]\nbody = \"\"\"\nShip {{ output_kind }} output.\n\"\"\"\n",
-                "[prompts.work]\naccept = [\"Built output\"]\nbody = \"\"\"\nShip {{ output_kind }} output for {{ audience }}.\n\"\"\"\n[prompts.work.params.audience]\ntype = \"enum\"\ndefault = \"operators\"\n",
+                "[prompts.work]\naccept = [\"Built output\"]\nbody = \"\"\"\nShip {{ output }} output.\n\"\"\"\n",
+                "[prompts.work]\naccept = [\"Built output\"]\nbody = \"\"\"\nShip {{ output }} output for {{ audience }}.\n\"\"\"\n[prompts.work.params.audience]\ntype = \"enum\"\ndefault = \"operators\"\n",
             ),
         )
         .expect("bundle with params should parse");
@@ -2334,8 +2419,9 @@ changes = "ready_for_work"
             params.get("audience").map(String::as_str),
             Some("operators")
         );
-        assert_eq!(output_mode_slug(&OutputMode::Local), "local");
-        assert_eq!(output_mode_slug(&OutputMode::Remote), "remote");
-        assert_eq!(output_mode_slug(&OutputMode::Pr), "pr");
+        assert_eq!(
+            params.get("output").map(String::as_str),
+            Some("branch")
+        );
     }
 }

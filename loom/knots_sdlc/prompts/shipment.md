@@ -12,12 +12,7 @@ failure:
   merge_conflicts: ready_for_implementation
   ci_failure: ready_for_implementation
 
-params:
-  output_kind:
-    type: enum
-    values: ["local", "remote", "remote_main", "pr"]
-    required: true
-    description: Artifact output type from the profile
+params: {}
 ---
 
 # Shipment

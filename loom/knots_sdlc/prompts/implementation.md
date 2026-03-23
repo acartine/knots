@@ -13,12 +13,7 @@ failure:
   implementation_infeasible: ready_for_planning
   merge_conflict: ready_for_implementation
 
-params:
-  output_kind:
-    type: enum
-    values: ["local", "remote", "remote_main", "pr"]
-    required: true
-    description: Artifact output type from the profile
+params: {}
 ---
 
 # Implementation

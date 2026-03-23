@@ -69,6 +69,13 @@ pub enum GateMode {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ActionOutputDef {
+    pub artifact_type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub access_hint: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum OutputMode {
     Local,
@@ -118,7 +125,8 @@ pub struct ProfileDefinition {
     pub description: Option<String>,
     pub planning_mode: GateMode,
     pub implementation_review_mode: GateMode,
-    pub output: OutputMode,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub outputs: BTreeMap<String, ActionOutputDef>,
     pub owners: ProfileOwners,
     pub initial_state: String,
     pub states: Vec<String>,
@@ -590,7 +598,7 @@ fn normalize_profile_definition(
             .and_then(|value| normalize_scalar(value.as_str())),
         planning_mode: raw.planning_mode,
         implementation_review_mode: raw.implementation_review_mode,
-        output: raw.output,
+        outputs: outputs_from_legacy_mode(&raw.output, &action_states),
         owners,
         initial_state,
         states,
@@ -601,6 +609,30 @@ fn normalize_profile_definition(
         action_prompts: BTreeMap::new(),
         prompt_acceptance: BTreeMap::new(),
     })
+}
+
+fn outputs_from_legacy_mode(
+    mode: &OutputMode,
+    action_states: &[String],
+) -> BTreeMap<String, ActionOutputDef> {
+    let artifact_type = match mode {
+        OutputMode::Local => "local",
+        OutputMode::Remote => "remote",
+        OutputMode::Pr => "pr",
+        OutputMode::RemoteMain => "remote_main",
+    };
+    action_states
+        .iter()
+        .map(|state| {
+            (
+                state.clone(),
+                ActionOutputDef {
+                    artifact_type: artifact_type.to_string(),
+                    access_hint: None,
+                },
+            )
+        })
+        .collect()
 }
 
 fn normalize_scalar(raw: &str) -> Option<String> {

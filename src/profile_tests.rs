@@ -41,7 +41,6 @@ gate = "work_step"
 
 [profiles.autopilot]
 phases = ["main"]
-output = "remote_main"
 
 [prompts.work]
 accept = ["Ship it"]

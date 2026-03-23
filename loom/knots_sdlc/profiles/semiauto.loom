@@ -1,7 +1,6 @@
 profile semiauto "Semi-automatic" {
     description "Human-gated plan and implementation reviews"
     phases [planning_phase, implementation_phase, shipment_phase]
-    output remote_main
 
     override plan_review {
         executor human

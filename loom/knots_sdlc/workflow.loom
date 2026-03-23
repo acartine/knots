@@ -14,6 +14,7 @@ workflow knots_sdlc v1 {
     action planning "Planning" {
         produce agent
         prompt planning
+        output note "kno show"
     }
 
     action plan_review "Plan Review" {
@@ -27,6 +28,7 @@ workflow knots_sdlc v1 {
     action implementation "Implementation" {
         produce agent
         prompt implementation
+        output branch
     }
 
     action implementation_review "Implementation Review" {
@@ -40,6 +42,7 @@ workflow knots_sdlc v1 {
     action shipment "Shipment" {
         produce agent
         prompt shipment
+        output commit
     }
 
     action shipment_review "Shipment Review" {

@@ -78,7 +78,7 @@ pub(crate) fn run_profile_command_with_home(
                             "impl_review",
                             format_profile_gate_mode(&profile.implementation_review_mode),
                         ),
-                        ProfileField::new("output", format_profile_output_mode(&profile.output)),
+                        ProfileField::new("output", format_profile_outputs(&profile.outputs)),
                         ProfileField::new("initial_state", profile.initial_state.clone()),
                         ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
                     ];
@@ -108,7 +108,7 @@ pub(crate) fn run_profile_command_with_home(
                         "impl_review",
                         format_profile_gate_mode(&profile.implementation_review_mode),
                     ),
-                    ProfileField::new("output", format_profile_output_mode(&profile.output)),
+                    ProfileField::new("output", format_profile_outputs(&profile.outputs)),
                     ProfileField::new("initial_state", profile.initial_state.clone()),
                     ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
                 ];
@@ -165,13 +165,19 @@ pub(crate) fn run_profile_command_with_home(
     Ok(())
 }
 
-pub(crate) fn format_profile_output_mode(mode: &workflow::OutputMode) -> &'static str {
-    match mode {
-        workflow::OutputMode::Local => "Local",
-        workflow::OutputMode::Remote => "Remote",
-        workflow::OutputMode::Pr => "Pr",
-        workflow::OutputMode::RemoteMain => "RemoteMain (merged)",
+pub(crate) fn format_profile_outputs(
+    outputs: &std::collections::BTreeMap<String, workflow::ActionOutputDef>,
+) -> String {
+    if outputs.is_empty() {
+        return "(none)".to_string();
     }
+    let mut seen = Vec::new();
+    for def in outputs.values() {
+        if !seen.contains(&def.artifact_type) {
+            seen.push(def.artifact_type.clone());
+        }
+    }
+    seen.join(", ")
 }
 
 pub(crate) fn format_profile_gate_mode(mode: &workflow::GateMode) -> &'static str {

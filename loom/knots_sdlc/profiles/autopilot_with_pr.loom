@@ -1,5 +1,12 @@
 profile autopilot_with_pr "Autopilot with PR" {
     description "Agent-owned full flow with PR output"
     phases [planning_phase, implementation_phase, shipment_phase]
-    output pr
+
+    override implementation {
+        output pr
+    }
+
+    override shipment {
+        output pr
+    }
 }

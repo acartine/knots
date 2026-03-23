@@ -1,10 +1,12 @@
 use std::path::PathBuf;
 
+use std::collections::BTreeMap;
+
 use crate::cli::{
     ProfileArgs, ProfileListArgs, ProfileSetArgs, ProfileSetDefaultArgs, ProfileShowArgs,
     ProfileSubcommands,
 };
-use crate::workflow::OutputMode;
+use crate::workflow::ActionOutputDef;
 
 use super::*;
 
@@ -27,14 +29,35 @@ fn profile_field_formatting_right_aligns_labels() {
 }
 
 #[test]
-fn profile_output_mode_labels_remote_main_as_merged() {
-    assert_eq!(
-        format_profile_output_mode(&OutputMode::RemoteMain),
-        "RemoteMain (merged)"
-    );
-    assert_eq!(format_profile_output_mode(&OutputMode::Local), "Local");
-    assert_eq!(format_profile_output_mode(&OutputMode::Remote), "Remote");
-    assert_eq!(format_profile_output_mode(&OutputMode::Pr), "Pr");
+fn profile_outputs_formats_unique_artifact_types() {
+    let outputs = BTreeMap::from([
+        (
+            "planning".to_string(),
+            ActionOutputDef {
+                artifact_type: "note".to_string(),
+                access_hint: Some("kno show".to_string()),
+            },
+        ),
+        (
+            "implementation".to_string(),
+            ActionOutputDef {
+                artifact_type: "branch".to_string(),
+                access_hint: None,
+            },
+        ),
+        (
+            "shipment".to_string(),
+            ActionOutputDef {
+                artifact_type: "branch".to_string(),
+                access_hint: None,
+            },
+        ),
+    ]);
+    assert_eq!(format_profile_outputs(&outputs), "branch, note");
+
+    let empty: BTreeMap<String, ActionOutputDef> = BTreeMap::new();
+    assert_eq!(format_profile_outputs(&empty), "(none)");
+
     assert_eq!(
         format_profile_gate_mode(&crate::workflow::GateMode::Optional),
         "Optional"
