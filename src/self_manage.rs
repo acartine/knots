@@ -188,7 +188,7 @@ fn format_upgrade_summary(
     }
     fields.push((
         "hint",
-        "run `kno hooks install` to update hook templates".to_string(),
+        "run `kno doctor` to check for post-upgrade issues".to_string(),
     ));
     format_titled_fields("Upgrade", &fields)
 }
@@ -425,7 +425,7 @@ mod tests {
         assert_eq!(lines[2], "    version:  v1.2.3");
         assert_eq!(lines[3], "       repo:  acartine/knots");
         assert_eq!(lines[4], "install_dir:  /tmp/kno-test-install");
-        assert!(lines[5].contains("kno hooks install"));
+        assert!(lines[5].contains("kno doctor"));
     }
 
     #[test]
