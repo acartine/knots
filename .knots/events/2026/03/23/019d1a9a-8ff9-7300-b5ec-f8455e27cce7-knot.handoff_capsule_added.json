@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1a9a-8ff9-7300-b5ec-f8455e27cce7",
+  "occurred_at": "2026-03-23T12:10:30.265722Z",
+  "knot_id": "knots-c642",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Plan review approved. The plan correctly identifies the two-line change in src/self_manage.rs (line 191 hint text and line 428 test assertion). Scope is minimal and well-bounded. kno doctor already exists in src/doctor.rs with hook drift detection, making it the right user-facing entry point. No invariants to check. Ready for implementation.",
+    "datetime": "2026-03-23T12:10:30.265722Z",
+    "entry_id": "019d1a9a-8ff9-7300-b5ec-f832bd7e8840",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}
