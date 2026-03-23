@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1aac-d2e8-79b1-bbfb-0aa8e38d99bf",
+  "occurred_at": "2026-03-23T12:30:27.048216Z",
+  "knot_id": "knots-c642",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Shipment review approved. Verified: (1) merge commit c7a4f84d7987 is HEAD of main with kno doctor hint at self_manage.rs:191 and old hooks install hint fully removed, (2) all 3 commits tagged, (3) no invariants to check, (4) CI green on c7a4f84d7987 (Repo Hygiene, Changesets, Release all passed), (5) change is narrowly scoped to upgrade messaging with no regressions.",
+    "datetime": "2026-03-23T12:30:27.048216Z",
+    "entry_id": "019d1aac-d2e8-79b1-bbfb-0a9f65f482d7",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}
