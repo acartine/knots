@@ -1,5 +1,22 @@
 # kno
 
+## 0.9.0
+
+### Minor Changes
+
+- dd44d2b: Add first-class knot acceptance criteria with native storage, sync, and CLI support.
+- f54ca96: Defer `kno sync` when active leases exist instead of erroring. The sync is queued via sync_pending and automatically triggered when the last active lease is terminated.
+- f445d27: Add lease threading to claim and next commands. External lease IDs can now be passed via --lease flags so the calling process can thread its own lease through the workflow instead of having duplicate leases created.
+
+### Patch Changes
+
+- 6c090d3: Detect managed skill drift in `kno doctor` by comparing deployed managed
+  `SKILL.md` files against rendered content. `kno doctor --fix` now reconciles
+  both missing and drifted managed skills.
+- fe62290: Harden self-update curl failures and remove auto-resolved handoff metadata flags from skill files.
+- f1a082a: Fix `kno skills update` to only write to the preferred (project-level) location instead of all installed locations.
+- 0e9d348: Add missing test assertions for worktree guidance in managed skill prompts.
+
 ## 0.8.0
 
 ### Minor Changes
