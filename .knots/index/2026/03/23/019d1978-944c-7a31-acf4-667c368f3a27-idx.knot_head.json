@@ -1,0 +1,20 @@
+{
+  "event_id": "019d1978-944c-7a31-acf4-667c368f3a27",
+  "occurred_at": "2026-03-23T06:53:45.925011Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5204",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "kno skills update claude should NOT update user level claude skills.  only project level.",
+    "type": "work",
+    "updated_at": "2026-03-23T06:53:45.925011Z",
+    "workflow_id": "compatibility"
+  }
+}

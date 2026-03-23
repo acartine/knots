@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1978-9445-7b23-8b23-805d6c6eeeb4",
+  "occurred_at": "2026-03-23T06:53:45.925011Z",
+  "knot_id": "knots-5204",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Merged worktree-knots-5204-update-project-only to main (9682cd32f8da). Sanity passes at 95.22% coverage. Pushed to remote.",
+    "datetime": "2026-03-23T06:53:45.925011Z",
+    "entry_id": "019d1978-9445-7b23-8b23-8046a94129af",
+    "model": "opus/claude",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}
