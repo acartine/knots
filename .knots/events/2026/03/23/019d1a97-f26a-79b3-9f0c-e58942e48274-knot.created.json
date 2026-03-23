@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1a97-f26a-79b3-9f0c-e58942e48274",
+  "occurred_at": "2026-03-23T12:07:38.858702Z",
+  "knot_id": "knots-c642",
+  "type": "knot.created",
+  "data": {
+    "body": "rather than blindly suggesting to the user to run kno hooks install, just trigger kno doctor instead.  this will tell the user if there are problems to correct.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno upgrade - replace \"hint:  run `kno hooks install` to update hook templates\"",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

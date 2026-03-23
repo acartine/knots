@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1a99-d8a4-7893-b8ef-3d881ed3d8a5",
+  "occurred_at": "2026-03-23T12:09:43.332268Z",
+  "knot_id": "knots-c642",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan ready for review. Scope is a narrow messaging change in `src/self_manage.rs`: replace the upgrade summary hint that says `kno hooks install` with guidance to run `kno doctor`, then update the existing upgrade summary regression test in the same file. Preserve current init/hook installation behavior and rely on focused self-management tests to catch any remaining references to the old hint.",
+    "datetime": "2026-03-23T12:08:35Z",
+    "entry_id": "019d1a99-d8a4-7893-b8ef-3d7357440afe",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

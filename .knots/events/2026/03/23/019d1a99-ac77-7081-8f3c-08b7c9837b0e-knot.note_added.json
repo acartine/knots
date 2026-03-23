@@ -1,0 +1,15 @@
+{
+  "event_id": "019d1a99-ac77-7081-8f3c-08b7c9837b0e",
+  "occurred_at": "2026-03-23T12:09:32.023516Z",
+  "knot_id": "knots-c642",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation plan:\n- Update the upgrade summary hint in `src/self_manage.rs` (`format_upgrade_summary`) so it directs users to run `kno doctor` instead of telling them to run `kno hooks install`.\n- Keep the change scoped to upgrade messaging; do not change hook installation behavior during `init` or any doctor/fix logic.\n- Refresh the existing unit test in `src/self_manage.rs` that currently asserts the `kno hooks install` text so it verifies the new doctor guidance and preserves the output layout assertions.\n- Review whether any adjacent docs or tests explicitly describe the upgrade hint; update only if they are directly coupled to this message.\n\nRelevant code and prior art:\n- `src/self_manage.rs` contains the hardcoded upgrade summary fields and a regression test covering the rendered lines.\n- `src/git_hooks.rs` and `src/doctor.rs` already use doctor checks to report hook/template drift and remediation paths, so `kno doctor` is the right entry point for user-facing guidance.\n- `src/init.rs` still installs hooks during init; that behavior should remain unchanged because this knot is only about post-upgrade messaging.\n\nTest strategy:\n- Run the targeted unit test for the upgrade summary rendering in `src/self_manage.rs`.\n- Run a focused Rust test selection covering self-management / CLI upgrade output if needed to confirm no other assertions still expect the old hook-install hint.\n- If the repo’s normal workflow for this area is lightweight enough, finish with the relevant sanity subset before implementation review.\n\nComplexity and risks:\n- Complexity is low; this is a narrow message change with one obvious regression test.\n- Main risk is replacing the hint with wording that is too vague or implies automatic repair. The implementation should make it clear that `kno doctor` diagnoses post-upgrade issues and tells the user what to correct.\n- Secondary risk is hidden snapshot/assertion coverage elsewhere for the old string; targeted grep plus focused tests should catch that.\n\nNo child knots are needed for this plan.",
+    "datetime": "2026-03-23T12:08:35Z",
+    "entry_id": "019d1a99-ac77-7081-8f3c-08a2f4751bf8",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}
