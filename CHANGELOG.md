@@ -1,5 +1,12 @@
 # kno
 
+## 0.9.1
+
+### Patch Changes
+
+- 72f62ae: Replace post-upgrade hint to suggest `kno doctor` instead of `kno hooks install`.
+- d5bab4b: Update workflows to be more precise in profile and implementation handling.
+
 ## 0.9.0
 
 ### Minor Changes
