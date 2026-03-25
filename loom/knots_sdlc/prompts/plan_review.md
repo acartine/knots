@@ -11,6 +11,7 @@ success:
 failure:
   plan_flawed: ready_for_planning
   requirements_changed: ready_for_planning
+  blocked_by_dependency: deferred
 
 params: {}
 ---

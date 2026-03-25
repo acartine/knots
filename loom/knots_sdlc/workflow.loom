@@ -1,53 +1,38 @@
 workflow knots_sdlc v1 {
 
-    // -- Queue States --
-
-    queue ready_for_planning              "Ready for Planning"
-    queue ready_for_plan_review           "Ready for Plan Review"
-    queue ready_for_implementation        "Ready for Implementation"
-    queue ready_for_implementation_review "Ready for Implementation Review"
-    queue ready_for_shipment              "Ready for Shipment"
-    queue ready_for_shipment_review       "Ready for Shipment Review"
-
     // -- Action States --
 
-    action planning "Planning" {
+    action planning {
         produce agent
-        prompt planning
         output note "kno show"
     }
 
-    action plan_review "Plan Review" {
+    action plan_review {
         gate review agent
-        prompt plan_review
         constraint read_only
         constraint no_git_write
         constraint metadata_only
     }
 
-    action implementation "Implementation" {
+    action implementation {
         produce agent
-        prompt implementation
         output branch
     }
 
-    action implementation_review "Implementation Review" {
+    action implementation_review {
         gate review agent
-        prompt implementation_review
         constraint read_only
         constraint no_git_write
         constraint metadata_only
     }
 
-    action shipment "Shipment" {
+    action shipment {
         produce agent
-        prompt shipment
         output commit
     }
 
-    action shipment_review "Shipment Review" {
+    action shipment_review {
         gate review agent
-        prompt shipment_review
         constraint read_only
         constraint no_git_write
         constraint metadata_only
@@ -55,56 +40,30 @@ workflow knots_sdlc v1 {
 
     // -- Terminal & Escape States --
 
-    terminal shipped   "Shipped"
-    terminal abandoned "Abandoned"
-    escape   deferred  "Deferred"
+    terminal shipped
+    terminal abandoned
+    escape   deferred
 
     // -- Wildcard Transitions --
 
     * -> abandoned
     * -> deferred
 
-    // -- Steps --
-
-    step plan {
-        ready_for_planning -> planning
-    }
-
-    step plan_rev {
-        ready_for_plan_review -> plan_review
-    }
-
-    step impl {
-        ready_for_implementation -> implementation
-    }
-
-    step impl_rev {
-        ready_for_implementation_review -> implementation_review
-    }
-
-    step ship {
-        ready_for_shipment -> shipment
-    }
-
-    step ship_rev {
-        ready_for_shipment_review -> shipment_review
-    }
-
     // -- Phases --
 
     phase planning_phase {
-        produce plan
-        gate plan_rev
+        produce planning
+        gate plan_review
     }
 
     phase implementation_phase {
-        produce impl
-        gate impl_rev
+        produce implementation
+        gate implementation_review
     }
 
     phase shipment_phase {
-        produce ship
-        gate ship_rev
+        produce shipment
+        gate shipment_review
     }
 
     // -- Profiles --

@@ -11,6 +11,7 @@ success:
 failure:
   merge_conflicts: ready_for_implementation
   ci_failure: ready_for_implementation
+  release_blocked: deferred
 
 params: {}
 ---
@@ -21,12 +22,13 @@ Merge the approved implementation to main and push to remote.
 
 ## Actions
 
-1. Merge feature branch to main if the profile output kind requires it
-2. Push main to remote if the profile output kind requires it
+1. Merge the feature branch to main
+2. Push main to remote
 3. Verify CI passes on remote
 
 ## Output
 
+The expected output artifact is a **commit** on main:
 - Code merged and pushed to main
 - CI green on remote
 - Handoff capsule summarizing shipment
