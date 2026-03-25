@@ -1,0 +1,15 @@
+{
+  "event_id": "019d251b-6d0e-7fe2-ba38-da637279e969",
+  "occurred_at": "2026-03-25T13:07:27.63072Z",
+  "knot_id": "knots-0801",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Implementation review approved. All user-level Claude references removed from production code. Tests updated with negative assertions confirming user-level paths are ignored. New tests cover the error case when only user-level root exists. Sanity passes (95.17% coverage). README updated. Codex/OpenCode unchanged.",
+    "datetime": "2026-03-25T13:07:27.63072Z",
+    "entry_id": "019d251b-6d0e-7fe2-ba38-da54d8f118aa",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}
