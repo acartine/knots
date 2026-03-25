@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2521-b0de-71f1-9409-ad8780c13063",
+  "occurred_at": "2026-03-25T13:14:18.206661Z",
+  "knot_id": "knots-0801",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Shipment complete. Feature branch knots-0801-claude-project-skills merged to main (fast-forward, commit ef97c08e3abc). Pushed to remote. CI green (run 23542763447, Sanity passed in 2m10s). Local and remote sanity both pass at 95.17% coverage.",
+    "datetime": "2026-03-25T13:14:18.206661Z",
+    "entry_id": "019d2521-b0de-71f1-9409-ad7c110c3ae0",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}
