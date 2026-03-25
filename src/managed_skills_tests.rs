@@ -20,7 +20,6 @@ fn install_prefers_project_location_when_supported() {
     let repo_root = unique_root("managed-skills-install");
     let home = unique_root("managed-skills-home");
     fs::create_dir_all(repo_root.join(".claude")).expect("project root");
-    fs::create_dir_all(home.join(".claude")).expect("user root");
 
     let output = run_command_with_io(
         &repo_root,
@@ -41,7 +40,6 @@ fn uninstall_removes_installed_skills_from_all_detected_locations() {
     let repo_root = unique_root("managed-skills-uninstall");
     let home = unique_root("managed-skills-home");
     fs::create_dir_all(repo_root.join(".claude")).expect("project root");
-    fs::create_dir_all(home.join(".claude")).expect("user root");
 
     write_skills(
         &SkillLocation {
@@ -52,15 +50,6 @@ fn uninstall_removes_installed_skills_from_all_detected_locations() {
         managed_skills(),
     )
     .expect("project skills should write");
-    write_skills(
-        &SkillLocation {
-            scope: LocationScope::User,
-            tool_root: home.join(".claude"),
-            skills_root: home.join(".claude/skills"),
-        },
-        managed_skills(),
-    )
-    .expect("user skills should write");
 
     let output = run_command_with_io(
         &repo_root,
@@ -72,7 +61,6 @@ fn uninstall_removes_installed_skills_from_all_detected_locations() {
 
     assert!(output.contains(".claude/skills/knots/SKILL.md"));
     assert!(!repo_root.join(".claude/skills/knots/SKILL.md").exists());
-    assert!(!home.join(".claude/skills/knots/SKILL.md").exists());
 }
 
 #[test]
@@ -97,16 +85,6 @@ fn doctor_warns_when_preferred_destination_is_missing_skills() {
     let repo_root = unique_root("managed-skills-doctor");
     let home = unique_root("managed-skills-home");
     fs::create_dir_all(repo_root.join(".claude")).expect("project root");
-    fs::create_dir_all(home.join(".claude")).expect("user root");
-    write_skills(
-        &SkillLocation {
-            scope: LocationScope::User,
-            tool_root: home.join(".claude"),
-            skills_root: home.join(".claude/skills"),
-        },
-        managed_skills(),
-    )
-    .expect("user skills should write");
 
     let check = doctor_check(&repo_root, Some(&home), SkillTool::Claude);
 
@@ -248,10 +226,7 @@ fn skill_tool_helpers_cover_display_and_lookup_paths() {
     assert_eq!(SkillTool::Codex.slug(), "codex");
     assert_eq!(SkillTool::Claude.to_string(), "Claude");
     assert_eq!(SkillTool::OpenCode.doctor_check_name(), "skills_opencode");
-    assert_eq!(
-        expected_root_hint(SkillTool::Claude),
-        ".claude or ~/.claude"
-    );
+    assert_eq!(expected_root_hint(SkillTool::Claude), "./.claude");
     assert_eq!(
         expected_root_hint(SkillTool::OpenCode),
         ".opencode or ~/.config/opencode"
@@ -266,14 +241,13 @@ fn locations_detect_supported_roots_for_all_tools() {
     let home = unique_root("managed-skills-home");
     fs::create_dir_all(repo_root.join(".claude")).expect("claude project root");
     fs::create_dir_all(repo_root.join(".opencode")).expect("opencode project root");
-    fs::create_dir_all(home.join(".claude")).expect("claude user root");
     fs::create_dir_all(home.join(".codex")).expect("codex user root");
     fs::create_dir_all(home.join(".config/opencode")).expect("opencode user root");
 
     assert_eq!(SkillTool::Codex.locations(&repo_root, Some(&home)).len(), 1);
     assert_eq!(
         SkillTool::Claude.locations(&repo_root, Some(&home)).len(),
-        2
+        1
     );
     assert_eq!(
         SkillTool::OpenCode.locations(&repo_root, Some(&home)).len(),
@@ -343,40 +317,46 @@ fn update_only_writes_to_preferred_location_not_user_level() {
     let repo_root = unique_root("managed-skills-update-scope");
     let home = unique_root("managed-skills-home");
     fs::create_dir_all(repo_root.join(".claude")).expect("project root");
-    fs::create_dir_all(home.join(".claude")).expect("user root");
 
-    // Install skills at both project and user level.
     let project_loc = SkillLocation {
         scope: LocationScope::Project,
         tool_root: repo_root.join(".claude"),
         skills_root: repo_root.join(".claude/skills"),
     };
-    let user_loc = SkillLocation {
-        scope: LocationScope::User,
-        tool_root: home.join(".claude"),
-        skills_root: home.join(".claude/skills"),
-    };
     write_skills(&project_loc, managed_skills()).expect("project install");
-    write_skills(&user_loc, managed_skills()).expect("user install");
 
-    // Make both stale.
     let project_knots = repo_root.join(".claude/skills/knots/SKILL.md");
-    let user_knots = home.join(".claude/skills/knots/SKILL.md");
     fs::write(&project_knots, "stale").expect("project stale");
-    fs::write(&user_knots, "stale").expect("user stale");
 
     let output = update_managed(&repo_root, Some(&home), false, SkillTool::Claude).expect("update");
 
     assert!(output.contains("updated"));
-    // Project-level should be refreshed.
     assert!(fs::read_to_string(&project_knots)
         .expect("project knots")
         .contains("---"));
-    // User-level should remain stale (untouched).
-    assert_eq!(
-        fs::read_to_string(&user_knots).expect("user knots"),
-        "stale"
-    );
+}
+
+#[test]
+fn claude_ignores_user_level_root_even_when_home_is_set() {
+    let repo_root = unique_root("managed-skills-claude-project-only");
+    let home = unique_root("managed-skills-home");
+    fs::create_dir_all(home.join(".claude")).expect("user root");
+
+    let check = doctor_check(&repo_root, Some(&home), SkillTool::Claude);
+    assert_eq!(check.status, DoctorStatus::Warn);
+    assert!(check.detail.contains("Claude root not detected"));
+    assert!(check.detail.contains("create ./.claude"));
+
+    let err = run_command_with_io(
+        &repo_root,
+        Some(&home),
+        false,
+        SkillsCommand::Install(SkillTool::Claude),
+    )
+    .expect_err("install should fail without a project-level root");
+
+    assert!(err.to_string().contains("create ./.claude first"));
+    assert!(!home.join(".claude/skills/knots/SKILL.md").exists());
 }
 
 #[test]

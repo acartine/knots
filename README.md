@@ -301,10 +301,10 @@ kno skills install claude
 kno skills install opencode
 ```
 
-When a project-level root exists, Knots installs there first (`.claude/skills`
-or `.opencode/skills`). Otherwise it falls back to the supported user-level
-root. `kno doctor` checks whether those expected skills are present and reports
-missing setup with the exact `SKILL.md` paths.
+Claude support is project-level only at `./.claude/skills`. OpenCode installs
+to the project root when `./.opencode/` exists; otherwise it falls back to the
+supported user-level root. `kno doctor` checks whether those expected skills
+are present and reports missing setup with the exact `SKILL.md` paths.
 
 **CI/CD**:
 ```yaml

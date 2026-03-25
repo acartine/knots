@@ -151,7 +151,6 @@ fn skills_install_prefers_project_root_for_claude() {
     let root = unique_workspace("knots-cli-skills-claude");
     let home = unique_workspace("knots-cli-skills-home");
     std::fs::create_dir_all(root.join(".claude")).expect("project root should exist");
-    std::fs::create_dir_all(home.join(".claude")).expect("user root should exist");
     let db = root.join(".knots/cache/state.sqlite");
 
     let install = run_knots(&root, &db, &home, &["skills", "install", "claude"]);
@@ -180,20 +179,16 @@ fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
     let home = unique_workspace("knots-cli-skills-home");
     setup_repo_with_remote(&root);
     let project_claude = root.join(".claude");
-    let user_claude = home.join(".claude");
     std::fs::create_dir_all(&project_claude).expect("project root should exist");
-    std::fs::create_dir_all(&user_claude).expect("user root should exist");
     let db = root.join(".knots/cache/state.sqlite");
 
-    let user_install = run_knots(&root, &db, &home, &["skills", "install", "claude"]);
-    assert_success(&user_install);
-    let user_skill = user_claude.join("skills/knots/SKILL.md");
+    let install = run_knots(&root, &db, &home, &["skills", "install", "claude"]);
+    assert_success(&install);
     let project_skill = project_claude.join("skills/knots/SKILL.md");
     assert!(project_skill.exists());
     std::fs::rename(&project_skill, project_claude.join("knots.backup"))
         .expect("project skill should be movable");
     assert!(!project_skill.exists());
-    assert!(!user_skill.exists());
     assert!(project_claude.join("knots.backup").exists());
 
     let doctor = run_knots(&root, &db, &home, &["doctor", "--json"]);
@@ -211,13 +206,26 @@ fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
     let doctor_fix = run_knots(&root, &db, &home, &["doctor", "--fix"]);
     assert_success(&doctor_fix);
     assert!(project_skill.exists());
-    assert!(!user_skill.exists());
 
     let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
     assert_success(&after);
     let report: Value = serde_json::from_slice(&after.stdout).expect("doctor json should parse");
     let claude = find_check(&report, "skills_claude");
     assert_eq!(claude["status"], "pass");
+}
+
+#[test]
+fn skills_install_for_claude_ignores_user_level_home_root() {
+    let root = unique_workspace("knots-cli-skills-claude-project-only");
+    let home = unique_workspace("knots-cli-skills-home");
+    std::fs::create_dir_all(home.join(".claude")).expect("user root should exist");
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let install = run_knots(&root, &db, &home, &["skills", "install", "claude"]);
+    assert_failure(&install);
+    let stderr = String::from_utf8_lossy(&install.stderr);
+    assert!(stderr.contains("Claude root not detected; create ./.claude first"));
+    assert!(!home.join(".claude/skills/knots/SKILL.md").exists());
 }
 
 #[test]

@@ -77,6 +77,10 @@ impl SkillTool {
             .collect()
     }
 
+    fn requires_existing_root(self) -> bool {
+        matches!(self, SkillTool::Claude)
+    }
+
     fn location_candidates(self, repo_root: &Path, home: Option<&Path>) -> Vec<SkillLocation> {
         let mut locations = Vec::new();
         match self {
@@ -97,14 +101,6 @@ impl SkillTool {
                     repo_root.join(".claude"),
                     "skills",
                 );
-                if let Some(home) = home {
-                    push_location(
-                        &mut locations,
-                        LocationScope::User,
-                        home.join(".claude"),
-                        "skills",
-                    );
-                }
             }
             SkillTool::OpenCode => {
                 push_location(
@@ -421,7 +417,11 @@ fn doctor_location(
                 .find(|location| location.scope == LocationScope::User)
                 .cloned()
         })
-        .or_else(|| candidates.into_iter().next())
+        .or_else(|| {
+            (!tool.requires_existing_root())
+                .then(|| candidates.into_iter().next())
+                .flatten()
+        })
 }
 
 fn push_location(
@@ -440,7 +440,7 @@ fn push_location(
 fn expected_root_hint(tool: SkillTool) -> &'static str {
     match tool {
         SkillTool::Codex => "~/.codex",
-        SkillTool::Claude => ".claude or ~/.claude",
+        SkillTool::Claude => "./.claude",
         SkillTool::OpenCode => ".opencode or ~/.config/opencode",
     }
 }
