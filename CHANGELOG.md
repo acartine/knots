@@ -1,5 +1,11 @@
 # kno
 
+## 0.10.1
+
+### Patch Changes
+
+- 7fbe752: - Restrict Claude skills to project root directory
+
 ## 0.10.0
 
 ### Minor Changes
