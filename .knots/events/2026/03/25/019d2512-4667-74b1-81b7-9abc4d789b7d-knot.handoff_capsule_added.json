@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2512-4667-74b1-81b7-9abc4d789b7d",
+  "occurred_at": "2026-03-25T12:57:27.911419Z",
+  "knot_id": "knots-0801",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Plan reviewed and approved. All user-level Claude path references identified in location_candidates(), expected_root_hint(), unit tests (managed_skills_tests.rs), integration tests (cli_skills.rs), and README.md. The plan correctly targets all locations, scopes changes to Claude only (leaving Codex/OpenCode unchanged), and includes adequate test coverage. Backward incompatibility for ~/.claude/skills users is intentional per acceptance criteria.",
+    "datetime": "2026-03-25T12:57:27.911419Z",
+    "entry_id": "019d2512-4667-74b1-81b7-9aa067b0cd21",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}
