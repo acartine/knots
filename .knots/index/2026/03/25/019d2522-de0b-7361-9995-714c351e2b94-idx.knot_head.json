@@ -1,0 +1,20 @@
+{
+  "event_id": "019d2522-de0b-7361-9995-714c351e2b94",
+  "occurred_at": "2026-03-25T13:15:35.301216Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-0801",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "kno doctor looks in wrong place for knots skills for claude",
+    "type": "work",
+    "updated_at": "2026-03-25T13:15:35.301216Z",
+    "workflow_id": "compatibility"
+  }
+}

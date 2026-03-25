@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2522-de05-7d42-9661-86646b762374",
+  "occurred_at": "2026-03-25T13:15:35.301216Z",
+  "knot_id": "knots-0801",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Shipment review approved. Verified commit ef97c08e3abc on main. All 3 CI workflows green. Code correctly removes user-level ~/.claude from Claude location_candidates, adds requires_existing_root() gate, updates doctor_location and expected_root_hint. Tests include negative assertions confirming user-level paths are never written. README updated. OpenCode/Codex behavior unchanged. No regressions.",
+    "datetime": "2026-03-25T13:15:35.301216Z",
+    "entry_id": "019d2522-de05-7d42-9661-865507708523",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}
