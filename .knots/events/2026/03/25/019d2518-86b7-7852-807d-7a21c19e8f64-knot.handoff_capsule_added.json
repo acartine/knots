@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2518-86b7-7852-807d-7a21c19e8f64",
+  "occurred_at": "2026-03-25T13:04:17.591807Z",
+  "knot_id": "knots-0801",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented Claude managed-skill project scoping only. Removed all Knots fallback/use of ~/.claude for Claude commands and doctor flows, updated unit and CLI coverage for project-root-only behavior, and updated README guidance. Validation: cargo test managed_skills; cargo test --test cli_skills; make install-hooks; make sanity. Branch: knots-0801-claude-project-skills. Commit: ef97c08e3abc.",
+    "datetime": "2026-03-25T13:04:11Z",
+    "entry_id": "019d2518-86b7-7852-807d-7a14500cefc0",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "1.0"
+  }
+}
