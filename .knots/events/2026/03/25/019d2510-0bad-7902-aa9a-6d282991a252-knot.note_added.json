@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2510-0bad-7902-aa9a-6d282991a252",
+  "occurred_at": "2026-03-25T12:55:01.805438Z",
+  "knot_id": "knots-0801",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation plan:\n1. Restrict Claude managed-skill discovery to the project root only in `src/managed_skills.rs`. Remove the `HOME/.claude` candidate from `SkillTool::Claude::location_candidates`, update the Claude root hint to `./.claude`, and verify the shared `preferred_location` / `doctor_location` path continues to drive `kno skills install`, `uninstall`, `update`, `doctor`, and `doctor --fix` without any Claude user-scope fallback.\n2. Update unit coverage in `src/managed_skills_tests.rs` to match the new contract. Remove test setup and assertions that create or expect `home/.claude`, add assertions that Claude exposes only the project location, and cover the negative case where Claude warns/errors if `./.claude` is absent even when `HOME` is set. Keep Codex and OpenCode user-level behavior unchanged.\n3. Update CLI integration coverage in `tests/cli_skills.rs` so Claude flows validate only `./.claude/skills`. Rewrite the doctor/install scenarios to assert that reported paths and repairs are project-local, and drop any assumptions that Knots will inspect or clean user-level Claude state.\n4. Update the managed-skills documentation in `README.md` to remove the Claude fallback wording and state clearly that Claude support is project-level only (`./.claude/skills`).\n5. During implementation, run targeted tests first (`cargo test managed_skills`, `cargo test --test cli_skills`) and then `make sanity` before any push because this repo requires the full sanity gate.\n\nComplexity: low to moderate; the behavior is centralized, but tests and docs must be updated consistently.\nRisk: this is an intentional compatibility break for legacy `~/.claude/skills` users. After the change, Knots will no longer uninstall or repair those files; manual cleanup would be outside Knots, which matches the requested behavior.\n\nChild knots: not needed; the change is small and cohesive.",
+    "datetime": "2026-03-25T12:54:02Z",
+    "entry_id": "019d2510-0bad-7902-aa9a-6d1be3c1262f",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

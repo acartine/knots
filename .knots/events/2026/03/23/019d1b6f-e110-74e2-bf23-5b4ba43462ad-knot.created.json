@@ -1,0 +1,17 @@
+{
+  "event_id": "019d1b6f-e110-74e2-bf23-5b4ba43462ad",
+  "occurred_at": "2026-03-23T16:03:30.192834Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.created",
+  "data": {
+    "body": "Clients should only provide identity once, at lease creation time. When a lease is bound to a knot, Knots should stamp note and handoff capsule metadata from that lease instead of storing unknown identity fields. Clients must not rehydrate this on read; the stored knot data should already be correct.\n\nReproduction steps:\n1. Create a lease with agent identity populated, for example provider, agent name, model, and model version.\n2. Bind that lease to a knot and operate on the knot through the lease.\n3. Add a note with `kno update <id> --add-note \"...\"` without passing note identity flags.\n4. Add a handoff capsule with `kno update <id> --add-handoff-capsule \"...\"` without passing handoff identity flags.\n5. Inspect the knot with `kno show <id> --json`.\n\nExpected result:\n- The stored note and handoff capsule entries are stamped with the lease-owned identity metadata.\n- Username, agentname, model, and version reflect the lease metadata rather than unknown placeholders.\n- Clients do not need to supply identity again after lease creation and do not need to repair metadata on read.\n\nActual result:\n- Knots stores the new note and handoff capsule entries with `username`, `agentname`, `model`, and `version` set to `\"unknown\"` even though the lease already has that identity.\n- This forces clients into an invalid position where they would otherwise have to choose between re-sending identity outside lease creation or rehydrating metadata on read.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_with_pr",
+    "state": "ready_for_planning",
+    "title": "Stamp note and handoff metadata from the lease",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

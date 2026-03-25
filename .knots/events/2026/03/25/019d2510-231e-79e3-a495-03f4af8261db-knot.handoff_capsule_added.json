@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2510-231e-79e3-a495-03f4af8261db",
+  "occurred_at": "2026-03-25T12:55:07.806048Z",
+  "knot_id": "knots-0801",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan attached. The implementation should remove all Claude user-scope managed-skill handling from `src/managed_skills.rs`, update unit and CLI coverage to treat Claude as project-only (`./.claude/skills`), and revise README language accordingly. Main risk is intentional backward incompatibility for legacy `~/.claude/skills`; Knots should no longer read, repair, or uninstall that location.",
+    "datetime": "2026-03-25T12:54:02Z",
+    "entry_id": "019d2510-231e-79e3-a495-03ee04900abc",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

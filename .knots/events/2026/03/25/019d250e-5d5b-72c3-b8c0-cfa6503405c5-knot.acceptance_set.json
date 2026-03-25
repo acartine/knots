@@ -1,0 +1,9 @@
+{
+  "event_id": "019d250e-5d5b-72c3-b8c0-cfa6503405c5",
+  "occurred_at": "2026-03-25T12:53:11.638428Z",
+  "knot_id": "knots-0801",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "knots should never ever under any circumstance look at the user level claude settings.  ever.\n\nthere is no reference anywhere in knots where user level claude settings are referenced"
+  }
+}
