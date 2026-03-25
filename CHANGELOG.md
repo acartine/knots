@@ -1,5 +1,13 @@
 # kno
 
+## 0.10.0
+
+### Minor Changes
+
+- 77fc354: - Add ship-release skill for autonomous release cutting
+  - Update loom SDLC workflow definitions (simplified workflow, updated prompts)
+  - Remove changeset enforcement from pre-push hook and CI
+
 ## 0.9.1
 
 ### Patch Changes
