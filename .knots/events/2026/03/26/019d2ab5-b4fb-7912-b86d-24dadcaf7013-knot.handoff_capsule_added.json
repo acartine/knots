@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2ab5-b4fb-7912-b86d-24dadcaf7013",
+  "occurred_at": "2026-03-26T15:14:04.667649Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Implementation review APPROVED. Diff is minimal and correct: 2 symmetric changes in write_dispatch.rs add lease provider->username fallback for both note and handoff metadata, matching the existing pattern for agentname/model/version. All 5 acceptance criteria verified: (1) note auto-fills from lease, (2) handoff auto-fills from lease, (3) no 'unknown' when lease has values, (4) show returns persisted metadata, (5) no resend required. Tests cover auto-fill, override, and no-lease fallback for both note and handoff. Sanity passes: 711 tests, 95.17% coverage, no lint/format issues.",
+    "datetime": "2026-03-26T15:14:04.667649Z",
+    "entry_id": "019d2ab5-b4fb-7912-b86d-24cca7e0e6fc",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}
