@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2aa3-564d-7613-8fec-4b21ada02c80",
+  "occurred_at": "2026-03-26T14:54:00.781492Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Plan review approved. The implementation plan is sound and well-scoped. Key observations: (1) 3 of 4 lease-to-metadata field mappings already exist in write_dispatch.rs — only username←provider is missing for both note and handoff paths. (2) resolve_lease_agent_info() already centralizes lease identity lookup. (3) Test infrastructure exists in tests_lease_ext.rs but needs username assertions and handoff capsule coverage. (4) No architectural concerns — change is small, backward-compatible, and follows existing patterns. (5) The plan correctly identifies provider as the source for username, which is the only durable lease identity field for that purpose. Ready for implementation.",
+    "datetime": "2026-03-26T14:54:00.781492Z",
+    "entry_id": "019d2aa3-564d-7613-8fec-4b1dbfd5193a",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}
