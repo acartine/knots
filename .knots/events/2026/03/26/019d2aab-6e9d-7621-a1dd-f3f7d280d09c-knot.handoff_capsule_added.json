@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2aab-6e9d-7621-a1dd-f3f7d280d09c",
+  "occurred_at": "2026-03-26T15:02:51.293097Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Implementation complete on feat/stamp-lease-identity-metadata (PR #41). Added lease provider->username mapping for both note and handoff capsule write paths in write_dispatch.rs. Added 2 new tests (handoff auto-fill, handoff override) and strengthened 3 existing tests with username assertions. All 711 tests pass, 95.18% coverage. Ready for implementation review.",
+    "datetime": "2026-03-26T15:02:51.293097Z",
+    "entry_id": "019d2aab-6e9d-7621-a1dd-f3ece3dce914",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}
