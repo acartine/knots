@@ -1,0 +1,9 @@
+{
+  "event_id": "019d2a9e-e98d-7741-9f7b-753e4638ff1b",
+  "occurred_at": "2026-03-26T14:49:10.79737Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.description_set",
+  "data": {
+    "description": "When a lease is created, clients provide agent identity metadata once at lease creation time. After that, when the lease is bound to a knot, Knots must use the identity stored on the lease to stamp any new note and handoff capsule metadata written through that lease. Knots should not persist `unknown` placeholders for these fields when lease identity is available, and clients should not need to resend identity fields on update operations or repair missing metadata when reading knot data."
+  }
+}

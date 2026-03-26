@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2aa1-8dc3-7801-9e83-58589b01506f",
+  "occurred_at": "2026-03-26T14:52:03.907809Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan:\n1. Trace the write path in src/write_dispatch.rs and centralize lease-derived metadata resolution for update operations so both note and handoff creation use the bound lease once, not repeated ad hoc fallbacks.\n2. Map lease identity fields from src/domain/lease.rs into metadata fields consistently: provider -> username, agent_name -> agentname, model -> model, model_version -> version. Preserve explicit --note-* and --handoff-* flags as higher priority, and keep \"unknown\" only for fields still empty after both explicit input and lease metadata are checked.\n3. Keep persistence in the normal write path so src/app.rs continues storing the resolved metadata directly in knot.note_added and knot.handoff_capsule_added events. This should satisfy show/read behavior without adding repair logic on read, because kno show --json already projects persisted metadata entries.\n4. Extend lease-focused tests in src/write_dispatch/tests_lease_ext.rs to cover both add-note and add-handoff-capsule with a bound lease and no identity flags, asserting username/agentname/model/version are stamped from lease identity and not stored as \"unknown\". Add override coverage to prove explicit flags still win, and keep the no-lease fallback case so legacy unknown behavior remains only when no lease metadata exists.\n5. Add an end-to-end acceptance test at the CLI or app layer (tests/cli_dispatch.rs or src/app/tests_acceptance_ext.rs) that binds a lease, runs update operations without identity flags, then verifies kno show <id> --json returns the already-persisted stamped metadata for both notes and handoff capsules.\nComplexity: small to moderate, likely confined to write_dispatch plus targeted tests.\nPrimary risk: confirming the intended source for metadata.username. Based on the current schema, lease agent_info.provider is the only durable lease identity field that can populate username, so tests should lock that mapping in explicitly.",
+    "datetime": "2026-03-26T14:52:03.907809Z",
+    "entry_id": "019d2aa1-8dc3-7801-9e83-5842a91fe10a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

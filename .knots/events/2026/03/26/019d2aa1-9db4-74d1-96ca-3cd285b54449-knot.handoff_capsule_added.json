@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2aa1-9db4-74d1-96ca-3cd285b54449",
+  "occurred_at": "2026-03-26T14:52:07.988839Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan ready: implement shared lease-to-metadata stamping for note and handoff writes, using lease provider/agent/model/version as defaults when update flags are omitted, then cover note, handoff, override, no-lease fallback, and show --json persistence with focused tests.",
+    "datetime": "2026-03-26T00:00:00Z",
+    "entry_id": "019d2aa1-9db4-74d1-96ca-3cc8e68ab18a",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "1"
+  }
+}

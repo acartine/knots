@@ -1,0 +1,9 @@
+{
+  "event_id": "019d2a9e-e98d-7741-9f7b-75453c35bfc9",
+  "occurred_at": "2026-03-26T14:49:10.79737Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Given a lease created with agent identity metadata populated (for example provider, agent name, model, and model version), when that lease is bound to a knot and `kno update <id> --add-note \"...\"` is run without note identity flags, the stored note entry is stamped from the lease identity.\n2. Given the same lease, when `kno update <id> --add-handoff-capsule \"...\"` is run without handoff identity flags, the stored handoff capsule entry is stamped from the lease identity.\n3. In both stored entries, `username`, `agentname`, `model`, and `version` reflect the lease metadata and are not stored as `\"unknown\"` when the lease has values for those fields.\n4. `kno show <id> --json` returns knot data with the correct stamped note and handoff capsule metadata already persisted; clients are not required to rehydrate or repair these fields on read.\n5. The change does not require clients to resend identity metadata after lease creation in order to get correct note or handoff capsule metadata."
+  }
+}

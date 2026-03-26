@@ -1,0 +1,10 @@
+{
+  "event_id": "019d2a9e-e98d-7741-9f7b-7521cdd8011a",
+  "occurred_at": "2026-03-26T14:49:10.79737Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Stamp note and handoff metadata from the lease",
+    "to": "Stamp note and handoff metadata from lease identity"
+  }
+}
