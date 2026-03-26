@@ -436,6 +436,7 @@ fn note_auto_fills_from_lease_agent_info() {
 
     let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
     let note = updated.notes.last().expect("should have a note");
+    assert_eq!(note.username, "Anthropic");
     assert_eq!(note.agentname, "claude");
     assert_eq!(note.model, "opus");
     assert_eq!(note.version, "4.6");
@@ -472,7 +473,7 @@ fn explicit_note_flags_override_lease_agent_info() {
         gate_failure_modes: vec![],
         clear_gate_failure_modes: false,
         add_note: Some("override note".to_string()),
-        note_username: None,
+        note_username: Some("custom-user".to_string()),
         note_datetime: None,
         note_agentname: Some("custom-agent".to_string()),
         note_model: Some("custom-model".to_string()),
@@ -496,6 +497,7 @@ fn explicit_note_flags_override_lease_agent_info() {
 
     let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
     let note = updated.notes.last().expect("should have a note");
+    assert_eq!(note.username, "custom-user");
     assert_eq!(note.agentname, "custom-agent");
     assert_eq!(note.model, "custom-model");
     assert_eq!(note.version, "9.9");
@@ -554,7 +556,136 @@ fn note_defaults_preserved_without_lease() {
 
     let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
     let note = updated.notes.last().expect("should have a note");
+    assert_eq!(note.username, "unknown");
     assert_eq!(note.agentname, "unknown");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn handoff_capsule_auto_fills_from_lease_agent_info() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let knot = app
+        .create_knot("Handoff autofill test", None, None, None)
+        .expect("create");
+    let lease_id = create_test_lease(&app);
+    crate::lease::bind_lease(&app, &knot.id, &lease_id).expect("bind");
+
+    let op = WriteOperation::Update(UpdateOperation {
+        id: knot.id.clone(),
+        title: None,
+        description: None,
+        acceptance: None,
+        priority: None,
+        status: None,
+        knot_type: None,
+        add_tags: vec![],
+        remove_tags: vec![],
+        add_invariants: vec![],
+        remove_invariants: vec![],
+        clear_invariants: false,
+        gate_owner_kind: None,
+        gate_failure_modes: vec![],
+        clear_gate_failure_modes: false,
+        add_note: None,
+        note_username: None,
+        note_datetime: None,
+        note_agentname: None,
+        note_model: None,
+        note_version: None,
+        add_handoff_capsule: Some("auto-filled handoff".to_string()),
+        handoff_username: None,
+        handoff_datetime: None,
+        handoff_agentname: None,
+        handoff_model: None,
+        handoff_version: None,
+        if_match: None,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        force: false,
+        approve_terminal_cascade: false,
+        lease_id: None,
+    });
+    execute_operation(&app, &op).expect("update with handoff should succeed");
+
+    let updated = app.show_knot(&knot.id).expect("show").expect("exists");
+    let hc = updated
+        .handoff_capsules
+        .last()
+        .expect("should have handoff");
+    assert_eq!(hc.username, "Anthropic");
+    assert_eq!(hc.agentname, "claude");
+    assert_eq!(hc.model, "opus");
+    assert_eq!(hc.version, "4.6");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn explicit_handoff_flags_override_lease_agent_info() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let knot = app
+        .create_knot("Handoff override test", None, None, None)
+        .expect("create");
+    let lease_id = create_test_lease(&app);
+    crate::lease::bind_lease(&app, &knot.id, &lease_id).expect("bind");
+
+    let op = WriteOperation::Update(UpdateOperation {
+        id: knot.id.clone(),
+        title: None,
+        description: None,
+        acceptance: None,
+        priority: None,
+        status: None,
+        knot_type: None,
+        add_tags: vec![],
+        remove_tags: vec![],
+        add_invariants: vec![],
+        remove_invariants: vec![],
+        clear_invariants: false,
+        gate_owner_kind: None,
+        gate_failure_modes: vec![],
+        clear_gate_failure_modes: false,
+        add_note: None,
+        note_username: None,
+        note_datetime: None,
+        note_agentname: None,
+        note_model: None,
+        note_version: None,
+        add_handoff_capsule: Some("override handoff".to_string()),
+        handoff_username: Some("custom-user".to_string()),
+        handoff_datetime: None,
+        handoff_agentname: Some("custom-agent".to_string()),
+        handoff_model: Some("custom-model".to_string()),
+        handoff_version: Some("9.9".to_string()),
+        if_match: None,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        force: false,
+        approve_terminal_cascade: false,
+        lease_id: None,
+    });
+    execute_operation(&app, &op).expect("update should succeed");
+
+    let updated = app.show_knot(&knot.id).expect("show").expect("exists");
+    let hc = updated
+        .handoff_capsules
+        .last()
+        .expect("should have handoff");
+    assert_eq!(hc.username, "custom-user");
+    assert_eq!(hc.agentname, "custom-agent");
+    assert_eq!(hc.model, "custom-model");
+    assert_eq!(hc.version, "9.9");
 
     let _ = std::fs::remove_dir_all(root);
 }
