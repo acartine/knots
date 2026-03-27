@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2de4-ca86-7df1-90e0-e0acca59b5a5",
+  "occurred_at": "2026-03-27T06:04:22.022941Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review approved on main. Verified commit f785c272f9ee is live on origin/main, knot tag commit:f785c272f9ee is present, no knot invariants are defined, PR #41 required checks succeeded, and cargo test write_dispatch::tests_lease_ext passed on main with the lease identity stamping coverage green.",
+    "datetime": "2026-03-27T06:04:22.022941Z",
+    "entry_id": "019d2de4-ca86-7df1-90e0-e09b20bc7577",
+    "model": "opus/claude",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}

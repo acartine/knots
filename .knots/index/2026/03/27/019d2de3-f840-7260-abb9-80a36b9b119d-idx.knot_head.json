@@ -1,0 +1,23 @@
+{
+  "event_id": "019d2de3-f840-7260-abb9-80a36b9b119d",
+  "occurred_at": "2026-03-27T06:03:28.192657Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-6a90",
+    "profile_id": "autopilot_with_pr",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "Stamp note and handoff metadata from lease identity",
+    "type": "work",
+    "updated_at": "2026-03-27T06:03:28.192657Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d2de3-a7b3-7d92-be94-483b7448a6ec"
+  }
+}
