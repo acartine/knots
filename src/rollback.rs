@@ -295,6 +295,14 @@ mod tests {
     }
 
     #[test]
+    fn require_rollback_state_rejects_unknown_gate_states() {
+        let profile = profile("autopilot");
+        let err = require_rollback_state(&profile, KnotType::Gate, "blocked")
+            .expect_err("passive gate state should be rejected");
+        assert!(err.to_string().contains("not valid for gate knots"));
+    }
+
+    #[test]
     fn reject_invalid_rollback_state_rejects_gate_queue_states() {
         let profile = profile("autopilot");
         let err = reject_invalid_rollback_state(
@@ -304,6 +312,19 @@ mod tests {
         )
         .expect_err("gate queue state should be rejected");
         assert!(err.to_string().contains("queue state"));
+    }
+
+    #[test]
+    fn reject_invalid_rollback_state_rejects_terminal_and_passive_work_states() {
+        let profile = profile("autopilot");
+
+        let terminal = reject_invalid_rollback_state(&profile, KnotType::Work, "shipped")
+            .expect_err("terminal state should be rejected");
+        assert!(terminal.to_string().contains("terminal state"));
+
+        let passive = reject_invalid_rollback_state(&profile, KnotType::Work, "deferred")
+            .expect_err("passive state should be rejected");
+        assert!(passive.to_string().contains("passive state"));
     }
 
     #[test]

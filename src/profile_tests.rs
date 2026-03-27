@@ -1,4 +1,4 @@
-use super::{GateMode, ProfileRegistry};
+use super::{GateMode, ProfileError, ProfileRegistry};
 use crate::installed_workflows;
 use uuid::Uuid;
 
@@ -189,4 +189,65 @@ fn require_state_and_transition_validation_report_unknown_states() {
         .validate_transition("ready_for_planning", "shipped", false)
         .expect_err("invalid transition should fail");
     assert!(err.to_string().contains("invalid state transition"));
+}
+
+#[test]
+fn profile_error_display_covers_passive_workflow_variants() {
+    assert_eq!(
+        ProfileError::MissingProfileReference.to_string(),
+        "profile id is required"
+    );
+    assert_eq!(
+        ProfileError::UnknownWorkflow("custom_flow".to_string()).to_string(),
+        "unknown workflow 'custom_flow'"
+    );
+    assert_eq!(
+        ProfileError::UnknownState {
+            profile_id: "custom_flow/autopilot".to_string(),
+            state: "blocked".to_string(),
+        }
+        .to_string(),
+        "unknown state 'blocked' for profile 'custom_flow/autopilot'"
+    );
+}
+
+#[test]
+fn queue_state_and_optional_planning_transitions_are_profile_aware() {
+    let registry = ProfileRegistry::load().expect("registry should load");
+    let autopilot = registry.require("autopilot").expect("profile should exist");
+    assert!(autopilot.is_queue_state("ready_for_planning"));
+    assert_eq!(
+        autopilot.action_for_queue_state("ready_for_plan_review"),
+        Some("plan_review")
+    );
+
+    let optional = ProfileRegistry::from_toml(
+        r#"
+            [[profiles]]
+            id = "test_optional_planning"
+            planning_mode = "optional"
+            implementation_review_mode = "required"
+            output = "local"
+
+            [profiles.owners.planning]
+            kind = "agent"
+            [profiles.owners.plan_review]
+            kind = "human"
+            [profiles.owners.implementation]
+            kind = "agent"
+            [profiles.owners.implementation_review]
+            kind = "human"
+            [profiles.owners.shipment]
+            kind = "agent"
+            [profiles.owners.shipment_review]
+            kind = "human"
+        "#,
+    )
+    .expect("registry should parse");
+    let profile = optional
+        .require("test_optional_planning")
+        .expect("profile should exist");
+    profile
+        .validate_transition("ready_for_planning", "ready_for_implementation", false)
+        .expect("optional planning should allow direct transition");
 }
