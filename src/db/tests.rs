@@ -1,6 +1,6 @@
 use super::{
-    get_pull_drift_warn_threshold, get_sync_fetch_blob_limit_kb, open_connection, set_meta,
-    CURRENT_SCHEMA_VERSION,
+    get_pull_drift_warn_threshold, get_sync_fetch_blob_limit_kb, is_retryable_lock_error,
+    needs_schema_bootstrap, open_connection, set_meta, with_write_retry, CURRENT_SCHEMA_VERSION,
 };
 use rusqlite::params;
 use std::sync::mpsc;
@@ -591,6 +591,46 @@ fn get_knot_hot_accepts_legacy_empty_lease_data_json() {
         record.lease_data,
         crate::domain::lease::LeaseData::default()
     );
+
+    cleanup_db_files(&path);
+}
+
+#[test]
+fn needs_schema_bootstrap_detects_meta_drift() {
+    let path = unique_db_path();
+    let conn = open_connection(&path).expect("connection should open");
+    assert!(!needs_schema_bootstrap(&conn).expect("fresh schema should not need bootstrap"));
+
+    set_meta(&conn, "schema_version", "0").expect("schema version should update");
+    assert!(needs_schema_bootstrap(&conn).expect("stale schema version should trigger bootstrap"));
+
+    set_meta(&conn, "schema_version", &CURRENT_SCHEMA_VERSION.to_string())
+        .expect("schema version should restore");
+    conn.execute("DELETE FROM meta WHERE key = 'sync_policy'", [])
+        .expect("required meta key should delete");
+    assert!(needs_schema_bootstrap(&conn).expect("missing meta should trigger bootstrap"));
+
+    cleanup_db_files(&path);
+}
+
+#[test]
+fn fetch_blob_limit_env_override_and_retry_helpers_cover_error_paths() {
+    let path = unique_db_path();
+    let conn = open_connection(&path).expect("connection should open");
+    set_meta(&conn, "sync_fetch_blob_limit_kb", "4").expect("meta update should succeed");
+
+    std::env::set_var("KNOTS_FETCH_BLOB_LIMIT_KB", "8");
+    let env_value = get_sync_fetch_blob_limit_kb(&conn).expect("env override should parse");
+    std::env::remove_var("KNOTS_FETCH_BLOB_LIMIT_KB");
+    assert_eq!(env_value, Some(8));
+
+    let err = with_write_retry(|| {
+        Err::<(), rusqlite::Error>(rusqlite::Error::InvalidParameterName("boom".to_string()))
+    })
+    .expect_err("non-retryable errors should propagate");
+    assert!(matches!(err, rusqlite::Error::InvalidParameterName(_)));
+
+    assert!(!is_retryable_lock_error(&rusqlite::Error::InvalidQuery));
 
     cleanup_db_files(&path);
 }
