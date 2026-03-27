@@ -1,0 +1,15 @@
+{
+  "event_id": "019d2de3-956b-7942-8ed3-8cb22b6a4e57",
+  "occurred_at": "2026-03-27T06:03:02.891201Z",
+  "knot_id": "knots-6a90",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment complete. Merged PR #41 (squash) to main as commit f785c272f9ee. CI green on main — 711 tests pass, 95.17% coverage. Feature stamps lease identity (provider, agent_name, model, model_version) into note and handoff capsule metadata on write, eliminating 'unknown' placeholders when lease metadata is available.",
+    "datetime": "2026-03-27T06:03:02.891201Z",
+    "entry_id": "019d2de3-956b-7942-8ed3-8caaf4986ecd",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
