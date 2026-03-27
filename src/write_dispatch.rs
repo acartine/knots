@@ -313,7 +313,10 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 let lai = lease_agent.as_ref();
                 MetadataEntryInput {
                     content,
-                    username: args.note_username.clone(),
+                    username: args
+                        .note_username
+                        .clone()
+                        .or_else(|| lai.map(|i| i.provider.clone())),
                     datetime: args.note_datetime.clone(),
                     agentname: args
                         .note_agentname
@@ -333,7 +336,10 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 let lai = lease_agent.as_ref();
                 MetadataEntryInput {
                     content,
-                    username: args.handoff_username.clone(),
+                    username: args
+                        .handoff_username
+                        .clone()
+                        .or_else(|| lai.map(|i| i.provider.clone())),
                     datetime: args.handoff_datetime.clone(),
                     agentname: args
                         .handoff_agentname
