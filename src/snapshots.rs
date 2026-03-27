@@ -179,6 +179,7 @@ pub fn apply_latest_snapshots(
                     profile_id: &record.profile_id,
                     profile_etag: record.profile_etag.as_deref(),
                     deferred_from_state: record.deferred_from_state.as_deref(),
+                    blocked_from_state: record.blocked_from_state.as_deref(),
                     created_at: record.created_at.as_deref(),
                 },
             )?;
@@ -305,6 +306,7 @@ mod tests {
                 profile_id: "default",
                 profile_etag: Some("evt-1"),
                 deferred_from_state: None,
+                blocked_from_state: None,
                 created_at: Some("2026-02-24T10:00:00Z"),
             },
         )

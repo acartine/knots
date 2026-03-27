@@ -23,10 +23,11 @@ pub const SHIPMENT: &str = "shipment";
 pub const READY_FOR_SHIPMENT_REVIEW: &str = "ready_for_shipment_review";
 pub const SHIPMENT_REVIEW: &str = "shipment_review";
 pub const SHIPPED: &str = "shipped";
+pub const BLOCKED: &str = "blocked";
 pub const DEFERRED: &str = "deferred";
 pub const ABANDONED: &str = "abandoned";
 
-const ALL_STATES: [&str; 15] = [
+const ALL_STATES: [&str; 16] = [
     READY_FOR_PLANNING,
     PLANNING,
     READY_FOR_PLAN_REVIEW,
@@ -40,6 +41,7 @@ const ALL_STATES: [&str; 15] = [
     READY_FOR_SHIPMENT_REVIEW,
     SHIPMENT_REVIEW,
     SHIPPED,
+    BLOCKED,
     DEFERRED,
     ABANDONED,
 ];
@@ -134,6 +136,12 @@ pub struct ProfileDefinition {
     pub queue_states: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub action_states: Vec<String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub queue_actions: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub action_kinds: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub escape_states: Vec<String>,
     pub terminal_states: Vec<String>,
     pub transitions: Vec<WorkflowTransition>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -372,6 +380,9 @@ impl ProfileDefinition {
 
     #[allow(dead_code)]
     pub fn is_action_state(&self, state: &str) -> bool {
+        if self.is_escape_state(state) {
+            return false;
+        }
         if !self.action_states.is_empty() {
             return self
                 .action_states
@@ -379,6 +390,23 @@ impl ProfileDefinition {
                 .any(|candidate| candidate == state);
         }
         self.owners.for_action_state(state).is_some() || state == "evaluating"
+    }
+
+    pub fn action_for_queue_state(&self, state: &str) -> Option<&str> {
+        self.queue_actions.get(state).map(String::as_str)
+    }
+
+    pub fn is_gate_action_state(&self, state: &str) -> bool {
+        matches!(
+            self.action_kinds.get(state).map(String::as_str),
+            Some("gate") | Some("review")
+        )
+    }
+
+    pub fn is_escape_state(&self, state: &str) -> bool {
+        self.escape_states
+            .iter()
+            .any(|candidate| candidate == normalize_state_alias(state))
     }
 
     pub fn prompt_for_action_state(&self, state: &str) -> Option<&str> {
@@ -530,6 +558,7 @@ fn normalize_profile_definition(
     }
 
     let terminal_states = vec![SHIPPED.to_string(), ABANDONED.to_string()];
+    let escape_states = vec![DEFERRED.to_string()];
     let queue_states = states
         .iter()
         .filter(|state| state.starts_with("ready_for_"))
@@ -550,6 +579,31 @@ fn normalize_profile_definition(
         })
         .cloned()
         .collect::<Vec<_>>();
+    let queue_actions = BTreeMap::from([
+        (READY_FOR_PLANNING.to_string(), PLANNING.to_string()),
+        (READY_FOR_PLAN_REVIEW.to_string(), PLAN_REVIEW.to_string()),
+        (
+            READY_FOR_IMPLEMENTATION.to_string(),
+            IMPLEMENTATION.to_string(),
+        ),
+        (
+            READY_FOR_IMPLEMENTATION_REVIEW.to_string(),
+            IMPLEMENTATION_REVIEW.to_string(),
+        ),
+        (READY_FOR_SHIPMENT.to_string(), SHIPMENT.to_string()),
+        (
+            READY_FOR_SHIPMENT_REVIEW.to_string(),
+            SHIPMENT_REVIEW.to_string(),
+        ),
+    ]);
+    let action_kinds = BTreeMap::from([
+        (PLANNING.to_string(), "produce".to_string()),
+        (PLAN_REVIEW.to_string(), "gate".to_string()),
+        (IMPLEMENTATION.to_string(), "produce".to_string()),
+        (IMPLEMENTATION_REVIEW.to_string(), "gate".to_string()),
+        (SHIPMENT.to_string(), "produce".to_string()),
+        (SHIPMENT_REVIEW.to_string(), "gate".to_string()),
+    ]);
     let mut owner_states = BTreeMap::new();
     owner_states.insert(READY_FOR_PLANNING.to_string(), raw.owners.planning.clone());
     owner_states.insert(PLANNING.to_string(), raw.owners.planning.clone());
@@ -604,6 +658,9 @@ fn normalize_profile_definition(
         states,
         queue_states,
         action_states,
+        queue_actions,
+        action_kinds,
+        escape_states,
         terminal_states,
         transitions,
         action_prompts: BTreeMap::new(),

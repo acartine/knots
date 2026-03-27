@@ -42,6 +42,7 @@ fn sample_record(id: &str, state: &str, deferred_from_state: Option<&str>) -> Kn
         profile_id: "default".to_string(),
         profile_etag: None,
         deferred_from_state: deferred_from_state.map(ToString::to_string),
+        blocked_from_state: None,
         created_at: None,
     }
 }
@@ -141,8 +142,8 @@ fn terminal_parent_resolutions_require_all_direct_children_and_pick_precedence()
         .map(|resolution| (resolution.parent.id, resolution.target_state))
         .collect::<Vec<_>>();
 
-    assert!(summary.contains(&(shipped_parent.id, "shipped".to_string())));
-    assert!(summary.contains(&(deferred_parent.id, "deferred".to_string())));
+    assert!(!summary.iter().any(|(id, _)| id == &shipped_parent.id));
+    assert!(!summary.iter().any(|(id, _)| id == &deferred_parent.id));
     assert!(summary.contains(&(abandoned_parent.id, "abandoned".to_string())));
     assert!(!summary.iter().any(|(id, _)| id == &blocked_parent.id));
 
@@ -184,12 +185,12 @@ fn terminal_parent_resolutions_skip_terminal_parents_and_missing_children() {
 }
 
 #[test]
-fn terminal_resolution_target_handles_deferred_abandoned_and_invalid_states() {
+fn terminal_resolution_target_rejects_deferred_and_handles_abandoned() {
     let deferred = vec![sample_record("child-a", "deferred", None)];
-    assert_eq!(
-        terminal_resolution_target(&deferred).expect("deferred target should resolve"),
-        "deferred"
-    );
+    let err = terminal_resolution_target(&deferred).expect_err("deferred should stay non-terminal");
+    assert!(err
+        .to_string()
+        .contains("non-terminal child state 'deferred'"));
 
     let abandoned = vec![sample_record("child-b", "abandoned", None)];
     assert_eq!(
@@ -250,10 +251,7 @@ fn ancestor_terminal_resolutions_walk_parents_once_and_sort_results() {
         .collect::<Vec<_>>();
     summary.sort();
 
-    let mut expected = vec![
-        (parent.id, "shipped".to_string()),
-        (sibling_parent.id, "shipped".to_string()),
-    ];
+    let mut expected = vec![(parent.id, "shipped".to_string())];
     expected.sort();
     assert_eq!(summary, expected);
 

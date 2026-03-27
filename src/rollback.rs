@@ -1,7 +1,6 @@
 use crate::app::{App, AppError, KnotView};
 use crate::dispatch::{owner_kind_label, profile_lookup_id};
 use crate::domain::knot_type::KnotType;
-use crate::profile::{DEFERRED, IMPLEMENTATION, PLANNING, SHIPMENT};
 use crate::workflow::ProfileDefinition;
 use crate::workflow_runtime;
 
@@ -93,7 +92,9 @@ fn reject_invalid_rollback_state(
     knot_type: KnotType,
     state: &str,
 ) -> Result<(), AppError> {
-    if workflow_runtime::is_queue_state(state) {
+    if (knot_type == KnotType::Gate && workflow_runtime::is_queue_state(state))
+        || (knot_type != KnotType::Gate && profile.is_queue_state(state))
+    {
         return Err(AppError::InvalidArgument(format!(
             "rollback is only allowed from action states; '{}' is a queue state",
             state
@@ -105,10 +106,11 @@ fn reject_invalid_rollback_state(
             state
         )));
     }
-    if state == DEFERRED {
-        return Err(AppError::InvalidArgument(
-            "rollback is only allowed from action states; 'deferred' is not actionable".to_string(),
-        ));
+    if knot_type == KnotType::Work && profile.is_escape_state(state) {
+        return Err(AppError::InvalidArgument(format!(
+            "rollback is only allowed from action states; '{}' is a passive state",
+            state
+        )));
     }
     Ok(())
 }
@@ -144,10 +146,13 @@ fn rollback_target<'a>(
     }
 
     let current_idx = profile.states.iter().position(|state| state == current)?;
-    if is_review_action_state(current) {
+    if profile.is_gate_action_state(current) {
         let action_idx = profile.states[..current_idx]
             .iter()
-            .rposition(|state| is_non_review_action_state(state))?;
+            .rposition(|state| {
+                profile.is_action_state(state) && !profile.is_gate_action_state(state)
+            })
+            .unwrap_or(current_idx);
         let target_state = previous_ready_state(profile, action_idx)?;
         return Some(RollbackTarget {
             target_state,
@@ -157,7 +162,7 @@ fn rollback_target<'a>(
             ),
         });
     }
-    if is_non_review_action_state(current) {
+    if profile.is_action_state(current) {
         let target_state = previous_ready_state(profile, current_idx)?;
         return Some(RollbackTarget {
             target_state,
@@ -173,16 +178,8 @@ fn rollback_target<'a>(
 fn previous_ready_state(profile: &ProfileDefinition, before_idx: usize) -> Option<&str> {
     profile.states[..before_idx]
         .iter()
-        .rposition(|state| workflow_runtime::is_queue_state(state))
+        .rposition(|state| profile.is_queue_state(state))
         .map(|idx| profile.states[idx].as_str())
-}
-
-fn is_review_action_state(state: &str) -> bool {
-    !workflow_runtime::is_queue_state(state) && state.ends_with("_review")
-}
-
-fn is_non_review_action_state(state: &str) -> bool {
-    matches!(state, PLANNING | IMPLEMENTATION | SHIPMENT)
 }
 
 #[cfg(test)]

@@ -14,7 +14,7 @@ use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 12;
+pub const CURRENT_SCHEMA_VERSION: i64 = 13;
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
 const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
@@ -34,7 +34,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 12] = [
+const MIGRATIONS: [Migration; 13] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -211,6 +211,13 @@ ALTER TABLE knot_hot ADD COLUMN workflow_id TEXT NOT NULL DEFAULT 'compatibility
         name: "knot_acceptance_v1",
         sql: r#"
 ALTER TABLE knot_hot ADD COLUMN acceptance TEXT;
+"#,
+    },
+    Migration {
+        version: 13,
+        name: "knot_blocked_provenance_v1",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN blocked_from_state TEXT;
 "#,
     },
 ];
@@ -451,6 +458,7 @@ pub struct KnotCacheRecord {
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
+    pub blocked_from_state: Option<String>,
     pub created_at: Option<String>,
 }
 
@@ -490,6 +498,7 @@ pub struct UpsertKnotHot<'a> {
     pub profile_id: &'a str,
     pub profile_etag: Option<&'a str>,
     pub deferred_from_state: Option<&'a str>,
+    pub blocked_from_state: Option<&'a str>,
     pub created_at: Option<&'a str>,
 }
 
@@ -510,7 +519,7 @@ INSERT INTO knot_hot (
     handoff_capsules_json, invariants_json, step_history_json,
     gate_data_json, lease_data_json, lease_id,
     workflow_id, profile_id, profile_etag,
-    deferred_from_state, created_at
+    deferred_from_state, blocked_from_state, created_at
 )
 VALUES (
     ?1, ?2, ?3, ?4, ?5, ?6, ?7,
@@ -518,7 +527,7 @@ VALUES (
     ?12, ?13, ?14, ?15,
     ?16, ?17,
     ?18, ?19, ?20,
-    ?21, ?22
+    ?21, ?22, ?23
 )
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
@@ -541,6 +550,7 @@ ON CONFLICT(id) DO UPDATE SET
     profile_id = excluded.profile_id,
     profile_etag = excluded.profile_etag,
     deferred_from_state = excluded.deferred_from_state,
+    blocked_from_state = excluded.blocked_from_state,
     created_at = COALESCE(knot_hot.created_at, excluded.created_at)
 "#,
             params![
@@ -565,6 +575,7 @@ ON CONFLICT(id) DO UPDATE SET
                 args.profile_id,
                 args.profile_etag,
                 args.deferred_from_state,
+                args.blocked_from_state,
                 args.created_at
             ],
         )?;
@@ -586,7 +597,7 @@ SELECT id, title, state, updated_at, body, description, acceptance,
        handoff_capsules_json, invariants_json, step_history_json, gate_data_json,
        lease_data_json, lease_id,
        workflow_id, profile_id, profile_etag,
-       deferred_from_state, created_at
+       deferred_from_state, blocked_from_state, created_at
 FROM knot_hot
 WHERE id = ?1
 "#,
@@ -604,7 +615,7 @@ SELECT id, title, state, updated_at, body, description, acceptance,
        handoff_capsules_json, invariants_json, step_history_json, gate_data_json,
        lease_data_json, lease_id,
        workflow_id, profile_id, profile_etag,
-       deferred_from_state, created_at
+       deferred_from_state, blocked_from_state, created_at
 FROM knot_hot
 ORDER BY updated_at DESC, id ASC
 "#,
@@ -649,7 +660,8 @@ fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> 
         profile_id: row.get(18)?,
         profile_etag: row.get(19)?,
         deferred_from_state: row.get(20)?,
-        created_at: row.get(21)?,
+        blocked_from_state: row.get(21)?,
+        created_at: row.get(22)?,
     })
 }
 

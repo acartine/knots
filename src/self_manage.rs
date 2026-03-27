@@ -416,9 +416,11 @@ mod tests {
 
     #[test]
     fn upgrade_summary_right_aligns_labels_and_left_aligns_values() {
+        std::env::set_var("NO_COLOR", "1");
         let install_dir = Path::new("/tmp/kno-test-install");
         let summary =
             format_upgrade_summary(Some("v1.2.3"), Some("acartine/knots"), Some(install_dir));
+        std::env::remove_var("NO_COLOR");
         let lines = summary.lines().collect::<Vec<_>>();
         assert_eq!(lines[0], "Upgrade");
         assert_eq!(lines[1], "     status:  updated kno binary");

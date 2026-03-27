@@ -178,6 +178,10 @@ action_type = "gate"
 executor = "human"
 prompt = "review"
 
+[states.blocked]
+display_name = "Blocked"
+kind = "escape"
+
 [states.deferred]
 display_name = "Deferred"
 kind = "escape"
@@ -214,7 +218,7 @@ Perform the work.
 complete = "ready_for_review"
 
 [prompts.work.failure]
-blocked = "deferred"
+blocked = "blocked"
 
 [prompts.review]
 accept = ["Reviewed change"]
@@ -421,7 +425,7 @@ fn loom_compat_test_dispatches_through_main() {
         stdout.contains("success -> ready_for_review"),
         "stdout: {stdout}"
     );
-    assert!(stdout.contains("blocked -> deferred"), "stdout: {stdout}");
+    assert!(stdout.contains("blocked -> blocked"), "stdout: {stdout}");
 
     let json = run_knots_with_path(
         &root,

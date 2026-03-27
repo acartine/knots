@@ -394,7 +394,7 @@ pub struct ListArgs {
     #[arg(
         short = 'a',
         long = "all",
-        help = "Include shipped, abandoned, and deferred knots."
+        help = "Include shipped and abandoned knots."
     )]
     pub all: bool,
 

@@ -16,7 +16,7 @@
 - This session is authorized only for `implementation`.
 - Complete exactly one implementation action, then stop.
 - Allowed resting states after this session:
-  `ready_for_implementation_review`, `deferred`, or `ready_for_planning`.
+  `ready_for_implementation_review`, `blocked`, or `ready_for_planning`.
 - Do not merge the feature branch to main, perform shipment work, or
   continue into later workflow stages in this session.
 - Opening or updating a review artifact for the implementation branch is
@@ -49,8 +49,8 @@
 
 ## Failure Modes
 - Blocked by dependency:
-  `kno update <id> --status deferred --add-note "<blocker details>"`
-  `kno update <id> --add-handoff-capsule "<reason for deferral>"`
+  `kno update <id> --status blocked --add-note "<blocker details>"`
+  `kno update <id> --add-handoff-capsule "<blocking dependency details>"`
 - Implementation infeasible:
   `kno update <id> --status ready_for_planning`
   `--add-note "<blocker details>"`

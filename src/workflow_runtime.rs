@@ -26,7 +26,7 @@ pub fn is_action_state(state: &str) -> bool {
         || (!is_queue_state(state)
             && !matches!(
                 state,
-                "shipped" | "abandoned" | "deferred" | LEASE_TERMINATED
+                "shipped" | "abandoned" | "blocked" | "deferred" | LEASE_TERMINATED
             ))
 }
 
@@ -82,6 +82,19 @@ pub fn is_terminal_state(
         KnotType::Gate => Ok(matches!(state, "shipped" | "abandoned")),
         KnotType::Lease => Ok(matches!(state, LEASE_TERMINATED)),
     }
+}
+
+#[allow(dead_code)]
+pub fn is_escape_state(
+    registry: &ProfileRegistry,
+    profile_id: &str,
+    knot_type: KnotType,
+    state: &str,
+) -> Result<bool, ProfileError> {
+    Ok(match knot_type {
+        KnotType::Work => registry.require(profile_id)?.is_escape_state(state),
+        KnotType::Gate | KnotType::Lease => false,
+    })
 }
 
 pub fn validate_transition(
@@ -221,10 +234,10 @@ fn validate_lease_transition(from: &str, to: &str, force: bool) -> Result<(), Pr
 #[cfg(test)]
 mod tests {
     use super::{
-        initial_state, is_action_state, is_action_state_for_profile, is_queue_state,
-        is_queue_state_for_profile, is_terminal_state, next_happy_path_state, next_outcome_state,
-        owner_kind_for_state, queue_state_for_stage, validate_transition, EVALUATING,
-        READY_TO_EVALUATE,
+        initial_state, is_action_state, is_action_state_for_profile, is_escape_state,
+        is_queue_state, is_queue_state_for_profile, is_terminal_state, next_happy_path_state,
+        next_outcome_state, owner_kind_for_state, queue_state_for_stage, validate_transition,
+        EVALUATING, READY_TO_EVALUATE,
     };
     use crate::domain::gate::{GateData, GateOwnerKind};
     use crate::domain::knot_type::KnotType;
@@ -243,6 +256,117 @@ mod tests {
         assert!(is_queue_state(READY_TO_EVALUATE));
         assert!(is_action_state(EVALUATING));
         assert!(!is_action_state(READY_TO_EVALUATE));
+        assert!(!is_action_state("blocked"));
+    }
+
+    #[test]
+    fn profile_escape_states_are_non_actionable_and_non_terminal() {
+        let workspace = unique_workspace("knots-workflow-escape");
+        let workflow_root = workspace.join(".knots/workflows/custom_flow/1");
+        std::fs::create_dir_all(&workflow_root).expect("workflow dir should exist");
+        std::fs::write(
+            workflow_root.join("bundle.toml"),
+            r#"
+[workflow]
+name = "custom_flow"
+version = 1
+default_profile = "autopilot"
+
+[states.ready_for_work]
+kind = "queue"
+
+[states.work]
+kind = "action"
+action_type = "produce"
+executor = "agent"
+prompt = "work"
+
+[states.blocked]
+kind = "escape"
+
+[states.deferred]
+kind = "escape"
+
+[states.done]
+kind = "terminal"
+
+[steps.work_step]
+queue = "ready_for_work"
+action = "work"
+
+[states.ready_for_review]
+kind = "queue"
+
+[states.review]
+kind = "action"
+action_type = "gate"
+executor = "human"
+prompt = "review"
+
+[steps.review_step]
+queue = "ready_for_review"
+action = "review"
+
+[phases.main]
+produce = "work_step"
+gate = "review_step"
+
+[profiles.autopilot]
+phases = ["main"]
+output = "remote_main"
+
+[prompts.work]
+body = "Work"
+
+[prompts.work.success]
+done = "done"
+
+[prompts.work.failure]
+blocked = "blocked"
+
+[prompts.review]
+body = "Review"
+
+[prompts.review.success]
+approved = "done"
+
+[prompts.review.failure]
+changes = "ready_for_work"
+"#,
+        )
+        .expect("bundle should write");
+        std::fs::create_dir_all(workspace.join(".knots/workflows"))
+            .expect(".knots workflows should exist");
+        std::fs::write(
+            workspace.join(".knots/workflows/current"),
+            "current_workflow = \"custom_flow\"\ncurrent_version = 1\ncurrent_profile = \"autopilot\"\n",
+        )
+        .expect("workflow config should write");
+
+        let registry = ProfileRegistry::load_for_repo(&workspace).expect("registry should load");
+        assert!(is_escape_state(
+            &registry,
+            "custom_flow/autopilot",
+            KnotType::Work,
+            "blocked"
+        )
+        .expect("blocked should classify as escape"));
+        assert!(!is_action_state_for_profile(
+            &registry,
+            "custom_flow/autopilot",
+            KnotType::Work,
+            "blocked"
+        )
+        .expect("blocked should not be actionable"));
+        assert!(!is_terminal_state(
+            &registry,
+            "custom_flow/autopilot",
+            KnotType::Work,
+            "blocked"
+        )
+        .expect("blocked should not be terminal"));
+
+        let _ = std::fs::remove_dir_all(workspace);
     }
 
     #[test]

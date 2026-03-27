@@ -116,7 +116,7 @@ fn should_hide_terminal(knot: &KnotView, filter: &NormalizedFilter) -> bool {
         return false;
     }
     let state_lower = knot.state.trim().to_ascii_lowercase();
-    let is_terminal = matches!(state_lower.as_str(), "shipped" | "abandoned" | "deferred");
+    let is_terminal = matches!(state_lower.as_str(), "shipped" | "abandoned");
     if !is_terminal {
         return false;
     }
@@ -213,6 +213,7 @@ mod tests {
             profile_id: "default".to_string(),
             profile_etag: None,
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: None,
             edges: Vec::new(),
             child_summaries: vec![],
@@ -413,15 +414,14 @@ mod tests {
     }
 
     #[test]
-    fn excludes_deferred_by_default() {
+    fn includes_deferred_by_default() {
         let knots = vec![
             knot("K-1", "Active", "implementing", Some("task"), &[], None),
             knot("K-2", "Later", "deferred", Some("task"), &[], None),
         ];
         let filter = KnotListFilter::default();
         let filtered = apply_filters(knots, &filter);
-        assert_eq!(filtered.len(), 1);
-        assert_eq!(filtered[0].id, "K-1");
+        assert_eq!(filtered.len(), 2);
     }
 
     #[test]

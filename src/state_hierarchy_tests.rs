@@ -44,6 +44,7 @@ fn sample_record(id: &str, state: &str, deferred_from_state: Option<&str>) -> Kn
         profile_id: "default".to_string(),
         profile_etag: None,
         deferred_from_state: deferred_from_state.map(ToString::to_string),
+        blocked_from_state: None,
         created_at: None,
     }
 }
@@ -80,9 +81,9 @@ fn terminal_state_helper_matches_terminal_states() {
 }
 
 #[test]
-fn terminal_resolution_state_helper_includes_deferred() {
+fn terminal_resolution_state_helper_excludes_deferred() {
     assert!(is_terminal_resolution_state("shipped").expect("shipped should parse"));
-    assert!(is_terminal_resolution_state("deferred").expect("deferred should parse"));
+    assert!(!is_terminal_resolution_state("deferred").expect("deferred should parse"));
     assert!(is_terminal_resolution_state("abandoned").expect("abandoned should parse"));
     assert!(!is_terminal_resolution_state("implementation").expect("implementation should parse"));
 }

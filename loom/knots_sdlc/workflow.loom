@@ -42,6 +42,7 @@ workflow knots_sdlc v1 {
 
     terminal shipped
     terminal abandoned
+    escape   blocked
     escape   deferred
 
     // -- Wildcard Transitions --

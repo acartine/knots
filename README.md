@@ -32,6 +32,9 @@ Each step of the workflow is either an action state or a queue state.
 - **Queue states** mean something is ready to be picked up by the next responsible actor.
 
 That split keeps it obvious what is in progress, what is waiting, and what should happen next.
+Some workflows also define **passive escape states** such as `blocked` or
+`deferred`. Those states are non-terminal waiting states: they are not
+claimable work, and they do not imply that the knot is done.
 
 ### Profiles
 

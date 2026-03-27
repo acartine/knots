@@ -45,6 +45,7 @@ fn sample_record() -> KnotCacheRecord {
         profile_id: "default".to_string(),
         profile_etag: Some("etag-1".to_string()),
         deferred_from_state: None,
+        blocked_from_state: None,
         created_at: None,
     }
 }
@@ -141,6 +142,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
         profile_id: String::new(),
         profile_etag: None,
         deferred_from_state: None,
+        blocked_from_state: None,
         created_at: None,
     };
 

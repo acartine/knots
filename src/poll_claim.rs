@@ -365,15 +365,6 @@ fn require_queue_state(registry: &ProfileRegistry, knot: &KnotView) -> Result<()
             knot.id
         )));
     }
-    if knot.knot_type == KnotType::Work {
-        if !workflow_runtime::is_queue_state(&knot.state) {
-            return Err(AppError::InvalidArgument(format!(
-                "knot '{}' is in state '{}', which is not a claimable queue state",
-                knot.id, knot.state
-            )));
-        }
-        return Ok(());
-    }
     let profile_id = profile_lookup_id(knot);
     if !workflow_runtime::is_queue_state_for_profile(
         registry,
@@ -444,7 +435,9 @@ fn queue_stage_matches(registry: &ProfileRegistry, knot: &KnotView, normalized: 
     }
     if let Ok(profile) = registry.require(&profile_lookup_id(knot)) {
         return profile.queue_states.iter().any(|state| {
-            state == &knot.state && state.trim_start_matches("ready_for_") == normalized
+            state == &knot.state
+                && (state.trim_start_matches("ready_for_") == normalized
+                    || profile.action_for_queue_state(state) == Some(normalized))
         });
     }
     false

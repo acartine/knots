@@ -12,7 +12,7 @@ success:
 failure:
   insufficient_context: ready_for_planning
   out_of_scope: ready_for_planning
-  blocked_by_dependency: deferred
+  blocked_by_dependency: blocked
 
 params:
   complexity:

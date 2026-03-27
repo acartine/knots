@@ -380,6 +380,7 @@ fn push_blocks_with_active_leases() {
             profile_id: "autopilot",
             profile_etag: None,
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: None,
         },
     )

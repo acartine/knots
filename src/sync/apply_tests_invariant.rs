@@ -74,6 +74,7 @@ fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
             profile_id: "autopilot",
             profile_etag: Some("etag-1"),
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: Some("2026-02-25T10:00:00Z"),
         },
     )

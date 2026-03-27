@@ -15,6 +15,7 @@ pub struct HierarchyKnot {
     pub id: String,
     pub state: String,
     pub deferred_from_state: Option<String>,
+    pub blocked_from_state: Option<String>,
 }
 
 impl HierarchyKnot {
@@ -23,13 +24,17 @@ impl HierarchyKnot {
             id: record.id.clone(),
             state: record.state.clone(),
             deferred_from_state: record.deferred_from_state.clone(),
+            blocked_from_state: record.blocked_from_state.clone(),
         }
     }
 
     pub fn display_state(&self) -> String {
         match self.deferred_from_state.as_deref() {
             Some(from) if self.state == "deferred" => format!("deferred from {from}"),
-            _ => self.state.clone(),
+            _ => match self.blocked_from_state.as_deref() {
+                Some(from) if self.state == "blocked" => format!("blocked from {from}"),
+                _ => self.state.clone(),
+            },
         }
     }
 }
@@ -284,6 +289,13 @@ fn collect_descendant_depths(
 }
 
 fn effective_target_rank(knot: &KnotCacheRecord, target_state: &str) -> Result<u8, AppError> {
+    if target_state == "blocked" {
+        return if knot.state == "blocked" {
+            effective_state_rank(knot.blocked_from_state.as_deref().unwrap_or("blocked"))
+        } else {
+            effective_state_rank(&knot.state)
+        };
+    }
     if target_state == "deferred" {
         return if knot.state == "deferred" {
             effective_state_rank(knot.deferred_from_state.as_deref().unwrap_or("deferred"))
@@ -295,6 +307,9 @@ fn effective_target_rank(knot: &KnotCacheRecord, target_state: &str) -> Result<u
 }
 
 fn effective_record_rank(knot: &KnotCacheRecord) -> Result<u8, AppError> {
+    if knot.state == "blocked" {
+        return effective_state_rank(knot.blocked_from_state.as_deref().unwrap_or("blocked"));
+    }
     if knot.state == "deferred" {
         effective_state_rank(knot.deferred_from_state.as_deref().unwrap_or("deferred"))
     } else {
@@ -326,6 +341,9 @@ fn effective_state_rank(state: &str) -> Result<u8, AppError> {
         };
         return Ok(rank);
     }
+    if normalized == "blocked" {
+        return Ok(255);
+    }
     if normalized == "deferred" {
         return Ok(255);
     }
@@ -348,25 +366,15 @@ pub fn is_terminal_state(state: &str) -> Result<bool, AppError> {
 pub fn is_terminal_resolution_state(state: &str) -> Result<bool, AppError> {
     let normalized = state.trim().to_ascii_lowercase().replace('-', "_");
     Ok(KnotState::from_str(&normalized)
-        .map(|state| {
-            matches!(
-                state,
-                KnotState::Shipped | KnotState::Deferred | KnotState::Abandoned
-            )
-        })
-        .unwrap_or(matches!(
-            normalized.as_str(),
-            "shipped" | "deferred" | "abandoned"
-        )))
+        .map(|state| matches!(state, KnotState::Shipped | KnotState::Abandoned))
+        .unwrap_or(matches!(normalized.as_str(), "shipped" | "abandoned")))
 }
 
 fn terminal_resolution_target(children: &[KnotCacheRecord]) -> Result<&'static str, AppError> {
-    let mut saw_deferred = false;
     for child in children {
         let normalized = child.state.trim().to_ascii_lowercase().replace('-', "_");
         match KnotState::from_str(&normalized) {
             Ok(KnotState::Shipped) => return Ok("shipped"),
-            Ok(KnotState::Deferred) => saw_deferred = true,
             Ok(KnotState::Abandoned) => {}
             Ok(other) => {
                 return Err(AppError::InvalidArgument(format!(
@@ -375,7 +383,6 @@ fn terminal_resolution_target(children: &[KnotCacheRecord]) -> Result<&'static s
                 )));
             }
             Err(_) if normalized == "shipped" => return Ok("shipped"),
-            Err(_) if normalized == "deferred" => saw_deferred = true,
             Err(_) if normalized == "abandoned" => {}
             Err(_) => {
                 return Err(AppError::InvalidArgument(format!(
@@ -386,11 +393,7 @@ fn terminal_resolution_target(children: &[KnotCacheRecord]) -> Result<&'static s
         }
     }
 
-    if saw_deferred {
-        Ok("deferred")
-    } else {
-        Ok("abandoned")
-    }
+    Ok("abandoned")
 }
 
 #[cfg(test)]

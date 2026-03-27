@@ -265,6 +265,7 @@ fn check_stuck_leases_warns_when_active() {
             profile_id: "autopilot",
             profile_etag: None,
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: None,
         },
     )
@@ -324,6 +325,7 @@ fn fix_stuck_leases_terminates_active() {
             profile_id: "autopilot",
             profile_etag: None,
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: None,
         },
     )

@@ -1025,6 +1025,7 @@ mod tests {
             id: "knots-child".to_string(),
             state: "planning".to_string(),
             deferred_from_state: None,
+            blocked_from_state: None,
         }];
         let err = execute_with_terminal_cascade_prompt(false, |_| -> Result<(), AppError> {
             Err(AppError::TerminalCascadeApprovalRequired {
@@ -1054,6 +1055,7 @@ mod tests {
             id: "knots-child".to_string(),
             state: "deferred".to_string(),
             deferred_from_state: Some("implementation".to_string()),
+            blocked_from_state: None,
         }];
         let mut output = Vec::new();
         let mut input = Cursor::new("yes\n");
@@ -1079,6 +1081,7 @@ mod tests {
             id: "knots-child".to_string(),
             state: "planning".to_string(),
             deferred_from_state: None,
+            blocked_from_state: None,
         }];
         let mut output = Vec::new();
         let mut input = Cursor::new("no\n");
@@ -1338,6 +1341,7 @@ mod tests {
             profile_id: "default".to_string(),
             profile_etag: None,
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: None,
             edges: vec![],
             child_summaries: vec![],

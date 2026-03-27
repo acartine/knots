@@ -418,6 +418,7 @@ fn upsert_and_get_knot_hot_round_trips_invariants() {
             profile_id: "autopilot",
             profile_etag: Some("etag-inv"),
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: Some("2026-03-05T09:00:00Z"),
         },
     )
@@ -466,6 +467,7 @@ fn upsert_knot_hot_with_empty_invariants_round_trips() {
             profile_id: "autopilot",
             profile_etag: None,
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: None,
         },
     )
@@ -526,6 +528,7 @@ fn count_active_leases_returns_count() {
                 profile_id: "autopilot",
                 profile_etag: None,
                 deferred_from_state: None,
+                blocked_from_state: None,
                 created_at: None,
             },
         )
@@ -569,6 +572,7 @@ fn get_knot_hot_accepts_legacy_empty_lease_data_json() {
             profile_id: "autopilot",
             profile_etag: None,
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: None,
         },
     )

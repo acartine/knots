@@ -140,7 +140,7 @@ fn doctor_warns_and_fix_resolves_terminal_parents_recursively() {
     let grandparent = create_knot(&root, &db, "Grandparent", "implementation");
     let parent = create_knot(&root, &db, "Parent", "implementation");
     let shipped = create_knot(&root, &db, "Shipped child", "shipped");
-    let deferred = create_knot(&root, &db, "Deferred child", "deferred");
+    let abandoned = create_knot(&root, &db, "Abandoned child", "abandoned");
 
     assert_success(&run_knots(
         &root,
@@ -155,7 +155,7 @@ fn doctor_warns_and_fix_resolves_terminal_parents_recursively() {
     assert_success(&run_knots(
         &root,
         &db,
-        &["edge", "add", &parent, "parent_of", &deferred],
+        &["edge", "add", &parent, "parent_of", &abandoned],
     ));
 
     let doctor = run_knots(&root, &db, &["doctor", "--json"]);
@@ -177,7 +177,7 @@ fn doctor_warns_and_fix_resolves_terminal_parents_recursively() {
     assert_success(&doctor_fix);
     assert_eq!(show_state(&root, &db, &parent), "shipped");
     assert_eq!(show_state(&root, &db, &grandparent), "shipped");
-    assert_eq!(show_state(&root, &db, &deferred), "deferred");
+    assert_eq!(show_state(&root, &db, &abandoned), "abandoned");
 
     let after = run_knots(&root, &db, &["doctor", "--json"]);
     assert_success(&after);
@@ -189,4 +189,39 @@ fn doctor_warns_and_fix_resolves_terminal_parents_recursively() {
         .find(|check| check["name"] == "terminal_parents")
         .expect("terminal_parents check should exist");
     assert_eq!(terminal_parents["status"], "pass");
+}
+
+#[test]
+fn doctor_ignores_deferred_children_when_checking_terminal_parents() {
+    let root = unique_workspace("knots-cli-doctor-deferred-passive");
+    setup_repo_with_remote(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let parent = create_knot(&root, &db, "Parent", "implementation");
+    let shipped = create_knot(&root, &db, "Shipped child", "shipped");
+    let deferred = create_knot(&root, &db, "Deferred child", "deferred");
+
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["edge", "add", &parent, "parent_of", &shipped],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["edge", "add", &parent, "parent_of", &deferred],
+    ));
+
+    let doctor = run_knots(&root, &db, &["doctor", "--json"]);
+    assert_success(&doctor);
+    let report: Value = serde_json::from_slice(&doctor.stdout).expect("doctor json should parse");
+    let terminal_parents = report["checks"]
+        .as_array()
+        .expect("checks should be an array")
+        .iter()
+        .find(|check| check["name"] == "terminal_parents")
+        .expect("terminal_parents check should exist");
+    assert_eq!(terminal_parents["status"], "pass");
+    assert_eq!(show_state(&root, &db, &parent), "implementation");
+    assert_eq!(show_state(&root, &db, &deferred), "deferred");
 }

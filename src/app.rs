@@ -75,6 +75,7 @@ pub struct KnotView {
     pub profile_id: String,
     pub profile_etag: Option<String>,
     pub deferred_from_state: Option<String>,
+    pub blocked_from_state: Option<String>,
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub edges: Vec<EdgeView>,
@@ -674,6 +675,7 @@ impl App {
                 updated_at: &occurred_at,
                 terminal,
                 deferred_from_state: None,
+                blocked_from_state: None,
                 invariants: &[],
                 knot_type: options.knot_type,
                 gate_data: &options.gate_data,
@@ -725,6 +727,7 @@ impl App {
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: None,
+                blocked_from_state: None,
                 created_at: Some(&occurred_at),
             },
         )?;
@@ -775,13 +778,8 @@ impl App {
             return self.apply_alias_to_knot(KnotView::from(current));
         }
 
-        let deferred_from_state = if next_state == "deferred" && current.state != "deferred" {
-            Some(current.state.clone())
-        } else if current.state == "deferred" && next_state != "deferred" {
-            None
-        } else {
-            current.deferred_from_state.clone()
-        };
+        let deferred_from_state = next_deferred_from_state(&current, &next_state);
+        let blocked_from_state = next_blocked_from_state(profile, &current, &next_state);
 
         let occurred_at = now_utc_rfc3339();
         let mut full_event = FullEvent::with_identity(
@@ -795,6 +793,7 @@ impl App {
                 "from_state": current.state,
                 "to_state": next_state,
                 "deferred_from_state": deferred_from_state,
+                "blocked_from_state": blocked_from_state,
             }),
         );
         if let Some(expected) = expected_profile_etag {
@@ -822,6 +821,7 @@ impl App {
                 updated_at: &occurred_at,
                 terminal,
                 deferred_from_state: deferred_from_state.as_deref(),
+                blocked_from_state: blocked_from_state.as_deref(),
                 invariants: &current.invariants,
                 knot_type,
                 gate_data: &current.gate_data,
@@ -858,6 +858,7 @@ impl App {
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
+                blocked_from_state: blocked_from_state.as_deref(),
                 created_at: current.created_at.as_deref(),
             },
         )?;
@@ -989,6 +990,7 @@ impl App {
         let profile = self.resolve_profile_for_record(&current)?;
         let profile_id = profile.id.clone();
         let mut deferred_from_state = current.deferred_from_state.clone();
+        let mut blocked_from_state = current.blocked_from_state.clone();
         let mut tags = current.tags.clone();
         let mut notes = current.notes.clone();
         let mut handoff_capsules = current.handoff_capsules.clone();
@@ -1005,18 +1007,34 @@ impl App {
                 knot_type,
                 &next_state,
             )?;
-            if state == "deferred" && next_state != "deferred" && !patch.force && !next_is_terminal
-            {
-                let expected = deferred_from_state.as_deref().ok_or_else(|| {
-                    AppError::InvalidArgument(
-                        "deferred knot is missing deferred_from_state provenance".to_string(),
-                    )
-                })?;
-                if expected != next_state {
-                    return Err(AppError::InvalidArgument(format!(
-                        "deferred knots may only resume to '{}'",
-                        expected
-                    )));
+            let resuming_deferred = state == "deferred" && next_state != "deferred";
+            let resuming_blocked = state == "blocked" && next_state != "blocked";
+            if !patch.force && !next_is_terminal && (resuming_deferred || resuming_blocked) {
+                if resuming_deferred {
+                    let expected = deferred_from_state.as_deref().ok_or_else(|| {
+                        AppError::InvalidArgument(
+                            "deferred knot is missing deferred_from_state provenance".to_string(),
+                        )
+                    })?;
+                    if expected != next_state {
+                        return Err(AppError::InvalidArgument(format!(
+                            "deferred knots may only resume to '{}'",
+                            expected
+                        )));
+                    }
+                }
+                if resuming_blocked {
+                    let expected = blocked_from_state.as_deref().ok_or_else(|| {
+                        AppError::InvalidArgument(
+                            "blocked knot is missing blocked_from_state provenance".to_string(),
+                        )
+                    })?;
+                    if expected != next_state {
+                        return Err(AppError::InvalidArgument(format!(
+                            "blocked knots may only resume to '{}'",
+                            expected
+                        )));
+                    }
                 }
             } else {
                 workflow_runtime::validate_transition(
@@ -1037,11 +1055,8 @@ impl App {
                 false,
             )? {
                 TransitionPlan::Allowed if state != next_state => {
-                    if next_state == "deferred" && state != "deferred" {
-                        deferred_from_state = Some(state.clone());
-                    } else if state == "deferred" && next_state != "deferred" {
-                        deferred_from_state = None;
-                    }
+                    deferred_from_state = next_deferred_from_state(&current, &next_state);
+                    blocked_from_state = next_blocked_from_state(profile, &current, &next_state);
                     state = next_state;
                     let state_event_data = build_state_event_data(
                         &current.state,
@@ -1050,6 +1065,7 @@ impl App {
                         &profile_id,
                         patch.force,
                         deferred_from_state.as_deref(),
+                        blocked_from_state.as_deref(),
                         &patch.state_actor,
                         None,
                     )?;
@@ -1080,6 +1096,7 @@ impl App {
                     priority = current.priority;
                     knot_type = parse_knot_type(current.knot_type.as_deref());
                     deferred_from_state = current.deferred_from_state.clone();
+                    blocked_from_state = current.blocked_from_state.clone();
                     tags = current.tags.clone();
                     notes = current.notes.clone();
                     handoff_capsules = current.handoff_capsules.clone();
@@ -1340,6 +1357,7 @@ impl App {
                 updated_at: &occurred_at,
                 terminal,
                 deferred_from_state: deferred_from_state.as_deref(),
+                blocked_from_state: blocked_from_state.as_deref(),
                 invariants: &invariants,
                 knot_type,
                 gate_data: &gate_data,
@@ -1381,6 +1399,7 @@ impl App {
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
+                blocked_from_state: blocked_from_state.as_deref(),
                 created_at: current.created_at.as_deref(),
             },
         )?;
@@ -1411,17 +1430,34 @@ impl App {
             knot_type,
             next_state,
         )?;
-        if current.state == "deferred" && next_state != "deferred" && !force && !next_is_terminal {
-            let expected = current.deferred_from_state.as_deref().ok_or_else(|| {
-                AppError::InvalidArgument(
-                    "deferred knot is missing deferred_from_state provenance".to_string(),
-                )
-            })?;
-            if expected != next_state {
-                return Err(AppError::InvalidArgument(format!(
-                    "deferred knots may only resume to '{}'",
-                    expected
-                )));
+        let resuming_deferred = current.state == "deferred" && next_state != "deferred";
+        let resuming_blocked = current.state == "blocked" && next_state != "blocked";
+        if !force && !next_is_terminal && (resuming_deferred || resuming_blocked) {
+            if resuming_deferred {
+                let expected = current.deferred_from_state.as_deref().ok_or_else(|| {
+                    AppError::InvalidArgument(
+                        "deferred knot is missing deferred_from_state provenance".to_string(),
+                    )
+                })?;
+                if expected != next_state {
+                    return Err(AppError::InvalidArgument(format!(
+                        "deferred knots may only resume to '{}'",
+                        expected
+                    )));
+                }
+            }
+            if resuming_blocked {
+                let expected = current.blocked_from_state.as_deref().ok_or_else(|| {
+                    AppError::InvalidArgument(
+                        "blocked knot is missing blocked_from_state provenance".to_string(),
+                    )
+                })?;
+                if expected != next_state {
+                    return Err(AppError::InvalidArgument(format!(
+                        "blocked knots may only resume to '{}'",
+                        expected
+                    )));
+                }
             }
         } else {
             workflow_runtime::validate_transition(
@@ -1518,6 +1554,7 @@ impl App {
         let profile_id = profile.id.clone();
         let knot_type = parse_knot_type(current.knot_type.as_deref());
         let deferred_from_state = next_deferred_from_state(current, next_state);
+        let blocked_from_state = next_blocked_from_state(profile, current, next_state);
         let occurred_at = now_utc_rfc3339();
         let state_event_data = build_state_event_data(
             &current.state,
@@ -1526,6 +1563,7 @@ impl App {
             &profile_id,
             force,
             deferred_from_state.as_deref(),
+            blocked_from_state.as_deref(),
             state_actor,
             cascade,
         )?;
@@ -1560,6 +1598,7 @@ impl App {
                 updated_at: &occurred_at,
                 terminal,
                 deferred_from_state: deferred_from_state.as_deref(),
+                blocked_from_state: blocked_from_state.as_deref(),
                 invariants: &current.invariants,
                 knot_type,
                 gate_data: &current.gate_data,
@@ -1605,12 +1644,17 @@ impl App {
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: deferred_from_state.as_deref(),
+                blocked_from_state: blocked_from_state.as_deref(),
                 created_at: current.created_at.as_deref(),
             },
         )?;
 
-        db::get_knot_hot(&self.conn, &current.id)?
-            .ok_or_else(|| AppError::NotFound(current.id.clone()))
+        let updated = db::get_knot_hot(&self.conn, &current.id)?
+            .ok_or_else(|| AppError::NotFound(current.id.clone()))?;
+        if next_state == "shipped" {
+            self.resume_blocked_dependents_locked(&updated.id, state_actor)?;
+        }
+        Ok(updated)
     }
 
     fn reconcile_terminal_parent_state_locked(
@@ -1653,6 +1697,55 @@ impl App {
                     pending.push(parent.id);
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    fn resume_blocked_dependents_locked(
+        &self,
+        blocker_id: &str,
+        state_actor: &StateActorMetadata,
+    ) -> Result<(), AppError> {
+        let blocked_edges = db::list_edges_by_kind(&self.conn, "blocked_by")?;
+        let mut dependents = blocked_edges
+            .iter()
+            .filter(|edge| edge.dst == blocker_id)
+            .map(|edge| edge.src.clone())
+            .collect::<Vec<_>>();
+        dependents.sort();
+        dependents.dedup();
+
+        for dependent_id in dependents {
+            let Some(record) = db::get_knot_hot(&self.conn, &dependent_id)? else {
+                continue;
+            };
+            if record.state != "blocked" {
+                continue;
+            }
+
+            let blockers = blocked_edges
+                .iter()
+                .filter(|edge| edge.src == dependent_id)
+                .collect::<Vec<_>>();
+            let all_shipped = blockers.iter().all(|edge| {
+                db::get_knot_hot(&self.conn, &edge.dst)
+                    .ok()
+                    .flatten()
+                    .is_some_and(|knot| knot.state == "shipped")
+            });
+            if !all_shipped {
+                continue;
+            }
+
+            let Some(target_state) = record.blocked_from_state.as_deref() else {
+                return Err(AppError::InvalidArgument(format!(
+                    "blocked knot '{}' is missing blocked_from_state provenance",
+                    record.id
+                )));
+            };
+
+            self.write_state_change_locked(&record, target_state, true, None, state_actor, None)?;
         }
 
         Ok(())
@@ -1764,6 +1857,7 @@ impl App {
                 updated_at: &occurred_at,
                 terminal,
                 deferred_from_state: current.deferred_from_state.as_deref(),
+                blocked_from_state: current.blocked_from_state.as_deref(),
                 invariants: &current.invariants,
                 knot_type,
                 gate_data: &current.gate_data,
@@ -1797,6 +1891,7 @@ impl App {
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
+                blocked_from_state: current.blocked_from_state.as_deref(),
                 created_at: current.created_at.as_deref(),
             },
         )?;
@@ -1841,6 +1936,7 @@ impl App {
                 profile_id: &record.profile_id,
                 profile_etag: record.profile_etag.as_deref(),
                 deferred_from_state: record.deferred_from_state.as_deref(),
+                blocked_from_state: record.blocked_from_state.as_deref(),
                 created_at: record.created_at.as_deref(),
             },
         )?;
@@ -1919,6 +2015,7 @@ impl App {
                 updated_at: &occurred_at,
                 terminal,
                 deferred_from_state: current.deferred_from_state.as_deref(),
+                blocked_from_state: current.blocked_from_state.as_deref(),
                 invariants: &current.invariants,
                 knot_type,
                 gate_data: &current.gate_data,
@@ -1949,6 +2046,7 @@ impl App {
                 profile_id: &profile.id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
+                blocked_from_state: current.blocked_from_state.as_deref(),
                 created_at: current.created_at.as_deref(),
             },
         )?;
@@ -2298,6 +2396,7 @@ impl App {
                 profile_id: &record.profile_id,
                 profile_etag: record.profile_etag.as_deref(),
                 deferred_from_state: record.deferred_from_state.as_deref(),
+                blocked_from_state: record.blocked_from_state.as_deref(),
                 created_at: record.created_at.as_deref(),
             },
         )?;
@@ -2362,6 +2461,7 @@ impl App {
                 updated_at: &occurred_at,
                 terminal,
                 deferred_from_state: current.deferred_from_state.as_deref(),
+                blocked_from_state: current.blocked_from_state.as_deref(),
                 invariants: &current.invariants,
                 knot_type,
                 gate_data: &current.gate_data,
@@ -2399,9 +2499,13 @@ impl App {
                 profile_id: &profile_id,
                 profile_etag: Some(&index_event_id),
                 deferred_from_state: current.deferred_from_state.as_deref(),
+                blocked_from_state: current.blocked_from_state.as_deref(),
                 created_at: current.created_at.as_deref(),
             },
         )?;
+        if !add && kind == "blocked_by" {
+            self.resume_blocked_dependents_locked(src, &StateActorMetadata::default())?;
+        }
         Ok(EdgeView {
             src: src.to_string(),
             kind: kind.to_string(),
@@ -2476,6 +2580,35 @@ fn next_deferred_from_state(current: &KnotCacheRecord, next_state: &str) -> Opti
     }
 }
 
+fn next_blocked_from_state(
+    profile: &ProfileDefinition,
+    current: &KnotCacheRecord,
+    next_state: &str,
+) -> Option<String> {
+    if next_state == "blocked" && current.state != "blocked" {
+        blocked_resume_state(profile, current)
+    } else if current.state == "blocked" && next_state != "blocked" {
+        None
+    } else {
+        current.blocked_from_state.clone()
+    }
+}
+
+fn blocked_resume_state(profile: &ProfileDefinition, current: &KnotCacheRecord) -> Option<String> {
+    if profile.is_queue_state(&current.state) {
+        return Some(current.state.clone());
+    }
+
+    let current_idx = profile
+        .states
+        .iter()
+        .position(|state| state == &current.state)?;
+    profile.states[..current_idx]
+        .iter()
+        .rposition(|state| profile.is_queue_state(state))
+        .map(|idx| profile.states[idx].clone())
+}
+
 fn require_state_for_knot_type(
     knot_type: KnotType,
     profile: &ProfileDefinition,
@@ -2536,6 +2669,7 @@ struct KnotHeadData<'a> {
     updated_at: &'a str,
     terminal: bool,
     deferred_from_state: Option<&'a str>,
+    blocked_from_state: Option<&'a str>,
     invariants: &'a [Invariant],
     knot_type: KnotType,
     gate_data: &'a GateData,
@@ -2582,6 +2716,14 @@ fn build_knot_head_data(head: KnotHeadData<'_>) -> Value {
     } else {
         payload.insert("deferred_from_state".to_string(), Value::Null);
     }
+    if let Some(value) = head.blocked_from_state {
+        payload.insert(
+            "blocked_from_state".to_string(),
+            Value::String(value.to_string()),
+        );
+    } else {
+        payload.insert("blocked_from_state".to_string(), Value::Null);
+    }
     Value::Object(payload)
 }
 
@@ -2593,6 +2735,7 @@ fn build_state_event_data(
     profile_id: &str,
     force: bool,
     deferred_from_state: Option<&str>,
+    blocked_from_state: Option<&str>,
     state_actor: &StateActorMetadata,
     cascade: Option<StateCascadeMetadata<'_>>,
 ) -> Result<Value, AppError> {
@@ -2611,6 +2754,12 @@ fn build_state_event_data(
     if let Some(value) = deferred_from_state {
         payload.insert(
             "deferred_from_state".to_string(),
+            Value::String(value.to_string()),
+        );
+    }
+    if let Some(value) = blocked_from_state {
+        payload.insert(
+            "blocked_from_state".to_string(),
             Value::String(value.to_string()),
         );
     }
@@ -2776,6 +2925,7 @@ struct RehydrateProjection {
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
+    blocked_from_state: Option<String>,
     created_at: Option<String>,
 }
 
@@ -2807,6 +2957,7 @@ fn rehydrate_from_events(
         profile_id: String::new(),
         profile_etag: None,
         deferred_from_state: None,
+        blocked_from_state: None,
         created_at: Some(updated_at),
     };
 
@@ -2906,6 +3057,10 @@ fn rehydrate_from_events(
             .get("deferred_from_state")
             .and_then(Value::as_str)
             .map(ToString::to_string);
+        projection.blocked_from_state = data
+            .get("blocked_from_state")
+            .and_then(Value::as_str)
+            .map(ToString::to_string);
         if data.contains_key("invariants") {
             projection.invariants = parse_invariants_value(data.get("invariants"));
         }
@@ -2960,6 +3115,10 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
                 .get("deferred_from_state")
                 .and_then(Value::as_str)
                 .map(ToString::to_string);
+            projection.blocked_from_state = data
+                .get("blocked_from_state")
+                .and_then(Value::as_str)
+                .map(ToString::to_string);
             if data.contains_key("invariants") {
                 projection.invariants = parse_invariants_value(data.get("invariants"));
             }
@@ -2987,6 +3146,10 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
                 .get("deferred_from_state")
                 .and_then(Value::as_str)
                 .map(ToString::to_string);
+            projection.blocked_from_state = data
+                .get("blocked_from_state")
+                .and_then(Value::as_str)
+                .map(ToString::to_string);
         }
         "knot.profile_set" => {
             let raw_workflow_id = data
@@ -3012,6 +3175,10 @@ fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent
             }
             projection.deferred_from_state = data
                 .get("deferred_from_state")
+                .and_then(Value::as_str)
+                .map(ToString::to_string);
+            projection.blocked_from_state = data
+                .get("blocked_from_state")
                 .and_then(Value::as_str)
                 .map(ToString::to_string);
             projection.updated_at = event.occurred_at.clone();
@@ -3162,6 +3329,7 @@ impl From<KnotCacheRecord> for KnotView {
             profile_id,
             profile_etag: value.profile_etag,
             deferred_from_state: value.deferred_from_state,
+            blocked_from_state: value.blocked_from_state,
             created_at: value.created_at,
             edges: Vec::new(),
             child_summaries: Vec::new(),

@@ -24,6 +24,7 @@ This document describes the architecture of **Knots**: a robust, git-backed coor
   - `refining`
   - `approved`
   - `shipped`
+  - `blocked`
   - `deferred`
   - `abandoned`
 - **Supports iteration routing**: track “rework cycles” without forcing extra states.
@@ -287,7 +288,11 @@ Knots maintains a local SQLite DB (not in git):
 
 Let:
 - `HOT_WINDOW_DAYS = N` (default `7`)
-- Terminal states (cold): `{ shipped, deferred, abandoned }`
+- Terminal states (cold): `{ shipped, abandoned }`
+
+Passive escape states such as `blocked` and `deferred` are non-terminal waiting
+states. They are not claimable work, but they also do not move knots to cold
+storage just for waiting.
 
 Classification:
 1. **Cold** if state ∈ terminal states  
@@ -838,7 +843,7 @@ fn maybe_auto_sync(repo: &Repo) -> Result<()> {
 Process new `.knots/index/...` files since `last_index_head_commit`:
 
 For each `idx.knot_head` delta:
-- Determine terminal: `state ∈ {shipped, deferred, abandoned}`
+- Determine terminal: `state ∈ {shipped, abandoned}`
 - If terminal:
   - remove from `knot_hot` and `knot_warm`
   - (optionally) insert into `cold_catalog` only if cold sync mode is enabled
@@ -952,6 +957,7 @@ Suggested “common path” transitions (validation/UX only):
 - `reviewing -> approved` OR `reviewing -> rejected`
 - `rejected -> refining -> implemented` (loop)
 - `approved -> shipped`
+- `* -> blocked` (dependency wait)
 - `* -> deferred` (pause)
 - `* -> abandoned` (terminal)
 

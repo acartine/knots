@@ -75,6 +75,7 @@ fn apply_full_event_updates_acceptance_metadata() {
             profile_id: "autopilot",
             profile_etag: Some("etag-1"),
             deferred_from_state: None,
+            blocked_from_state: None,
             created_at: Some("2026-03-22T10:00:00Z"),
         },
     )

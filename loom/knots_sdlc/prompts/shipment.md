@@ -11,7 +11,7 @@ success:
 failure:
   merge_conflicts: ready_for_implementation
   ci_failure: ready_for_implementation
-  release_blocked: deferred
+  release_blocked: blocked
 
 params: {}
 ---

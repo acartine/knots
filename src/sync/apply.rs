@@ -238,6 +238,11 @@ impl<'a> IncrementalApplier<'a> {
             .and_then(|record| record.deferred_from_state.clone());
         let deferred_from_state =
             optional_string(data.get("deferred_from_state")).or(deferred_from_state);
+        let blocked_from_state = existing
+            .as_ref()
+            .and_then(|record| record.blocked_from_state.clone());
+        let blocked_from_state =
+            optional_string(data.get("blocked_from_state")).or(blocked_from_state);
         let created_at = existing
             .as_ref()
             .and_then(|record| record.created_at.clone())
@@ -269,6 +274,7 @@ impl<'a> IncrementalApplier<'a> {
                         profile_id: &profile_id,
                         profile_etag: Some(&event.event_id),
                         deferred_from_state: deferred_from_state.as_deref(),
+                        blocked_from_state: blocked_from_state.as_deref(),
                         created_at: Some(&created_at),
                     },
                 )?;
@@ -449,6 +455,7 @@ impl<'a> IncrementalApplier<'a> {
             profile_id: existing.profile_id,
             profile_etag: existing.profile_etag,
             deferred_from_state: existing.deferred_from_state,
+            blocked_from_state: existing.blocked_from_state,
             created_at: existing.created_at,
         };
         mutate(&mut projection);
@@ -477,6 +484,7 @@ impl<'a> IncrementalApplier<'a> {
                 profile_id: &projection.profile_id,
                 profile_etag: projection.profile_etag.as_deref(),
                 deferred_from_state: projection.deferred_from_state.as_deref(),
+                blocked_from_state: projection.blocked_from_state.as_deref(),
                 created_at: projection.created_at.as_deref(),
             },
         )?;
@@ -511,6 +519,7 @@ struct MetadataProjection {
     profile_id: String,
     profile_etag: Option<String>,
     deferred_from_state: Option<String>,
+    blocked_from_state: Option<String>,
     created_at: Option<String>,
 }
 

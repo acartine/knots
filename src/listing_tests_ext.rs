@@ -33,6 +33,7 @@ fn knot(
         profile_id: "default".to_string(),
         profile_etag: None,
         deferred_from_state: None,
+        blocked_from_state: None,
         created_at: None,
         edges: Vec::new(),
         child_summaries: vec![],

@@ -456,7 +456,7 @@ fn compatibility_workflow() -> Result<WorkflowDefinition, ProfileError> {
                         .iter()
                         .any(|terminal| terminal == *state)
                 })
-                .filter(|state| *state != "deferred" && *state != "abandoned")
+                .filter(|state| !profile.escape_states.iter().any(|escape| escape == *state))
                 .cloned()
                 .collect();
         }
@@ -1016,6 +1016,8 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
         let mut ordered_states = Vec::new();
         let mut queue_states = Vec::new();
         let mut action_states = Vec::new();
+        let mut queue_actions = BTreeMap::new();
+        let mut action_kinds = BTreeMap::new();
         let mut transitions = Vec::new();
         let mut owner_states = BTreeMap::new();
         let mut prompt_bodies = BTreeMap::new();
@@ -1036,6 +1038,13 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
                 push_unique(&mut ordered_states, action_name.to_string());
                 push_unique(&mut queue_states, queue_name.to_string());
                 push_unique(&mut action_states, action_name.to_string());
+                queue_actions.insert(queue_name.to_string(), action_name.to_string());
+                let kind = if step_name == &phase.gate_step {
+                    "gate"
+                } else {
+                    "produce"
+                };
+                action_kinds.insert(action_name.to_string(), kind.to_string());
                 transitions.push(WorkflowTransition {
                     from: queue_name.to_string(),
                     to: action_name.to_string(),
@@ -1090,10 +1099,14 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
         }
 
         let mut terminal_states = Vec::new();
+        let mut escape_states = Vec::new();
         for state in &parsed.states {
-            if matches!(state.kind.as_str(), "terminal" | "escape") {
+            if state.kind == "terminal" {
                 push_unique(&mut ordered_states, state.id.clone());
                 push_unique(&mut terminal_states, state.id.clone());
+            } else if state.kind == "escape" {
+                push_unique(&mut ordered_states, state.id.clone());
+                push_unique(&mut escape_states, state.id.clone());
             }
         }
 
@@ -1131,6 +1144,9 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
                 states: ordered_states,
                 queue_states,
                 action_states,
+                queue_actions,
+                action_kinds,
+                escape_states,
                 terminal_states,
                 transitions,
                 action_prompts: prompt_bodies,
@@ -1182,6 +1198,8 @@ fn build_profile_definition(
     let mut ordered_states = Vec::new();
     let mut queue_states = Vec::new();
     let mut action_states = Vec::new();
+    let mut queue_actions = BTreeMap::new();
+    let mut action_kinds = BTreeMap::new();
     let mut transitions = Vec::new();
     let mut owner_states = BTreeMap::new();
     let mut first_queue = None;
@@ -1229,6 +1247,13 @@ fn build_profile_definition(
             push_unique(&mut ordered_states, step.action.clone());
             push_unique(&mut queue_states, step.queue.clone());
             push_unique(&mut action_states, step.action.clone());
+            queue_actions.insert(step.queue.clone(), step.action.clone());
+            let kind = if step_name == &phase.gate {
+                "gate"
+            } else {
+                "produce"
+            };
+            action_kinds.insert(step.action.clone(), kind.to_string());
             transitions.push(WorkflowTransition {
                 from: step.queue.clone(),
                 to: step.action.clone(),
@@ -1243,12 +1268,14 @@ fn build_profile_definition(
     }
 
     let mut terminal_states = Vec::new();
+    let mut escape_states = Vec::new();
     for (name, state) in states {
         if state.kind == "terminal" {
             push_unique(&mut ordered_states, name.clone());
             push_unique(&mut terminal_states, name.clone());
         } else if state.kind == "escape" {
             push_unique(&mut ordered_states, name.clone());
+            push_unique(&mut escape_states, name.clone());
         }
     }
 
@@ -1343,6 +1370,9 @@ fn build_profile_definition(
         states: ordered_states,
         queue_states,
         action_states,
+        queue_actions,
+        action_kinds,
+        escape_states,
         terminal_states,
         transitions,
         action_prompts,
@@ -1538,6 +1568,10 @@ kind = "queue"
 display_name = "Done"
 kind = "terminal"
 
+[states.blocked]
+display_name = "Blocked"
+kind = "escape"
+
 [states.deferred]
 display_name = "Deferred"
 kind = "escape"
@@ -1572,7 +1606,7 @@ Ship {{ output }} output.
 complete = "ready_for_review"
 
 [prompts.work.failure]
-blocked = "deferred"
+blocked = "blocked"
 
 [prompts.review]
 accept = ["Reviewed output"]

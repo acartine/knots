@@ -9,7 +9,7 @@ success:
   implementation_complete: ready_for_implementation_review
 
 failure:
-  blocked_by_dependency: deferred
+  blocked_by_dependency: blocked
   implementation_infeasible: ready_for_planning
   merge_conflict: ready_for_implementation
 

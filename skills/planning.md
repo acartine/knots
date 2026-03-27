@@ -16,7 +16,8 @@
 - This session is authorized only for `planning`.
 - Complete exactly one planning action, then stop.
 - Allowed resting states after this session: `ready_for_plan_review` on
-  success or `ready_for_planning` when deferred.
+  success, `ready_for_planning` for retry, or `blocked` when dependencies stop
+  progress.
 - Creating child knots is planning output only. Do not claim, start, or
   execute those child knots in this session.
 - Do not edit repository code or perform git write operations during

@@ -20,7 +20,7 @@ fn open_app(root: &std::path::Path) -> App {
 }
 
 #[test]
-fn update_can_abandon_deferred_parent_after_auto_resolution() {
+fn update_can_abandon_parent_with_deferred_child_without_auto_resolution() {
     let root = unique_workspace();
     let app = open_app(&root);
     let parent = app
@@ -36,8 +36,8 @@ fn update_can_abandon_deferred_parent_after_auto_resolution() {
         .expect("child should defer");
     assert_eq!(
         app.show_knot(&parent.id).unwrap().unwrap().state,
-        "deferred",
-        "parent should auto-resolve to deferred"
+        "implementation",
+        "parent should remain active while the child is deferred"
     );
 
     let parent = app
