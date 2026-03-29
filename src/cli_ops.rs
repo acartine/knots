@@ -3,6 +3,62 @@ use std::path::PathBuf;
 use clap::{Args, Subcommand};
 
 #[derive(Debug, Args)]
+#[command(about = "Manage named Knots projects.")]
+pub struct ProjectArgs {
+    #[command(subcommand)]
+    pub command: ProjectSubcommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ProjectSubcommands {
+    #[command(about = "Create a named project.")]
+    Create(ProjectCreateArgs),
+    #[command(about = "Delete a named project after confirmation.")]
+    Delete(ProjectDeleteArgs),
+    #[command(about = "Set the active named project.")]
+    Use(ProjectUseArgs),
+    #[command(about = "Clear the active named project.")]
+    Clear,
+    #[command(about = "List named projects.")]
+    List(ProjectListArgs),
+    #[command(about = "Interactively select or create a named project.")]
+    Select,
+}
+
+#[derive(Debug, Args)]
+pub struct ProjectCreateArgs {
+    #[arg(help = "Named project identifier.")]
+    pub id: String,
+
+    #[arg(long, help = "Associate the project with this root path.")]
+    pub repo_root: Option<PathBuf>,
+
+    #[arg(long, help = "Set the created project as active.")]
+    pub use_project: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ProjectDeleteArgs {
+    #[arg(help = "Named project identifier.")]
+    pub id: String,
+
+    #[arg(long, help = "Skip the interactive confirmation prompt.")]
+    pub yes: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ProjectUseArgs {
+    #[arg(help = "Named project identifier.")]
+    pub id: String,
+}
+
+#[derive(Debug, Args)]
+pub struct ProjectListArgs {
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
+}
+
+#[derive(Debug, Args)]
 #[command(about = "Manage git sync hooks.")]
 pub struct HooksArgs {
     #[command(subcommand)]

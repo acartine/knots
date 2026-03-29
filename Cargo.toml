@@ -16,3 +16,6 @@ sha2 = "0.10"
 time = { version = "0.3", features = ["formatting", "parsing"] }
 uuid = { version = "1.8", features = ["v7"] }
 clap_complete = "4.5"
+
+[dev-dependencies]
+portable-pty = "0.9.0"

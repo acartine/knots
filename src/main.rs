@@ -37,6 +37,12 @@ mod poll_claim;
 mod profile;
 mod profile_commands;
 mod progress;
+mod project;
+mod project_commands;
+#[cfg(test)]
+mod project_commands_tests;
+#[cfg(test)]
+mod project_tests_ext;
 mod prompt;
 mod remote_init;
 mod replication;
@@ -72,12 +78,20 @@ fn print_json(val: &impl serde::Serialize) {
     println!("{s}");
 }
 
-fn resolve_db_path(repo_root: &std::path::Path, db_path: &str) -> String {
+fn resolve_db_path(context: &project::ProjectContext, db_path: Option<&str>) -> String {
+    let default_path = context.store_paths.db_path();
+    let Some(db_path) = db_path else {
+        return default_path.display().to_string();
+    };
     let db = std::path::Path::new(db_path);
     if db.is_absolute() {
-        db.display().to_string()
-    } else {
-        repo_root.join(db).display().to_string()
+        return db.display().to_string();
+    }
+    match context.distribution {
+        project::DistributionMode::Git => context.repo_root.join(db).display().to_string(),
+        project::DistributionMode::LocalOnly => {
+            context.store_paths.root.join(db).display().to_string()
+        }
     }
 }
 
@@ -91,47 +105,91 @@ fn run() -> Result<(), app::AppError> {
 
     let cli = cli::Cli::from_arg_matches_mut(&mut cli::styled_command().get_matches())
         .expect("arg matches should be valid");
-    let db_path = resolve_db_path(&cli.repo_root, &cli.db);
+    let cwd = std::env::current_dir()?;
+    let explicit_repo_root = cli.repo_root.as_deref();
 
     if let Some(outcome) = self_manage::maybe_run_self_command(&cli.command)? {
         println!("{outcome}");
         return Ok(());
     }
 
+    if let Commands::Project(args) = &cli.command {
+        return project_commands::run_project_command(args, None, explicit_repo_root);
+    }
+
     if let Commands::Init = &cli.command {
-        init::init_all(&cli.repo_root, &db_path)?;
+        if let Some(project_id) = cli.project.as_deref() {
+            let repo_root = explicit_repo_root.or(Some(cwd.as_path()));
+            let _ = project::load_named_project(None, project_id)
+                .or_else(|_| project::create_named_project(None, project_id, repo_root))
+                .map_err(app::AppError::InvalidArgument)?;
+            project::set_active_project(None, project_id)
+                .map_err(app::AppError::InvalidArgument)?;
+            let context = project::resolve_context(Some(project_id), None, &cwd, None)
+                .map_err(app::AppError::InvalidArgument)?;
+            let db_path = resolve_db_path(&context, cli.db.as_deref());
+            init::init_local_store(&context.repo_root, &db_path)?;
+            println!("kno init completed");
+            return Ok(());
+        }
+        let context = project::resolve_context(None, explicit_repo_root, &cwd, None)
+            .map_err(app::AppError::InvalidArgument)?;
+        let db_path = resolve_db_path(&context, cli.db.as_deref());
+        init::init_all(&context.repo_root, &db_path)?;
         println!("kno init completed");
         return Ok(());
     }
+    let context = project::resolve_context(cli.project.as_deref(), explicit_repo_root, &cwd, None)
+        .map_err(app::AppError::InvalidArgument)?;
+    let db_path = resolve_db_path(&context, cli.db.as_deref());
+
     if let Commands::Uninit = &cli.command {
-        init::uninit_all(&cli.repo_root, &db_path)?;
+        match context.distribution {
+            project::DistributionMode::Git => init::uninit_all(&context.repo_root, &db_path)?,
+            project::DistributionMode::LocalOnly => {
+                init::uninit_local_store(&context.repo_root, &db_path)?;
+                if let Some(project_id) = context.project_id.as_deref() {
+                    let _ = project::clear_active_project(None);
+                    println!("removed local store for project {}", project_id);
+                    return Ok(());
+                }
+            }
+        }
         println!("kno uninit completed");
         return Ok(());
     }
     if let Commands::Hooks(args) = &cli.command {
-        return run_hooks_command(&cli.repo_root, &args.command);
+        if context.distribution != project::DistributionMode::Git {
+            return Err(app::AppError::UnsupportedDistribution {
+                action: "hooks".to_string(),
+                mode: "local-only".to_string(),
+            });
+        }
+        return run_hooks_command(&context.repo_root, &args.command);
     }
     if let Commands::Completions(args) = &cli.command {
         return completions::run_completions_command(args.shell.as_deref(), args.install);
     }
     if let Commands::Skills(args) = &cli.command {
-        return run_skills_command(&cli.repo_root, args);
+        return run_skills_command(&context.repo_root, args);
     }
     if let Commands::Profile(args) = &cli.command {
-        return profile_commands::run_profile_command(args, &cli.repo_root, &db_path);
+        return profile_commands::run_profile_command_with_context(args, &context, &db_path);
     }
     if let Commands::Workflow(args) = &cli.command {
-        return workflow_commands::run_workflow_command(args, &cli.repo_root);
+        return workflow_commands::run_workflow_command(args, &context.repo_root);
     }
     if let Commands::Loom(args) = &cli.command {
-        return loom_compat_commands::run_loom_command(args, &cli.repo_root);
+        return loom_compat_commands::run_loom_command(args, &context.repo_root);
     }
-    if let Some(output) = write_dispatch::maybe_run_queued_command(&cli)? {
+    if let Some(output) =
+        write_dispatch::maybe_run_queued_command_with_context(&cli, &context, &db_path)?
+    {
         print!("{output}");
         return Ok(());
     }
 
-    let app = app::App::open(&db_path, cli.repo_root)?;
+    let app = app::App::open_with_context(&context, &db_path)?;
 
     match cli.command {
         Commands::New(_) => {
@@ -177,6 +235,9 @@ fn run() -> Result<(), app::AppError> {
         },
         Commands::Profile(_) => {
             unreachable!("profile commands are handled before app initialization")
+        }
+        Commands::Project(_) => {
+            unreachable!("project commands are handled before app initialization")
         }
         Commands::Workflow(_) => {
             unreachable!("workflow commands are handled before app initialization")

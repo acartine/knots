@@ -21,8 +21,8 @@ pub enum EventStream {
 impl EventStream {
     fn root_dir(self) -> &'static str {
         match self {
-            EventStream::Full => ".knots/events",
-            EventStream::Index => ".knots/index",
+            EventStream::Full => "events",
+            EventStream::Index => "index",
         }
     }
 }
@@ -239,13 +239,13 @@ impl EventRecord {
 
 #[derive(Debug, Clone)]
 pub struct EventWriter {
-    repo_root: PathBuf,
+    store_root: PathBuf,
 }
 
 impl EventWriter {
-    pub fn new(repo_root: impl Into<PathBuf>) -> Self {
+    pub fn new(store_root: impl Into<PathBuf>) -> Self {
         Self {
-            repo_root: repo_root.into(),
+            store_root: store_root.into(),
         }
     }
 
@@ -256,7 +256,7 @@ impl EventWriter {
             event.event_id(),
             event.event_type(),
         )?;
-        let abs_path = self.repo_root.join(&rel_path);
+        let abs_path = self.store_root.join(&rel_path);
         if let Some(parent) = abs_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -409,7 +409,7 @@ mod tests {
         .expect("path should build");
         assert_eq!(
             path.to_string_lossy(),
-            ".knots/events/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-knot.state_set.json"
+            "events/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-knot.state_set.json"
         );
     }
 
@@ -424,7 +424,7 @@ mod tests {
         .expect("path should build");
         assert_eq!(
             path.to_string_lossy(),
-            ".knots/index/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-idx.knot_head.json"
+            "index/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-idx.knot_head.json"
         );
     }
 
@@ -451,7 +451,7 @@ mod tests {
         let relative = writer.write(&event).expect("first write should succeed");
         assert_eq!(
             relative.to_string_lossy(),
-            ".knots/events/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-knot.created.json"
+            "events/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-knot.created.json"
         );
 
         let absolute = root.join(&relative);
@@ -506,7 +506,7 @@ mod tests {
         let relative = writer.write(&event).expect("index write should succeed");
         assert_eq!(
             relative.to_string_lossy(),
-            ".knots/index/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-idx.knot_head.json"
+            "index/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-idx.knot_head.json"
         );
 
         let _ = std::fs::remove_dir_all(root);

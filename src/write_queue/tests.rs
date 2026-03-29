@@ -22,6 +22,9 @@ fn state_request(
     QueuedWriteRequest {
         request_id: request_id.to_string(),
         repo_root: root.display().to_string(),
+        store_root: root.join(".knots").display().to_string(),
+        distribution: "git".to_string(),
+        project_id: None,
         db_path: root.join(".knots/cache/state.sqlite").display().to_string(),
         response_path: paths
             .responses_dir

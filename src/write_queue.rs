@@ -6,11 +6,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 
 use crate::locks::{FileLock, LockError};
+use crate::project::{DistributionMode, StorePaths};
 
-const QUEUE_DIR: &str = ".knots/queue";
 const REQUESTS_DIR: &str = "writes";
 const RESPONSES_DIR: &str = "responses";
-const WORKER_LOCK_FILE: &str = ".knots/locks/write_queue_worker.lock";
 const WAIT_TIMEOUT: Duration = Duration::from_secs(120);
 const WAIT_POLL_INTERVAL: Duration = Duration::from_millis(20);
 
@@ -200,6 +199,9 @@ pub enum WriteOperation {
 pub struct QueuedWriteRequest {
     pub request_id: String,
     pub repo_root: String,
+    pub store_root: String,
+    pub distribution: String,
+    pub project_id: Option<String>,
     pub db_path: String,
     pub response_path: String,
     pub operation: WriteOperation,
@@ -283,12 +285,20 @@ struct QueuePaths {
 }
 
 impl QueuePaths {
+    #[cfg(test)]
     fn for_repo(repo_root: &Path) -> Self {
-        let queue_dir = repo_root.join(QUEUE_DIR);
+        let store_paths = StorePaths {
+            root: repo_root.join(".knots"),
+        };
+        Self::for_store(&store_paths)
+    }
+
+    fn for_store(store_paths: &StorePaths) -> Self {
+        let queue_dir = store_paths.queue_dir();
         Self {
             requests_dir: queue_dir.join(REQUESTS_DIR),
             responses_dir: queue_dir.join(RESPONSES_DIR),
-            worker_lock_path: repo_root.join(WORKER_LOCK_FILE),
+            worker_lock_path: store_paths.write_queue_worker_lock_path(),
         }
     }
 
@@ -299,8 +309,34 @@ impl QueuePaths {
     }
 }
 
+#[cfg(test)]
 pub fn enqueue_and_wait<F>(
     repo_root: &Path,
+    db_path: &str,
+    operation: WriteOperation,
+    executor: F,
+) -> Result<QueuedWriteResponse, QueueError>
+where
+    F: FnMut(&QueuedWriteRequest) -> QueuedWriteResponse,
+{
+    enqueue_and_wait_with_context(
+        repo_root,
+        &StorePaths {
+            root: repo_root.join(".knots"),
+        },
+        DistributionMode::Git,
+        None,
+        db_path,
+        operation,
+        executor,
+    )
+}
+
+pub fn enqueue_and_wait_with_context<F>(
+    repo_root: &Path,
+    store_paths: &StorePaths,
+    distribution: DistributionMode,
+    project_id: Option<String>,
     db_path: &str,
     operation: WriteOperation,
     mut executor: F,
@@ -309,8 +345,11 @@ where
     F: FnMut(&QueuedWriteRequest) -> QueuedWriteResponse,
 {
     let absolute_root = canonical_or_original(repo_root);
-    let absolute_db = to_absolute_db_path(&absolute_root, db_path);
-    let paths = QueuePaths::for_repo(&absolute_root);
+    let absolute_store = canonical_or_original(&store_paths.root);
+    let absolute_db = to_absolute_db_path(&absolute_store, db_path);
+    let paths = QueuePaths::for_store(&StorePaths {
+        root: absolute_store.clone(),
+    });
     paths.create_dirs()?;
 
     let request_id = uuid::Uuid::now_v7().to_string();
@@ -322,6 +361,12 @@ where
     let request = QueuedWriteRequest {
         request_id: request_id.clone(),
         repo_root: absolute_root.display().to_string(),
+        store_root: absolute_store.display().to_string(),
+        distribution: match distribution {
+            DistributionMode::Git => "git".to_string(),
+            DistributionMode::LocalOnly => "local_only".to_string(),
+        },
+        project_id,
         db_path: absolute_db,
         response_path: response_path.clone(),
         operation,
@@ -346,12 +391,12 @@ fn canonical_or_original(path: &Path) -> PathBuf {
     fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
 }
 
-fn to_absolute_db_path(repo_root: &Path, db_path: &str) -> String {
+fn to_absolute_db_path(base_root: &Path, db_path: &str) -> String {
     let db = Path::new(db_path);
     if db.is_absolute() {
         db.display().to_string()
     } else {
-        repo_root.join(db).display().to_string()
+        base_root.join(db).display().to_string()
     }
 }
 

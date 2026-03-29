@@ -34,19 +34,24 @@ pub struct Cli {
         short = 'd',
         long,
         env = "KNOTS_DB_PATH",
-        default_value = ".knots/cache/state.sqlite",
         help = "Path to the local SQLite cache database."
     )]
-    pub db: String,
+    pub db: Option<String>,
 
     #[arg(
         short = 'C',
         long,
         env = "KNOTS_REPO_ROOT",
-        default_value = ".",
-        help = "Repository root that contains .knots/."
+        help = "Repository root to target for this command."
     )]
-    pub repo_root: PathBuf,
+    pub repo_root: Option<PathBuf>,
+
+    #[arg(
+        long,
+        env = "KNOTS_PROJECT",
+        help = "Named Knots project to target for this command."
+    )]
+    pub project: Option<String>,
 
     #[command(subcommand)]
     pub command: Commands,
@@ -73,6 +78,8 @@ pub enum Commands {
     Profile(ProfileArgs),
     #[command(about = "Manage installed workflows.")]
     Workflow(WorkflowArgs),
+    #[command(about = "Manage named Knots projects.")]
+    Project(ProjectArgs),
     #[command(about = "Manage Loom compatibility checks.")]
     Loom(LoomArgs),
     #[command(about = "Pull knot updates from the remote knots branch.")]
@@ -81,7 +88,7 @@ pub enum Commands {
     Push(SyncArgs),
     #[command(about = "Push then pull knot updates.")]
     Sync(SyncArgs),
-    #[command(about = "Initialize local store, add .knots gitignore entries, and init remote.")]
+    #[command(about = "Initialize local store and remote or named project state.")]
     Init,
     #[command(about = "Remove local knots store artifacts and delete remote branch.")]
     Uninit,

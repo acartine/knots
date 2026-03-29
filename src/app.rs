@@ -10,7 +10,7 @@ use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::db::{self, EdgeDirection, EdgeRecord, KnotCacheRecord, UpsertKnotHot};
-use crate::doctor::{run_doctor_with_fix, DoctorError, DoctorReport};
+use crate::doctor::{run_doctor_with_fix_at, DoctorError, DoctorReport};
 use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::invariant::Invariant;
 use crate::domain::knot_type::{parse_knot_type, KnotType};
@@ -22,16 +22,17 @@ use crate::events::{
     new_event_id, now_utc_rfc3339, EventRecord, EventWriteError, EventWriter, FullEvent,
     FullEventKind, IndexEvent, IndexEventKind,
 };
-use crate::fsck::{run_fsck, FsckError, FsckReport};
+use crate::fsck::{run_fsck_at_store, FsckError, FsckReport};
 use crate::hierarchy_alias::{build_alias_maps, AliasMaps};
 use crate::installed_workflows;
-use crate::knot_id::generate_knot_id;
+use crate::knot_id::{generate_knot_id, generate_knot_id_from_slug};
 use crate::locks::{FileLock, LockError};
 use crate::perf::{run_perf_harness, PerfError, PerfReport};
 use crate::progress::ProgressReporter;
+use crate::project::{DistributionMode, GlobalConfig, ProjectContext, StorePaths};
 use crate::remote_init::{init_remote_knots_branch, RemoteInitError};
 use crate::replication::{PushSummary, ReplicationService, ReplicationSummary, SyncOutcome};
-use crate::snapshots::{write_snapshots, SnapshotError, SnapshotWriteSummary};
+use crate::snapshots::{write_snapshots_at_store, SnapshotError, SnapshotWriteSummary};
 use crate::state_hierarchy::{self, HierarchyKnot, TransitionPlan};
 use crate::sync::{SyncError, SyncSummary};
 use crate::workflow::{normalize_profile_id, ProfileDefinition, ProfileError, ProfileRegistry};
@@ -43,6 +44,9 @@ pub struct App {
     conn: Connection,
     writer: EventWriter,
     repo_root: PathBuf,
+    store_paths: StorePaths,
+    distribution: DistributionMode,
+    project_id: Option<String>,
     profile_registry: ProfileRegistry,
     home_override: Option<Option<PathBuf>>,
 }
@@ -157,13 +161,7 @@ pub enum GateDecision {
     No,
 }
 
-#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
-pub struct UserConfig {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default_profile: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default_quick_profile: Option<String>,
-}
+pub type UserConfig = GlobalConfig;
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct ColdKnotView {
@@ -209,22 +207,40 @@ impl UpdateKnotPatch {
 
 impl App {
     pub fn open(db_path: &str, repo_root: PathBuf) -> Result<Self, AppError> {
+        let context = ProjectContext {
+            project_id: None,
+            repo_root: repo_root.clone(),
+            store_paths: StorePaths {
+                root: repo_root.join(".knots"),
+            },
+            distribution: DistributionMode::Git,
+        };
+        Self::open_with_context(&context, db_path)
+    }
+
+    pub fn open_with_context(context: &ProjectContext, db_path: &str) -> Result<Self, AppError> {
         let db = std::path::Path::new(db_path);
         let is_default_path = db
             .components()
             .next()
             .is_some_and(|c| c.as_os_str() == ".knots");
-        if is_default_path && !repo_root.join(".knots").exists() {
+        if is_default_path
+            && context.distribution == DistributionMode::Git
+            && !context.store_paths.root.exists()
+        {
             return Err(AppError::NotInitialized);
         }
         ensure_parent_dir(db_path)?;
         let conn = db::open_connection(db_path)?;
-        let profile_registry = ProfileRegistry::load_for_repo(&repo_root)?;
-        let writer = EventWriter::new(repo_root.clone());
+        let profile_registry = ProfileRegistry::load_for_repo(&context.repo_root)?;
+        let writer = EventWriter::new(context.store_paths.root.clone());
         Ok(Self {
             conn,
             writer,
-            repo_root,
+            repo_root: context.repo_root.clone(),
+            store_paths: context.store_paths.clone(),
+            distribution: context.distribution,
+            project_id: context.project_id.clone(),
             profile_registry,
             home_override: None,
         })
@@ -236,17 +252,11 @@ impl App {
     }
 
     fn repo_lock_path(&self) -> PathBuf {
-        self.repo_root
-            .join(".knots")
-            .join("locks")
-            .join("repo.lock")
+        self.store_paths.repo_lock_path()
     }
 
     fn cache_lock_path(&self) -> PathBuf {
-        self.repo_root
-            .join(".knots")
-            .join("cache")
-            .join("cache.lock")
+        self.store_paths.cache_lock_path()
     }
 
     fn read_sync_policy(&self) -> Result<SyncPolicy, AppError> {
@@ -281,44 +291,46 @@ impl App {
             .ok_or_else(|| AppError::InvalidArgument("no profiles are defined".to_string()))
     }
 
-    fn config_path(&self) -> Option<PathBuf> {
-        let home = match &self.home_override {
-            Some(explicit) => explicit.clone(),
-            None => std::env::var_os("HOME").map(PathBuf::from),
-        }?;
-        Some(home.join(".config").join("knots").join("config.toml"))
-    }
-
     fn read_user_config(&self) -> Result<UserConfig, AppError> {
-        let Some(path) = self.config_path() else {
-            return Ok(UserConfig::default());
-        };
-        if !path.exists() {
-            return Ok(UserConfig::default());
+        match self.home_override.as_ref() {
+            Some(Some(home)) => crate::project::read_global_config(Some(home.as_path()))
+                .map_err(AppError::InvalidArgument),
+            Some(None) => Ok(UserConfig::default()),
+            None => crate::project::read_global_config(None).map_err(AppError::InvalidArgument),
         }
-        let raw = fs::read_to_string(path)?;
-        let parsed: UserConfig = toml::from_str(&raw)
-            .map_err(|err| AppError::InvalidArgument(format!("invalid profile config: {err}")))?;
-        Ok(parsed)
     }
 
     fn write_user_config(&self, config: &UserConfig) -> Result<(), AppError> {
-        let path = self.config_path().ok_or_else(|| {
-            AppError::InvalidArgument("unable to resolve $HOME for profile config".to_string())
-        })?;
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
+        match self.home_override.as_ref() {
+            Some(Some(home)) => crate::project::write_global_config(Some(home.as_path()), config)
+                .map_err(AppError::InvalidArgument),
+            Some(None) => Err(AppError::InvalidArgument(
+                "unable to resolve $HOME for profile config".to_string(),
+            )),
+            None => {
+                crate::project::write_global_config(None, config).map_err(AppError::InvalidArgument)
+            }
         }
-        let rendered = toml::to_string_pretty(config).map_err(|err| {
-            AppError::InvalidArgument(format!("failed to serialize config: {err}"))
-        })?;
-        fs::write(path, rendered)?;
-        Ok(())
     }
 
     fn resolve_config_profile(&self, raw: &Option<String>) -> Option<String> {
         let raw_id = raw.as_deref()?;
         self.resolve_profile_id(raw_id, None).ok()
+    }
+
+    fn is_git_distribution(&self) -> bool {
+        self.distribution == DistributionMode::Git
+    }
+
+    fn require_git_distribution(&self, action: &str) -> Result<(), AppError> {
+        if self.is_git_distribution() {
+            Ok(())
+        } else {
+            Err(AppError::UnsupportedDistribution {
+                action: action.to_string(),
+                mode: "local-only".to_string(),
+            })
+        }
     }
 
     fn current_workflow_id(&self) -> Result<String, AppError> {
@@ -419,6 +431,9 @@ impl App {
     }
 
     fn maybe_auto_sync_for_read(&self) -> Result<(), AppError> {
+        if !self.is_git_distribution() {
+            return Ok(());
+        }
         match self.read_sync_policy()? {
             SyncPolicy::Never => Ok(()),
             SyncPolicy::Always => {
@@ -455,7 +470,12 @@ impl App {
     }
 
     fn pull_unlocked(&self) -> Result<SyncSummary, AppError> {
-        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        self.require_git_distribution("pull")?;
+        let service = ReplicationService::with_store_paths(
+            &self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         Ok(service.pull()?)
     }
 
@@ -463,7 +483,12 @@ impl App {
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncSummary, AppError> {
-        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        self.require_git_distribution("pull")?;
+        let service = ReplicationService::with_store_paths(
+            &self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         Ok(service.pull_with_progress(reporter)?)
     }
 
@@ -577,9 +602,12 @@ impl App {
 
     fn next_knot_id(&self) -> Result<String, AppError> {
         let existing = self.known_knot_ids()?;
-        Ok(generate_knot_id(&self.repo_root, |candidate| {
-            existing.contains(candidate)
-        }))
+        Ok(match self.project_id.as_deref() {
+            Some(project_id) => {
+                generate_knot_id_from_slug(project_id, |candidate| existing.contains(candidate))
+            }
+            None => generate_knot_id(&self.repo_root, |candidate| existing.contains(candidate)),
+        })
     }
 
     fn resolve_profile_for_record<'a>(
@@ -2176,6 +2204,7 @@ impl App {
         &self,
         reporter: Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncSummary, AppError> {
+        self.require_git_distribution("pull")?;
         let mut reporter = reporter;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
@@ -2184,9 +2213,14 @@ impl App {
     }
 
     pub fn pull_drift_warning(&self) -> Result<Option<PullDriftWarning>, AppError> {
+        self.require_git_distribution("pull")?;
         let threshold = self.read_pull_drift_warn_threshold()?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
-        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        let service = ReplicationService::with_store_paths(
+            &self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         let unpushed_event_files = service.count_unpushed_event_files()?;
         if unpushed_event_files > threshold {
             Ok(Some(PullDriftWarning {
@@ -2199,8 +2233,13 @@ impl App {
     }
 
     pub fn push(&self) -> Result<PushSummary, AppError> {
+        self.require_git_distribution("push")?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
-        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        let service = ReplicationService::with_store_paths(
+            &self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         Ok(service.push()?)
     }
 
@@ -2208,17 +2247,27 @@ impl App {
         &self,
         reporter: Option<&mut dyn ProgressReporter>,
     ) -> Result<PushSummary, AppError> {
+        self.require_git_distribution("push")?;
         let mut reporter = reporter;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
-        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        let service = ReplicationService::with_store_paths(
+            &self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         Ok(service.push_with_progress(&mut reporter)?)
     }
 
     pub fn sync(&self) -> Result<ReplicationSummary, AppError> {
+        self.require_git_distribution("sync")?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
-        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        let service = ReplicationService::with_store_paths(
+            &self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         Ok(service.sync()?)
     }
 
@@ -2227,11 +2276,16 @@ impl App {
         &self,
         reporter: Option<&mut dyn ProgressReporter>,
     ) -> Result<ReplicationSummary, AppError> {
+        self.require_git_distribution("sync")?;
         let mut reporter = reporter;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
-        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        let service = ReplicationService::with_store_paths(
+            &self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         Ok(service.sync_with_progress(&mut reporter)?)
     }
 
@@ -2241,11 +2295,16 @@ impl App {
         &self,
         reporter: Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncOutcome, AppError> {
+        self.require_git_distribution("sync")?;
         let mut reporter = reporter;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
-        let service = ReplicationService::new(&self.conn, self.repo_root.clone());
+        let service = ReplicationService::with_store_paths(
+            &self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         let outcome = service.sync_or_defer_with_progress(&mut reporter)?;
         if matches!(outcome, SyncOutcome::Deferred { .. }) {
             self.mark_sync_pending()?;
@@ -2271,6 +2330,7 @@ impl App {
     }
 
     pub fn init_remote(&self) -> Result<(), AppError> {
+        self.require_git_distribution("init-remote")?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         crate::init::ensure_knots_gitignore(&self.repo_root)?;
         init_remote_knots_branch(&self.repo_root)?;
@@ -2278,18 +2338,26 @@ impl App {
     }
 
     pub fn fsck(&self) -> Result<FsckReport, AppError> {
-        Ok(run_fsck(&self.repo_root)?)
+        Ok(run_fsck_at_store(&self.store_paths.root)?)
     }
 
     pub fn doctor(&self, fix: bool) -> Result<DoctorReport, AppError> {
-        Ok(run_doctor_with_fix(&self.repo_root, fix)?)
+        Ok(run_doctor_with_fix_at(
+            &self.repo_root,
+            &self.store_paths.root,
+            self.distribution,
+            fix,
+        )?)
     }
 
     pub fn compact_write_snapshots(&self) -> Result<SnapshotWriteSummary, AppError> {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
-        Ok(write_snapshots(&self.conn, &self.repo_root)?)
+        Ok(write_snapshots_at_store(
+            &self.conn,
+            &self.store_paths.root,
+        )?)
     }
 
     pub fn perf_harness(&self, iterations: u32) -> Result<PerfReport, AppError> {
@@ -2371,7 +2439,7 @@ impl App {
             .as_ref()
             .map(|record| record.updated_at.clone())
             .unwrap_or_else(now_utc_rfc3339);
-        let record = rehydrate_from_events(&self.repo_root, &id, title, state, updated_at)?;
+        let record = rehydrate_from_events(&self.store_paths.root, &id, title, state, updated_at)?;
         db::upsert_knot_hot(
             &self.conn,
             &UpsertKnotHot {
@@ -2930,7 +2998,7 @@ struct RehydrateProjection {
 }
 
 fn rehydrate_from_events(
-    repo_root: &std::path::Path,
+    store_root: &std::path::Path,
     knot_id: &str,
     title: String,
     state: String,
@@ -2961,7 +3029,12 @@ fn rehydrate_from_events(
         created_at: Some(updated_at),
     };
 
-    let mut stack = vec![repo_root.join(".knots").join("events")];
+    let event_root = if store_root.join(".knots").exists() {
+        store_root.join(".knots").join("events")
+    } else {
+        store_root.join("events")
+    };
+    let mut stack = vec![event_root];
     let mut full_paths = Vec::new();
     while let Some(dir) = stack.pop() {
         if !dir.exists() {
@@ -2993,7 +3066,12 @@ fn rehydrate_from_events(
         apply_rehydrate_event(&mut projection, &event);
     }
 
-    let mut idx_stack = vec![repo_root.join(".knots").join("index")];
+    let index_root = if store_root.join(".knots").exists() {
+        store_root.join(".knots").join("index")
+    } else {
+        store_root.join("index")
+    };
+    let mut idx_stack = vec![index_root];
     let mut idx_paths = Vec::new();
     while let Some(dir) = idx_stack.pop() {
         if !dir.exists() {
@@ -3377,6 +3455,10 @@ pub enum AppError {
         descendants: Vec<HierarchyKnot>,
     },
     InvalidArgument(String),
+    UnsupportedDistribution {
+        action: String,
+        mode: String,
+    },
     NotFound(String),
     NotInitialized,
 }
@@ -3429,6 +3511,9 @@ impl fmt::Display for AppError {
                 state_hierarchy::format_hierarchy_knots(descendants)
             ),
             AppError::InvalidArgument(message) => write!(f, "{}", message),
+            AppError::UnsupportedDistribution { action, mode } => {
+                write!(f, "{action} is not supported in {mode} mode")
+            }
             AppError::NotFound(id) => write!(f, "knot '{}' not found in local cache", id),
             AppError::NotInitialized => write!(
                 f,
@@ -3458,6 +3543,7 @@ impl Error for AppError {
             AppError::HierarchyProgressBlocked { .. } => None,
             AppError::TerminalCascadeApprovalRequired { .. } => None,
             AppError::InvalidArgument(_) => None,
+            AppError::UnsupportedDistribution { .. } => None,
             AppError::NotFound(_) => None,
             AppError::NotInitialized => None,
         }

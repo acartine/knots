@@ -4,6 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::app::App;
 use crate::doctor::{DoctorCheck, DoctorStatus};
+use crate::project::StorePaths;
 use crate::remote_init::init_remote_knots_branch;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError};
 
@@ -64,7 +65,12 @@ fn fix_worktree(repo_root: &Path) {
     }
 
     let git = GitAdapter::new();
-    let worktree = KnotsWorktree::new(repo_root.to_path_buf());
+    let worktree = KnotsWorktree::with_store_paths(
+        repo_root.to_path_buf(),
+        &StorePaths {
+            root: repo_root.join(".knots"),
+        },
+    );
 
     match worktree.ensure_exists(&git) {
         Ok(()) => {}

@@ -2,33 +2,69 @@ use std::io::IsTerminal;
 
 use crate::app;
 use crate::cli;
+use crate::project::ProjectContext;
 use crate::workflow;
 use crate::workflow_diagram;
 
+#[cfg(test)]
 pub(crate) fn run_profile_command(
     args: &cli::ProfileArgs,
     repo_root: &std::path::Path,
     db_path: &str,
 ) -> Result<(), app::AppError> {
-    run_profile_command_with_home(args, repo_root, db_path, None)
+    let context = ProjectContext {
+        project_id: None,
+        repo_root: repo_root.to_path_buf(),
+        store_paths: crate::project::StorePaths {
+            root: repo_root.join(".knots"),
+        },
+        distribution: crate::project::DistributionMode::Git,
+    };
+    run_profile_command_with_context_and_home(args, &context, db_path, None)
 }
 
+#[cfg(test)]
 pub(crate) fn run_profile_command_with_home(
     args: &cli::ProfileArgs,
     repo_root: &std::path::Path,
     db_path: &str,
     home_override: Option<std::path::PathBuf>,
 ) -> Result<(), app::AppError> {
+    let context = ProjectContext {
+        project_id: None,
+        repo_root: repo_root.to_path_buf(),
+        store_paths: crate::project::StorePaths {
+            root: repo_root.join(".knots"),
+        },
+        distribution: crate::project::DistributionMode::Git,
+    };
+    run_profile_command_with_context_and_home(args, &context, db_path, home_override)
+}
+
+pub(crate) fn run_profile_command_with_context(
+    args: &cli::ProfileArgs,
+    context: &ProjectContext,
+    db_path: &str,
+) -> Result<(), app::AppError> {
+    run_profile_command_with_context_and_home(args, context, db_path, None)
+}
+
+pub(crate) fn run_profile_command_with_context_and_home(
+    args: &cli::ProfileArgs,
+    context: &ProjectContext,
+    db_path: &str,
+    home_override: Option<std::path::PathBuf>,
+) -> Result<(), app::AppError> {
     use cli::ProfileSubcommands;
 
     let open_app = || -> Result<app::App, app::AppError> {
-        let app = app::App::open(db_path, repo_root.to_path_buf())?;
+        let app = app::App::open_with_context(context, db_path)?;
         Ok(match home_override.clone() {
             Some(home) => app.with_home_override(Some(home)),
             None => app,
         })
     };
-    let registry = workflow::ProfileRegistry::load_for_repo(repo_root)?;
+    let registry = workflow::ProfileRegistry::load_for_repo(&context.repo_root)?;
     let palette = ProfilePalette::auto();
     match &args.command {
         ProfileSubcommands::List(list_args) => {

@@ -4,11 +4,23 @@ use std::process::Command;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-pub fn generate_knot_id<F>(repo_root: &Path, mut exists: F) -> String
+pub fn generate_knot_id<F>(repo_root: &Path, exists: F) -> String
 where
     F: FnMut(&str) -> bool,
 {
-    let slug = repo_slug(repo_root);
+    generate_knot_id_from_slug(&repo_slug(repo_root), exists)
+}
+
+pub fn generate_knot_id_from_slug<F>(slug: &str, mut exists: F) -> String
+where
+    F: FnMut(&str) -> bool,
+{
+    let slug = normalize_slug(slug);
+    let slug = if slug.is_empty() {
+        "repo".to_string()
+    } else {
+        slug
+    };
 
     for _ in 0..64 {
         let seed = Uuid::now_v7().to_string();
@@ -68,7 +80,7 @@ fn origin_repo_name(repo_root: &Path) -> Option<String> {
 fn normalize_slug(raw: &str) -> String {
     raw.chars()
         .map(|ch| ch.to_ascii_lowercase())
-        .filter(|ch| ch.is_ascii_alphanumeric() || *ch == '-')
+        .filter(|ch| ch.is_ascii_alphanumeric() || matches!(*ch, '-' | '_'))
         .collect::<String>()
 }
 
@@ -79,8 +91,9 @@ pub fn display_id(id: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
+    use std::path::Path;
 
-    use super::{display_id, generate_knot_id, repo_slug};
+    use super::{display_id, generate_knot_id, generate_knot_id_from_slug, repo_slug};
 
     #[test]
     fn slug_fallbacks_to_repo_name_when_git_remote_missing() {
@@ -109,9 +122,63 @@ mod tests {
     }
 
     #[test]
+    fn generated_ids_follow_explicit_slug_shape() {
+        let seen: HashSet<String> = HashSet::new();
+        let id = generate_knot_id_from_slug("demo_project", |candidate| seen.contains(candidate));
+        assert!(id.starts_with("demo_project-"));
+    }
+
+    #[test]
     fn display_id_strips_prefix() {
         assert_eq!(display_id("knots-19dc"), "19dc");
         assert_eq!(display_id("my-repo-a1b2"), "a1b2");
         assert_eq!(display_id("nohyphen"), "nohyphen");
+    }
+
+    #[test]
+    fn empty_slug_and_root_path_fall_back_to_repo() {
+        let id = generate_knot_id_from_slug("", |_| false);
+        assert!(id.starts_with("repo-"));
+        assert_eq!(repo_slug(Path::new("/")), "repo");
+
+        let weird = std::env::temp_dir().join("!!!");
+        assert_eq!(repo_slug(&weird), "repo");
+    }
+
+    #[test]
+    fn repeated_collisions_fall_back_to_longer_uuid_suffix() {
+        let id = generate_knot_id_from_slug("demo", |_| true);
+        assert!(id.starts_with("demo-"));
+        assert_eq!(display_id(&id).len(), 8);
+    }
+
+    #[test]
+    fn blank_origin_url_falls_back_to_repo_basename() {
+        let root = std::env::temp_dir().join("knots-id-blank-origin");
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).expect("repo root should be creatable");
+
+        let run_git = |args: &[&str]| {
+            let output = std::process::Command::new("git")
+                .arg("-C")
+                .arg(&root)
+                .args(args)
+                .output()
+                .expect("git command should run");
+            assert!(
+                output.status.success(),
+                "git {:?} failed: {}",
+                args,
+                String::from_utf8_lossy(&output.stderr)
+            );
+        };
+
+        run_git(&["init"]);
+        run_git(&["remote", "add", "origin", "https://example.com/demo.git"]);
+        run_git(&["config", "remote.origin.url", "   "]);
+
+        assert_eq!(repo_slug(&root), "knots-id-blank-origin");
+
+        let _ = std::fs::remove_dir_all(root);
     }
 }

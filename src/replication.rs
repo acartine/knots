@@ -4,6 +4,7 @@ use rusqlite::Connection;
 use serde::Serialize;
 
 use crate::progress::{emit_progress, ProgressKind, ProgressReporter};
+use crate::project::StorePaths;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError, SyncService, SyncSummary};
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -34,21 +35,39 @@ pub enum SyncOutcome {
 pub struct ReplicationService<'a> {
     conn: &'a Connection,
     repo_root: PathBuf,
+    store_paths: StorePaths,
     git: GitAdapter,
 }
 
 impl<'a> ReplicationService<'a> {
+    #[cfg(test)]
     pub fn new(conn: &'a Connection, repo_root: PathBuf) -> Self {
+        let store_paths = StorePaths {
+            root: repo_root.join(".knots"),
+        };
+        Self::with_store_paths(conn, repo_root, store_paths)
+    }
+
+    pub fn with_store_paths(
+        conn: &'a Connection,
+        repo_root: PathBuf,
+        store_paths: StorePaths,
+    ) -> Self {
         Self {
             conn,
             repo_root,
+            store_paths,
             git: GitAdapter::new(),
         }
     }
 
     pub fn pull(&self) -> Result<SyncSummary, SyncError> {
         self.require_no_active_leases()?;
-        let service = SyncService::new(self.conn, self.repo_root.clone());
+        let service = SyncService::with_store_paths(
+            self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         service.sync()
     }
 
@@ -57,7 +76,11 @@ impl<'a> ReplicationService<'a> {
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncSummary, SyncError> {
         self.require_no_active_leases()?;
-        let service = SyncService::new(self.conn, self.repo_root.clone());
+        let service = SyncService::with_store_paths(
+            self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
         service.sync_with_progress(reporter)
     }
 
@@ -78,7 +101,7 @@ impl<'a> ReplicationService<'a> {
             ProgressKind::Stage,
             "publishing local knots events",
         )?;
-        let worktree = KnotsWorktree::new(self.repo_root.clone());
+        let worktree = KnotsWorktree::with_store_paths(self.repo_root.clone(), &self.store_paths);
         emit_progress(reporter, ProgressKind::Info, "preparing knots worktree")?;
         worktree.ensure_exists(&self.git)?;
 
@@ -232,7 +255,7 @@ impl<'a> ReplicationService<'a> {
     }
 
     pub fn count_unpushed_event_files(&self) -> Result<u64, SyncError> {
-        let worktree = KnotsWorktree::new(self.repo_root.clone());
+        let worktree = KnotsWorktree::with_store_paths(self.repo_root.clone(), &self.store_paths);
         worktree.ensure_exists(&self.git)?;
         let mut reporter = None;
         self.reset_worktree_to_remote_or_local(&worktree, &mut reporter)?;

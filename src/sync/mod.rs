@@ -6,6 +6,7 @@ use rusqlite::Connection;
 use serde::Serialize;
 
 use crate::progress::{emit_progress, ProgressKind, ProgressReporter};
+use crate::project::StorePaths;
 
 mod apply;
 mod git;
@@ -28,14 +29,28 @@ pub struct SyncSummary {
 pub struct SyncService<'a> {
     conn: &'a Connection,
     repo_root: PathBuf,
+    store_paths: StorePaths,
     git: GitAdapter,
 }
 
 impl<'a> SyncService<'a> {
+    #[cfg(test)]
     pub fn new(conn: &'a Connection, repo_root: PathBuf) -> Self {
+        let store_paths = StorePaths {
+            root: repo_root.join(".knots"),
+        };
+        Self::with_store_paths(conn, repo_root, store_paths)
+    }
+
+    pub fn with_store_paths(
+        conn: &'a Connection,
+        repo_root: PathBuf,
+        store_paths: StorePaths,
+    ) -> Self {
         Self {
             conn,
             repo_root,
+            store_paths,
             git: GitAdapter::new(),
         }
     }
@@ -50,7 +65,7 @@ impl<'a> SyncService<'a> {
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncSummary, SyncError> {
         emit_progress(reporter, ProgressKind::Stage, "importing knots updates")?;
-        let worktree = KnotsWorktree::new(self.repo_root.clone());
+        let worktree = KnotsWorktree::with_store_paths(self.repo_root.clone(), &self.store_paths);
         emit_progress(reporter, ProgressKind::Info, "preparing knots worktree")?;
         worktree.ensure_exists(&self.git)?;
 

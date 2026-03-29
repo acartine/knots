@@ -138,11 +138,13 @@ unsafe fn libc_kill(pid: i32, sig: i32) -> i32 {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
     use std::path::PathBuf;
     use std::time::Duration;
     use uuid::Uuid;
 
-    use super::{process_alive, reclaim_stale, FileLock};
+    use super::{process_alive, reclaim_stale, FileLock, LockError};
 
     fn lock_path() -> PathBuf {
         std::env::temp_dir().join(format!("knots-lock-test-{}.lock", Uuid::now_v7()))
@@ -250,5 +252,37 @@ mod tests {
         // File doesn't exist — reclaim should return true.
         let reclaimed = reclaim_stale(&path).expect("reclaim should not fail");
         assert!(reclaimed);
+    }
+
+    #[test]
+    fn io_error_paths_surface_as_lock_errors() {
+        let path = std::env::temp_dir().join(format!("knots-lock-dir-{}", Uuid::now_v7()));
+        std::fs::create_dir_all(&path).expect("directory path should be creatable");
+
+        let converted = LockError::from(std::io::Error::other("boom"));
+        assert!(converted.to_string().contains("boom"));
+
+        assert!(!reclaim_stale(&path).expect("directory should not be reclaimed as stale"));
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn try_acquire_reports_open_errors_from_read_only_directories() {
+        let parent = std::env::temp_dir().join(format!("knots-lock-readonly-{}", Uuid::now_v7()));
+        std::fs::create_dir_all(&parent).expect("parent dir should be creatable");
+        let original = std::fs::metadata(&parent)
+            .expect("metadata should be readable")
+            .permissions();
+        let mut readonly = original.clone();
+        readonly.set_mode(0o555);
+        std::fs::set_permissions(&parent, readonly).expect("permissions should update");
+
+        let path = parent.join("child.lock");
+        let err = super::try_acquire(&path).expect_err("read-only directory should fail");
+        assert!(err.to_string().contains("lock I/O error"));
+
+        std::fs::set_permissions(&parent, original).expect("permissions should restore");
+        let _ = std::fs::remove_dir_all(parent);
     }
 }

@@ -69,8 +69,12 @@ pub(crate) fn init_local_store(repo_root: &Path, db_path: &str) -> Result<(), Ap
     }
     progress(&format!("opening cache database at {db_path}"))?;
     let _ = db::open_connection(db_path)?;
-    progress("ensuring gitignore includes .knots rule")?;
-    ensure_knots_gitignore(repo_root)?;
+    if crate::project::canonical_or_original(&store_root_for_db(db_path))
+        == crate::project::canonical_or_original(&repo_root.join(".knots"))
+    {
+        progress("ensuring gitignore includes .knots rule")?;
+        ensure_knots_gitignore(repo_root)?;
+    }
     progress_ok("local store ready")?;
     Ok(())
 }
@@ -82,11 +86,15 @@ fn pull_knots_from_remote(repo_root: PathBuf, db_path: &str) -> Result<(), AppEr
 }
 
 pub(crate) fn uninit_local_store(repo_root: &Path, db_path: &str) -> Result<(), AppError> {
-    remove_gitignore_entries(repo_root)?;
+    let store_root = store_root_for_db(db_path);
+    if crate::project::canonical_or_original(&store_root)
+        == crate::project::canonical_or_original(&repo_root.join(".knots"))
+    {
+        remove_gitignore_entries(repo_root)?;
+    }
     remove_db_file(db_path)?;
-    let knots_dir = repo_root.join(".knots");
-    if knots_dir.exists() {
-        std::fs::remove_dir_all(&knots_dir)?;
+    if store_root.exists() {
+        std::fs::remove_dir_all(&store_root)?;
     }
     progress_ok("local store removed")?;
     Ok(())
@@ -214,6 +222,14 @@ fn remove_db_file(db_path: &str) -> Result<(), AppError> {
         std::fs::remove_file(path)?;
     }
     Ok(())
+}
+
+fn store_root_for_db(db_path: &str) -> PathBuf {
+    let path = Path::new(db_path);
+    path.parent()
+        .and_then(Path::parent)
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| path.to_path_buf())
 }
 
 fn contains_knots_ignore(contents: &str) -> bool {

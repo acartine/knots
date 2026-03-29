@@ -51,9 +51,14 @@ impl From<std::io::Error> for FsckError {
     }
 }
 
+#[cfg(test)]
 pub fn run_fsck(repo_root: &Path) -> Result<FsckReport, FsckError> {
+    run_fsck_at_store(&repo_root.join(".knots"))
+}
+
+pub fn run_fsck_at_store(store_root: &Path) -> Result<FsckReport, FsckError> {
     let mut issues = Vec::new();
-    let mut files = collect_json_files(repo_root)?;
+    let mut files = collect_json_files(store_root)?;
     files.sort();
 
     let mut event_id_to_path: HashMap<String, PathBuf> = HashMap::new();
@@ -189,10 +194,10 @@ pub fn run_fsck(repo_root: &Path) -> Result<FsckReport, FsckError> {
     })
 }
 
-fn collect_json_files(repo_root: &Path) -> Result<Vec<PathBuf>, FsckError> {
+fn collect_json_files(store_root: &Path) -> Result<Vec<PathBuf>, FsckError> {
     let mut files = Vec::new();
-    for rel_root in [".knots/index", ".knots/events"] {
-        let root = repo_root.join(rel_root);
+    for rel_root in ["index", "events"] {
+        let root = store_root.join(rel_root);
         if !root.exists() {
             continue;
         }

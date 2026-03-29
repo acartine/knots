@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use crate::project::StorePaths;
+
 use super::{GitAdapter, SyncError};
 
 #[derive(Debug, Clone)]
@@ -11,10 +13,19 @@ pub struct KnotsWorktree {
 }
 
 impl KnotsWorktree {
+    #[cfg(test)]
     pub fn new(root: impl Into<PathBuf>) -> Self {
         let root = root.into();
+        let store_paths = StorePaths {
+            root: root.join(".knots"),
+        };
+        Self::with_store_paths(root, &store_paths)
+    }
+
+    pub fn with_store_paths(root: impl Into<PathBuf>, store_paths: &StorePaths) -> Self {
+        let root = root.into();
         Self {
-            path: root.join(".knots").join("_worktree"),
+            path: store_paths.worktree_path(),
             root,
             branch: "knots".to_string(),
             remote: "origin".to_string(),

@@ -6,6 +6,7 @@ use std::process::Command;
 use serde::Serialize;
 
 use crate::locks::{FileLock, LockError};
+use crate::project::{DistributionMode, StorePaths};
 use crate::state_hierarchy::find_terminal_parent_resolutions;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError};
 
@@ -74,32 +75,62 @@ impl From<LockError> for DoctorError {
     }
 }
 
+#[cfg(test)]
 pub fn run_doctor(repo_root: &Path) -> Result<DoctorReport, DoctorError> {
+    run_doctor_at(repo_root, &repo_root.join(".knots"), DistributionMode::Git)
+}
+
+pub fn run_doctor_at(
+    repo_root: &Path,
+    store_root: &Path,
+    distribution: DistributionMode,
+) -> Result<DoctorReport, DoctorError> {
+    let store_paths = StorePaths {
+        root: store_root.to_path_buf(),
+    };
     let mut checks = vec![
-        check_locks(repo_root)?,
-        check_worktree(repo_root),
-        check_remote(repo_root)?,
+        check_locks(&store_paths)?,
+        check_worktree(repo_root, &store_paths, distribution),
+        check_remote(repo_root, distribution)?,
         check_version(),
-        crate::git_hooks::check_hooks(repo_root),
-        check_stuck_leases(repo_root)?,
-        check_terminal_parents(repo_root)?,
+        check_hooks(repo_root, distribution),
+        check_stuck_leases(&store_paths)?,
+        check_terminal_parents(repo_root, &store_paths)?,
     ];
     checks.extend(crate::managed_skills::doctor_checks(repo_root));
     Ok(DoctorReport { checks })
 }
 
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn run_doctor_with_fix(repo_root: &Path, fix: bool) -> Result<DoctorReport, DoctorError> {
-    let report = run_doctor(repo_root)?;
+    run_doctor_with_fix_at(
+        repo_root,
+        &repo_root.join(".knots"),
+        DistributionMode::Git,
+        fix,
+    )
+}
+
+pub fn run_doctor_with_fix_at(
+    repo_root: &Path,
+    store_root: &Path,
+    distribution: DistributionMode,
+    fix: bool,
+) -> Result<DoctorReport, DoctorError> {
+    let report = run_doctor_at(repo_root, store_root, distribution)?;
     if !fix {
         return Ok(report);
     }
-    crate::doctor_fix::apply_fixes(repo_root, &report.checks);
-    run_doctor(repo_root)
+    if distribution == DistributionMode::Git {
+        crate::doctor_fix::apply_fixes(repo_root, &report.checks);
+    }
+    run_doctor_at(repo_root, store_root, distribution)
 }
 
-fn check_locks(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
-    let repo_lock_path = repo_root.join(".knots").join("locks").join("repo.lock");
-    let cache_lock_path = repo_root.join(".knots").join("cache").join("cache.lock");
+fn check_locks(store_paths: &StorePaths) -> Result<DoctorCheck, DoctorError> {
+    let repo_lock_path = store_paths.repo_lock_path();
+    let cache_lock_path = store_paths.cache_lock_path();
 
     let repo_guard = FileLock::try_acquire(&repo_lock_path)?;
     let cache_guard = FileLock::try_acquire(&cache_lock_path)?;
@@ -125,7 +156,18 @@ fn check_locks(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
     })
 }
 
-fn check_worktree(repo_root: &Path) -> DoctorCheck {
+fn check_worktree(
+    repo_root: &Path,
+    store_paths: &StorePaths,
+    distribution: DistributionMode,
+) -> DoctorCheck {
+    if distribution != DistributionMode::Git {
+        return DoctorCheck {
+            name: "worktree".to_string(),
+            status: DoctorStatus::Pass,
+            detail: "local-only mode; git worktree check skipped".to_string(),
+        };
+    }
     if !repo_root.join(".git").exists() {
         return DoctorCheck {
             name: "worktree".to_string(),
@@ -135,7 +177,7 @@ fn check_worktree(repo_root: &Path) -> DoctorCheck {
     }
 
     let git = GitAdapter::new();
-    let worktree = KnotsWorktree::new(repo_root.to_path_buf());
+    let worktree = KnotsWorktree::with_store_paths(repo_root.to_path_buf(), store_paths);
     let result = worktree
         .ensure_exists(&git)
         .and_then(|()| worktree.ensure_clean(&git));
@@ -159,7 +201,17 @@ fn check_worktree(repo_root: &Path) -> DoctorCheck {
     }
 }
 
-fn check_remote(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
+fn check_remote(
+    repo_root: &Path,
+    distribution: DistributionMode,
+) -> Result<DoctorCheck, DoctorError> {
+    if distribution != DistributionMode::Git {
+        return Ok(DoctorCheck {
+            name: "remote".to_string(),
+            status: DoctorStatus::Pass,
+            detail: "local-only mode; remote check skipped".to_string(),
+        });
+    }
     if !repo_root.join(".git").exists() {
         return Ok(DoctorCheck {
             name: "remote".to_string(),
@@ -220,6 +272,17 @@ fn check_remote(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
         status,
         detail,
     })
+}
+
+fn check_hooks(repo_root: &Path, distribution: DistributionMode) -> DoctorCheck {
+    if distribution != DistributionMode::Git {
+        return DoctorCheck {
+            name: "hooks".to_string(),
+            status: DoctorStatus::Pass,
+            detail: "local-only mode; git hook check skipped".to_string(),
+        };
+    }
+    crate::git_hooks::check_hooks(repo_root)
 }
 
 const RELEASES_LATEST_URL: &str = "https://github.com/acartine/knots/releases/latest";
@@ -317,8 +380,8 @@ fn is_outdated(current: &str, latest: &str) -> Option<bool> {
     Some(cur < lat)
 }
 
-fn check_stuck_leases(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
-    let db_path = repo_root.join(".knots").join("cache").join("state.sqlite");
+fn check_stuck_leases(store_paths: &StorePaths) -> Result<DoctorCheck, DoctorError> {
+    let db_path = store_paths.db_path();
     if !db_path.exists() {
         return Ok(DoctorCheck {
             name: "stuck_leases".to_string(),
@@ -326,7 +389,7 @@ fn check_stuck_leases(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
             detail: "no cache database found".to_string(),
         });
     }
-    let conn = crate::db::open_connection(db_path.to_str().unwrap_or(".knots/cache/state.sqlite"))
+    let conn = crate::db::open_connection(db_path.to_str().unwrap_or("cache/state.sqlite"))
         .map_err(|e| DoctorError::Io(std::io::Error::other(e.to_string())))?;
 
     let count = crate::db::count_active_leases(&conn)
@@ -347,8 +410,11 @@ fn check_stuck_leases(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
     }
 }
 
-fn check_terminal_parents(repo_root: &Path) -> Result<DoctorCheck, DoctorError> {
-    let db_path = repo_root.join(".knots").join("cache").join("state.sqlite");
+fn check_terminal_parents(
+    _repo_root: &Path,
+    store_paths: &StorePaths,
+) -> Result<DoctorCheck, DoctorError> {
+    let db_path = store_paths.db_path();
     if !db_path.exists() {
         return Ok(DoctorCheck {
             name: "terminal_parents".to_string(),
@@ -357,7 +423,7 @@ fn check_terminal_parents(repo_root: &Path) -> Result<DoctorCheck, DoctorError> 
         });
     }
 
-    let conn = crate::db::open_connection(db_path.to_str().unwrap_or(".knots/cache/state.sqlite"))
+    let conn = crate::db::open_connection(db_path.to_str().unwrap_or("cache/state.sqlite"))
         .map_err(|err| DoctorError::Io(std::io::Error::other(err.to_string())))?;
     let resolutions = find_terminal_parent_resolutions(&conn)
         .map_err(|err| DoctorError::Io(std::io::Error::other(err.to_string())))?;

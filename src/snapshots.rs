@@ -90,9 +90,17 @@ struct ColdCatalogSnapshot {
     cold: Vec<ColdCatalogRecord>,
 }
 
+#[cfg(test)]
 pub fn write_snapshots(
     conn: &Connection,
     repo_root: &Path,
+) -> Result<SnapshotWriteSummary, SnapshotError> {
+    write_snapshots_at_store(conn, &repo_root.join(".knots"))
+}
+
+pub fn write_snapshots_at_store(
+    conn: &Connection,
+    store_root: &Path,
 ) -> Result<SnapshotWriteSummary, SnapshotError> {
     let hot = db::list_knot_hot(conn)?;
     let warm = db::list_knot_warm(conn)?;
@@ -100,7 +108,7 @@ pub fn write_snapshots(
 
     let written_at = current_rfc3339();
     let stamp = filename_timestamp();
-    let snapshots_dir = repo_root.join(".knots").join("snapshots");
+    let snapshots_dir = store_root.join("snapshots");
     std::fs::create_dir_all(&snapshots_dir)?;
 
     let active = ActiveCatalogSnapshot {
@@ -134,7 +142,14 @@ pub fn apply_latest_snapshots(
     conn: &Connection,
     repo_root: &Path,
 ) -> Result<SnapshotLoadSummary, SnapshotError> {
-    let snapshots_dir = repo_root.join(".knots").join("snapshots");
+    apply_latest_snapshots_at_store(conn, &repo_root.join(".knots"))
+}
+
+pub fn apply_latest_snapshots_at_store(
+    conn: &Connection,
+    store_root: &Path,
+) -> Result<SnapshotLoadSummary, SnapshotError> {
+    let snapshots_dir = store_root.join("snapshots");
     if !snapshots_dir.exists() {
         return Ok(SnapshotLoadSummary {
             active_path: None,

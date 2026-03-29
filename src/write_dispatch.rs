@@ -16,6 +16,7 @@ use crate::domain::metadata::MetadataEntryInput;
 use crate::domain::state::KnotState;
 use crate::domain::step_history::StepActorInfo;
 use crate::poll_claim;
+use crate::project::{DistributionMode, ProjectContext, StorePaths};
 use crate::rollback::resolve_rollback_state;
 use crate::ui;
 use crate::write_queue::{
@@ -25,14 +26,43 @@ use crate::write_queue::{
     StepAnnotateOperation, UpdateOperation, WriteOperation,
 };
 
+#[cfg(test)]
 pub fn maybe_run_queued_command(cli: &Cli) -> Result<Option<String>, AppError> {
+    let repo_root = cli.repo_root.clone().unwrap_or_else(|| PathBuf::from("."));
+    let context = ProjectContext {
+        project_id: None,
+        repo_root: repo_root.clone(),
+        store_paths: StorePaths {
+            root: repo_root.join(".knots"),
+        },
+        distribution: DistributionMode::Git,
+    };
+    let db_path = cli
+        .db
+        .clone()
+        .unwrap_or_else(|| ".knots/cache/state.sqlite".to_string());
+    maybe_run_queued_command_with_context(cli, &context, &db_path)
+}
+
+pub fn maybe_run_queued_command_with_context(
+    cli: &Cli,
+    context: &ProjectContext,
+    db_path: &str,
+) -> Result<Option<String>, AppError> {
     let Some(operation) = operation_from_command(&cli.command) else {
         return Ok(None);
     };
 
-    let response =
-        write_queue::enqueue_and_wait(&cli.repo_root, &cli.db, operation, execute_queued_request)
-            .map_err(|err| AppError::InvalidArgument(format!("write queue error: {}", err)))?;
+    let response = write_queue::enqueue_and_wait_with_context(
+        &context.repo_root,
+        &context.store_paths,
+        context.distribution,
+        context.project_id.clone(),
+        db_path,
+        operation,
+        execute_queued_request,
+    )
+    .map_err(|err| AppError::InvalidArgument(format!("write queue error: {}", err)))?;
 
     if response.success {
         Ok(Some(response.output))
@@ -215,8 +245,19 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
 }
 
 fn execute_queued_request(request: &QueuedWriteRequest) -> QueuedWriteResponse {
-    let repo_root = PathBuf::from(&request.repo_root);
-    let app = match App::open(&request.db_path, repo_root) {
+    let context = ProjectContext {
+        project_id: request.project_id.clone(),
+        repo_root: PathBuf::from(&request.repo_root),
+        store_paths: StorePaths {
+            root: PathBuf::from(&request.store_root),
+        },
+        distribution: if request.distribution == "git" {
+            DistributionMode::Git
+        } else {
+            DistributionMode::LocalOnly
+        },
+    };
+    let app = match App::open_with_context(&context, &request.db_path) {
         Ok(app) => app,
         Err(err) => return QueuedWriteResponse::failure(err.to_string()),
     };
@@ -912,6 +953,9 @@ mod tests {
         let request = QueuedWriteRequest {
             request_id: "req-open-fail".to_string(),
             repo_root: root.to_string_lossy().into_owned(),
+            store_root: root.join(".knots").to_string_lossy().into_owned(),
+            distribution: "git".to_string(),
+            project_id: None,
             db_path: bad_db_dir.to_string_lossy().into_owned(),
             response_path: String::new(),
             operation: WriteOperation::New(NewOperation {
