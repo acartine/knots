@@ -160,19 +160,19 @@ jobs:
     if: needs.detect-release.outputs.should_release == 'true'
     steps:
       - name: Download Linux artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: release-linux
           path: dist
 
       - name: Download Linux ARM64 artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: release-linux-arm64
           path: dist
 
       - name: Download Darwin artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: release-darwin
           path: dist
@@ -189,13 +189,18 @@ jobs:
             > knots-v"${version}"-checksums.txt
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.detect-release.outputs.tag }}
-          name: ${{ needs.detect-release.outputs.tag }}
-          generate_release_notes: true
-          files: |
-            dist/knots-v${{ needs.detect-release.outputs.version }}-darwin-arm64.tar.gz
-            dist/knots-v${{ needs.detect-release.outputs.version }}-linux-x86_64.tar.gz
-            dist/knots-v${{ needs.detect-release.outputs.version }}-linux-aarch64.tar.gz
-            dist/knots-v${{ needs.detect-release.outputs.version }}-checksums.txt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.detect-release.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.detect-release.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "${RELEASE_TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${RELEASE_TAG}" \
+            --generate-notes \
+            "dist/knots-v${RELEASE_VERSION}-darwin-arm64.tar.gz" \
+            "dist/knots-v${RELEASE_VERSION}-linux-x86_64.tar.gz" \
+            "dist/knots-v${RELEASE_VERSION}-linux-aarch64.tar.gz" \
+            "dist/knots-v${RELEASE_VERSION}-checksums.txt"
