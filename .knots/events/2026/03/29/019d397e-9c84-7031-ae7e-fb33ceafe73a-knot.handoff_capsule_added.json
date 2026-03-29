@@ -1,0 +1,15 @@
+{
+  "event_id": "019d397e-9c84-7031-ae7e-fb33ceafe73a",
+  "occurred_at": "2026-03-29T12:08:12.16448Z",
+  "knot_id": "knots-690a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Plan review approved. Verified all claims against release.yml: download-artifact@v5 (3 uses) and softprops/action-gh-release@v2 are the only remaining Node 20 dependencies. Plan to bump download-artifact and replace gh-release with gh CLI is sound and well-scoped. Implementation note: publish-release job has no checkout step, so gh CLI will need --repo flag or rely on GITHUB_REPOSITORY env var. Validation strategy (actionlint + make sanity + upstream metadata checks) is sufficient.",
+    "datetime": "2026-03-29T12:08:12.16448Z",
+    "entry_id": "019d397e-9c84-7031-ae7e-fb20521a40b2",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}

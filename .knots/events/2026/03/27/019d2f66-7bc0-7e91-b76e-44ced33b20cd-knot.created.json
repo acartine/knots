@@ -1,0 +1,17 @@
+{
+  "event_id": "019d2f66-7bc0-7e91-b76e-44ced33b20cd",
+  "occurred_at": "2026-03-27T13:05:38.752934Z",
+  "knot_id": "knots-690a",
+  "type": "knot.created",
+  "data": {
+    "body": "Address the GitHub Actions deprecation warning in the release workflow. Update the actions used by the release pipeline so the workflow no longer depends on Node.js 20 runtime behavior and remains compatible with GitHub's Node 24 transition. Expected outcome: the release workflow runs without the Node 20 deprecation warning, release behavior stays unchanged, and any action version bumps are validated before shipping. Constraints: keep the change limited to workflow and release-tooling updates; do not change release semantics unless required by the compatibility fix.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_with_pr",
+    "state": "ready_for_planning",
+    "title": "Update GitHub Actions for Node 24 compatibility",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

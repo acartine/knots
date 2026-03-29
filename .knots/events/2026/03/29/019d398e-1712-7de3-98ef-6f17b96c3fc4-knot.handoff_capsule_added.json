@@ -1,0 +1,15 @@
+{
+  "event_id": "019d398e-1712-7de3-98ef-6f17b96c3fc4",
+  "occurred_at": "2026-03-29T12:25:06.578029Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Implementation review approved. All four acceptance criteria verified: hint suppressed when hooks pass, preserved when hooks missing or stale, same logic for direct kno upgrade and doctor-fix subprocess, tests cover all conditional branches. make sanity passes clean at 95.06 percent coverage with 741 tests passing. No security issues, no regressions, minimal well-scoped change.",
+    "datetime": "2026-03-29T12:25:06.578029Z",
+    "entry_id": "019d398e-1712-7de3-98ef-6f06fe04b143",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}

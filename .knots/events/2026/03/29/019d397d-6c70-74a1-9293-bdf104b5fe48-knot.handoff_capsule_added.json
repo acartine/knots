@@ -1,0 +1,15 @@
+{
+  "event_id": "019d397d-6c70-74a1-9293-bdf104b5fe48",
+  "occurred_at": "2026-03-29T12:06:54.320811Z",
+  "knot_id": "knots-690a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan recorded for a narrow workflow-only fix. Update `.github/workflows/release.yml` by bumping `actions/download-artifact` to a Node 24-compatible major and replacing `softprops/action-gh-release@v2` with an equivalent `gh release create` publish step unless a smaller upstream Node 24-safe bump is available at implementation time. Validate with `actionlint`, upstream action runtime checks, and `make sanity`. No child knots were created.",
+    "datetime": "2026-03-29T12:06:54Z",
+    "entry_id": "019d397d-6c70-74a1-9293-bde3421a692d",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "5"
+  }
+}

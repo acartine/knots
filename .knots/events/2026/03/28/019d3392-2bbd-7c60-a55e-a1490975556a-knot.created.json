@@ -1,0 +1,17 @@
+{
+  "event_id": "019d3392-2bbd-7c60-a55e-a1490975556a",
+  "occurred_at": "2026-03-28T08:31:50.717862Z",
+  "knot_id": "knots-5403",
+  "type": "knot.created",
+  "data": {
+    "body": "When a user runs a kno cli command, knots should check to see whan the last upgrade check was.  If > 24 hours, knots should check for upgrade, and if found, notify the user in a banner at the top of the command output.  it's important to not spam the user, just check and notify once per 24 hour period (or longer if the user is inactive).",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno cli: check for upgrade and warn user with banner",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

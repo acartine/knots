@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3984-8106-78d2-90ef-7a838f22bfe1",
+  "occurred_at": "2026-03-29T12:14:38.341969Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented conditional post-upgrade hint suppression by threading cwd into the self-manage upgrade path and hiding the kno doctor hint only when the current repo resolves to a git root whose hooks check passes. Added regression coverage for current hooks, missing hooks, stale hooks, and non-repo contexts. Validation: cargo test maybe_run_self_command; cargo test upgrade_summary_omits_hint_when_not_needed; cargo test upgrade_hint_needed_stays_enabled_outside_git_repo; make sanity (95.05% coverage). make install-hooks had to be run from /Users/cartine/knots because the installer assumes .git/hooks is a directory in a non-worktree repo.",
+    "datetime": "2026-03-29T12:14:38Z",
+    "entry_id": "019d3984-8105-7a30-8b0b-4f4d0410b78a",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-29"
+  }
+}

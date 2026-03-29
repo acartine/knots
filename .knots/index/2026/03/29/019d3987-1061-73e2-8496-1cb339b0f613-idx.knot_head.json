@@ -1,0 +1,21 @@
+{
+  "event_id": "019d3987-1061-73e2-8496-1cb339b0f613",
+  "occurred_at": "2026-03-29T12:17:26.113803Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-690a",
+    "profile_id": "autopilot_with_pr",
+    "state": "ready_for_implementation_review",
+    "terminal": false,
+    "title": "Update GitHub Actions for Node 24 compatibility",
+    "type": "work",
+    "updated_at": "2026-03-29T12:17:26.113803Z",
+    "workflow_id": "compatibility"
+  }
+}

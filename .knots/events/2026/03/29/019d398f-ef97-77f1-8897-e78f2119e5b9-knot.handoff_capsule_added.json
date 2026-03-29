@@ -1,0 +1,15 @@
+{
+  "event_id": "019d398f-ef97-77f1-8897-e78f2119e5b9",
+  "occurred_at": "2026-03-29T12:27:07.543501Z",
+  "knot_id": "knots-5403",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented the periodic startup upgrade notice by extracting shared release-version helpers, adding a global 24h throttled upgrade-check state file, wiring the stderr banner into main before dispatch, and covering the new paths with unit plus subprocess CLI tests using a stubbed curl binary. Branch: knots-5403-upgrade-banner. Verified with make install-hooks and make sanity (95.05% coverage). Commits: 3839a55ed7b1, c18ebb5b0f3f.",
+    "datetime": "2026-03-29T12:19:51Z",
+    "entry_id": "019d398f-ef97-77f1-8897-e77e7d81e103",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "2026-03-29"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "event_id": "019d3392-76e6-7393-a9e3-9fad7d41a533",
+  "occurred_at": "2026-03-28T08:32:09.958131Z",
+  "knot_id": "knots-5403",
+  "type": "knot.title_set",
+  "data": {
+    "from": "kno cli: check for upgrade and warn user with banner",
+    "to": "kno cli: periodic upgrade-available banner"
+  }
+}

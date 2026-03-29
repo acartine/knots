@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3986-f935-78f0-9e04-605aec0d6e3e",
+  "occurred_at": "2026-03-29T12:17:20.181764Z",
+  "knot_id": "knots-6a8b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review requested revision. Verified src/knot_id.rs:87 and src/app.rs:536 already use last-hyphen splitting via rsplit_once('-'); rg found no split_once('-') call sites; existing unit test src/knot_id.rs:134 already covers a hyphenated prefix (my-repo-a1b2 -> a1b2). The proposed strip_project_prefix plus caller threading adds complexity without evidence of a real defect. Next planning pass should first reproduce the bug in the named-project flow or identify the actual faulty parser before proposing code changes.",
+    "datetime": "2026-03-29T12:17:02Z",
+    "entry_id": "019d3986-f935-78f0-9e04-60453507d6a7",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "2026-03-29"
+  }
+}

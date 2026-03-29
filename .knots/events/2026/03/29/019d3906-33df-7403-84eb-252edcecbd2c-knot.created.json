@@ -1,0 +1,17 @@
+{
+  "event_id": "019d3906-33df-7403-84eb-252edcecbd2c",
+  "occurred_at": "2026-03-29T09:56:41.055482Z",
+  "knot_id": "knots-2f2b",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "smoke git repo behavior 1774778201",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

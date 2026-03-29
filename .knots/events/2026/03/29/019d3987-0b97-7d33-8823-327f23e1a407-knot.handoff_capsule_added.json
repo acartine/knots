@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3987-0b97-7d33-8823-327f23e1a407",
+  "occurred_at": "2026-03-29T12:17:24.88764Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Final implementation handoff: threaded the current working directory into the self-manage upgrade path, derived the git repo root without full app initialization, and suppressed the post-upgrade kno doctor hint only when git_hooks::check_hooks reports Pass. Added regression coverage for direct upgrade output with current hooks, missing hooks, stale hooks, and non-repo execution. Validation passed with make sanity at 95.05 percent coverage. Branch knots-a97a includes commit b9588b890c8a.",
+    "datetime": "2026-03-29T12:17:24Z",
+    "entry_id": "019d3987-0b97-7d33-8823-3264730e7869",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-29"
+  }
+}

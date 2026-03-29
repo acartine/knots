@@ -1,0 +1,9 @@
+{
+  "event_id": "019d2f48-abe7-77b0-8eb0-131f4c37257b",
+  "occurred_at": "2026-03-27T12:33:04.999212Z",
+  "knot_id": "knots-6a8b",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Prefix stripping uses the last hyphen (rfind/rindex) rather than the first when locating the split point.\n2. A project named \"feature-builder\" with a knot like \"feature-builder-123\" strips to \"123\", not \"builder-123\".\n3. Single-segment project names (no hyphens) continue to strip correctly.\n4. Existing tests pass and new tests cover multi-hyphen project names."
+  }
+}

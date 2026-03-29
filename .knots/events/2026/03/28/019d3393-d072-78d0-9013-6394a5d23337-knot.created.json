@@ -1,0 +1,17 @@
+{
+  "event_id": "019d3393-d072-78d0-9013-6394a5d23337",
+  "occurred_at": "2026-03-28T08:33:38.418721Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.created",
+  "data": {
+    "body": "if in a git repo, and hooks are already installed, don't show that stupid message. \n\ncartine@adrian:~/collector$ kno doctor\nDoctor\nlock_health:  ✓ repo/cache locks are acquirable\n   worktree:  ✓ knots worktree is clean\n     remote:  ✓ origin reachable; knots branch exists\n    version:  ⚠ update available: v0.7.6 -> v0.11.0 (run `kno upgrade`)\n      hooks:  ✓ sync hooks installed\nkno doctor --fix to address these items\ncartine@adrian:~/collector$ kno doctor --fix\n          kno  /home/cartine/.local/bin/kno\n       compat  /home/cartine/.local/bin/knots\n      version  kno 0.11.0\n  completions  /home/cartine/.local/share/bash-completion/completions/kno\nUpgrade\nstatus:  updated kno binary\n  hint:  run `kno hooks install` to update hook templates\nDoctor\nlock_health:  ✓ repo/cache locks are acquirable\n   worktree:  ✓ knots worktree is clean\n     remote:  ✓ origin reachable; knots branch exists\n    version:  ✓ upgrade applied in this run; restart and rerun `kno doctor`\n      hooks:  ✓ sync hooks installed\ncartine@adrian:~/collector$",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno upgarde says \"hint: run hooks install. ...\" even when hooks are installed",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

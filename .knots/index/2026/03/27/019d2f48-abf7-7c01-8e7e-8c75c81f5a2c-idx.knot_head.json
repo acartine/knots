@@ -1,0 +1,20 @@
+{
+  "event_id": "019d2f48-abf7-7c01-8e7e-8c75c81f5a2c",
+  "occurred_at": "2026-03-27T12:33:04.999212Z",
+  "type": "idx.knot_head",
+  "data": {
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-6a8b",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Fix project-name prefix stripping for hyphenated names",
+    "type": "work",
+    "updated_at": "2026-03-27T12:33:04.999212Z",
+    "workflow_id": "compatibility"
+  }
+}

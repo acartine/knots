@@ -1,0 +1,9 @@
+{
+  "event_id": "019d3394-14f3-75f0-a349-09d8a865c88f",
+  "occurred_at": "2026-03-28T08:33:55.955795Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. When `kno doctor --fix` triggers an upgrade in a repo where hooks are already installed and current, the `hint: run 'kno hooks install'…` line is not printed.\n2. When hooks are not installed or are outdated, the hint is still printed.\n3. The same suppression logic applies to `kno upgrade` when run directly in a repo with current hooks.\n4. Existing tests pass; new test covers the conditional hint behavior."
+  }
+}

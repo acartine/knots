@@ -1,0 +1,21 @@
+{
+  "event_id": "019d3393-d072-78d0-9013-63a045b2272f",
+  "occurred_at": "2026-03-28T08:33:38.418721Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a97a",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "kno upgarde says \"hint: run hooks install. ...\" even when hooks are installed",
+    "type": "work",
+    "updated_at": "2026-03-28T08:33:38.418721Z",
+    "workflow_id": "compatibility"
+  }
+}

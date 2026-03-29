@@ -1,0 +1,15 @@
+{
+  "event_id": "019d397b-bc34-7833-a338-d4dee87d10d5",
+  "occurred_at": "2026-03-29T12:05:03.66815Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Plan reviewed and approved. All four acceptance criteria are addressed. The approach of threading an optional repo root into format_upgrade_summary and using check_hooks() as a predicate is sound — it avoids pulling app initialization into the early-exit path. Wording mismatch between knot description (kno hooks install) and current code (kno doctor) is noted in the plan and will be settled during implementation. Test strategy using temp git repos with varied hook states is appropriate. No invariant violations. No security, performance, or maintainability concerns.",
+    "datetime": "2026-03-29T12:05:03.66815Z",
+    "entry_id": "019d397b-bc34-7833-a338-d4c904b047b8",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "event_id": "019d3978-429a-7132-818b-14fc9ba4fbf9",
+  "occurred_at": "2026-03-29T12:01:15.93036Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5403",
+    "profile_id": "autopilot",
+    "state": "planning",
+    "terminal": false,
+    "title": "kno cli: periodic upgrade-available banner",
+    "type": "work",
+    "updated_at": "2026-03-29T12:01:15.93036Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d3392-76f5-7a01-8c2b-3e602bd07f18"
+  }
+}

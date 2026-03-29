@@ -1,0 +1,10 @@
+{
+  "event_id": "019d3394-14f3-75f0-a349-09b6c2e1fd6a",
+  "occurred_at": "2026-03-28T08:33:55.955795Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.title_set",
+  "data": {
+    "from": "kno upgarde says \"hint: run hooks install. ...\" even when hooks are installed",
+    "to": "Suppress post-upgrade hooks hint when hooks are already installed"
+  }
+}

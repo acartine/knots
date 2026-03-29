@@ -1,0 +1,15 @@
+{
+  "event_id": "019d398e-ece8-73f1-b6d1-b69c998133c6",
+  "occurred_at": "2026-03-29T12:26:01.320343Z",
+  "knot_id": "knots-690a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Implementation review approved. Single-file change to .github/workflows/release.yml: (1) bumped actions/download-artifact from v5 to v7 (node24) across 3 steps, preserving name/path inputs; (2) replaced softprops/action-gh-release@v2 (node20) with semantically equivalent gh release create shell step — tag, title, generated notes, and uploaded assets match exactly. No remaining node20 actions in the release path. No changes to release semantics, build jobs, or other workflows. Scope correctly limited to workflow-only updates.",
+    "datetime": "2026-03-29T12:26:01.320343Z",
+    "entry_id": "019d398e-ece8-73f1-b6d1-b6849075dbea",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}

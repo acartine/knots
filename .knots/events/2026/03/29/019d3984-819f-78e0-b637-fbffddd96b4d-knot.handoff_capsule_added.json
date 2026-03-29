@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3984-819f-78e0-b637-fbffddd96b4d",
+  "occurred_at": "2026-03-29T12:14:38.49571Z",
+  "knot_id": "knots-690a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implemented the release workflow Node 24 compatibility fix in /Users/cartine/knots-690a-worktree by bumping actions/download-artifact from v5 to v7 and replacing softprops/action-gh-release@v2 with gh release create while preserving the existing tag, title, generated notes, and uploaded assets. Validation: actionlint passed; make sanity passed at 95.05% coverage; verified checkout@v5, upload-artifact@v6, and download-artifact@v7 use node24 while softprops/action-gh-release@v2 remains node20.",
+    "datetime": "2026-03-29T12:14:38Z",
+    "entry_id": "019d3984-819f-78e0-b637-fbe66ea74c29",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5-codex"
+  }
+}

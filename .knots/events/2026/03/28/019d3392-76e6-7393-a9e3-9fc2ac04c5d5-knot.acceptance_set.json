@@ -1,0 +1,9 @@
+{
+  "event_id": "019d3392-76e6-7393-a9e3-9fc2ac04c5d5",
+  "occurred_at": "2026-03-28T08:32:09.958131Z",
+  "knot_id": "knots-5403",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. A timestamp of the last upgrade check is persisted locally (e.g. in a state file under the knots data directory).\n2. If ≥24 hours have elapsed since the last check (or no check has ever run), the CLI queries for the latest available version before executing the command.\n3. If a newer version is found, a single-line banner is printed to stderr above the normal command output, showing current version and available version.\n4. If the current version is up to date or the check fails (network error, timeout), no banner is displayed and the command proceeds normally.\n5. The check timestamp is updated after every check attempt (success or failure), so the user is not prompted again for at least 24 hours.\n6. The upgrade check must not noticeably delay command execution; use a short timeout (≤2 seconds) for the network call.\n7. Unit tests cover: first-run (no prior check), stale check triggers re-check, fresh check is skipped, newer version available, already up to date, and network failure scenarios.\n8. No new external dependencies are introduced solely for this feature."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "event_id": "019d2f48-abe7-77b0-8eb0-12f7512b8915",
+  "occurred_at": "2026-03-27T12:33:04.999212Z",
+  "knot_id": "knots-6a8b",
+  "type": "knot.title_set",
+  "data": {
+    "from": "project names with hyphens - handle prefix strip properly",
+    "to": "Fix project-name prefix stripping for hyphenated names"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d397a-1a2e-7cd2-84b5-5d3094541762",
+  "occurred_at": "2026-03-29T12:03:16.654377Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan: make the self-update summary repo-aware by consulting git hook health from `src/git_hooks.rs` and suppress the post-upgrade hint only when the current repo's hooks check passes. Preserve the hint for missing/stale/legacy hooks and likely for non-repo contexts. Test via focused self-manage/main regression tests that exercise shared summary logic rather than a real networked self-upgrade. Risk: `kno upgrade` exits before normal project context initialization in `main`, and the knot text still mentions the older `kno hooks install` wording while current code/changelog point at `kno doctor`.",
+    "datetime": "2026-03-29T12:02:21Z",
+    "entry_id": "019d397a-1a2e-7cd2-84b5-5d2ab598624d",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-03-29"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d398a-77c0-7093-be26-bd6dc8c0e6db",
+  "occurred_at": "2026-03-29T12:21:09.184579Z",
+  "knot_id": "knots-6a8b",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "## Planning Update\n\n### Research Findings\n- `src/knot_id.rs:87` uses `rsplit_once('-')` in `display_id()`, so prefix stripping already uses the last hyphen.\n- `src/app.rs:536` uses `rsplit_once('-')` in suffix-based token resolution.\n- `src/app/tests.rs:35` uses the same last-hyphen helper in test coverage.\n- `rg` found no first-hyphen split site such as `split_once('-')` or `find('-')` in current `src/` or `tests/` code.\n- Existing unit coverage already includes a hyphenated prefix case: `display_id(\"my-repo-a1b2\") == \"a1b2\"`.\n- Manual named-project verification also matched expected behavior: with active project `feature-builder`, `kno new` produced CLI output `created 92e7 ...`, `kno show 92e7 --json` returned full id `feature-builder-92e7`, and `kno ls` displayed `92e7`.\n\n### Proposed Implementation Plan\n1. Start implementation by adding a focused regression test in `tests/cli_named_projects.rs` for an active named project `feature-builder` that asserts both the short CLI id and the full stored id `feature-builder-<suffix>`.\n2. If that regression test fails after being added, trace the exact failing path and replace only that first-hyphen split site with explicit last-hyphen logic (`rsplit_once`/`rfind`) in the owning module.\n3. If the new regression test passes, treat the knot description as stale or mislocalized and capture the actual failing scenario before any production code change.\n4. Keep or extend unit coverage in `src/knot_id.rs` only if a newly identified parser there is involved; avoid speculative API additions such as project-aware stripping helpers unless a failing path demands them.\n5. Validate with the targeted named-project test plus existing prefix-display coverage.\n\n### Files Expected To Change\n- `tests/cli_named_projects.rs` for the reproduce-first regression.\n- Potentially one production file only after a failing path is demonstrated; current evidence points to no change in `src/knot_id.rs` or `src/app.rs`.\n\n### Complexity And Risk\n- Complexity: low if a real failing parser is found; otherwise this is primarily diagnosis.\n- Main risk: implementing a speculative fix in already-correct code and regressing unrelated ID display behavior.",
+    "datetime": "2026-03-29T12:19:29Z",
+    "entry_id": "019d398a-77c0-7093-be26-bd55e1919d6b",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

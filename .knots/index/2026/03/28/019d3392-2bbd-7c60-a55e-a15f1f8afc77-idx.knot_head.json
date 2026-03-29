@@ -1,0 +1,21 @@
+{
+  "event_id": "019d3392-2bbd-7c60-a55e-a15f1f8afc77",
+  "occurred_at": "2026-03-28T08:31:50.717862Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5403",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "kno cli: check for upgrade and warn user with banner",
+    "type": "work",
+    "updated_at": "2026-03-28T08:31:50.717862Z",
+    "workflow_id": "compatibility"
+  }
+}

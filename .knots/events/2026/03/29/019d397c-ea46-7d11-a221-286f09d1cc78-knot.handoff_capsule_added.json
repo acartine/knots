@@ -1,0 +1,15 @@
+{
+  "event_id": "019d397c-ea46-7d11-a221-286f09d1cc78",
+  "occurred_at": "2026-03-29T12:06:20.998518Z",
+  "knot_id": "knots-5403",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "OpenAI",
+    "content": "Plan review approved. All 8 acceptance criteria are addressed. Extraction of version-check helpers from doctor.rs into a shared release_version.rs is sound—those helpers are already well-factored at lines ~288-381. Placement of the hook in main.rs pre-dispatch adds minimal code (1-2 lines) with all logic in focused modules. Global state under data_dir(None) is correct for binary-wide checks. Reuse of KNOTS_SKIP_DOCTOR_UPGRADE env var avoids test harness churn across 11 existing test files. Test strategy covers all required scenarios with dependency injection for determinism. No invariants to violate. No revisions needed.",
+    "datetime": "2026-03-29T12:06:20.998518Z",
+    "entry_id": "019d397c-ea46-7d11-a221-285e031dbfd0",
+    "model": "gpt",
+    "username": "unknown",
+    "version": "5.4"
+  }
+}

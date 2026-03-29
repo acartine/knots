@@ -1,0 +1,9 @@
+{
+  "event_id": "019d3394-14f3-75f0-a349-09c79f1510d4",
+  "occurred_at": "2026-03-28T08:33:55.955795Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.description_set",
+  "data": {
+    "description": "After `kno doctor --fix` triggers a binary upgrade, the upgrade path unconditionally prints `hint: run 'kno hooks install' to update hook templates` even when the doctor check on the same run confirms `hooks: ✓ sync hooks installed`. The hint should be suppressed when hooks are already installed and up to date."
+  }
+}

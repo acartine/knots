@@ -1,0 +1,15 @@
+{
+  "event_id": "019d397b-48d2-7111-8542-1ac180286afa",
+  "occurred_at": "2026-03-29T12:04:34.130223Z",
+  "knot_id": "knots-5403",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan recorded: use a global upgrade-check state file under the Knots app-data directory, add a dedicated startup banner module with 24h throttling and <=2s probe timeout, and extract shared remote-version helpers out of `doctor` so the banner and `kno doctor` reuse the same comparison logic.\n\nImplementation should keep failures best-effort, preserve the existing `KNOTS_SKIP_DOCTOR_UPGRADE` test escape hatch, and add focused unit tests for fresh/stale/failed/newer-version scenarios without relying on live network access. No child knots were created.",
+    "datetime": "2026-03-29T12:02:25Z",
+    "entry_id": "019d397b-48d2-7111-8542-1abe4c7ece56",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

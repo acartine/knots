@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3985-8d95-7183-94a4-a1f524ef63df",
+  "occurred_at": "2026-03-29T12:15:47.093905Z",
+  "knot_id": "knots-6a8b",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan complete. Current code uses rsplit_once('-') everywhere (correct). Proposed adding a project-name-aware strip_project_prefix() function for robustness, with fallback to display_id(). Key files: knot_id.rs (new function + tests), app.rs/ui.rs/prompt.rs/dispatch.rs (thread project context), cli_named_projects.rs (integration test). Low complexity, low risk.",
+    "datetime": "2026-03-29T12:15:47.093905Z",
+    "entry_id": "019d3985-8d95-7183-94a4-a1eb0827d431",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

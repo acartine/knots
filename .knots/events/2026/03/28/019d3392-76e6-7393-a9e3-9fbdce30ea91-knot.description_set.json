@@ -1,0 +1,9 @@
+{
+  "event_id": "019d3392-76e6-7393-a9e3-9fbdce30ea91",
+  "occurred_at": "2026-03-28T08:32:09.958131Z",
+  "knot_id": "knots-5403",
+  "type": "knot.description_set",
+  "data": {
+    "description": "When a user runs any `kno` CLI command, check whether an upgrade-available check has been performed in the last 24 hours. If not, query for a newer version. If a newer version exists, display a single-line banner at the top of the command output informing the user. Suppress further checks until 24 hours have elapsed since the last check, regardless of outcome."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019d2f48-abe7-77b0-8eb0-130021da5a38",
+  "occurred_at": "2026-03-27T12:33:04.999212Z",
+  "knot_id": "knots-6a8b",
+  "type": "knot.description_set",
+  "data": {
+    "description": "When a project name contains hyphens (e.g. \"feature-builder\"), the prefix-stripping logic splits on the first hyphen instead of the last. This causes incorrect parsing — for example, stripping only \"feature\" rather than the full \"feature-builder\" prefix. The fix should use the last hyphen as the split index so the full project name is stripped correctly."
+  }
+}
