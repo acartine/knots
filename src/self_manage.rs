@@ -139,6 +139,7 @@ fn previous_paths(binary_path: &Path) -> Vec<PathBuf> {
 
 pub fn maybe_run_self_command(
     command: &crate::cli::Commands,
+    current_dir: &Path,
 ) -> Result<Option<String>, crate::app::AppError> {
     use crate::cli::Commands;
 
@@ -154,6 +155,7 @@ pub fn maybe_run_self_command(
                 update_args.version.as_deref(),
                 update_args.repo.as_deref(),
                 update_args.install_dir.as_deref(),
+                upgrade_hint_needed(current_dir),
             )))
         }
         Commands::Uninstall(uninstall_args) => {
@@ -171,10 +173,18 @@ pub fn maybe_run_self_command(
     }
 }
 
+fn upgrade_hint_needed(current_dir: &Path) -> bool {
+    let Some(repo_root) = crate::project::find_git_root(current_dir) else {
+        return true;
+    };
+    crate::git_hooks::check_hooks(&repo_root).status != crate::doctor::DoctorStatus::Pass
+}
+
 fn format_upgrade_summary(
     version: Option<&str>,
     repo: Option<&str>,
     install_dir: Option<&Path>,
+    include_hint: bool,
 ) -> String {
     let mut fields = vec![("status", "updated kno binary".to_string())];
     if let Some(version) = version {
@@ -186,10 +196,12 @@ fn format_upgrade_summary(
     if let Some(install_dir) = install_dir {
         fields.push(("install_dir", install_dir.display().to_string()));
     }
-    fields.push((
-        "hint",
-        "run `kno doctor` to check for post-upgrade issues".to_string(),
-    ));
+    if include_hint {
+        fields.push((
+            "hint",
+            "run `kno doctor` to check for post-upgrade issues".to_string(),
+        ));
+    }
     format_titled_fields("Upgrade", &fields)
 }
 
@@ -225,7 +237,7 @@ mod tests {
     use super::{
         canonical_binary_path, format_titled_fields, format_upgrade_summary, paint,
         remove_file_if_present, resolve_binary_path, run_uninstall, run_update,
-        SelfUninstallOptions, SelfUpdateOptions,
+        upgrade_hint_needed, SelfUninstallOptions, SelfUpdateOptions,
     };
     use std::path::Path;
     use std::path::PathBuf;
@@ -418,8 +430,12 @@ mod tests {
     fn upgrade_summary_right_aligns_labels_and_left_aligns_values() {
         std::env::set_var("NO_COLOR", "1");
         let install_dir = Path::new("/tmp/kno-test-install");
-        let summary =
-            format_upgrade_summary(Some("v1.2.3"), Some("acartine/knots"), Some(install_dir));
+        let summary = format_upgrade_summary(
+            Some("v1.2.3"),
+            Some("acartine/knots"),
+            Some(install_dir),
+            true,
+        );
         std::env::remove_var("NO_COLOR");
         let lines = summary.lines().collect::<Vec<_>>();
         assert_eq!(lines[0], "Upgrade");
@@ -428,6 +444,25 @@ mod tests {
         assert_eq!(lines[3], "       repo:  acartine/knots");
         assert_eq!(lines[4], "install_dir:  /tmp/kno-test-install");
         assert!(lines[5].contains("kno doctor"));
+    }
+
+    #[test]
+    fn upgrade_summary_omits_hint_when_not_needed() {
+        let install_dir = Path::new("/tmp/kno-test-install");
+        let summary = format_upgrade_summary(
+            Some("v1.2.3"),
+            Some("acartine/knots"),
+            Some(install_dir),
+            false,
+        );
+        assert!(!summary.contains("kno doctor"));
+    }
+
+    #[test]
+    fn upgrade_hint_needed_stays_enabled_outside_git_repo() {
+        let dir = unique_temp_dir();
+        assert!(upgrade_hint_needed(&dir));
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]

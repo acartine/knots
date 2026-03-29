@@ -108,7 +108,7 @@ fn run() -> Result<(), app::AppError> {
     let cwd = std::env::current_dir()?;
     let explicit_repo_root = cli.repo_root.as_deref();
 
-    if let Some(outcome) = self_manage::maybe_run_self_command(&cli.command)? {
+    if let Some(outcome) = self_manage::maybe_run_self_command(&cli.command, &cwd)? {
         println!("{outcome}");
         return Ok(());
     }
