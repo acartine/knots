@@ -1,5 +1,11 @@
 # kno
 
+## 0.10.2
+
+### Patch Changes
+
+- 3ca5f6b: Add named projects and confirmed project deletion
+
 ## 0.10.1
 
 ### Patch Changes
