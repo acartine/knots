@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::locks::{FileLock, LockError};
 use crate::project::{DistributionMode, StorePaths};
+use crate::release_version::{fetch_latest_tag, is_outdated, strip_v_prefix, RELEASES_LATEST_URL};
 use crate::state_hierarchy::find_terminal_parent_resolutions;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError};
 
@@ -285,7 +286,6 @@ fn check_hooks(repo_root: &Path, distribution: DistributionMode) -> DoctorCheck 
     crate::git_hooks::check_hooks(repo_root)
 }
 
-const RELEASES_LATEST_URL: &str = "https://github.com/acartine/knots/releases/latest";
 const VERSION_CHECK_TIMEOUT_SECS: u32 = 5;
 
 pub(crate) fn check_version() -> DoctorCheck {
@@ -332,52 +332,6 @@ fn build_version_check(current: &str, tag: Option<String>) -> DoctorCheck {
             detail: format!("v{current} (unable to check for updates)"),
         },
     }
-}
-
-fn fetch_latest_tag(url: &str, timeout_secs: u32) -> Option<String> {
-    // Use HEAD + redirect to avoid GitHub API rate limits.
-    let output = Command::new("curl")
-        .args(["--max-time", &timeout_secs.to_string(), "-fsS", "-I", url])
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    let headers = String::from_utf8_lossy(&output.stdout);
-    parse_location_tag(&headers)
-}
-
-fn parse_location_tag(headers: &str) -> Option<String> {
-    for line in headers.lines() {
-        let lower = line.to_ascii_lowercase();
-        if lower.starts_with("location:") {
-            let url = line.split_once(':')?.1.trim();
-            let tag = url.rsplit('/').next()?;
-            if !tag.is_empty() {
-                return Some(tag.to_string());
-            }
-        }
-    }
-    None
-}
-
-fn strip_v_prefix(tag: &str) -> &str {
-    tag.strip_prefix('v').unwrap_or(tag)
-}
-
-fn is_outdated(current: &str, latest: &str) -> Option<bool> {
-    let cur: Vec<u64> = current
-        .split('.')
-        .map(|s| s.parse().ok())
-        .collect::<Option<Vec<_>>>()?;
-    let lat: Vec<u64> = latest
-        .split('.')
-        .map(|s| s.parse().ok())
-        .collect::<Option<Vec<_>>>()?;
-    if cur.len() != 3 || lat.len() != 3 {
-        return None;
-    }
-    Some(cur < lat)
 }
 
 fn check_stuck_leases(store_paths: &StorePaths) -> Result<DoctorCheck, DoctorError> {
