@@ -50,6 +50,7 @@ mod project_tests_ext;
 mod prompt;
 #[cfg(test)]
 mod prompt_tests;
+mod release_version;
 mod remote_init;
 mod replication;
 mod rollback;
@@ -61,6 +62,7 @@ mod state_hierarchy;
 mod sync;
 mod tiering;
 mod ui;
+mod upgrade_notice;
 mod workflow;
 mod workflow_commands;
 mod workflow_diagram;
@@ -69,6 +71,7 @@ mod write_dispatch;
 mod write_queue;
 
 fn main() {
+    upgrade_notice::maybe_print_upgrade_notice();
     let args: Vec<String> = std::env::args().collect();
     if cli_help::is_toplevel_help(&args) {
         cli_help::print_custom_help();

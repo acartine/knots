@@ -28,16 +28,7 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-use super::{
-    build_version_check, check_version, fetch_latest_tag, is_outdated, parse_location_tag,
-    strip_v_prefix,
-};
-
-#[test]
-fn fetch_latest_tag_returns_none_for_unreachable_url() {
-    let result = fetch_latest_tag("http://127.0.0.1:1/nonexistent", 1);
-    assert_eq!(result, None);
-}
+use super::{build_version_check, check_version};
 
 #[test]
 fn build_version_check_warns_when_outdated() {
@@ -75,50 +66,6 @@ fn check_version_passes_when_upgrade_applied_in_process() {
     assert_eq!(check.status, DoctorStatus::Pass);
     assert!(check.detail.contains("upgrade applied in this run"));
     crate::doctor_fix::set_version_fix_applied_for_tests(false);
-}
-
-#[test]
-fn parse_location_tag_extracts_tag_from_redirect() {
-    let headers =
-        "HTTP/2 302\r\nlocation: https://github.com/acartine/knots/releases/tag/v1.0.0\r\n\r\n";
-    assert_eq!(parse_location_tag(headers), Some("v1.0.0".to_string()));
-}
-
-#[test]
-fn parse_location_tag_handles_lowercase_header() {
-    let headers = "HTTP/2 302\r\nLocation: https://example.com/releases/tag/v0.2.2\r\n";
-    assert_eq!(parse_location_tag(headers), Some("v0.2.2".to_string()));
-}
-
-#[test]
-fn parse_location_tag_returns_none_when_missing() {
-    assert_eq!(parse_location_tag("HTTP/2 200\r\n"), None);
-    assert_eq!(parse_location_tag(""), None);
-}
-
-#[test]
-fn strip_v_prefix_removes_leading_v() {
-    assert_eq!(strip_v_prefix("v1.2.3"), "1.2.3");
-    assert_eq!(strip_v_prefix("1.2.3"), "1.2.3");
-    assert_eq!(strip_v_prefix("v0.0.1"), "0.0.1");
-}
-
-#[test]
-fn is_outdated_compares_semver_parts() {
-    assert_eq!(is_outdated("0.2.2", "0.2.3"), Some(true));
-    assert_eq!(is_outdated("0.2.2", "0.3.0"), Some(true));
-    assert_eq!(is_outdated("0.2.2", "1.0.0"), Some(true));
-    assert_eq!(is_outdated("0.2.2", "0.2.2"), Some(false));
-    assert_eq!(is_outdated("0.2.3", "0.2.2"), Some(false));
-    assert_eq!(is_outdated("1.0.0", "0.9.9"), Some(false));
-}
-
-#[test]
-fn is_outdated_returns_none_for_invalid_versions() {
-    assert_eq!(is_outdated("abc", "0.2.2"), None);
-    assert_eq!(is_outdated("0.2.2", "abc"), None);
-    assert_eq!(is_outdated("0.2", "0.2.2"), None);
-    assert_eq!(is_outdated("0.2.2.1", "0.2.2"), None);
 }
 
 #[test]
