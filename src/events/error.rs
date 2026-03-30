@@ -61,3 +61,35 @@ impl From<serde_json::Error> for EventWriteError {
         EventWriteError::Serialize(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_invalid_timestamp() {
+        let bad = "not-a-date";
+        let err = time::OffsetDateTime::parse(bad, &time::format_description::well_known::Rfc3339)
+            .unwrap_err();
+        let e = EventWriteError::InvalidTimestamp {
+            value: bad.to_string(),
+            source: err,
+        };
+        let msg = e.to_string();
+        assert!(msg.contains("invalid RFC3339 timestamp"));
+        assert!(msg.contains(bad));
+        assert!(e.source().is_some());
+    }
+
+    #[test]
+    fn display_invalid_file_component() {
+        let e = EventWriteError::InvalidFileComponent {
+            field: "knot_id",
+            value: "has spaces".to_string(),
+        };
+        let msg = e.to_string();
+        assert!(msg.contains("invalid knot_id"));
+        assert!(msg.contains("has spaces"));
+        assert!(e.source().is_none());
+    }
+}

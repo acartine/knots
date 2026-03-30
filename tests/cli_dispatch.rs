@@ -1,185 +1,12 @@
-use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+mod cli_dispatch_helpers;
 
-use rusqlite::params;
+use cli_dispatch_helpers::*;
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
-}
-
-fn run_git(cwd: &Path, args: &[&str]) {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(cwd)
-        .args(args)
-        .output()
-        .expect("git command should run");
-    assert!(
-        output.status.success(),
-        "git {:?} failed: {}",
-        args,
-        String::from_utf8_lossy(&output.stderr)
-    );
-}
-
-fn setup_repo(root: &Path) {
-    run_git(root, &["init"]);
-    run_git(root, &["config", "user.email", "knots@example.com"]);
-    run_git(root, &["config", "user.name", "Knots Test"]);
-    std::fs::write(root.join("README.md"), "# knots\n").expect("readme should be writable");
-    run_git(root, &["add", "README.md"]);
-    run_git(root, &["commit", "-m", "init"]);
-    run_git(root, &["branch", "-M", "main"]);
-}
-
-fn setup_repo_with_remote(root: &Path) -> PathBuf {
-    setup_repo(root);
-    let remote = root.join("remote.git");
-    run_git(
-        root,
-        &["init", "--bare", remote.to_str().expect("utf8 path")],
-    );
-    run_git(
-        root,
-        &[
-            "remote",
-            "add",
-            "origin",
-            remote.to_str().expect("utf8 path"),
-        ],
-    );
-    run_git(root, &["push", "-u", "origin", "main"]);
-    let output = Command::new("git")
-        .arg("--git-dir")
-        .arg(&remote)
-        .args(["symbolic-ref", "HEAD", "refs/heads/main"])
-        .output()
-        .expect("git symbolic-ref should run");
-    assert!(
-        output.status.success(),
-        "git symbolic-ref failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    remote
-}
-
-fn knots_binary() -> PathBuf {
-    let configured = PathBuf::from(env!("CARGO_BIN_EXE_knots"));
-    if configured.is_absolute() && configured.exists() {
-        return configured;
-    }
-    if configured.exists() {
-        return std::fs::canonicalize(&configured).unwrap_or(configured);
-    }
-    let manifest_relative = Path::new(env!("CARGO_MANIFEST_DIR")).join(&configured);
-    if manifest_relative.exists() {
-        return std::fs::canonicalize(&manifest_relative).unwrap_or(manifest_relative);
-    }
-
-    if let Ok(current_exe) = std::env::current_exe() {
-        if !configured.is_absolute() {
-            for ancestor in current_exe.ancestors().skip(1) {
-                let candidate = ancestor.join(&configured);
-                if candidate.exists() {
-                    return std::fs::canonicalize(&candidate).unwrap_or(candidate);
-                }
-            }
-        }
-
-        if let Some(debug_dir) = current_exe.parent().and_then(|deps| deps.parent()) {
-            for name in ["knots", "knots.exe"] {
-                let candidate = debug_dir.join(name);
-                if candidate.exists() {
-                    return std::fs::canonicalize(&candidate).unwrap_or(candidate);
-                }
-            }
-        }
-    }
-
-    configured
-}
-
-fn configure_coverage_env(command: &mut Command) {
-    let _ = command;
-}
-
-fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
-    let mut command = Command::new(knots_binary());
-    command
-        .arg("--repo-root")
-        .arg(repo_root)
-        .arg("--db")
-        .arg(db_path)
-        .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
-        .args(args);
-    configure_coverage_env(&mut command);
-    command.output().expect("knots command should run")
-}
-
-fn set_meta_value(db_path: &Path, key: &str, value: &str) {
-    let conn = rusqlite::Connection::open(db_path).expect("db should open");
-    conn.execute(
-        r#"
-INSERT INTO meta (key, value)
-VALUES (?1, ?2)
-ON CONFLICT(key) DO UPDATE SET value = excluded.value
-"#,
-        params![key, value],
-    )
-    .expect("meta should be writable");
-}
-
-fn assert_success(output: &Output) {
-    assert!(
-        output.status.success(),
-        "expected success but failed.\nstdout:\n{}\nstderr:\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
-}
-
-fn assert_failure(output: &Output) {
-    assert!(
-        !output.status.success(),
-        "expected failure but command succeeded.\nstdout:\n{}\nstderr:\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
-}
-
-fn parse_created_id(output: &Output) -> String {
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    stdout
-        .split_whitespace()
-        .nth(1)
-        .expect("created output should include knot id")
-        .to_string()
-}
-
-fn assert_contains_in_order(haystack: &str, needles: &[&str]) {
-    let mut offset = 0usize;
-    for needle in needles {
-        let found = haystack[offset..]
-            .find(needle)
-            .unwrap_or_else(|| panic!("missing '{needle}' in output:\n{haystack}"));
-        offset += found + needle.len();
-    }
-}
-
-#[allow(clippy::too_many_lines)]
-#[test]
-fn core_cli_commands_dispatch_success_and_failure_paths() {
-    let root = unique_workspace("knots-cli-dispatch");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
+fn test_core_new_and_ls(root: &std::path::Path, db: &std::path::Path) -> (String, String) {
     let first = run_knots(
-        &root,
-        &db,
+        root,
+        db,
         &[
             "new",
             "First knot",
@@ -193,8 +20,8 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     let first_id = parse_created_id(&first);
 
     let second = run_knots(
-        &root,
-        &db,
+        root,
+        db,
         &[
             "new",
             "Second knot",
@@ -207,37 +34,42 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     assert_success(&second);
     let second_id = parse_created_id(&second);
 
-    let ls = run_knots(&root, &db, &["ls", "--json"]);
+    let ls = run_knots(root, db, &["ls", "--json"]);
     assert_success(&ls);
-    let listed: Value = serde_json::from_slice(&ls.stdout).expect("ls should emit json");
+    let listed: Value = serde_json::from_slice(&ls.stdout).expect("ls json");
     assert_eq!(listed.as_array().map_or(0, Vec::len), 2);
+    (first_id, second_id)
+}
 
-    let show = run_knots(&root, &db, &["show", &first_id, "--json"]);
+fn test_show_state_update(
+    root: &std::path::Path,
+    db: &std::path::Path,
+    first_id: &str,
+    second_id: &str,
+) {
+    let show = run_knots(root, db, &["show", first_id, "--json"]);
     assert_success(&show);
-    let shown: Value = serde_json::from_slice(&show.stdout).expect("show should emit json");
+    let shown: Value = serde_json::from_slice(&show.stdout).expect("show json");
     let shown_id = shown
         .get("id")
         .and_then(Value::as_str)
         .expect("shown knot should have an id field");
     assert!(
-        shown_id.ends_with(&first_id),
-        "full id '{shown_id}' should end with display id '{first_id}'"
+        shown_id.ends_with(first_id),
+        "full id '{shown_id}' should end with '{first_id}'"
     );
 
-    let state = run_knots(&root, &db, &["state", &first_id, "planning"]);
+    let state = run_knots(root, db, &["state", first_id, "planning"]);
     assert_success(&state);
-    let state_stdout = String::from_utf8_lossy(&state.stdout);
-    assert!(
-        state_stdout.contains("[PLANNING]"),
-        "kno state output should contain uppercase bracketed state: {state_stdout}"
-    );
+    let stdout = String::from_utf8_lossy(&state.stdout);
+    assert!(stdout.contains("[PLANNING]"), "state: {stdout}");
 
     let update = run_knots(
-        &root,
-        &db,
+        root,
+        db,
         &[
             "update",
-            &first_id,
+            first_id,
             "--description",
             "updated description",
             "--add-tag",
@@ -247,85 +79,79 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
         ],
     );
     assert_success(&update);
-    let update_stdout = String::from_utf8_lossy(&update.stdout);
+    let stdout = String::from_utf8_lossy(&update.stdout);
     assert!(
-        update_stdout.contains("[READY_FOR_PLAN_REVIEW]"),
-        "kno update output should contain uppercase bracketed state: {update_stdout}"
+        stdout.contains("[READY_FOR_PLAN_REVIEW]"),
+        "update: {stdout}"
     );
 
     let edge_add = run_knots(
-        &root,
-        &db,
-        &["edge", "add", &first_id, "blocked_by", &second_id],
+        root,
+        db,
+        &["edge", "add", first_id, "blocked_by", second_id],
     );
     assert_success(&edge_add);
-    let edge_list = run_knots(&root, &db, &["edge", "list", &first_id, "--json"]);
+    let edge_list = run_knots(root, db, &["edge", "list", first_id, "--json"]);
     assert_success(&edge_list);
-    let edges: Value = serde_json::from_slice(&edge_list.stdout).expect("edge list should be json");
+    let edges: Value = serde_json::from_slice(&edge_list.stdout).expect("edge list json");
     assert_eq!(edges.as_array().map_or(0, Vec::len), 1);
-    let edge_remove = run_knots(
-        &root,
-        &db,
-        &["edge", "remove", &first_id, "blocked_by", &second_id],
-    );
-    assert_success(&edge_remove);
-
-    assert_success(&run_knots(&root, &db, &["profile", "list", "--json"]));
     assert_success(&run_knots(
-        &root,
-        &db,
+        root,
+        db,
+        &["edge", "remove", first_id, "blocked_by", second_id],
+    ));
+}
+
+fn test_misc_commands(root: &std::path::Path, db: &std::path::Path, first_id: &str) {
+    assert_success(&run_knots(root, db, &["profile", "list", "--json"]));
+    assert_success(&run_knots(
+        root,
+        db,
         &["profile", "show", "autopilot", "--json"],
     ));
-    assert_success(&run_knots(&root, &db, &["fsck", "--json"]));
+    assert_success(&run_knots(root, db, &["fsck", "--json"]));
 
-    let compact_fail = run_knots(&root, &db, &["compact"]);
+    let compact_fail = run_knots(root, db, &["compact"]);
     assert_failure(&compact_fail);
     assert!(String::from_utf8_lossy(&compact_fail.stderr)
         .contains("compact currently requires --write-snapshots"));
 
     assert_success(&run_knots(
-        &root,
-        &db,
+        root,
+        db,
         &["compact", "--write-snapshots", "--json"],
     ));
-    assert_success(&run_knots(&root, &db, &["rehydrate", &first_id, "--json"]));
+    assert_success(&run_knots(root, db, &["rehydrate", first_id, "--json"]));
 
-    let missing = run_knots(&root, &db, &["show", "missing-id"]);
+    let missing = run_knots(root, db, &["show", "missing-id"]);
     assert_failure(&missing);
     assert!(String::from_utf8_lossy(&missing.stderr).contains("not found"));
 
-    let self_unknown = run_knots(&root, &db, &["self", "update"]);
+    let self_unknown = run_knots(root, db, &["self", "update"]);
     assert_failure(&self_unknown);
     assert!(String::from_utf8_lossy(&self_unknown.stderr).contains("unrecognized subcommand"));
+}
 
-    // first_id is in ready_for_plan_review, so skill resolves plan_review
-    let skill = run_knots(&root, &db, &["skill", &first_id]);
+fn test_skill_and_next(root: &std::path::Path, db: &std::path::Path, first_id: &str) {
+    let skill = run_knots(root, db, &["skill", first_id]);
     assert_success(&skill);
-    let skill_stdout = String::from_utf8_lossy(&skill.stdout);
-    assert!(
-        skill_stdout.contains("# Plan Review"),
-        "skill should print plan review markdown: {skill_stdout}"
-    );
+    let stdout = String::from_utf8_lossy(&skill.stdout);
+    assert!(stdout.contains("# Plan Review"), "skill: {stdout}");
 
-    // next advances ready_for_plan_review -> plan_review
-    let next = run_knots(&root, &db, &["next", &first_id, "ready_for_plan_review"]);
+    let next = run_knots(root, db, &["next", first_id, "ready_for_plan_review"]);
     assert_success(&next);
-    let next_stdout = String::from_utf8_lossy(&next.stdout);
-    assert!(
-        next_stdout.contains("updated"),
-        "next should print updated: {next_stdout}"
-    );
+    let stdout = String::from_utf8_lossy(&next.stdout);
+    assert!(stdout.contains("updated"), "next: {stdout}");
 
-    let next_missing = run_knots(&root, &db, &["next", "missing-id", "ready_for_plan_review"]);
+    let next_missing = run_knots(root, db, &["next", "missing-id", "ready_for_plan_review"]);
     assert_failure(&next_missing);
 
-    let skill_missing = run_knots(&root, &db, &["skill", "missing-id"]);
+    let skill_missing = run_knots(root, db, &["skill", "missing-id"]);
     assert_failure(&skill_missing);
 
-    // Terminal state has no next - test error path
     let shipped_knot = run_knots(
-        &root,
-        &db,
+        root,
+        db,
         &[
             "new",
             "Shipped knot",
@@ -337,11 +163,11 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     );
     assert_success(&shipped_knot);
     let shipped_id = parse_created_id(&shipped_knot);
-    let next_terminal = run_knots(&root, &db, &["next", &shipped_id, "shipped"]);
+    let next_terminal = run_knots(root, db, &["next", &shipped_id, "shipped"]);
     assert_failure(&next_terminal);
     assert!(String::from_utf8_lossy(&next_terminal.stderr).contains("no next state"));
 
-    let doctor = run_knots(&root, &db, &["doctor", "--json"]);
+    let doctor = run_knots(root, db, &["doctor", "--json"]);
     assert_failure(&doctor);
     assert!(String::from_utf8_lossy(&doctor.stderr).contains("doctor found"));
     assert!(
@@ -349,6 +175,18 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
     );
 
     let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn core_cli_commands_dispatch_success_and_failure_paths() {
+    let root = unique_workspace("knots-cli-dispatch");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let (first_id, second_id) = test_core_new_and_ls(&root, &db);
+    test_show_state_update(&root, &db, &first_id, &second_id);
+    test_misc_commands(&root, &db, &first_id);
+    test_skill_and_next(&root, &db, &first_id);
 }
 
 #[test]
@@ -368,7 +206,7 @@ fn doctor_without_fix_prints_hint_and_fix_creates_knots_branch() {
     assert!(!String::from_utf8_lossy(&doctor_fix.stderr)
         .contains("kno doctor --fix to address these items"));
 
-    let knots_remote = Command::new("git")
+    let knots_remote = std::process::Command::new("git")
         .arg("-C")
         .arg(&root)
         .args(["ls-remote", "--exit-code", "--heads", "origin", "knots"])
@@ -422,7 +260,7 @@ fn init_command_bootstraps_from_existing_remote_branch() {
     assert_success(&run_knots(&root, &db, &["sync"]));
 
     let clone = unique_workspace("knots-cli-init-existing-clone");
-    let clone_output = Command::new("git")
+    let clone_output = std::process::Command::new("git")
         .arg("clone")
         .arg(&remote)
         .arg(&clone)
@@ -442,7 +280,7 @@ fn init_command_bootstraps_from_existing_remote_branch() {
     let init_stdout = String::from_utf8_lossy(&init.stdout);
     assert!(
         init_stdout.contains("pulling knots from remote"),
-        "expected clone init to pull from remote: {init_stdout}"
+        "clone init: {init_stdout}"
     );
 
     let show = run_knots(&clone, &clone_db, &["show", &knot_id]);
@@ -450,7 +288,7 @@ fn init_command_bootstraps_from_existing_remote_branch() {
     let show_stdout = String::from_utf8_lossy(&show.stdout);
     assert!(
         show_stdout.contains("Shared knot"),
-        "expected pulled knot in clone output: {show_stdout}"
+        "clone show: {show_stdout}"
     );
 
     let _ = std::fs::remove_dir_all(root);
@@ -481,26 +319,19 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
         ],
     );
     assert_success(&created);
-    let created_stdout = String::from_utf8_lossy(&created.stdout);
-    assert!(
-        created_stdout.contains("[READY_FOR_PLANNING]"),
-        "kno new should format state in uppercase like kno ls: {created_stdout}"
-    );
+    let stdout = String::from_utf8_lossy(&created.stdout);
+    assert!(stdout.contains("[READY_FOR_PLANNING]"), "new: {stdout}");
     let knot_id = parse_created_id(&created);
 
     assert_success(&run_knots(&root, &db, &["ls"]));
     assert_success(&run_knots(&root, &db, &["show", &knot_id]));
     let profile_list = run_knots(&root, &db, &["profile", "list"]);
     assert_success(&profile_list);
-    let profile_list_stdout = String::from_utf8_lossy(&profile_list.stdout);
-    assert!(
-        profile_list_stdout.contains("(default)"),
-        "profile list should show (default) marker: {profile_list_stdout}"
-    );
+    let stdout = String::from_utf8_lossy(&profile_list.stdout);
+    assert!(stdout.contains("(default)"), "profile list: {stdout}");
     assert_success(&run_knots(&root, &db, &["profile", "show", "autopilot"]));
     assert_success(&run_knots(&root, &db, &["fsck"]));
     assert_success(&run_knots(&root, &db, &["rehydrate", &knot_id]));
-
     assert_success(&run_knots(&root, &db, &["edge", "list", &knot_id]));
 
     let second = run_knots(
@@ -517,7 +348,6 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
     );
     assert_success(&second);
     let second_id = parse_created_id(&second);
-
     assert_success(&run_knots(
         &root,
         &db,
@@ -539,218 +369,11 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
     assert_success(&run_knots(&root, &db, &["sync"]));
     assert_success(&run_knots(&root, &db, &["cold", "sync"]));
     assert_success(&run_knots(&root, &db, &["cold", "search", "no-match-term"]));
-
     assert_success(&run_knots(&root, &db, &["perf", "--iterations", "1"]));
 
     let doctor = run_knots(&root, &db, &["doctor"]);
     assert_success(&doctor);
     assert!(String::from_utf8_lossy(&doctor.stdout).contains("lock_health"));
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn push_pull_and_sync_emit_progress_in_text_mode_and_keep_json_clean() {
-    let root = unique_workspace("knots-cli-sync-progress");
-    let _remote = setup_repo_with_remote(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    assert_success(&run_knots(&root, &db, &["init"]));
-
-    let created = run_knots(&root, &db, &["new", "Progress knot"]);
-    assert_success(&created);
-
-    let push = run_knots(&root, &db, &["push"]);
-    assert_success(&push);
-    let push_stdout = String::from_utf8_lossy(&push.stdout);
-    assert_contains_in_order(
-        &push_stdout,
-        &[
-            "publishing local knots events",
-            "preparing knots worktree",
-            "scanning local knots event files",
-            "copying",
-            "pushing knots branch to origin",
-            "push local_event_files=",
-        ],
-    );
-
-    let pull = run_knots(&root, &db, &["pull"]);
-    assert_success(&pull);
-    let pull_stdout = String::from_utf8_lossy(&pull.stdout);
-    assert_contains_in_order(
-        &pull_stdout,
-        &[
-            "importing knots updates",
-            "preparing knots worktree",
-            "applying knots events to the local cache",
-            "pull head=",
-        ],
-    );
-
-    let sync = run_knots(&root, &db, &["sync"]);
-    assert_success(&sync);
-    let sync_stdout = String::from_utf8_lossy(&sync.stdout);
-    assert_contains_in_order(
-        &sync_stdout,
-        &[
-            "publishing local knots events",
-            "importing knots updates",
-            "sync push(",
-        ],
-    );
-
-    let push_json = run_knots(&root, &db, &["push", "--json"]);
-    assert_success(&push_json);
-    assert!(
-        !String::from_utf8_lossy(&push_json.stdout).contains("publishing knots events"),
-        "push --json should not include progress text"
-    );
-    let push_value: Value =
-        serde_json::from_slice(&push_json.stdout).expect("push --json should parse");
-    assert!(push_value.get("local_event_files").is_some());
-
-    let pull_json = run_knots(&root, &db, &["pull", "--json"]);
-    assert_success(&pull_json);
-    assert!(
-        !String::from_utf8_lossy(&pull_json.stdout).contains("importing knots updates"),
-        "pull --json should not include progress text"
-    );
-    let pull_value: Value =
-        serde_json::from_slice(&pull_json.stdout).expect("pull --json should parse");
-    assert!(pull_value.get("target_head").is_some());
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn pull_warns_when_local_drift_exceeds_threshold() {
-    let root = unique_workspace("knots-cli-pull-drift-warning");
-    let _remote = setup_repo_with_remote(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    assert_success(&run_knots(&root, &db, &["init-remote"]));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Drift warning knot",
-            "--profile",
-            "autopilot",
-            "--state",
-            "idea",
-        ],
-    ));
-
-    set_meta_value(&db, "pull_drift_warn_threshold", "1");
-
-    let pull = run_knots(&root, &db, &["pull"]);
-    assert_success(&pull);
-    let stderr = String::from_utf8_lossy(&pull.stderr);
-    assert!(
-        stderr.contains("warning: local knots drift is high"),
-        "pull warning stderr: {stderr}"
-    );
-    assert!(
-        stderr.contains("run `kno push`"),
-        "pull warning stderr: {stderr}"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn cli_dispatch_covers_json_branches_and_cold_search_results() {
-    let root = unique_workspace("knots-cli-json-branches");
-    let _remote = setup_repo_with_remote(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    assert_success(&run_knots(&root, &db, &["init-remote"]));
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Cold candidate",
-            "--profile",
-            "autopilot",
-            "--state",
-            "shipped",
-        ],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &knot_id,
-            "--description",
-            "cold description",
-            "--add-note",
-            "note body",
-            "--note-username",
-            "acartine",
-            "--note-datetime",
-            "2026-02-25T10:00:00Z",
-            "--note-agentname",
-            "codex",
-            "--note-model",
-            "gpt-5",
-            "--note-version",
-            "1",
-            "--add-handoff-capsule",
-            "handoff body",
-            "--handoff-username",
-            "acartine",
-            "--handoff-datetime",
-            "2026-02-25T10:05:00Z",
-            "--handoff-agentname",
-            "codex",
-            "--handoff-model",
-            "gpt-5",
-            "--handoff-version",
-            "1",
-        ],
-    ));
-
-    let push = run_knots(&root, &db, &["push", "--json"]);
-    assert_success(&push);
-    let _push_json: Value = serde_json::from_slice(&push.stdout).expect("push json should parse");
-
-    let pull = run_knots(&root, &db, &["pull", "--json"]);
-    assert_success(&pull);
-    let _pull_json: Value = serde_json::from_slice(&pull.stdout).expect("pull json should parse");
-
-    let sync = run_knots(&root, &db, &["sync", "--json"]);
-    assert_success(&sync);
-    let _sync_json: Value = serde_json::from_slice(&sync.stdout).expect("sync json should parse");
-
-    let perf = run_knots(&root, &db, &["perf", "--iterations", "1", "--json"]);
-    assert_success(&perf);
-    let _perf_json: Value = serde_json::from_slice(&perf.stdout).expect("perf json should parse");
-
-    let compact = run_knots(&root, &db, &["compact", "--write-snapshots"]);
-    assert_success(&compact);
-
-    let cold_sync = run_knots(&root, &db, &["cold", "sync", "--json"]);
-    assert_success(&cold_sync);
-    let _cold_sync_json: Value =
-        serde_json::from_slice(&cold_sync.stdout).expect("cold sync json should parse");
-
-    let cold_search_json = run_knots(&root, &db, &["cold", "search", "Cold", "--json"]);
-    assert_success(&cold_search_json);
-    let cold_matches: Value =
-        serde_json::from_slice(&cold_search_json.stdout).expect("cold search json should parse");
-    assert!(cold_matches.as_array().is_some());
-
-    let cold_search_text = run_knots(&root, &db, &["cold", "search", "Cold"]);
-    assert_success(&cold_search_text);
-    assert!(String::from_utf8_lossy(&cold_search_text.stdout).contains("Cold"));
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -764,11 +387,8 @@ fn completions_command_generates_bash_output() {
     let result = run_knots(&root, &db, &["completions", "bash"]);
     assert_success(&result);
     let stdout = String::from_utf8_lossy(&result.stdout);
-    assert!(!stdout.is_empty(), "completions output should be non-empty");
-    assert!(
-        stdout.contains("kno"),
-        "completions should reference kno: {stdout}"
-    );
+    assert!(!stdout.is_empty());
+    assert!(stdout.contains("kno"), "completions: {stdout}");
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -779,891 +399,18 @@ fn new_fast_flag_and_q_command_use_quick_profile() {
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
-    // kno new -f should use the default quick profile (autopilot_no_planning)
     let fast = run_knots(&root, &db, &["new", "Fast task", "-f"]);
     assert_success(&fast);
-    let fast_stdout = String::from_utf8_lossy(&fast.stdout);
-    // autopilot_no_planning starts at ready_for_implementation
+    let stdout = String::from_utf8_lossy(&fast.stdout);
     assert!(
-        fast_stdout.contains("[READY_FOR_IMPLEMENTATION]"),
-        "kno new -f should use quick profile: {fast_stdout}"
+        stdout.contains("[READY_FOR_IMPLEMENTATION]"),
+        "fast: {stdout}"
     );
 
-    // kno q should also use the quick profile
     let q = run_knots(&root, &db, &["q", "Quick task"]);
     assert_success(&q);
-    let q_stdout = String::from_utf8_lossy(&q.stdout);
-    assert!(
-        q_stdout.contains("[READY_FOR_IMPLEMENTATION]"),
-        "kno q should use quick profile: {q_stdout}"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn poll_returns_highest_priority_agent_owned_knot() {
-    let root = unique_workspace("knots-cli-poll");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    // Create two knots with different priorities
-    let low_prio = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Low priority",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_implementation",
-        ],
-    );
-    assert_success(&low_prio);
-    let low_id = parse_created_id(&low_prio);
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &low_id, "--priority", "3"],
-    ));
-
-    let high_prio = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "High priority",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_implementation",
-        ],
-    );
-    assert_success(&high_prio);
-    let high_id = parse_created_id(&high_prio);
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &high_id, "--priority", "1"],
-    ));
-
-    // Poll should return the high-priority knot
-    let poll = run_knots(&root, &db, &["poll", "--json"]);
-    assert_success(&poll);
-    let poll_json: Value = serde_json::from_slice(&poll.stdout).expect("poll json should parse");
-    assert_eq!(poll_json["title"], "High priority");
-    assert!(poll_json["prompt"]
-        .as_str()
-        .unwrap()
-        .contains("# High priority"));
-
-    // Poll text output should contain the skill
-    let poll_text = run_knots(&root, &db, &["poll"]);
-    assert_success(&poll_text);
-    let stdout = String::from_utf8_lossy(&poll_text.stdout);
-    assert!(stdout.contains("# High priority"), "poll text: {stdout}");
-    assert!(
-        stdout.contains("# Implementation"),
-        "poll should include skill: {stdout}"
-    );
-    assert!(
-        stdout.contains("## Completion"),
-        "poll should include completion: {stdout}"
-    );
-    assert!(
-        stdout.contains("kno next"),
-        "poll completion should use kno next: {stdout}"
-    );
-    assert!(
-        stdout.contains("--actor-kind agent"),
-        "poll completion should include actor kind: {stdout}"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn poll_with_stage_filter() {
-    let root = unique_workspace("knots-cli-poll-stage");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Plan me",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_planning",
-        ],
-    );
-    assert_success(&created);
-
-    // Poll for implementation should find nothing
-    let poll_impl = run_knots(&root, &db, &["poll", "implementation"]);
-    assert_failure(&poll_impl);
-
-    // Poll for planning should find the knot
-    let poll_plan = run_knots(&root, &db, &["poll", "planning"]);
-    assert_success(&poll_plan);
-    let stdout = String::from_utf8_lossy(&poll_plan.stdout);
-    assert!(stdout.contains("Plan me"), "poll planning: {stdout}");
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn poll_returns_nothing_when_queue_empty() {
-    let root = unique_workspace("knots-cli-poll-empty");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let poll = run_knots(&root, &db, &["poll"]);
-    assert_failure(&poll);
-    let stderr = String::from_utf8_lossy(&poll.stderr);
-    assert!(
-        stderr.contains("no claimable knots found"),
-        "empty poll: {stderr}"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn claim_transitions_and_returns_prompt() {
-    let root = unique_workspace("knots-cli-claim");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Claim me",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_implementation",
-        ],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-
-    // Claim should transition and return prompt
-    let claim = run_knots(
-        &root,
-        &db,
-        &["claim", &knot_id, "--agent-name", "test-agent"],
-    );
-    assert_success(&claim);
-    let stdout = String::from_utf8_lossy(&claim.stdout);
-    assert!(stdout.contains("# Claim me"), "claim text: {stdout}");
-    assert!(
-        stdout.contains("# Implementation"),
-        "claim should include skill: {stdout}"
-    );
-    assert!(
-        stdout.contains("kno next"),
-        "claim completion should use kno next: {stdout}"
-    );
-    assert!(
-        stdout.contains("--actor-kind agent"),
-        "claim completion should include actor kind: {stdout}"
-    );
-
-    // Show should confirm state changed to implementation
-    let show = run_knots(&root, &db, &["show", &knot_id, "--json"]);
-    assert_success(&show);
-    let shown: Value = serde_json::from_slice(&show.stdout).unwrap();
-    assert_eq!(shown["state"], "implementation");
-
-    // Second claim should fail (already in action state)
-    let claim2 = run_knots(&root, &db, &["claim", &knot_id]);
-    assert_failure(&claim2);
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn claim_json_output() {
-    let root = unique_workspace("knots-cli-claim-json");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "JSON claim",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_implementation",
-        ],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-
-    let claim = run_knots(&root, &db, &["claim", &knot_id, "--json"]);
-    assert_success(&claim);
-    let json: Value = serde_json::from_slice(&claim.stdout).expect("claim json should parse");
-    assert_eq!(json["title"], "JSON claim");
-    assert!(json["prompt"]
-        .as_str()
-        .unwrap()
-        .contains("# Implementation"));
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[allow(clippy::too_many_lines)]
-#[test]
-fn show_hides_older_metadata_unless_verbose() {
-    let root = unique_workspace("knots-cli-show-metadata");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let created = run_knots(
-        &root,
-        &db,
-        &["new", "Show metadata", "--profile", "autopilot"],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &knot_id,
-            "--add-note",
-            "old note",
-            "--note-agentname",
-            "agent-1",
-        ],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &knot_id,
-            "--add-note",
-            "new note",
-            "--note-agentname",
-            "agent-2",
-        ],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &knot_id,
-            "--add-handoff-capsule",
-            "old handoff",
-            "--handoff-agentname",
-            "agent-3",
-        ],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &knot_id,
-            "--add-handoff-capsule",
-            "new handoff",
-            "--handoff-agentname",
-            "agent-4",
-        ],
-    ));
-
-    let show = run_knots(&root, &db, &["show", &knot_id]);
-    assert_success(&show);
-    let stdout = String::from_utf8_lossy(&show.stdout);
-    assert!(!stdout.contains("old note"), "show text: {stdout}");
-    assert!(stdout.contains("new note"), "show text: {stdout}");
-    assert!(!stdout.contains("old handoff"), "show text: {stdout}");
-    assert!(stdout.contains("new handoff"), "show text: {stdout}");
-    assert!(stdout.contains("1 older note"), "show text: {stdout}");
-    assert!(
-        stdout.contains("1 older handoff capsule"),
-        "show text: {stdout}"
-    );
-
-    let show_json = run_knots(&root, &db, &["show", &knot_id, "--json"]);
-    assert_success(&show_json);
-    let json: Value = serde_json::from_slice(&show_json.stdout).expect("show json should parse");
-    assert_eq!(json["notes"].as_array().unwrap().len(), 1);
-    assert_eq!(json["notes"][0]["content"], "new note");
-    assert_eq!(json["handoff_capsules"].as_array().unwrap().len(), 1);
-    assert_eq!(json["handoff_capsules"][0]["content"], "new handoff");
-    let other = json["other"].as_str().expect("other hint should exist");
-    assert!(other.contains("1 older note"));
-    assert!(other.contains("1 older handoff capsule"));
-
-    let show_verbose = run_knots(&root, &db, &["show", &knot_id, "--verbose"]);
-    assert_success(&show_verbose);
-    let verbose_stdout = String::from_utf8_lossy(&show_verbose.stdout);
-    assert!(
-        verbose_stdout.contains("old note"),
-        "show verbose: {verbose_stdout}"
-    );
-    assert!(
-        verbose_stdout.contains("new note"),
-        "show verbose: {verbose_stdout}"
-    );
-    assert!(
-        verbose_stdout.contains("old handoff"),
-        "show verbose: {verbose_stdout}"
-    );
-    assert!(
-        verbose_stdout.contains("new handoff"),
-        "show verbose: {verbose_stdout}"
-    );
-    assert!(
-        !verbose_stdout.contains("not shown"),
-        "show verbose: {verbose_stdout}"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[allow(clippy::too_many_lines)]
-#[test]
-fn claim_hides_older_metadata_unless_verbose() {
-    let root = unique_workspace("knots-cli-claim-metadata");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Claim metadata",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_implementation",
-        ],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &knot_id,
-            "--add-note",
-            "old note",
-            "--note-agentname",
-            "agent-1",
-        ],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &knot_id,
-            "--add-note",
-            "new note",
-            "--note-agentname",
-            "agent-2",
-        ],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &knot_id,
-            "--add-handoff-capsule",
-            "old handoff",
-            "--handoff-agentname",
-            "agent-3",
-        ],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &knot_id,
-            "--add-handoff-capsule",
-            "new handoff",
-            "--handoff-agentname",
-            "agent-4",
-        ],
-    ));
-
-    let claim = run_knots(&root, &db, &["claim", &knot_id]);
-    assert_success(&claim);
-    let stdout = String::from_utf8_lossy(&claim.stdout);
-    assert!(!stdout.contains("old note"), "claim text: {stdout}");
-    assert!(stdout.contains("new note"), "claim text: {stdout}");
-    assert!(!stdout.contains("old handoff"), "claim text: {stdout}");
-    assert!(stdout.contains("new handoff"), "claim text: {stdout}");
-    assert!(stdout.contains("1 older note"), "claim text: {stdout}");
-    assert!(
-        stdout.contains("1 older handoff capsule"),
-        "claim text: {stdout}"
-    );
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Claim metadata json",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_implementation",
-        ],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &knot_id, "--add-note", "old note"],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &knot_id, "--add-note", "new note"],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &knot_id, "--add-handoff-capsule", "old handoff"],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &knot_id, "--add-handoff-capsule", "new handoff"],
-    ));
-
-    let claim_json = run_knots(&root, &db, &["claim", &knot_id, "--json"]);
-    assert_success(&claim_json);
-    let json: Value = serde_json::from_slice(&claim_json.stdout).expect("claim json should parse");
-    let prompt = json["prompt"].as_str().expect("claim prompt should exist");
-    assert!(!prompt.contains("old note"));
-    assert!(prompt.contains("new note"));
-    assert!(!prompt.contains("old handoff"));
-    assert!(prompt.contains("new handoff"));
-    let other = json["other"].as_str().expect("other hint should exist");
-    assert!(other.contains("1 older note"));
-    assert!(other.contains("1 older handoff capsule"));
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Claim metadata verbose",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_implementation",
-        ],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &knot_id, "--add-note", "old note"],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &knot_id, "--add-note", "new note"],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &knot_id, "--add-handoff-capsule", "old handoff"],
-    ));
-    assert_success(&run_knots(
-        &root,
-        &db,
-        &["update", &knot_id, "--add-handoff-capsule", "new handoff"],
-    ));
-
-    let claim_verbose = run_knots(&root, &db, &["claim", &knot_id, "--verbose"]);
-    assert_success(&claim_verbose);
-    let verbose_stdout = String::from_utf8_lossy(&claim_verbose.stdout);
-    assert!(
-        verbose_stdout.contains("old note"),
-        "claim verbose: {verbose_stdout}"
-    );
-    assert!(
-        verbose_stdout.contains("new note"),
-        "claim verbose: {verbose_stdout}"
-    );
-    assert!(
-        verbose_stdout.contains("old handoff"),
-        "claim verbose: {verbose_stdout}"
-    );
-    assert!(
-        verbose_stdout.contains("new handoff"),
-        "claim verbose: {verbose_stdout}"
-    );
-    assert!(
-        !verbose_stdout.contains("not shown"),
-        "claim verbose: {verbose_stdout}"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn next_accepts_actor_metadata_and_validates_actor_kind() {
-    let root = unique_workspace("knots-cli-next-actor");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Next actor metadata",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_plan_review",
-        ],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-
-    let next_ok = run_knots(
-        &root,
-        &db,
-        &[
-            "next",
-            &knot_id,
-            "ready_for_plan_review",
-            "--actor-kind",
-            "agent",
-            "--agent-name",
-            "codex",
-            "--agent-model",
-            "gpt-5",
-            "--agent-version",
-            "1.0",
-        ],
-    );
-    assert_success(&next_ok);
-
-    let created_bad = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Next actor invalid",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_plan_review",
-        ],
-    );
-    assert_success(&created_bad);
-    let knot_bad_id = parse_created_id(&created_bad);
-
-    let next_bad = run_knots(
-        &root,
-        &db,
-        &[
-            "next",
-            &knot_bad_id,
-            "ready_for_plan_review",
-            "--actor-kind",
-            "robot",
-        ],
-    );
-    assert_failure(&next_bad);
-    assert!(
-        String::from_utf8_lossy(&next_bad.stderr)
-            .contains("--actor-kind must be one of: human, agent"),
-        "next invalid actor-kind should be rejected"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn next_json_flag_emits_structured_output() {
-    let root = unique_workspace("knots-cli-next-json");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Next json test",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_plan_review",
-        ],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-
-    let next_json = run_knots(
-        &root,
-        &db,
-        &["next", &knot_id, "ready_for_plan_review", "--json"],
-    );
-    assert_success(&next_json);
-    let stdout = String::from_utf8_lossy(&next_json.stdout);
-    let parsed: Value = serde_json::from_str(&stdout).expect("next --json should emit valid JSON");
-    assert_eq!(parsed["previous_state"], "ready_for_plan_review");
-    assert_eq!(parsed["state"], "plan_review");
-    assert!(parsed["id"].is_string(), "id should be present");
-    assert_eq!(parsed["owner_kind"], "agent");
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn poll_claim_flag_atomically_grabs() {
-    let root = unique_workspace("knots-cli-poll-claim");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Grab me",
-            "--profile",
-            "autopilot",
-            "--state",
-            "ready_for_implementation",
-        ],
-    );
-    assert_success(&created);
-    let knot_id = parse_created_id(&created);
-
-    let poll_claim = run_knots(&root, &db, &["poll", "--claim"]);
-    assert_success(&poll_claim);
-    let stdout = String::from_utf8_lossy(&poll_claim.stdout);
-    assert!(stdout.contains("# Grab me"), "poll --claim: {stdout}");
-    assert!(stdout.contains("# Implementation"), "skill: {stdout}");
-
-    // Verify the knot is now in action state
-    let show = run_knots(&root, &db, &["show", &knot_id, "--json"]);
-    assert_success(&show);
-    let shown: Value = serde_json::from_slice(&show.stdout).unwrap();
-    assert_eq!(shown["state"], "implementation");
-
-    // Queue should now be empty
-    let poll_empty = run_knots(&root, &db, &["poll"]);
-    assert_failure(&poll_empty);
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn poll_filters_human_owned_stages() {
-    let root = unique_workspace("knots-cli-poll-human");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    // semiauto profile: plan_review is human-owned
-    let created = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Human gate",
-            "--profile",
-            "semiauto",
-            "--state",
-            "ready_for_plan_review",
-        ],
-    );
-    assert_success(&created);
-
-    // Default poll (agent owner) should not find it
-    let poll_agent = run_knots(&root, &db, &["poll"]);
-    assert_failure(&poll_agent);
-
-    // Poll with --owner human should find it
-    let poll_human = run_knots(&root, &db, &["poll", "--owner", "human"]);
-    assert_success(&poll_human);
-    let stdout = String::from_utf8_lossy(&poll_human.stdout);
-    assert!(stdout.contains("Human gate"), "human poll: {stdout}");
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn skill_command_accepts_state_name_as_fallback() {
-    let root = unique_workspace("knots-cli-skill-state");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    // Lowercase state name
-    let skill_planning = run_knots(&root, &db, &["skill", "planning"]);
-    assert_success(&skill_planning);
-    let skill_stdout = String::from_utf8_lossy(&skill_planning.stdout);
-    assert!(
-        skill_stdout.contains("# Planning"),
-        "kno skill planning should print planning markdown: {skill_stdout}"
-    );
-
-    // Uppercase state name (case-insensitive)
-    let skill_upper = run_knots(&root, &db, &["skill", "PLANNING"]);
-    assert_success(&skill_upper);
-    let upper_stdout = String::from_utf8_lossy(&skill_upper.stdout);
-    assert!(
-        upper_stdout.contains("# Planning"),
-        "kno skill PLANNING should work case-insensitively: {upper_stdout}"
-    );
-
-    // Nonsense state name should fail
-    let skill_nonsense = run_knots(&root, &db, &["skill", "nonsense"]);
-    assert_failure(&skill_nonsense);
-    assert!(
-        String::from_utf8_lossy(&skill_nonsense.stderr)
-            .contains("is not a knot id or skill state name"),
-        "skill nonsense should produce helpful error"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[allow(clippy::too_many_lines)]
-#[test]
-fn gate_knots_support_human_evaluation_and_reopen_flow() {
-    let root = unique_workspace("knots-cli-gate");
-    setup_repo(&root);
-    let db = root.join(".knots/cache/state.sqlite");
-
-    let target = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Blocked work",
-            "--state",
-            "shipped",
-            "--profile",
-            "autopilot",
-        ],
-    );
-    assert_success(&target);
-    let target_id = parse_created_id(&target);
-
-    let gate = run_knots(
-        &root,
-        &db,
-        &[
-            "new",
-            "Release gate",
-            "--type",
-            "gate",
-            "--gate-owner-kind",
-            "human",
-            "--gate-failure-mode",
-            &format!("release blocked={target_id}"),
-        ],
-    );
-    assert_success(&gate);
-    let gate_id = parse_created_id(&gate);
-
-    let gate_update = run_knots(
-        &root,
-        &db,
-        &[
-            "update",
-            &gate_id,
-            "--add-invariant",
-            "State:release blocked",
-        ],
-    );
-    assert_success(&gate_update);
-
-    let shown_gate = run_knots(&root, &db, &["show", &gate_id, "--json"]);
-    assert_success(&shown_gate);
-    let shown_json: Value = serde_json::from_slice(&shown_gate.stdout).expect("show json");
-    assert_eq!(shown_json["type"], "gate");
-    assert_eq!(shown_json["gate"]["owner_kind"], "human");
-
-    let poll = run_knots(
-        &root,
-        &db,
-        &["poll", "evaluate", "--owner", "human", "--json"],
-    );
-    assert_success(&poll);
-    let poll_json: Value = serde_json::from_slice(&poll.stdout).expect("poll json");
-    assert_eq!(poll_json["title"], "Release gate");
-
-    let claim = run_knots(&root, &db, &["claim", &gate_id, "--json"]);
-    assert_success(&claim);
-    let claim_json: Value = serde_json::from_slice(&claim.stdout).expect("claim json");
-    assert_eq!(claim_json["state"], "evaluating");
-    assert!(claim_json["prompt"]
-        .as_str()
-        .expect("prompt should exist")
-        .contains("# Evaluating"));
-
-    let evaluate = run_knots(
-        &root,
-        &db,
-        &[
-            "gate",
-            "evaluate",
-            &gate_id,
-            "--decision",
-            "no",
-            "--invariant",
-            "release blocked",
-            "--json",
-        ],
-    );
-    assert_success(&evaluate);
-    let evaluate_json: Value = serde_json::from_slice(&evaluate.stdout).expect("evaluate json");
-    assert_eq!(evaluate_json["decision"], "no");
-    assert_eq!(evaluate_json["gate"]["state"], "abandoned");
-    let reopened_id = evaluate_json["reopened"][0]
-        .as_str()
-        .expect("reopened id should be a string");
-    assert!(
-        reopened_id.ends_with(&target_id),
-        "full id '{reopened_id}' should end with display id '{target_id}'"
-    );
-
-    let reopened = run_knots(&root, &db, &["show", &target_id, "--json"]);
-    assert_success(&reopened);
-    let reopened_json: Value = serde_json::from_slice(&reopened.stdout).expect("show json");
-    assert_eq!(reopened_json["state"], "ready_for_planning");
-    assert!(reopened_json["notes"][0]
-        .as_object()
-        .and_then(|obj| obj.get("content"))
-        .and_then(Value::as_str)
-        .expect("note content")
-        .contains("reopened this knot for planning"));
+    let stdout = String::from_utf8_lossy(&q.stdout);
+    assert!(stdout.contains("[READY_FOR_IMPLEMENTATION]"), "q: {stdout}");
 
     let _ = std::fs::remove_dir_all(root);
 }

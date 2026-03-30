@@ -33,7 +33,6 @@ fn prompt_install_default(workflow_id: &str) -> Result<bool, app::AppError> {
     ))
 }
 
-#[allow(clippy::too_many_lines)]
 #[cfg(not(tarpaulin_include))]
 pub(crate) fn run_workflow_command(
     args: &cli::WorkflowArgs,
@@ -42,167 +41,205 @@ pub(crate) fn run_workflow_command(
     use cli::WorkflowSubcommands;
 
     match &args.command {
-        WorkflowSubcommands::Install(install_args) => {
-            let workflow_id = installed_workflows::install_bundle(repo_root, &install_args.source)?;
-            let set_default = match install_args.set_default.as_deref() {
-                Some(raw) => parse_bool_flag(raw)?,
-                None => prompt_install_default(&workflow_id)?,
-            };
-            if set_default {
-                let config = installed_workflows::set_current_workflow_selection(
-                    repo_root,
-                    &workflow_id,
-                    None,
-                    None,
-                )?;
-                let profile = config.current_profile_id().unwrap_or_default();
-                println!("installed workflow: {workflow_id} (default profile={profile})");
-            } else {
-                println!("installed workflow: {workflow_id}");
-            }
+        WorkflowSubcommands::Install(install_args) => run_workflow_install(install_args, repo_root),
+        WorkflowSubcommands::Use(use_args) => run_workflow_use(use_args, repo_root),
+        WorkflowSubcommands::Current(current_args) => run_workflow_current(current_args, repo_root),
+        WorkflowSubcommands::List(list_args) => run_workflow_list(list_args, repo_root),
+        WorkflowSubcommands::Show(show_args) => run_workflow_show(show_args, repo_root),
+    }
+}
+
+#[cfg(not(tarpaulin_include))]
+fn run_workflow_install(
+    install_args: &cli::WorkflowInstallArgs,
+    repo_root: &std::path::Path,
+) -> Result<(), app::AppError> {
+    let workflow_id = installed_workflows::install_bundle(repo_root, &install_args.source)?;
+    let set_default = match install_args.set_default.as_deref() {
+        Some(raw) => parse_bool_flag(raw)?,
+        None => prompt_install_default(&workflow_id)?,
+    };
+    if set_default {
+        let config = installed_workflows::set_current_workflow_selection(
+            repo_root,
+            &workflow_id,
+            None,
+            None,
+        )?;
+        let profile = config.current_profile_id().unwrap_or_default();
+        println!("installed workflow: {workflow_id} (default profile={profile})");
+    } else {
+        println!("installed workflow: {workflow_id}");
+    }
+    Ok(())
+}
+
+#[cfg(not(tarpaulin_include))]
+fn run_workflow_use(
+    use_args: &cli::WorkflowUseArgs,
+    repo_root: &std::path::Path,
+) -> Result<(), app::AppError> {
+    let config = installed_workflows::set_current_workflow_selection(
+        repo_root,
+        &use_args.id,
+        use_args.version,
+        use_args.profile.as_deref(),
+    )?;
+    let workflow_id = config
+        .current_workflow
+        .clone()
+        .unwrap_or_else(|| use_args.id.clone());
+    if let Some(version) = config.current_version {
+        if let Some(profile) = config.current_profile_id() {
+            let profile = profile.rsplit('/').next().unwrap_or(profile);
+            println!("default workflow: {workflow_id} v{version} profile={profile}");
+        } else {
+            println!("default workflow: {workflow_id} v{version}");
         }
-        WorkflowSubcommands::Use(use_args) => {
-            let config = installed_workflows::set_current_workflow_selection(
-                repo_root,
-                &use_args.id,
-                use_args.version,
-                use_args.profile.as_deref(),
-            )?;
-            let workflow_id = config
-                .current_workflow
-                .clone()
-                .unwrap_or_else(|| use_args.id.clone());
-            if let Some(version) = config.current_version {
-                if let Some(profile) = config.current_profile_id() {
-                    let profile = profile.rsplit('/').next().unwrap_or(profile);
-                    println!("default workflow: {workflow_id} v{version} profile={profile}");
-                } else {
-                    println!("default workflow: {workflow_id} v{version}");
-                }
-            } else {
-                println!("default workflow: {workflow_id}");
-            }
-        }
-        WorkflowSubcommands::Current(current_args) => {
-            let registry = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
-            let workflow = registry.current_workflow()?;
-            if current_args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&serde_json::json!({
-                        "id": workflow.id,
-                        "version": workflow.version,
-                        "builtin": workflow.builtin,
-                        "bundle_default_profile": workflow.default_profile,
-                        "default_profile": registry
-                            .current_profile_id()
-                            .map(|profile| {
-                                profile
-                                    .rsplit('/')
-                                    .next()
-                                    .unwrap_or(profile.as_str())
-                                    .to_string()
-                            }),
-                    }))
-                    .expect("json serialization should work")
-                );
-            } else if let Some(profile) = registry.current_profile_id() {
-                let profile = profile
-                    .rsplit('/')
-                    .next()
-                    .unwrap_or(profile.as_str())
-                    .to_string();
-                println!(
-                    "{} v{} default_profile={profile}",
-                    workflow.id, workflow.version
-                );
-            } else {
-                println!("{} v{}", workflow.id, workflow.version);
-            }
-        }
-        WorkflowSubcommands::List(list_args) => {
-            let registry = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
-            let current_id = registry.current_workflow_id().to_string();
-            let current_version = registry.current_workflow_version();
-            let workflows = registry
-                .list()
-                .into_iter()
-                .map(|workflow| {
-                    serde_json::json!({
-                        "id": workflow.id,
-                        "version": workflow.version,
-                        "builtin": workflow.builtin,
-                        "bundle_default_profile": workflow.default_profile,
-                        "default_profile": registry
-                            .default_profile_id_for_workflow(&workflow.id)
-                            .map(|profile| {
-                                profile
-                                    .rsplit('/')
-                                    .next()
-                                    .unwrap_or(profile.as_str())
-                                    .to_string()
-                            }),
-                        "current": workflow.id == current_id
-                            && Some(workflow.version) == current_version,
-                        "profiles": workflow.profiles.keys().cloned().collect::<Vec<_>>(),
-                    })
-                })
-                .collect::<Vec<_>>();
-            if list_args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&workflows)
-                        .expect("json serialization should work")
-                );
-            } else if workflows.is_empty() {
-                println!("no workflows installed");
-            } else {
-                for item in workflows {
-                    let id = item["id"].as_str().unwrap_or_default();
-                    let version = item["version"].as_u64().unwrap_or_default();
-                    let suffix = if item["current"].as_bool() == Some(true) {
-                        " (current)"
-                    } else {
-                        ""
-                    };
-                    let default_profile = item["default_profile"].as_str().unwrap_or_default();
-                    if default_profile.is_empty() {
-                        println!("{id} v{version}{suffix}");
-                    } else {
-                        println!("{id} v{version}{suffix} default_profile={default_profile}");
-                    }
-                }
-            }
-        }
-        WorkflowSubcommands::Show(show_args) => {
-            let registry = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
-            let workflow = match show_args.version {
-                Some(version) => registry.require_workflow_version(&show_args.id, version)?,
-                None => registry.require_workflow(&show_args.id)?,
-            };
-            if show_args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(workflow).expect("json serialization should work")
-                );
-            } else {
-                println!("workflow: {}", workflow.id);
-                println!("version: {}", workflow.version);
-                if let Some(description) = workflow.display_description() {
-                    println!("description: {description}");
-                }
-                if let Some(default_profile) = workflow.default_profile.as_deref() {
-                    println!("default_profile: {default_profile}");
-                }
-                println!("builtin: {}", workflow.builtin);
-                println!("profiles:");
-                for profile in workflow.profiles.keys() {
-                    println!("  - {profile}");
-                }
-            }
+    } else {
+        println!("default workflow: {workflow_id}");
+    }
+    Ok(())
+}
+
+#[cfg(not(tarpaulin_include))]
+fn run_workflow_current(
+    current_args: &cli::WorkflowCurrentArgs,
+    repo_root: &std::path::Path,
+) -> Result<(), app::AppError> {
+    let registry = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
+    let workflow = registry.current_workflow()?;
+    if current_args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&serde_json::json!({
+                "id": workflow.id,
+                "version": workflow.version,
+                "builtin": workflow.builtin,
+                "bundle_default_profile": workflow.default_profile,
+                "default_profile": registry
+                    .current_profile_id()
+                    .map(|profile| {
+                        profile
+                            .rsplit('/')
+                            .next()
+                            .unwrap_or(profile.as_str())
+                            .to_string()
+                    }),
+            }))
+            .expect("json serialization should work")
+        );
+    } else if let Some(profile) = registry.current_profile_id() {
+        let profile = profile
+            .rsplit('/')
+            .next()
+            .unwrap_or(profile.as_str())
+            .to_string();
+        println!(
+            "{} v{} default_profile={profile}",
+            workflow.id, workflow.version
+        );
+    } else {
+        println!("{} v{}", workflow.id, workflow.version);
+    }
+    Ok(())
+}
+
+#[cfg(not(tarpaulin_include))]
+fn run_workflow_list(
+    list_args: &cli::WorkflowListArgs,
+    repo_root: &std::path::Path,
+) -> Result<(), app::AppError> {
+    let registry = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
+    let current_id = registry.current_workflow_id().to_string();
+    let current_version = registry.current_workflow_version();
+    let workflows = registry
+        .list()
+        .into_iter()
+        .map(|workflow| {
+            serde_json::json!({
+                "id": workflow.id,
+                "version": workflow.version,
+                "builtin": workflow.builtin,
+                "bundle_default_profile": workflow.default_profile,
+                "default_profile": registry
+                    .default_profile_id_for_workflow(&workflow.id)
+                    .map(|profile| {
+                        profile
+                            .rsplit('/')
+                            .next()
+                            .unwrap_or(profile.as_str())
+                            .to_string()
+                    }),
+                "current": workflow.id == current_id
+                    && Some(workflow.version) == current_version,
+                "profiles":
+                    workflow.profiles.keys().cloned().collect::<Vec<_>>(),
+            })
+        })
+        .collect::<Vec<_>>();
+    if list_args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&workflows).expect("json serialization should work")
+        );
+    } else if workflows.is_empty() {
+        println!("no workflows installed");
+    } else {
+        for item in workflows {
+            print_workflow_list_item(&item);
         }
     }
+    Ok(())
+}
 
+#[cfg(not(tarpaulin_include))]
+fn print_workflow_list_item(item: &serde_json::Value) {
+    let id = item["id"].as_str().unwrap_or_default();
+    let version = item["version"].as_u64().unwrap_or_default();
+    let suffix = if item["current"].as_bool() == Some(true) {
+        " (current)"
+    } else {
+        ""
+    };
+    let default_profile = item["default_profile"].as_str().unwrap_or_default();
+    if default_profile.is_empty() {
+        println!("{id} v{version}{suffix}");
+    } else {
+        println!("{id} v{version}{suffix} default_profile={default_profile}");
+    }
+}
+
+#[cfg(not(tarpaulin_include))]
+fn run_workflow_show(
+    show_args: &cli::WorkflowShowArgs,
+    repo_root: &std::path::Path,
+) -> Result<(), app::AppError> {
+    let registry = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
+    let workflow = match show_args.version {
+        Some(version) => registry.require_workflow_version(&show_args.id, version)?,
+        None => registry.require_workflow(&show_args.id)?,
+    };
+    if show_args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(workflow).expect("json serialization should work")
+        );
+    } else {
+        println!("workflow: {}", workflow.id);
+        println!("version: {}", workflow.version);
+        if let Some(description) = workflow.display_description() {
+            println!("description: {description}");
+        }
+        if let Some(default_profile) = workflow.default_profile.as_deref() {
+            println!("default_profile: {default_profile}");
+        }
+        println!("builtin: {}", workflow.builtin);
+        println!("profiles:");
+        for profile in workflow.profiles.keys() {
+            println!("  - {profile}");
+        }
+    }
     Ok(())
 }
 

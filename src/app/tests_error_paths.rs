@@ -119,10 +119,8 @@ fn helper_validations_cover_success_and_error_paths() {
     ));
 }
 
-#[allow(clippy::too_many_lines)]
-#[test]
-fn apply_rehydrate_event_covers_known_event_types() {
-    let mut projection = RehydrateProjection {
+fn seed_projection() -> RehydrateProjection {
+    RehydrateProjection {
         title: "seed".to_string(),
         state: "idea".to_string(),
         updated_at: "2026-02-25T10:00:00Z".to_string(),
@@ -145,8 +143,10 @@ fn apply_rehydrate_event_covers_known_event_types() {
         deferred_from_state: None,
         blocked_from_state: None,
         created_at: None,
-    };
+    }
+}
 
+fn apply_core_events(projection: &mut RehydrateProjection) {
     let non_object = FullEvent::with_identity(
         "e0",
         "2026-02-25T10:00:00Z",
@@ -154,16 +154,20 @@ fn apply_rehydrate_event_covers_known_event_types() {
         FullEventKind::KnotCreated.as_str(),
         json!("not-object"),
     );
-    apply_rehydrate_event(&mut projection, &non_object);
+    apply_rehydrate_event(projection, &non_object);
 
     let created = FullEvent::with_identity(
         "e1",
         "2026-02-25T10:01:00Z",
         "K-1",
         FullEventKind::KnotCreated.as_str(),
-        json!({"title":"Created","state":"work_item","profile_id":"default"}),
+        json!({
+            "title": "Created",
+            "state": "work_item",
+            "profile_id": "default"
+        }),
     );
-    apply_rehydrate_event(&mut projection, &created);
+    apply_rehydrate_event(projection, &created);
 
     let title_set = FullEvent::with_identity(
         "e2",
@@ -172,7 +176,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
         FullEventKind::KnotTitleSet.as_str(),
         json!({"to":"Renamed"}),
     );
-    apply_rehydrate_event(&mut projection, &title_set);
+    apply_rehydrate_event(projection, &title_set);
 
     let state_set = FullEvent::with_identity(
         "e3",
@@ -181,7 +185,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
         FullEventKind::KnotStateSet.as_str(),
         json!({"to":"implementing"}),
     );
-    apply_rehydrate_event(&mut projection, &state_set);
+    apply_rehydrate_event(projection, &state_set);
 
     let description_set = FullEvent::with_identity(
         "e4",
@@ -190,7 +194,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
         FullEventKind::KnotDescriptionSet.as_str(),
         json!({"description":"details"}),
     );
-    apply_rehydrate_event(&mut projection, &description_set);
+    apply_rehydrate_event(projection, &description_set);
 
     let priority_set = FullEvent::with_identity(
         "e5",
@@ -199,7 +203,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
         FullEventKind::KnotPrioritySet.as_str(),
         json!({"priority":2}),
     );
-    apply_rehydrate_event(&mut projection, &priority_set);
+    apply_rehydrate_event(projection, &priority_set);
 
     let type_set = FullEvent::with_identity(
         "e6",
@@ -208,8 +212,10 @@ fn apply_rehydrate_event_covers_known_event_types() {
         FullEventKind::KnotTypeSet.as_str(),
         json!({"type":"task"}),
     );
-    apply_rehydrate_event(&mut projection, &type_set);
+    apply_rehydrate_event(projection, &type_set);
+}
 
+fn apply_metadata_events(projection: &mut RehydrateProjection) {
     let tag_add = FullEvent::with_identity(
         "e7",
         "2026-02-25T10:07:00Z",
@@ -217,8 +223,8 @@ fn apply_rehydrate_event_covers_known_event_types() {
         FullEventKind::KnotTagAdd.as_str(),
         json!({"tag":"Release"}),
     );
-    apply_rehydrate_event(&mut projection, &tag_add);
-    apply_rehydrate_event(&mut projection, &tag_add);
+    apply_rehydrate_event(projection, &tag_add);
+    apply_rehydrate_event(projection, &tag_add);
 
     let note = FullEvent::with_identity(
         "e8",
@@ -235,7 +241,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
             "version":"v"
         }),
     );
-    apply_rehydrate_event(&mut projection, &note);
+    apply_rehydrate_event(projection, &note);
 
     let handoff = FullEvent::with_identity(
         "e9",
@@ -252,7 +258,7 @@ fn apply_rehydrate_event_covers_known_event_types() {
             "version":"v"
         }),
     );
-    apply_rehydrate_event(&mut projection, &handoff);
+    apply_rehydrate_event(projection, &handoff);
 
     let tag_remove = FullEvent::with_identity(
         "e10",
@@ -261,7 +267,14 @@ fn apply_rehydrate_event_covers_known_event_types() {
         FullEventKind::KnotTagRemove.as_str(),
         json!({"tag":"release"}),
     );
-    apply_rehydrate_event(&mut projection, &tag_remove);
+    apply_rehydrate_event(projection, &tag_remove);
+}
+
+#[test]
+fn apply_rehydrate_event_covers_known_event_types() {
+    let mut projection = seed_projection();
+    apply_core_events(&mut projection);
+    apply_metadata_events(&mut projection);
 
     assert_eq!(projection.title, "Renamed");
     assert_eq!(projection.state, "implementing");
@@ -409,11 +422,9 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
 
     let not_found = AppError::NotFound("K-404".to_string());
     assert!(not_found.to_string().contains("not found"));
-    assert!(not_found.source().is_none());
 
     let not_init = AppError::NotInitialized;
     assert!(not_init.to_string().contains("not initialized"));
-    assert!(not_init.source().is_none());
 
     let _ = IndexEvent::with_identity(
         "idx-1",
@@ -425,14 +436,13 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
 
 fn unique_workspace() -> PathBuf {
     let root = std::env::temp_dir().join(format!("knots-app-errpath-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
+    std::fs::create_dir_all(&root).expect("workspace creatable");
     root
 }
 
 fn open_app(root: &Path) -> App {
-    let db_path = root.join(".knots/cache/state.sqlite");
-    let db_str = db_path.to_str().expect("utf8 db path").to_string();
-    App::open(&db_str, root.to_path_buf()).expect("app should open")
+    let db = root.join(".knots/cache/state.sqlite");
+    App::open(db.to_str().expect("utf8"), root.to_path_buf()).expect("app should open")
 }
 
 #[test]

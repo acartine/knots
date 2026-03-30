@@ -24,11 +24,7 @@ fn fsck_error_display_source_and_from_cover_io_variant() {
     assert!(err.source().is_some());
 }
 
-#[allow(clippy::too_many_lines)]
-#[test]
-fn reports_schema_and_reference_issues_for_malformed_events() {
-    let root = unique_workspace();
-
+fn write_malformed_event_fixtures(root: &std::path::Path) {
     let invalid_json = root.join(".knots/events/2026/02/25/1000-knot.created.json");
     write_file(&invalid_json, "{");
 
@@ -116,7 +112,9 @@ fn reports_schema_and_reference_issues_for_malformed_events() {
             "}\n"
         ),
     );
+}
 
+fn write_edge_and_index_fixtures(root: &std::path::Path) {
     let valid_index = root.join(".knots/index/2026/02/25/2000-idx.knot_head.json");
     write_file(
         &valid_index,
@@ -167,6 +165,20 @@ fn reports_schema_and_reference_issues_for_malformed_events() {
             "}\n"
         ),
     );
+}
+
+fn assert_has_message(messages: &[&str], needle: &str) {
+    assert!(
+        messages.iter().any(|m| m.contains(needle)),
+        "expected message containing '{needle}' in:\n{messages:?}"
+    );
+}
+
+#[test]
+fn reports_schema_and_reference_issues_for_malformed_events() {
+    let root = unique_workspace();
+    write_malformed_event_fixtures(&root);
+    write_edge_and_index_fixtures(&root);
 
     let report = run_fsck(&root).expect("fsck should complete");
     assert!(!report.ok());
@@ -177,46 +189,20 @@ fn reports_schema_and_reference_issues_for_malformed_events() {
         .iter()
         .map(|issue| issue.message.as_str())
         .collect::<Vec<_>>();
-    assert!(messages.iter().any(|m| m.contains("invalid JSON payload")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("event payload must be a JSON object")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required string field 'event_id'")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required string field 'occurred_at'")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required string field 'type'")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("event filename mismatch")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required object field 'data'")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required string field 'knot_id'")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required string field data.dst")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required string field data.kind")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required string field data.title")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required string field data.state")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("missing required string field data.updated_at")));
-    assert!(messages
-        .iter()
-        .any(|m| m.contains("edge destination 'K-missing'")));
+    assert_has_message(&messages, "invalid JSON payload");
+    assert_has_message(&messages, "event payload must be a JSON object");
+    assert_has_message(&messages, "missing required string field 'event_id'");
+    assert_has_message(&messages, "missing required string field 'occurred_at'");
+    assert_has_message(&messages, "missing required string field 'type'");
+    assert_has_message(&messages, "event filename mismatch");
+    assert_has_message(&messages, "missing required object field 'data'");
+    assert_has_message(&messages, "missing required string field 'knot_id'");
+    assert_has_message(&messages, "missing required string field data.dst");
+    assert_has_message(&messages, "missing required string field data.kind");
+    assert_has_message(&messages, "missing required string field data.title");
+    assert_has_message(&messages, "missing required string field data.state");
+    assert_has_message(&messages, "missing required string field data.updated_at");
+    assert_has_message(&messages, "edge destination 'K-missing'");
 
     let _ = std::fs::remove_dir_all(root);
 }

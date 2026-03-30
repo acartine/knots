@@ -56,7 +56,6 @@ pub fn run_fsck(repo_root: &Path) -> Result<FsckReport, FsckError> {
     run_fsck_at_store(&repo_root.join(".knots"))
 }
 
-#[allow(clippy::too_many_lines)]
 pub fn run_fsck_at_store(store_root: &Path) -> Result<FsckReport, FsckError> {
     let mut issues = Vec::new();
     let mut files = collect_json_files(store_root)?;
@@ -67,132 +66,183 @@ pub fn run_fsck_at_store(store_root: &Path) -> Result<FsckReport, FsckError> {
     let mut edge_refs = Vec::new();
 
     for path in &files {
-        let raw = match std::fs::read(path) {
-            Ok(value) => value,
-            Err(err) => {
-                issues.push(issue(path, &format!("unable to read file: {}", err)));
-                continue;
-            }
-        };
-
-        let value: Value = match serde_json::from_slice(&raw) {
-            Ok(value) => value,
-            Err(err) => {
-                issues.push(issue(path, &format!("invalid JSON payload: {}", err)));
-                continue;
-            }
-        };
-
-        let Some(object) = value.as_object() else {
-            issues.push(issue(path, "event payload must be a JSON object"));
-            continue;
-        };
-
-        let event_id = match object.get("event_id").and_then(Value::as_str) {
-            Some(value) if !value.trim().is_empty() => value.trim().to_string(),
-            _ => {
-                issues.push(issue(path, "missing required string field 'event_id'"));
-                continue;
-            }
-        };
-
-        if let Some(previous) = event_id_to_path.get(&event_id) {
-            if previous != path {
-                issues.push(issue(
-                    path,
-                    &format!(
-                        "duplicate event_id '{}' also found in '{}'",
-                        event_id,
-                        previous.display()
-                    ),
-                ));
-            }
-        } else {
-            event_id_to_path.insert(event_id.clone(), path.clone());
-        }
-
-        if object
-            .get("occurred_at")
-            .and_then(Value::as_str)
-            .is_none_or(|value| value.trim().is_empty())
-        {
-            issues.push(issue(path, "missing required string field 'occurred_at'"));
-        }
-
-        if object
-            .get("type")
-            .and_then(Value::as_str)
-            .is_none_or(|value| value.trim().is_empty())
-        {
-            issues.push(issue(path, "missing required string field 'type'"));
-        }
-        if let Some(event_type) = object.get("type").and_then(Value::as_str) {
-            validate_filename(path, &event_id, event_type, &mut issues);
-        }
-
-        if !object.get("data").is_some_and(Value::is_object) {
-            issues.push(issue(path, "missing required object field 'data'"));
-            continue;
-        }
-
-        let event_type = object
-            .get("type")
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let Some(data) = object.get("data").and_then(Value::as_object) else {
-            continue;
-        };
-
-        if path_is_index(path) {
-            if event_type == "idx.knot_head" {
-                let knot_id = require_data_string(data, "knot_id", path, &mut issues);
-                require_data_string(data, "title", path, &mut issues);
-                require_data_string(data, "state", path, &mut issues);
-                require_data_string(data, "updated_at", path, &mut issues);
-                if let Some(knot_id) = knot_id {
-                    known_knot_ids.insert(knot_id);
-                }
-            }
-            continue;
-        }
-
-        let knot_id = match object.get("knot_id").and_then(Value::as_str) {
-            Some(value) if !value.trim().is_empty() => value.trim().to_string(),
-            _ => {
-                issues.push(issue(path, "missing required string field 'knot_id'"));
-                continue;
-            }
-        };
-        known_knot_ids.insert(knot_id.clone());
-
-        if matches!(event_type, "knot.edge_add" | "knot.edge_remove") {
-            let dst = require_data_string(data, "dst", path, &mut issues);
-            require_data_string(data, "kind", path, &mut issues);
-            if let Some(dst) = dst {
-                edge_refs.push((path.clone(), knot_id, dst));
-            }
-        }
+        validate_single_event(
+            path,
+            &mut issues,
+            &mut event_id_to_path,
+            &mut known_knot_ids,
+            &mut edge_refs,
+        );
     }
 
-    for (path, src, dst) in edge_refs {
-        if !known_knot_ids.contains(&src) {
-            issues.push(issue(
-                &path,
-                &format!("edge source '{}' is not present in knot index", src),
-            ));
-        }
-        if !known_knot_ids.contains(&dst) {
-            issues.push(issue(
-                &path,
-                &format!("edge destination '{}' is not present in knot index", dst),
-            ));
-        }
-    }
+    validate_edge_refs(&edge_refs, &known_knot_ids, &mut issues);
 
     Ok(FsckReport {
         files_scanned: files.len() as u64,
         issues,
     })
+}
+
+fn validate_single_event(
+    path: &Path,
+    issues: &mut Vec<FsckIssue>,
+    event_id_to_path: &mut HashMap<String, PathBuf>,
+    known_knot_ids: &mut HashSet<String>,
+    edge_refs: &mut Vec<(PathBuf, String, String)>,
+) {
+    let raw = match std::fs::read(path) {
+        Ok(value) => value,
+        Err(err) => {
+            issues.push(issue(path, &format!("unable to read file: {}", err)));
+            return;
+        }
+    };
+
+    let value: Value = match serde_json::from_slice(&raw) {
+        Ok(value) => value,
+        Err(err) => {
+            issues.push(issue(path, &format!("invalid JSON payload: {}", err)));
+            return;
+        }
+    };
+
+    let Some(object) = value.as_object() else {
+        issues.push(issue(path, "event payload must be a JSON object"));
+        return;
+    };
+
+    let event_id = match object.get("event_id").and_then(Value::as_str) {
+        Some(value) if !value.trim().is_empty() => value.trim().to_string(),
+        _ => {
+            issues.push(issue(path, "missing required string field 'event_id'"));
+            return;
+        }
+    };
+
+    check_duplicate_event_id(path, &event_id, event_id_to_path, issues);
+    validate_envelope_fields(path, object, &event_id, issues);
+
+    if !object.get("data").is_some_and(Value::is_object) {
+        issues.push(issue(path, "missing required object field 'data'"));
+        return;
+    }
+
+    let event_type = object
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let Some(data) = object.get("data").and_then(Value::as_object) else {
+        return;
+    };
+
+    if path_is_index(path) {
+        validate_index_event(path, event_type, data, known_knot_ids, issues);
+        return;
+    }
+
+    let knot_id = match object.get("knot_id").and_then(Value::as_str) {
+        Some(value) if !value.trim().is_empty() => value.trim().to_string(),
+        _ => {
+            issues.push(issue(path, "missing required string field 'knot_id'"));
+            return;
+        }
+    };
+    known_knot_ids.insert(knot_id.clone());
+
+    if matches!(event_type, "knot.edge_add" | "knot.edge_remove") {
+        let dst = require_data_string(data, "dst", path, issues);
+        require_data_string(data, "kind", path, issues);
+        if let Some(dst) = dst {
+            edge_refs.push((path.to_path_buf(), knot_id, dst));
+        }
+    }
+}
+
+fn check_duplicate_event_id(
+    path: &Path,
+    event_id: &str,
+    event_id_to_path: &mut HashMap<String, PathBuf>,
+    issues: &mut Vec<FsckIssue>,
+) {
+    if let Some(previous) = event_id_to_path.get(event_id) {
+        if previous != path {
+            issues.push(issue(
+                path,
+                &format!(
+                    "duplicate event_id '{}' also found in '{}'",
+                    event_id,
+                    previous.display()
+                ),
+            ));
+        }
+    } else {
+        event_id_to_path.insert(event_id.to_string(), path.to_path_buf());
+    }
+}
+
+fn validate_envelope_fields(
+    path: &Path,
+    object: &serde_json::Map<String, Value>,
+    event_id: &str,
+    issues: &mut Vec<FsckIssue>,
+) {
+    if object
+        .get("occurred_at")
+        .and_then(Value::as_str)
+        .is_none_or(|value| value.trim().is_empty())
+    {
+        issues.push(issue(path, "missing required string field 'occurred_at'"));
+    }
+
+    if object
+        .get("type")
+        .and_then(Value::as_str)
+        .is_none_or(|value| value.trim().is_empty())
+    {
+        issues.push(issue(path, "missing required string field 'type'"));
+    }
+    if let Some(event_type) = object.get("type").and_then(Value::as_str) {
+        validate_filename(path, event_id, event_type, issues);
+    }
+}
+
+fn validate_index_event(
+    path: &Path,
+    event_type: &str,
+    data: &serde_json::Map<String, Value>,
+    known_knot_ids: &mut HashSet<String>,
+    issues: &mut Vec<FsckIssue>,
+) {
+    if event_type == "idx.knot_head" {
+        let knot_id = require_data_string(data, "knot_id", path, issues);
+        require_data_string(data, "title", path, issues);
+        require_data_string(data, "state", path, issues);
+        require_data_string(data, "updated_at", path, issues);
+        if let Some(knot_id) = knot_id {
+            known_knot_ids.insert(knot_id);
+        }
+    }
+}
+
+fn validate_edge_refs(
+    edge_refs: &[(PathBuf, String, String)],
+    known_knot_ids: &HashSet<String>,
+    issues: &mut Vec<FsckIssue>,
+) {
+    for (path, src, dst) in edge_refs {
+        if !known_knot_ids.contains(src) {
+            issues.push(issue(
+                path,
+                &format!("edge source '{}' is not present in knot index", src),
+            ));
+        }
+        if !known_knot_ids.contains(dst) {
+            issues.push(issue(
+                path,
+                &format!("edge destination '{}' is not present in knot index", dst),
+            ));
+        }
+    }
 }
 
 fn collect_json_files(store_root: &Path) -> Result<Vec<PathBuf>, FsckError> {

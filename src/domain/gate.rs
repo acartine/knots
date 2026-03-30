@@ -274,4 +274,18 @@ mod tests {
         assert!(data.find_reopen_targets(" ").is_none());
         assert!(data.find_reopen_targets("missing").is_none());
     }
+
+    #[test]
+    fn failure_mode_error_display_covers_all_variants() {
+        let missing = ParseGateFailureModeError::MissingSeparator;
+        assert!(missing.to_string().contains("expected"));
+
+        let empty_inv = ParseGateFailureModeError::EmptyInvariant;
+        assert!(empty_inv.to_string().contains("invariant cannot be empty"));
+
+        let empty_tgt = ParseGateFailureModeError::EmptyTargets;
+        assert!(empty_tgt
+            .to_string()
+            .contains("at least one knot id is required"));
+    }
 }

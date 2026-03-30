@@ -5,11 +5,13 @@ use std::process::Command;
 use clap::Parser;
 use uuid::Uuid;
 
-use super::{
-    execute_operation, operation_from_command, parse_gate_data_args, parse_gate_decision,
-    parse_gate_failure_modes_option, parse_gate_owner_kind_arg, parse_knot_type_arg,
+use super::execute_operation;
+use super::helpers::{
+    parse_gate_data_args, parse_gate_decision, parse_gate_failure_modes_option,
+    parse_gate_owner_kind_arg, parse_knot_type_arg,
 };
-use crate::app::{App, CreateKnotOptions, StateActorMetadata, UpdateKnotPatch};
+use super::operation_from_command;
+use crate::app::{App, CreateKnotOptions, UpdateKnotPatch};
 use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::invariant::{Invariant, InvariantType};
 use crate::domain::knot_type::KnotType;
@@ -156,13 +158,7 @@ fn operation_from_command_maps_gate_specific_arguments() {
     }
 }
 
-#[allow(clippy::too_many_lines)]
-#[test]
-fn execute_operation_gate_evaluate_covers_text_and_json_output() {
-    let root = unique_workspace("knots-write-dispatch-gate-ext");
-    setup_repo(&root);
-    let app = open_app(&root);
-
+fn create_simple_gate(app: &App) -> crate::app::KnotView {
     let gate = app
         .create_knot_with_options(
             "Ship gate",
@@ -177,36 +173,18 @@ fn execute_operation_gate_evaluate_covers_text_and_json_output() {
             },
         )
         .expect("gate should be created");
-    let gate = app
-        .set_state(
-            &gate.id,
-            crate::workflow_runtime::EVALUATING,
-            false,
-            gate.profile_etag.as_deref(),
-        )
-        .expect("gate should enter evaluating");
-    let text = execute_operation(
-        &app,
-        &WriteOperation::GateEvaluate(GateEvaluateOperation {
-            id: gate.id.clone(),
-            decision: "yes".to_string(),
-            invariant: None,
-            json: false,
-            actor_kind: None,
-            agent_name: None,
-            agent_model: None,
-            agent_version: None,
-        }),
+    app.set_state(
+        &gate.id,
+        crate::workflow_runtime::EVALUATING,
+        false,
+        gate.profile_etag.as_deref(),
     )
-    .expect("text evaluation should succeed");
-    assert!(text.contains("evaluated"));
-    assert!(text.contains("decision=yes"));
+    .expect("gate should enter evaluating")
+}
 
-    let target = app
-        .create_knot("Blocked work", None, Some("shipped"), None)
-        .expect("target should be created");
+fn create_gate_with_failure_modes(app: &App, target_id: &str) -> crate::app::KnotView {
     let mut failure_modes = BTreeMap::new();
-    failure_modes.insert("release blocked".to_string(), vec![target.id.clone()]);
+    failure_modes.insert("release blocked".to_string(), vec![target_id.to_string()]);
     let gate = app
         .create_knot_with_options(
             "Fail gate",
@@ -228,37 +206,50 @@ fn execute_operation_gate_evaluate_covers_text_and_json_output() {
         .update_knot(
             &gate.id,
             UpdateKnotPatch {
-                title: None,
-                description: None,
-                acceptance: None,
-                priority: None,
-                status: None,
-                knot_type: None,
-                add_tags: vec![],
-                remove_tags: vec![],
                 add_invariants: vec![Invariant::new(InvariantType::State, "release blocked")
                     .expect("invariant should build")],
-                remove_invariants: vec![],
-                clear_invariants: false,
-                gate_owner_kind: None,
-                gate_failure_modes: None,
-                clear_gate_failure_modes: false,
-                add_note: None,
-                add_handoff_capsule: None,
                 expected_profile_etag: gate.profile_etag.clone(),
-                force: false,
-                state_actor: StateActorMetadata::default(),
+                ..UpdateKnotPatch::default()
             },
         )
         .expect("gate should update");
-    let gate = app
-        .set_state(
-            &gate.id,
-            crate::workflow_runtime::EVALUATING,
-            false,
-            gate.profile_etag.as_deref(),
-        )
-        .expect("gate should enter evaluating");
+    app.set_state(
+        &gate.id,
+        crate::workflow_runtime::EVALUATING,
+        false,
+        gate.profile_etag.as_deref(),
+    )
+    .expect("gate should enter evaluating")
+}
+
+#[test]
+fn execute_operation_gate_evaluate_covers_text_and_json_output() {
+    let root = unique_workspace("knots-write-dispatch-gate-ext");
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let gate = create_simple_gate(&app);
+    let text = execute_operation(
+        &app,
+        &WriteOperation::GateEvaluate(GateEvaluateOperation {
+            id: gate.id.clone(),
+            decision: "yes".to_string(),
+            invariant: None,
+            json: false,
+            actor_kind: None,
+            agent_name: None,
+            agent_model: None,
+            agent_version: None,
+        }),
+    )
+    .expect("text evaluation should succeed");
+    assert!(text.contains("evaluated"));
+    assert!(text.contains("decision=yes"));
+
+    let target = app
+        .create_knot("Blocked work", None, Some("shipped"), None)
+        .expect("target should be created");
+    let gate = create_gate_with_failure_modes(&app, &target.id);
     let json = execute_operation(
         &app,
         &WriteOperation::GateEvaluate(GateEvaluateOperation {

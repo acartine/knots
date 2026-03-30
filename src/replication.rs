@@ -32,6 +32,12 @@ pub enum SyncOutcome {
     Deferred { active_leases: i64 },
 }
 
+enum PushAttemptResult {
+    Success(PushSummary),
+    AlreadySynced(PushSummary),
+    Retry(SyncError),
+}
+
 pub struct ReplicationService<'a> {
     conn: &'a Connection,
     repo_root: PathBuf,
@@ -89,7 +95,6 @@ impl<'a> ReplicationService<'a> {
         self.push_with_progress(&mut reporter)
     }
 
-    #[allow(clippy::too_many_lines)]
     pub fn push_with_progress(
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
@@ -129,100 +134,121 @@ impl<'a> ReplicationService<'a> {
         }
 
         for attempt in 0..MAX_ATTEMPTS {
-            self.reset_worktree_to_remote_or_local(&worktree, reporter)?;
-            worktree.ensure_clean(&self.git)?;
-
-            emit_progress(
-                reporter,
-                ProgressKind::Info,
-                format!("copying {local_event_files} local knot file(s) into the publish worktree"),
-            )?;
-            let copied_files = self.copy_files_into_worktree(worktree.path(), &local_files)?;
-            let stage_paths = stage_paths(worktree.path());
-            if stage_paths.is_empty() {
-                emit_progress(
-                    reporter,
-                    ProgressKind::Success,
-                    "remote knots already includes the local events",
-                )?;
-                return Ok(PushSummary {
-                    local_event_files,
-                    copied_files,
-                    committed: false,
-                    pushed: false,
-                    commit: None,
-                });
-            }
-
-            self.git.add_paths(worktree.path(), &stage_paths)?;
-
-            if !self.git.has_staged_changes(worktree.path(), &stage_paths)? {
-                emit_progress(
-                    reporter,
-                    ProgressKind::Success,
-                    "remote knots already includes the local events",
-                )?;
-                return Ok(PushSummary {
-                    local_event_files,
-                    copied_files,
-                    committed: false,
-                    pushed: false,
-                    commit: None,
-                });
-            }
-
-            emit_progress(reporter, ProgressKind::Info, "creating a publish commit")?;
-            let commit = self
-                .git
-                .commit(worktree.path(), "knots: publish local events")?;
-
-            emit_progress(
-                reporter,
-                ProgressKind::Info,
-                "pushing knots branch to origin",
-            )?;
-            match self
-                .git
-                .push_branch(worktree.path(), worktree.remote(), worktree.branch())
-            {
-                Ok(()) => {
-                    emit_progress(
-                        reporter,
-                        ProgressKind::Success,
-                        format!("push complete at {}", short_commit(&commit)),
-                    )?;
-                    return Ok(PushSummary {
-                        local_event_files,
-                        copied_files,
-                        committed: true,
-                        pushed: true,
-                        commit: Some(commit),
-                    });
-                }
-                Err(err) if err.is_non_fast_forward() && attempt + 1 < MAX_ATTEMPTS => {
+            match self.attempt_push(&worktree, &local_files, local_event_files, reporter)? {
+                PushAttemptResult::Success(summary) => return Ok(summary),
+                PushAttemptResult::AlreadySynced(summary) => return Ok(summary),
+                PushAttemptResult::Retry(err) if attempt + 1 < MAX_ATTEMPTS => {
                     emit_progress(
                         reporter,
                         ProgressKind::Warn,
                         format!(
-                            "push was rejected; refreshing remote state and retrying ({}/{})",
+                            "push was rejected; refreshing remote \
+                             state and retrying ({}/{})",
                             attempt + 2,
                             MAX_ATTEMPTS
                         ),
                     )?;
+                    let _ = err;
                     continue;
                 }
-                Err(err) if err.is_non_fast_forward() => {
+                PushAttemptResult::Retry(_) => {
                     return Err(SyncError::MergeConflictEscalation {
-                        message: "push rejected as non-fast-forward after retries".to_string(),
+                        message: "push rejected as non-fast-forward \
+                                  after retries"
+                            .to_string(),
                     });
                 }
-                Err(err) => return Err(err),
             }
         }
 
         Err(SyncError::MergeConflictEscalation {
             message: "push retries exhausted".to_string(),
         })
+    }
+
+    fn attempt_push(
+        &self,
+        worktree: &KnotsWorktree,
+        local_files: &[PathBuf],
+        local_event_files: u64,
+        reporter: &mut Option<&mut dyn ProgressReporter>,
+    ) -> Result<PushAttemptResult, SyncError> {
+        self.reset_worktree_to_remote_or_local(worktree, reporter)?;
+        worktree.ensure_clean(&self.git)?;
+
+        emit_progress(
+            reporter,
+            ProgressKind::Info,
+            format!(
+                "copying {local_event_files} local knot file(s) \
+                 into the publish worktree"
+            ),
+        )?;
+        let copied_files = self.copy_files_into_worktree(worktree.path(), local_files)?;
+        let stage_paths = stage_paths(worktree.path());
+        if stage_paths.is_empty() {
+            emit_progress(
+                reporter,
+                ProgressKind::Success,
+                "remote knots already includes the local events",
+            )?;
+            return Ok(PushAttemptResult::AlreadySynced(PushSummary {
+                local_event_files,
+                copied_files,
+                committed: false,
+                pushed: false,
+                commit: None,
+            }));
+        }
+
+        self.git.add_paths(worktree.path(), &stage_paths)?;
+
+        if !self.git.has_staged_changes(worktree.path(), &stage_paths)? {
+            emit_progress(
+                reporter,
+                ProgressKind::Success,
+                "remote knots already includes the local events",
+            )?;
+            return Ok(PushAttemptResult::AlreadySynced(PushSummary {
+                local_event_files,
+                copied_files,
+                committed: false,
+                pushed: false,
+                commit: None,
+            }));
+        }
+
+        emit_progress(reporter, ProgressKind::Info, "creating a publish commit")?;
+        let commit = self
+            .git
+            .commit(worktree.path(), "knots: publish local events")?;
+
+        emit_progress(
+            reporter,
+            ProgressKind::Info,
+            "pushing knots branch to origin",
+        )?;
+        match self
+            .git
+            .push_branch(worktree.path(), worktree.remote(), worktree.branch())
+        {
+            Ok(()) => {
+                emit_progress(
+                    reporter,
+                    ProgressKind::Success,
+                    format!("push complete at {}", short_commit(&commit)),
+                )?;
+                Ok(PushAttemptResult::Success(PushSummary {
+                    local_event_files,
+                    copied_files,
+                    committed: true,
+                    pushed: true,
+                    commit: Some(commit),
+                }))
+            }
+            Err(err) if err.is_non_fast_forward() => Ok(PushAttemptResult::Retry(err)),
+            Err(err) => Err(err),
+        }
     }
 
     pub fn sync(&self) -> Result<ReplicationSummary, SyncError> {

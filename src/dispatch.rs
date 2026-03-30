@@ -64,4 +64,70 @@ mod tests {
         assert_eq!(owner_kind_label(&OwnerKind::Human), "human");
         assert_eq!(owner_kind_label(&OwnerKind::Agent), "agent");
     }
+
+    #[test]
+    fn profile_lookup_id_prefixes_non_compatibility_workflow() {
+        let knot = KnotView {
+            id: "knots-1".to_string(),
+            alias: None,
+            title: "Test".to_string(),
+            state: "planning".to_string(),
+            updated_at: "2026-01-01T00:00:00Z".to_string(),
+            body: None,
+            description: None,
+            acceptance: None,
+            priority: None,
+            knot_type: crate::domain::knot_type::KnotType::Work,
+            tags: Vec::new(),
+            notes: Vec::new(),
+            handoff_capsules: Vec::new(),
+            invariants: Vec::new(),
+            step_history: Vec::new(),
+            gate: None,
+            lease: None,
+            lease_id: None,
+            workflow_id: "custom-wf".to_string(),
+            profile_id: "autopilot".to_string(),
+            profile_etag: None,
+            deferred_from_state: None,
+            blocked_from_state: None,
+            created_at: None,
+            edges: Vec::new(),
+            child_summaries: Vec::new(),
+        };
+        assert_eq!(profile_lookup_id(&knot), "custom-wf/autopilot");
+    }
+
+    #[test]
+    fn profile_lookup_id_returns_as_is_for_compatibility() {
+        let knot = KnotView {
+            id: "knots-2".to_string(),
+            alias: None,
+            title: "Compat".to_string(),
+            state: "planning".to_string(),
+            updated_at: "2026-01-01T00:00:00Z".to_string(),
+            body: None,
+            description: None,
+            acceptance: None,
+            priority: None,
+            knot_type: crate::domain::knot_type::KnotType::Work,
+            tags: Vec::new(),
+            notes: Vec::new(),
+            handoff_capsules: Vec::new(),
+            invariants: Vec::new(),
+            step_history: Vec::new(),
+            gate: None,
+            lease: None,
+            lease_id: None,
+            workflow_id: "compatibility".to_string(),
+            profile_id: "default".to_string(),
+            profile_etag: None,
+            deferred_from_state: None,
+            blocked_from_state: None,
+            created_at: None,
+            edges: Vec::new(),
+            child_summaries: Vec::new(),
+        };
+        assert_eq!(profile_lookup_id(&knot), "default");
+    }
 }

@@ -49,7 +49,6 @@ pub(crate) fn run_profile_command_with_context(
     run_profile_command_with_context_and_home(args, context, db_path, None)
 }
 
-#[allow(clippy::too_many_lines)]
 pub(crate) fn run_profile_command_with_context_and_home(
     args: &cli::ProfileArgs,
     context: &ProjectContext,
@@ -69,97 +68,10 @@ pub(crate) fn run_profile_command_with_context_and_home(
     let palette = ProfilePalette::auto();
     match &args.command {
         ProfileSubcommands::List(list_args) => {
-            let profiles = registry.list();
-            if list_args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&profiles)
-                        .expect("json serialization should work")
-                );
-            } else if profiles.is_empty() {
-                #[cfg(not(tarpaulin_include))]
-                {
-                    println!("{}", palette.dim("no profiles found"));
-                }
-            } else {
-                let app = open_app()?;
-                let default_id = app.default_profile_id().ok();
-                let default_quick_id = app.default_quick_profile_id().ok();
-
-                println!("{}", palette.heading("Profiles"));
-                let count = profiles.len();
-                for (index, profile) in profiles.into_iter().enumerate() {
-                    if index > 0 {
-                        println!();
-                    }
-                    let profile_name = profile
-                        .description
-                        .as_deref()
-                        .unwrap_or(profile.id.as_str());
-                    let mut marker = String::new();
-                    if default_id.as_deref() == Some(&profile.id) {
-                        marker.push_str(" (default)");
-                    }
-                    if default_quick_id.as_deref() == Some(&profile.id) {
-                        marker.push_str(" (default quick)");
-                    }
-                    let id_display = format!("{}{}", profile.id, marker);
-                    let fields = vec![
-                        ProfileField::new("name", profile_name),
-                        ProfileField::new("id", id_display),
-                        ProfileField::new(
-                            "planning",
-                            format_profile_gate_mode(&profile.planning_mode),
-                        ),
-                        ProfileField::new(
-                            "impl_review",
-                            format_profile_gate_mode(&profile.implementation_review_mode),
-                        ),
-                        ProfileField::new("output", format_profile_outputs(&profile.outputs)),
-                        ProfileField::new("initial_state", profile.initial_state.clone()),
-                        ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
-                    ];
-                    for line in format_profile_fields(&fields, &palette) {
-                        println!("{line}");
-                    }
-                }
-                if count > 1 {
-                    println!();
-                }
-                println!("{}", palette.dim(&format!("{count} profile(s)")));
-            }
+            print_profile_list(&registry, list_args, &open_app, &palette)?;
         }
         ProfileSubcommands::Show(show_args) => {
-            let profile = registry.require(&show_args.id)?.clone();
-            if show_args.json {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&profile).expect("json serialization should work")
-                );
-            } else {
-                println!("{}", palette.heading("Profile"));
-                let mut fields = vec![
-                    ProfileField::new("id", profile.id.clone()),
-                    ProfileField::new("planning", format_profile_gate_mode(&profile.planning_mode)),
-                    ProfileField::new(
-                        "impl_review",
-                        format_profile_gate_mode(&profile.implementation_review_mode),
-                    ),
-                    ProfileField::new("output", format_profile_outputs(&profile.outputs)),
-                    ProfileField::new("initial_state", profile.initial_state.clone()),
-                    ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
-                ];
-                if let Some(description) = profile.description.as_deref() {
-                    fields.insert(1, ProfileField::new("description", description));
-                }
-                for line in format_profile_fields(&fields, &palette) {
-                    println!("{line}");
-                }
-                println!("{}", palette.dim("workflow:"));
-                for line in workflow_diagram::render(&profile) {
-                    println!("  {line}");
-                }
-            }
+            print_profile_show(&registry, show_args, &palette)?;
         }
         ProfileSubcommands::SetDefault(set_default_args) => {
             let app = open_app()?;
@@ -172,33 +84,149 @@ pub(crate) fn run_profile_command_with_context_and_home(
             println!("default quick profile: {}", profile_id);
         }
         ProfileSubcommands::Set(set_args) => {
-            let app = open_app()?;
-            let profile = registry.require(&set_args.profile)?;
-            let current = app
-                .show_knot(&set_args.id)?
-                .ok_or_else(|| app::AppError::NotFound(set_args.id.clone()))?;
-            let state = resolve_profile_state_selection(
-                profile,
-                set_args.state.as_deref(),
-                &current.state,
-            )?;
-            let knot = app.set_profile(
-                &set_args.id,
-                &profile.id,
-                &state,
-                set_args.if_match.as_deref(),
-            )?;
-            let short_id = crate::knot_id::display_id(&knot.id);
-            let knot_label = match knot.alias.as_deref() {
-                Some(alias) => format!("{alias} ({short_id})"),
-                None => short_id.to_string(),
-            };
-            println!(
-                "updated {} [{}] profile={}",
-                knot_label, knot.state, knot.profile_id
-            );
+            run_profile_set(&registry, set_args, &open_app)?;
         }
     }
+    Ok(())
+}
+
+fn print_profile_list(
+    registry: &workflow::ProfileRegistry,
+    list_args: &cli::ProfileListArgs,
+    open_app: &dyn Fn() -> Result<app::App, app::AppError>,
+    palette: &ProfilePalette,
+) -> Result<(), app::AppError> {
+    let profiles = registry.list();
+    if list_args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&profiles).expect("json serialization should work")
+        );
+    } else if profiles.is_empty() {
+        #[cfg(not(tarpaulin_include))]
+        {
+            println!("{}", palette.dim("no profiles found"));
+        }
+    } else {
+        let app = open_app()?;
+        let default_id = app.default_profile_id().ok();
+        let default_quick_id = app.default_quick_profile_id().ok();
+        println!("{}", palette.heading("Profiles"));
+        let count = profiles.len();
+        for (index, profile) in profiles.into_iter().enumerate() {
+            if index > 0 {
+                println!();
+            }
+            print_profile_entry(&profile, &default_id, &default_quick_id, palette);
+        }
+        if count > 1 {
+            println!();
+        }
+        println!("{}", palette.dim(&format!("{count} profile(s)")));
+    }
+    Ok(())
+}
+
+fn print_profile_entry(
+    profile: &workflow::ProfileDefinition,
+    default_id: &Option<String>,
+    default_quick_id: &Option<String>,
+    palette: &ProfilePalette,
+) {
+    let profile_name = profile
+        .description
+        .as_deref()
+        .unwrap_or(profile.id.as_str());
+    let mut marker = String::new();
+    if default_id.as_deref() == Some(&profile.id) {
+        marker.push_str(" (default)");
+    }
+    if default_quick_id.as_deref() == Some(&profile.id) {
+        marker.push_str(" (default quick)");
+    }
+    let id_display = format!("{}{}", profile.id, marker);
+    let fields = vec![
+        ProfileField::new("name", profile_name),
+        ProfileField::new("id", id_display),
+        ProfileField::new("planning", format_profile_gate_mode(&profile.planning_mode)),
+        ProfileField::new(
+            "impl_review",
+            format_profile_gate_mode(&profile.implementation_review_mode),
+        ),
+        ProfileField::new("output", format_profile_outputs(&profile.outputs)),
+        ProfileField::new("initial_state", profile.initial_state.clone()),
+        ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
+    ];
+    for line in format_profile_fields(&fields, palette) {
+        println!("{line}");
+    }
+}
+
+fn print_profile_show(
+    registry: &workflow::ProfileRegistry,
+    show_args: &cli::ProfileShowArgs,
+    palette: &ProfilePalette,
+) -> Result<(), app::AppError> {
+    let profile = registry.require(&show_args.id)?.clone();
+    if show_args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&profile).expect("json serialization should work")
+        );
+    } else {
+        println!("{}", palette.heading("Profile"));
+        let mut fields = vec![
+            ProfileField::new("id", profile.id.clone()),
+            ProfileField::new("planning", format_profile_gate_mode(&profile.planning_mode)),
+            ProfileField::new(
+                "impl_review",
+                format_profile_gate_mode(&profile.implementation_review_mode),
+            ),
+            ProfileField::new("output", format_profile_outputs(&profile.outputs)),
+            ProfileField::new("initial_state", profile.initial_state.clone()),
+            ProfileField::new("terminal_states", profile.terminal_states.join(", ")),
+        ];
+        if let Some(description) = profile.description.as_deref() {
+            fields.insert(1, ProfileField::new("description", description));
+        }
+        for line in format_profile_fields(&fields, palette) {
+            println!("{line}");
+        }
+        println!("{}", palette.dim("workflow:"));
+        for line in workflow_diagram::render(&profile) {
+            println!("  {line}");
+        }
+    }
+    Ok(())
+}
+
+fn run_profile_set(
+    registry: &workflow::ProfileRegistry,
+    set_args: &cli::ProfileSetArgs,
+    open_app: &dyn Fn() -> Result<app::App, app::AppError>,
+) -> Result<(), app::AppError> {
+    let app = open_app()?;
+    let profile = registry.require(&set_args.profile)?;
+    let current = app
+        .show_knot(&set_args.id)?
+        .ok_or_else(|| app::AppError::NotFound(set_args.id.clone()))?;
+    let state =
+        resolve_profile_state_selection(profile, set_args.state.as_deref(), &current.state)?;
+    let knot = app.set_profile(
+        &set_args.id,
+        &profile.id,
+        &state,
+        set_args.if_match.as_deref(),
+    )?;
+    let short_id = crate::knot_id::display_id(&knot.id);
+    let knot_label = match knot.alias.as_deref() {
+        Some(alias) => format!("{alias} ({short_id})"),
+        None => short_id.to_string(),
+    };
+    println!(
+        "updated {} [{}] profile={}",
+        knot_label, knot.state, knot.profile_id
+    );
     Ok(())
 }
 

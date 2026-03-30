@@ -100,7 +100,6 @@ where
     })
 }
 
-#[allow(clippy::too_many_lines)]
 fn run_compat_test_inner(
     config: &CompatTestConfig,
     workspace: &Path,
@@ -108,9 +107,55 @@ fn run_compat_test_inner(
 ) -> Result<TestResult, AppError> {
     let package_dir = workspace.join("package");
     std::fs::create_dir_all(&package_dir)?;
-    let package_name = "knots_sdlc";
 
+    let mut steps = run_loom_build_steps(config, workspace, &package_dir, reporter)?;
+    let bundle_path = steps
+        .last()
+        .expect("build steps should include bundle")
+        .detail
+        .strip_prefix("wrote ")
+        .expect("build detail should start with 'wrote '")
+        .to_string();
+
+    let (app, workflow_id, profile_id, action_state, prompt) =
+        install_and_resolve_workflow(workspace, Path::new(&bundle_path))?;
+    steps.push(run_step("install_bundle", reporter, || {
+        Ok(format!("selected {profile_id}"))
+    })?);
+
+    let scenarios = run_scenarios(
+        &app,
+        workspace,
+        &workflow_id,
+        &profile_id,
+        &action_state,
+        &prompt,
+        config.mode,
+    )?;
+    steps.push(run_step("exercise_runtime", reporter, || {
+        Ok(format!("{} scenario(s)", scenarios.len()))
+    })?);
+
+    Ok(TestResult {
+        success: true,
+        mode: config.mode,
+        source: PathBuf::from("<builtin:knots_sdlc>"),
+        workflow_id,
+        workspace_path: Some(workspace.to_path_buf()),
+        steps,
+        scenarios,
+    })
+}
+
+fn run_loom_build_steps(
+    config: &CompatTestConfig,
+    workspace: &Path,
+    package_dir: &Path,
+    reporter: &mut dyn FnMut(ProgressUpdate),
+) -> Result<Vec<StepResult>, AppError> {
+    let package_name = "knots_sdlc";
     let mut steps = Vec::new();
+
     steps.push(run_step("check_loom", reporter, || {
         run_loom(config.loom_bin.as_deref(), workspace, &["--version"])
     })?);
@@ -118,57 +163,51 @@ fn run_compat_test_inner(
     steps.push(run_step("prepare_package", reporter, || {
         run_loom(
             config.loom_bin.as_deref(),
-            &package_dir,
+            package_dir,
             &["init", package_name],
         )?;
-        crate::loom_compat_bundle::write_builtin_loom_package(&package_dir)?;
+        crate::loom_compat_bundle::write_builtin_loom_package(package_dir)?;
         Ok("embedded knots_sdlc".to_string())
     })?);
 
     steps.push(run_step("validate", reporter, || {
-        run_loom(config.loom_bin.as_deref(), &package_dir, &["validate"])
+        run_loom(config.loom_bin.as_deref(), package_dir, &["validate"])
     })?);
 
     let mut bundle = None;
     steps.push(run_step("build", reporter, || {
         let rendered = run_loom(
             config.loom_bin.as_deref(),
-            &package_dir,
+            package_dir,
             &["build", "--emit", "knots-bundle"],
         )?;
-        let bundle_path = workspace.join(if rendered.trim_start().starts_with('{') {
+        let ext = if rendered.trim_start().starts_with('{') {
             "bundle.json"
         } else {
             "bundle.toml"
-        });
+        };
+        let bundle_path = workspace.join(ext);
         std::fs::write(&bundle_path, &rendered)?;
-        bundle = Some((rendered, bundle_path.clone()));
+        bundle = Some(bundle_path.clone());
         Ok(format!("wrote {}", bundle_path.display()))
     })?);
-    let bundle_path = bundle.expect("build step should set bundle").1;
+    let _ = bundle.expect("build step should set bundle");
+    Ok(steps)
+}
 
+fn install_and_resolve_workflow(
+    workspace: &Path,
+    bundle_path: &Path,
+) -> Result<(App, String, String, String, PromptDefinition), AppError> {
     let db_path = workspace.join(".knots/cache/state.sqlite");
     if let Some(parent) = db_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
     let _ = db::open_connection(&db_path.to_string_lossy())?;
-    let install_detail = run_step("install_bundle", reporter, || {
-        let installed_id = installed_workflows::install_bundle(workspace, &bundle_path)?;
-        let config_selection = installed_workflows::set_current_workflow_selection(
-            workspace,
-            &installed_id,
-            None,
-            None,
-        )?;
-        Ok(format!(
-            "selected {}",
-            config_selection
-                .current_profile_id()
-                .map(str::to_string)
-                .unwrap_or(installed_id)
-        ))
-    })?;
-    steps.push(install_detail);
+
+    let installed_id = installed_workflows::install_bundle(workspace, bundle_path)?;
+    let _config_selection =
+        installed_workflows::set_current_workflow_selection(workspace, &installed_id, None, None)?;
 
     let app = App::open(&db_path.to_string_lossy(), workspace.to_path_buf())?;
     let installed = InstalledWorkflowRegistry::load(workspace)?;
@@ -202,28 +241,7 @@ fn run_compat_test_inner(
             ))
         })?
         .clone();
-    let scenarios = run_scenarios(
-        &app,
-        workspace,
-        &workflow.id,
-        &profile_id,
-        &action_state,
-        &prompt,
-        config.mode,
-    )?;
-    steps.push(run_step("exercise_runtime", reporter, || {
-        Ok(format!("{} scenario(s)", scenarios.len()))
-    })?);
-
-    Ok(TestResult {
-        success: true,
-        mode: config.mode,
-        source: PathBuf::from("<builtin:knots_sdlc>"),
-        workflow_id: workflow.id.clone(),
-        workspace_path: Some(workspace.to_path_buf()),
-        steps,
-        scenarios,
-    })
+    Ok((app, workflow.id.clone(), profile_id, action_state, prompt))
 }
 
 fn run_step(

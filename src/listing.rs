@@ -456,6 +456,22 @@ mod tests {
     }
 
     #[test]
+    fn filters_by_knot_type() {
+        let knots = vec![
+            knot("K-1", "Bug fix", "planning", Some("task"), &[], None),
+            knot("K-2", "Quality gate", "planning", Some("gate"), &[], None),
+        ];
+        let filter = KnotListFilter {
+            include_all: false,
+            knot_type: Some("gate".to_string()),
+            ..KnotListFilter::default()
+        };
+        let filtered = apply_filters(knots, &filter);
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].id, "K-2");
+    }
+
+    #[test]
     fn allows_state_deferred_explicit() {
         let knots = vec![
             knot("K-1", "Active", "implementing", Some("task"), &[], None),
