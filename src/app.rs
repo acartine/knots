@@ -3748,3 +3748,6 @@ mod tests_step_history;
 #[cfg(test)]
 #[path = "app/tests_terminal_deferred.rs"]
 mod tests_terminal_deferred;
+#[cfg(test)]
+#[path = "app/tests_update_ext.rs"]
+mod tests_update_ext;
