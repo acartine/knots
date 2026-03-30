@@ -38,6 +38,12 @@ fn setup_git_repo(prefix: &str) -> PathBuf {
     root
 }
 
+fn managed_hook_path(root: &std::path::Path) -> PathBuf {
+    root.join(".git")
+        .join("hooks")
+        .join(crate::git_hooks::MANAGED_HOOKS[0])
+}
+
 #[test]
 fn knot_ref_prefers_alias_when_available() {
     let with_alias = crate::app::KnotView {
@@ -77,7 +83,8 @@ fn knot_ref_prefers_alias_when_available() {
 
 #[test]
 fn maybe_run_self_command_returns_none_for_non_self_commands() {
-    let outcome = maybe_run_self_command(&Commands::Init).expect("init probe should succeed");
+    let cwd = std::env::current_dir().expect("cwd should resolve");
+    let outcome = maybe_run_self_command(&Commands::Init, &cwd).expect("init probe should succeed");
     assert!(outcome.is_none());
 }
 
@@ -88,12 +95,15 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     std::fs::write(&script, "#!/bin/sh\nexit 0\n").expect("script should be writable");
     let script_url = format!("file://{}", script.display());
 
-    let upgrade_outcome = maybe_run_self_command(&Commands::Upgrade(SelfUpdateArgs {
-        version: Some("v1.2.3".to_string()),
-        repo: Some("acartine/knots".to_string()),
-        install_dir: Some(dir.clone()),
-        script_url: script_url.clone(),
-    }))
+    let upgrade_outcome = maybe_run_self_command(
+        &Commands::Upgrade(SelfUpdateArgs {
+            version: Some("v1.2.3".to_string()),
+            repo: Some("acartine/knots".to_string()),
+            install_dir: Some(dir.clone()),
+            script_url: script_url.clone(),
+        }),
+        &dir,
+    )
     .expect("upgrade command should succeed")
     .expect("upgrade should emit summary");
     assert!(upgrade_outcome.starts_with("Upgrade"));
@@ -102,12 +112,15 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     assert!(upgrade_outcome.contains("repo:  acartine/knots"));
     assert!(upgrade_outcome.contains("install_dir:  "));
 
-    let second_upgrade_outcome = maybe_run_self_command(&Commands::Upgrade(SelfUpdateArgs {
-        version: Some("v1.2.4".to_string()),
-        repo: Some("acartine/knots".to_string()),
-        install_dir: Some(dir.clone()),
-        script_url,
-    }))
+    let second_upgrade_outcome = maybe_run_self_command(
+        &Commands::Upgrade(SelfUpdateArgs {
+            version: Some("v1.2.4".to_string()),
+            repo: Some("acartine/knots".to_string()),
+            install_dir: Some(dir.clone()),
+            script_url,
+        }),
+        &dir,
+    )
     .expect("second upgrade command should succeed")
     .expect("second upgrade should emit summary");
     assert!(second_upgrade_outcome.starts_with("Upgrade"));
@@ -121,10 +134,13 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     std::fs::write(&previous, b"bin").expect("previous should be writable");
     std::fs::write(&legacy_previous, b"bin").expect("legacy previous should be writable");
 
-    let uninstall_top = maybe_run_self_command(&Commands::Uninstall(SelfUninstallArgs {
-        bin_path: Some(binary.clone()),
-        remove_previous: false,
-    }))
+    let uninstall_top = maybe_run_self_command(
+        &Commands::Uninstall(SelfUninstallArgs {
+            bin_path: Some(binary.clone()),
+            remove_previous: false,
+        }),
+        &dir,
+    )
     .expect("top-level uninstall should succeed")
     .expect("top-level uninstall should emit output");
     assert!(uninstall_top.contains("removed"));
@@ -134,10 +150,13 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     assert!(legacy_previous.exists());
 
     std::fs::write(&binary, b"bin").expect("binary should be writable for second uninstall");
-    let uninstall_with_previous = maybe_run_self_command(&Commands::Uninstall(SelfUninstallArgs {
-        bin_path: Some(binary.clone()),
-        remove_previous: true,
-    }))
+    let uninstall_with_previous = maybe_run_self_command(
+        &Commands::Uninstall(SelfUninstallArgs {
+            bin_path: Some(binary.clone()),
+            remove_previous: true,
+        }),
+        &dir,
+    )
     .expect("second top-level uninstall should succeed")
     .expect("second top-level uninstall should emit output");
     assert!(uninstall_with_previous.contains("removed"));
@@ -146,6 +165,68 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     assert!(!previous.exists());
     assert!(!legacy_previous.exists());
 
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn maybe_run_self_command_upgrade_hint_tracks_hook_health() {
+    let dir = unique_dir("knots-main-self-upgrade-hooks");
+    let script = dir.join("install.sh");
+    std::fs::write(&script, "#!/bin/sh\nexit 0\n").expect("script should be writable");
+    let script_url = format!("file://{}", script.display());
+
+    let clean_repo = setup_git_repo("knots-main-self-upgrade-clean");
+    crate::git_hooks::install_hooks(&clean_repo).expect("hooks should install");
+    let clean_outcome = maybe_run_self_command(
+        &Commands::Upgrade(SelfUpdateArgs {
+            version: None,
+            repo: None,
+            install_dir: Some(dir.clone()),
+            script_url: script_url.clone(),
+        }),
+        &clean_repo,
+    )
+    .expect("clean upgrade should succeed")
+    .expect("clean upgrade should emit summary");
+    assert!(!clean_outcome.contains("kno doctor"));
+
+    let missing_repo = setup_git_repo("knots-main-self-upgrade-missing");
+    let missing_outcome = maybe_run_self_command(
+        &Commands::Upgrade(SelfUpdateArgs {
+            version: None,
+            repo: None,
+            install_dir: Some(dir.clone()),
+            script_url: script_url.clone(),
+        }),
+        &missing_repo,
+    )
+    .expect("missing-hook upgrade should succeed")
+    .expect("missing-hook upgrade should emit summary");
+    assert!(missing_outcome.contains("kno doctor"));
+
+    let stale_repo = setup_git_repo("knots-main-self-upgrade-stale");
+    crate::git_hooks::install_hooks(&stale_repo).expect("hooks should install");
+    std::fs::write(
+        managed_hook_path(&stale_repo),
+        "#!/usr/bin/env bash\n# stale\n",
+    )
+    .expect("stale hook fixture should be writable");
+    let stale_outcome = maybe_run_self_command(
+        &Commands::Upgrade(SelfUpdateArgs {
+            version: None,
+            repo: None,
+            install_dir: Some(dir.clone()),
+            script_url,
+        }),
+        &stale_repo,
+    )
+    .expect("stale-hook upgrade should succeed")
+    .expect("stale-hook upgrade should emit summary");
+    assert!(stale_outcome.contains("kno doctor"));
+
+    let _ = std::fs::remove_dir_all(clean_repo);
+    let _ = std::fs::remove_dir_all(missing_repo);
+    let _ = std::fs::remove_dir_all(stale_repo);
     let _ = std::fs::remove_dir_all(dir);
 }
 
