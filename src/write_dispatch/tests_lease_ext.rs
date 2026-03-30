@@ -444,4 +444,3 @@ fn note_auto_fills_from_lease_agent_info() {
 
     let _ = std::fs::remove_dir_all(root);
 }
-

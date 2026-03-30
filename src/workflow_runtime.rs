@@ -231,7 +231,6 @@ fn validate_lease_transition(from: &str, to: &str, force: bool) -> Result<(), Pr
     )))
 }
 
-
 #[cfg(test)]
 #[path = "workflow_runtime_tests.rs"]
 mod tests;

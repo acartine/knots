@@ -52,7 +52,6 @@ pub fn list_knot_warm(conn: &Connection) -> Result<Vec<WarmKnotRecord>> {
     Ok(result)
 }
 
-
 pub fn upsert_cold_catalog(
     conn: &Connection,
     id: &str,
@@ -76,7 +75,6 @@ ON CONFLICT(id) DO UPDATE SET
     })?;
     Ok(())
 }
-
 
 pub fn get_cold_catalog(conn: &Connection, id: &str) -> Result<Option<ColdCatalogRecord>> {
     conn.query_row(
@@ -146,7 +144,6 @@ pub fn delete_cold_catalog(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
-
 pub fn get_hot_window_days(conn: &Connection) -> Result<i64> {
     let value = super::get_meta(conn, "hot_window_days")?;
     let parsed = value
@@ -191,7 +188,6 @@ pub fn get_pull_drift_warn_threshold(conn: &Connection) -> Result<u64> {
     Ok(parsed)
 }
 
-
 pub fn count_active_leases(conn: &Connection) -> Result<i64> {
     conn.query_row(
         r#"
@@ -203,7 +199,6 @@ WHERE knot_type = 'lease'
         |row| row.get(0),
     )
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EdgeRecord {
@@ -218,7 +213,6 @@ pub enum EdgeDirection {
     Outgoing,
     Both,
 }
-
 
 pub fn insert_edge(conn: &Connection, src: &str, kind: &str, dst: &str) -> Result<()> {
     with_write_retry(|| {
@@ -285,4 +279,3 @@ pub fn list_edges_by_kind(conn: &Connection, kind: &str) -> Result<Vec<EdgeRecor
     }
     Ok(result)
 }
-

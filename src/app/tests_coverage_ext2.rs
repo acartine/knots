@@ -2,16 +2,12 @@ use std::collections::BTreeMap;
 
 use serde_json::Value;
 
-use super::{
-    AppError, CreateKnotOptions, GateDecision,
-    StateActorMetadata, UpdateKnotPatch,
-};
+use super::{AppError, CreateKnotOptions, GateDecision, StateActorMetadata, UpdateKnotPatch};
 use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::invariant::{Invariant, InvariantType};
 
 use super::tests_coverage_ext::{
-    open_app, read_event_payloads,
-    unique_workspace, CUSTOM_WORKFLOW_BUNDLE,
+    open_app, read_event_payloads, unique_workspace, CUSTOM_WORKFLOW_BUNDLE,
 };
 
 #[test]

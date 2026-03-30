@@ -20,13 +20,11 @@ mod catalog;
 mod migrations;
 
 pub use catalog::{
-    count_active_leases, delete_cold_catalog, delete_edge,
-    delete_knot_warm, get_cold_catalog, get_hot_window_days,
-    get_knot_warm, get_pull_drift_warn_threshold,
-    get_sync_fetch_blob_limit_kb, insert_edge,
-    list_cold_catalog, list_edges, list_edges_by_kind,
-    list_knot_warm, search_cold_catalog, upsert_cold_catalog, upsert_knot_warm,
-    EdgeDirection, EdgeRecord,
+    count_active_leases, delete_cold_catalog, delete_edge, delete_knot_warm, get_cold_catalog,
+    get_hot_window_days, get_knot_warm, get_pull_drift_warn_threshold,
+    get_sync_fetch_blob_limit_kb, insert_edge, list_cold_catalog, list_edges, list_edges_by_kind,
+    list_knot_warm, search_cold_catalog, upsert_cold_catalog, upsert_knot_warm, EdgeDirection,
+    EdgeRecord,
 };
 
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
@@ -109,7 +107,6 @@ fn from_json_text<T: DeserializeOwned>(raw: String, column: usize) -> Result<T> 
         .map_err(|err| rusqlite::Error::FromSqlConversionFailure(column, Type::Text, Box::new(err)))
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct KnotCacheRecord {
     pub id: String,
@@ -181,7 +178,6 @@ pub struct UpsertKnotHot<'a> {
     pub blocked_from_state: Option<&'a str>,
     pub created_at: Option<&'a str>,
 }
-
 
 pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()> {
     let tags_json = to_json_text(args.tags)?;
@@ -354,11 +350,9 @@ pub fn delete_knot_hot(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
-
 fn default_workflow_id() -> String {
     "compatibility".to_string()
 }
-
 
 pub fn get_meta(conn: &Connection, key: &str) -> Result<Option<String>> {
     conn.query_row(
@@ -384,7 +378,5 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests;
-

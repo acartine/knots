@@ -1,6 +1,5 @@
 use super::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::db;
-use crate::domain::metadata::MetadataEntryInput;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 

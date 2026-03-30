@@ -99,17 +99,26 @@ pub(super) fn read_event_payloads(root: &Path, event_type: &str) -> Vec<Value> {
     payloads
 }
 
-
 pub(super) fn default_update_patch() -> UpdateKnotPatch {
     UpdateKnotPatch {
-        title: None, description: None, acceptance: None,
-        priority: None, status: None, knot_type: None,
-        add_tags: vec![], remove_tags: vec![],
-        add_invariants: vec![], remove_invariants: vec![],
-        clear_invariants: false, gate_owner_kind: None,
-        gate_failure_modes: None, clear_gate_failure_modes: false,
-        add_note: None, add_handoff_capsule: None,
-        expected_profile_etag: None, force: false,
+        title: None,
+        description: None,
+        acceptance: None,
+        priority: None,
+        status: None,
+        knot_type: None,
+        add_tags: vec![],
+        remove_tags: vec![],
+        add_invariants: vec![],
+        remove_invariants: vec![],
+        clear_invariants: false,
+        gate_owner_kind: None,
+        gate_failure_modes: None,
+        clear_gate_failure_modes: false,
+        add_note: None,
+        add_handoff_capsule: None,
+        expected_profile_etag: None,
+        force: false,
         state_actor: StateActorMetadata::default(),
     }
 }
@@ -121,11 +130,21 @@ fn update_knot_rejects_blank_title_and_bad_priority() {
     let knot = app
         .create_knot("Coverage", None, Some("idea"), Some("default"))
         .expect("knot should be created");
-    let empty = app.update_knot(&knot.id, UpdateKnotPatch {
-        title: Some("   ".to_string()), ..default_update_patch() });
+    let empty = app.update_knot(
+        &knot.id,
+        UpdateKnotPatch {
+            title: Some("   ".to_string()),
+            ..default_update_patch()
+        },
+    );
     assert!(matches!(empty, Err(AppError::InvalidArgument(_))));
-    let bad = app.update_knot(&knot.id, UpdateKnotPatch {
-        priority: Some(9), ..default_update_patch() });
+    let bad = app.update_knot(
+        &knot.id,
+        UpdateKnotPatch {
+            priority: Some(9),
+            ..default_update_patch()
+        },
+    );
     assert!(matches!(bad, Err(AppError::InvalidArgument(_))));
     let _ = std::fs::remove_dir_all(root);
 }
@@ -137,17 +156,36 @@ fn update_knot_tag_normalization_branches() {
     let knot = app
         .create_knot("Coverage", None, Some("idea"), Some("default"))
         .expect("knot should be created");
-    let no_effect = app.update_knot(&knot.id, UpdateKnotPatch {
-        add_tags: vec!["   ".to_string()], remove_tags: vec!["   ".to_string()],
-        ..default_update_patch() }).expect("no-op tags should return knot state");
+    let no_effect = app
+        .update_knot(
+            &knot.id,
+            UpdateKnotPatch {
+                add_tags: vec!["   ".to_string()],
+                remove_tags: vec!["   ".to_string()],
+                ..default_update_patch()
+            },
+        )
+        .expect("no-op tags should return knot state");
     assert_eq!(no_effect.id, knot.id);
-    let with_tag = app.update_knot(&knot.id, UpdateKnotPatch {
-        add_tags: vec!["alpha".to_string()], ..default_update_patch()
-    }).expect("tag add should succeed");
+    let with_tag = app
+        .update_knot(
+            &knot.id,
+            UpdateKnotPatch {
+                add_tags: vec!["alpha".to_string()],
+                ..default_update_patch()
+            },
+        )
+        .expect("tag add should succeed");
     assert!(with_tag.tags.contains(&"alpha".to_string()));
-    let removed = app.update_knot(&knot.id, UpdateKnotPatch {
-        remove_tags: vec!["alpha".to_string()], ..default_update_patch()
-    }).expect("tag remove should succeed");
+    let removed = app
+        .update_knot(
+            &knot.id,
+            UpdateKnotPatch {
+                remove_tags: vec!["alpha".to_string()],
+                ..default_update_patch()
+            },
+        )
+        .expect("tag remove should succeed");
     assert!(!removed.tags.contains(&"alpha".to_string()));
     let _ = std::fs::remove_dir_all(root);
 }

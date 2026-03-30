@@ -18,7 +18,6 @@ struct Migration {
     sql: &'static str,
 }
 
-
 const MIGRATIONS: [Migration; 13] = [
     Migration {
         version: 1,
@@ -335,7 +334,6 @@ pub(super) fn needs_schema_bootstrap(conn: &Connection) -> Result<bool> {
     Ok(false)
 }
 
-
 fn table_exists(conn: &Connection, table_name: &str) -> Result<bool> {
     let exists: i64 = conn.query_row(
         "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1)",
@@ -344,4 +342,3 @@ fn table_exists(conn: &Connection, table_name: &str) -> Result<bool> {
     )?;
     Ok(exists == 1)
 }
-

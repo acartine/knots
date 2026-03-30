@@ -1,8 +1,7 @@
 use super::{
-    initial_state, is_action_state_for_profile, is_queue_state_for_profile,
-    is_terminal_state, next_happy_path_state, next_outcome_state,
-    owner_kind_for_state, queue_state_for_stage, validate_transition,
-    EVALUATING, READY_TO_EVALUATE,
+    initial_state, is_action_state_for_profile, is_queue_state_for_profile, is_terminal_state,
+    next_happy_path_state, next_outcome_state, owner_kind_for_state, queue_state_for_stage,
+    validate_transition, EVALUATING, READY_TO_EVALUATE,
 };
 use crate::domain::gate::GateData;
 use crate::domain::knot_type::KnotType;
@@ -11,8 +10,7 @@ use crate::workflow::{OwnerKind, ProfileRegistry};
 use uuid::Uuid;
 
 fn unique_workspace(prefix: &str) -> std::path::PathBuf {
-    let path = std::env::temp_dir()
-        .join(format!("{prefix}-{}", Uuid::now_v7()));
+    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&path).expect("workspace should be creatable");
     path
 }
@@ -60,8 +58,7 @@ fn lease_terminal_state_is_terminated() {
     )
     .unwrap());
     assert!(
-        !is_terminal_state(&registry, "autopilot", KnotType::Lease, super::LEASE_ACTIVE,)
-            .unwrap()
+        !is_terminal_state(&registry, "autopilot", KnotType::Lease, super::LEASE_ACTIVE,).unwrap()
     );
 }
 
@@ -163,8 +160,7 @@ fn work_runtime_delegates_to_profile_definition() {
     )
     .unwrap());
     assert!(
-        is_action_state_for_profile(&registry, "autopilot", KnotType::Work, "planning",)
-            .unwrap()
+        is_action_state_for_profile(&registry, "autopilot", KnotType::Work, "planning",).unwrap()
     );
     assert_eq!(
         next_happy_path_state(&registry, "autopilot", KnotType::Work, "planning").unwrap(),
@@ -197,13 +193,10 @@ fn queue_and_action_checks_report_unknown_profiles() {
 #[test]
 fn gate_and_lease_queue_action_helpers_cover_remaining_paths() {
     let registry = ProfileRegistry::load().unwrap();
-    assert!(is_queue_state_for_profile(
-        &registry,
-        "autopilot",
-        KnotType::Gate,
-        READY_TO_EVALUATE,
-    )
-    .unwrap());
+    assert!(
+        is_queue_state_for_profile(&registry, "autopilot", KnotType::Gate, READY_TO_EVALUATE,)
+            .unwrap()
+    );
     assert!(is_queue_state_for_profile(
         &registry,
         "autopilot",
@@ -212,8 +205,7 @@ fn gate_and_lease_queue_action_helpers_cover_remaining_paths() {
     )
     .unwrap());
     assert!(
-        is_action_state_for_profile(&registry, "autopilot", KnotType::Gate, EVALUATING,)
-            .unwrap()
+        is_action_state_for_profile(&registry, "autopilot", KnotType::Gate, EVALUATING,).unwrap()
     );
     assert!(is_action_state_for_profile(
         &registry,

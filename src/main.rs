@@ -1,5 +1,6 @@
 mod app;
 mod cli;
+mod cli_agent;
 mod cli_help;
 mod cli_loom;
 mod cli_ops;
@@ -40,6 +41,7 @@ mod perf;
 mod poll_claim;
 mod profile;
 mod profile_commands;
+mod profile_normalize;
 mod progress;
 mod project;
 mod project_commands;

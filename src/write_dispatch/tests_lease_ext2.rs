@@ -3,9 +3,7 @@ use crate::app::StateActorMetadata;
 use crate::poll_claim;
 use crate::write_queue::{NextOperation, UpdateOperation, WriteOperation};
 
-use super::tests_lease_ext::{
-    create_test_lease, open_app, parse, setup_repo, unique_workspace,
-};
+use super::tests_lease_ext::{create_test_lease, open_app, parse, setup_repo, unique_workspace};
 
 #[test]
 fn explicit_note_flags_override_lease_agent_info() {

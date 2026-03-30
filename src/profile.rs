@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap};
 use std::error::Error;
 use std::fmt;
 use std::path::Path;
@@ -26,35 +26,6 @@ pub const SHIPPED: &str = "shipped";
 pub const BLOCKED: &str = "blocked";
 pub const DEFERRED: &str = "deferred";
 pub const ABANDONED: &str = "abandoned";
-
-const ALL_STATES: [&str; 16] = [
-    READY_FOR_PLANNING,
-    PLANNING,
-    READY_FOR_PLAN_REVIEW,
-    PLAN_REVIEW,
-    READY_FOR_IMPLEMENTATION,
-    IMPLEMENTATION,
-    READY_FOR_IMPLEMENTATION_REVIEW,
-    IMPLEMENTATION_REVIEW,
-    READY_FOR_SHIPMENT,
-    SHIPMENT,
-    READY_FOR_SHIPMENT_REVIEW,
-    SHIPMENT_REVIEW,
-    SHIPPED,
-    BLOCKED,
-    DEFERRED,
-    ABANDONED,
-];
-
-const PLANNING_STATES: [&str; 4] = [
-    READY_FOR_PLANNING,
-    PLANNING,
-    READY_FOR_PLAN_REVIEW,
-    PLAN_REVIEW,
-];
-
-const IMPLEMENTATION_REVIEW_STATES: [&str; 2] =
-    [READY_FOR_IMPLEMENTATION_REVIEW, IMPLEMENTATION_REVIEW];
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorkflowTransition {
@@ -148,23 +119,6 @@ pub struct ProfileDefinition {
     pub action_prompts: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub prompt_acceptance: BTreeMap<String, Vec<String>>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct RawProfileFile {
-    #[serde(default)]
-    profiles: Vec<RawProfileDefinition>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct RawProfileDefinition {
-    id: String,
-    #[serde(default)]
-    description: Option<String>,
-    planning_mode: GateMode,
-    implementation_review_mode: GateMode,
-    output: OutputMode,
-    owners: ProfileOwners,
 }
 
 #[derive(Debug, Clone)]
@@ -281,7 +235,7 @@ impl ProfileRegistry {
     }
 
     pub(crate) fn from_toml(raw: &str) -> Result<Self, ProfileError> {
-        let file: RawProfileFile = toml::from_str(raw)?;
+        let file: crate::profile_normalize::RawProfileFile = toml::from_str(raw)?;
         if file.profiles.is_empty() {
             return Err(ProfileError::InvalidDefinition(
                 "at least one profile must be defined".to_string(),
@@ -292,7 +246,7 @@ impl ProfileRegistry {
         let mut aliases = HashMap::new();
 
         for raw_profile in file.profiles {
-            let profile = normalize_profile_definition(raw_profile)?;
+            let profile = crate::profile_normalize::normalize(raw_profile)?;
             if profiles
                 .insert(profile.id.clone(), profile.clone())
                 .is_some()
@@ -493,203 +447,6 @@ fn builtin_workflow_id() -> String {
     installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string()
 }
 
-#[allow(clippy::too_many_lines)]
-fn normalize_profile_definition(
-    raw: RawProfileDefinition,
-) -> Result<ProfileDefinition, ProfileError> {
-    let id = normalize_profile_id(raw.id.as_str())
-        .ok_or_else(|| ProfileError::InvalidDefinition("profile id is required".to_string()))?;
-    let aliases = legacy_aliases(&id)
-        .iter()
-        .map(|alias| (*alias).to_string())
-        .collect::<Vec<_>>();
-
-    let mut states = ALL_STATES
-        .iter()
-        .map(|value| (*value).to_string())
-        .collect::<Vec<_>>();
-
-    if raw.planning_mode == GateMode::Skipped {
-        states.retain(|state| !PLANNING_STATES.contains(&state.as_str()));
-    }
-    if raw.implementation_review_mode == GateMode::Skipped {
-        states.retain(|state| !IMPLEMENTATION_REVIEW_STATES.contains(&state.as_str()));
-    }
-
-    let state_set = states.iter().cloned().collect::<HashSet<_>>();
-    let mut transitions = canonical_transitions();
-
-    if raw.planning_mode == GateMode::Optional || raw.planning_mode == GateMode::Skipped {
-        transitions.push(WorkflowTransition {
-            from: READY_FOR_PLANNING.to_string(),
-            to: READY_FOR_IMPLEMENTATION.to_string(),
-        });
-    }
-
-    if raw.implementation_review_mode == GateMode::Optional
-        || raw.implementation_review_mode == GateMode::Skipped
-    {
-        transitions.push(WorkflowTransition {
-            from: IMPLEMENTATION.to_string(),
-            to: READY_FOR_SHIPMENT.to_string(),
-        });
-    }
-
-    transitions.retain(|transition| {
-        (transition.from == WILDCARD_STATE || state_set.contains(&transition.from))
-            && state_set.contains(&transition.to)
-    });
-
-    transitions.sort_by(|left, right| {
-        left.from
-            .cmp(&right.from)
-            .then_with(|| left.to.cmp(&right.to))
-    });
-    transitions.dedup_by(|left, right| left.from == right.from && left.to == right.to);
-
-    let initial_state = if raw.planning_mode == GateMode::Skipped {
-        READY_FOR_IMPLEMENTATION.to_string()
-    } else {
-        READY_FOR_PLANNING.to_string()
-    };
-
-    debug_assert!(state_set.contains(&initial_state));
-
-    let terminal_states = vec![SHIPPED.to_string(), ABANDONED.to_string()];
-    let escape_states = vec![DEFERRED.to_string()];
-    let queue_states = states
-        .iter()
-        .filter(|state| state.starts_with("ready_for_"))
-        .cloned()
-        .collect::<Vec<_>>();
-    let action_states = states
-        .iter()
-        .filter(|state| {
-            matches!(
-                state.as_str(),
-                PLANNING
-                    | PLAN_REVIEW
-                    | IMPLEMENTATION
-                    | IMPLEMENTATION_REVIEW
-                    | SHIPMENT
-                    | SHIPMENT_REVIEW
-            )
-        })
-        .cloned()
-        .collect::<Vec<_>>();
-    let queue_actions = BTreeMap::from([
-        (READY_FOR_PLANNING.to_string(), PLANNING.to_string()),
-        (READY_FOR_PLAN_REVIEW.to_string(), PLAN_REVIEW.to_string()),
-        (
-            READY_FOR_IMPLEMENTATION.to_string(),
-            IMPLEMENTATION.to_string(),
-        ),
-        (
-            READY_FOR_IMPLEMENTATION_REVIEW.to_string(),
-            IMPLEMENTATION_REVIEW.to_string(),
-        ),
-        (READY_FOR_SHIPMENT.to_string(), SHIPMENT.to_string()),
-        (
-            READY_FOR_SHIPMENT_REVIEW.to_string(),
-            SHIPMENT_REVIEW.to_string(),
-        ),
-    ]);
-    let action_kinds = BTreeMap::from([
-        (PLANNING.to_string(), "produce".to_string()),
-        (PLAN_REVIEW.to_string(), "gate".to_string()),
-        (IMPLEMENTATION.to_string(), "produce".to_string()),
-        (IMPLEMENTATION_REVIEW.to_string(), "gate".to_string()),
-        (SHIPMENT.to_string(), "produce".to_string()),
-        (SHIPMENT_REVIEW.to_string(), "gate".to_string()),
-    ]);
-    let mut owner_states = BTreeMap::new();
-    owner_states.insert(READY_FOR_PLANNING.to_string(), raw.owners.planning.clone());
-    owner_states.insert(PLANNING.to_string(), raw.owners.planning.clone());
-    owner_states.insert(
-        READY_FOR_PLAN_REVIEW.to_string(),
-        raw.owners.plan_review.clone(),
-    );
-    owner_states.insert(PLAN_REVIEW.to_string(), raw.owners.plan_review.clone());
-    owner_states.insert(
-        READY_FOR_IMPLEMENTATION.to_string(),
-        raw.owners.implementation.clone(),
-    );
-    owner_states.insert(
-        IMPLEMENTATION.to_string(),
-        raw.owners.implementation.clone(),
-    );
-    owner_states.insert(
-        READY_FOR_IMPLEMENTATION_REVIEW.to_string(),
-        raw.owners.implementation_review.clone(),
-    );
-    owner_states.insert(
-        IMPLEMENTATION_REVIEW.to_string(),
-        raw.owners.implementation_review.clone(),
-    );
-    owner_states.insert(READY_FOR_SHIPMENT.to_string(), raw.owners.shipment.clone());
-    owner_states.insert(SHIPMENT.to_string(), raw.owners.shipment.clone());
-    owner_states.insert(
-        READY_FOR_SHIPMENT_REVIEW.to_string(),
-        raw.owners.shipment_review.clone(),
-    );
-    owner_states.insert(
-        SHIPMENT_REVIEW.to_string(),
-        raw.owners.shipment_review.clone(),
-    );
-    let owners = ProfileOwners {
-        states: owner_states,
-        ..raw.owners
-    };
-
-    Ok(ProfileDefinition {
-        id,
-        workflow_id: builtin_workflow_id(),
-        aliases,
-        description: raw
-            .description
-            .and_then(|value| normalize_scalar(value.as_str())),
-        planning_mode: raw.planning_mode,
-        implementation_review_mode: raw.implementation_review_mode,
-        outputs: outputs_from_legacy_mode(&raw.output, &action_states),
-        owners,
-        initial_state,
-        states,
-        queue_states,
-        action_states,
-        queue_actions,
-        action_kinds,
-        escape_states,
-        terminal_states,
-        transitions,
-        action_prompts: BTreeMap::new(),
-        prompt_acceptance: BTreeMap::new(),
-    })
-}
-
-fn outputs_from_legacy_mode(
-    mode: &OutputMode,
-    action_states: &[String],
-) -> BTreeMap<String, ActionOutputDef> {
-    let artifact_type = match mode {
-        OutputMode::Local => "local",
-        OutputMode::Remote => "remote",
-        OutputMode::Pr => "pr",
-        OutputMode::RemoteMain => "remote_main",
-    };
-    action_states
-        .iter()
-        .map(|state| {
-            (
-                state.clone(),
-                ActionOutputDef {
-                    artifact_type: artifact_type.to_string(),
-                    access_hint: None,
-                },
-            )
-        })
-        .collect()
-}
-
 fn normalize_scalar(raw: &str) -> Option<String> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
@@ -709,50 +466,6 @@ fn normalize_state_alias(raw: &str) -> &str {
         "rejected" | "refining" => READY_FOR_IMPLEMENTATION,
         "approved" => READY_FOR_SHIPMENT,
         other => other,
-    }
-}
-
-fn canonical_transitions() -> Vec<WorkflowTransition> {
-    vec![
-        transition(READY_FOR_PLANNING, PLANNING),
-        transition(PLANNING, READY_FOR_PLAN_REVIEW),
-        transition(READY_FOR_PLAN_REVIEW, PLAN_REVIEW),
-        transition(PLAN_REVIEW, READY_FOR_IMPLEMENTATION),
-        transition(PLAN_REVIEW, READY_FOR_PLANNING),
-        transition(READY_FOR_IMPLEMENTATION, IMPLEMENTATION),
-        transition(IMPLEMENTATION, READY_FOR_IMPLEMENTATION_REVIEW),
-        transition(READY_FOR_IMPLEMENTATION_REVIEW, IMPLEMENTATION_REVIEW),
-        transition(IMPLEMENTATION_REVIEW, READY_FOR_SHIPMENT),
-        transition(IMPLEMENTATION_REVIEW, READY_FOR_IMPLEMENTATION),
-        transition(READY_FOR_SHIPMENT, SHIPMENT),
-        transition(SHIPMENT, READY_FOR_SHIPMENT_REVIEW),
-        transition(READY_FOR_SHIPMENT_REVIEW, SHIPMENT_REVIEW),
-        transition(SHIPMENT_REVIEW, SHIPPED),
-        transition(SHIPMENT_REVIEW, READY_FOR_IMPLEMENTATION),
-        transition(SHIPMENT_REVIEW, READY_FOR_SHIPMENT),
-        transition(WILDCARD_STATE, DEFERRED),
-        transition(WILDCARD_STATE, ABANDONED),
-    ]
-}
-
-fn transition(from: &str, to: &str) -> WorkflowTransition {
-    WorkflowTransition {
-        from: from.to_string(),
-        to: to.to_string(),
-    }
-}
-
-fn legacy_aliases(id: &str) -> &'static [&'static str] {
-    match id {
-        "autopilot" => &[
-            "automation_granular",
-            "default",
-            "delivery",
-            "automation",
-            "granular",
-        ],
-        "semiauto" => &["human_gate", "human", "coarse", "pr_human_gate"],
-        _ => &[],
     }
 }
 

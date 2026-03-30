@@ -1,8 +1,7 @@
 use super::{
-    initial_state, is_action_state, is_action_state_for_profile, is_escape_state,
-    is_queue_state, is_terminal_state, next_happy_path_state,
-    owner_kind_for_state, queue_state_for_stage, validate_transition,
-    EVALUATING, READY_TO_EVALUATE,
+    initial_state, is_action_state, is_action_state_for_profile, is_escape_state, is_queue_state,
+    is_terminal_state, next_happy_path_state, owner_kind_for_state, queue_state_for_stage,
+    validate_transition, EVALUATING, READY_TO_EVALUATE,
 };
 use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::knot_type::KnotType;
@@ -143,8 +142,7 @@ fn queue_state_for_stage_maps_gate_aliases() {
 fn gate_next_happy_path_is_fixed() {
     let registry = ProfileRegistry::load().unwrap();
     assert_eq!(
-        next_happy_path_state(&registry, "autopilot", KnotType::Gate, READY_TO_EVALUATE)
-            .unwrap(),
+        next_happy_path_state(&registry, "autopilot", KnotType::Gate, READY_TO_EVALUATE).unwrap(),
         Some(EVALUATING.to_string())
     );
     assert_eq!(
@@ -183,9 +181,7 @@ fn initial_state_uses_gate_queue_for_gate_knots() {
 #[test]
 fn gate_terminal_state_and_transition_rules_are_fixed() {
     let registry = ProfileRegistry::load().unwrap();
-    assert!(
-        !is_terminal_state(&registry, "autopilot", KnotType::Gate, READY_TO_EVALUATE).unwrap()
-    );
+    assert!(!is_terminal_state(&registry, "autopilot", KnotType::Gate, READY_TO_EVALUATE).unwrap());
     assert!(is_terminal_state(&registry, "autopilot", KnotType::Gate, "shipped").unwrap());
     assert!(validate_transition(
         &registry,
@@ -262,4 +258,3 @@ fn gate_transition_allows_noop_force_and_abandon() {
     )
     .is_ok());
 }
-
