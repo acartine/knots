@@ -670,6 +670,10 @@ fn is_stale_precondition(
 mod tests_ext;
 
 #[cfg(test)]
+#[path = "apply_tests_event_paths.rs"]
+mod tests_event_paths;
+
+#[cfg(test)]
 #[path = "apply_tests_invariant.rs"]
 mod tests_invariant;
 

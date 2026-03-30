@@ -3737,6 +3737,9 @@ mod tests_gate_ext;
 #[path = "app/tests_hierarchy.rs"]
 mod tests_hierarchy;
 #[cfg(test)]
+#[path = "app/tests_hierarchy_ext.rs"]
+mod tests_hierarchy_ext;
+#[cfg(test)]
 #[path = "app/tests_hierarchy_auto_resolve.rs"]
 mod tests_hierarchy_auto_resolve;
 #[cfg(test)]

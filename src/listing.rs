@@ -471,50 +471,6 @@ mod tests {
         assert_eq!(filtered[0].id, "K-2");
     }
 
-    #[test]
-    fn filters_by_alias_query() {
-        let mut with_alias = knot(
-            "repo-a1b2",
-            "Alias Target",
-            "work_item",
-            Some("task"),
-            &[],
-            None,
-        );
-        with_alias.alias = Some("repo-root.1".to_string());
-        let without_alias = knot("repo-c3d4", "Other", "work_item", Some("task"), &[], None);
-        let filter = KnotListFilter {
-            include_all: false,
-            state: None,
-            knot_type: None,
-            profile_id: None,
-            tags: Vec::new(),
-            query: Some("root.1".to_string()),
-        };
-
-        let filtered = apply_filters(vec![with_alias, without_alias], &filter);
-        assert_eq!(filtered.len(), 1);
-        assert_eq!(filtered[0].id, "repo-a1b2");
-    }
-
-    #[test]
-    fn filters_by_profile_id() {
-        let mut triage = knot("K-1", "Triage item", "work_item", Some("task"), &[], None);
-        triage.profile_id = "triage".to_string();
-        let default = knot("K-2", "Default item", "work_item", Some("task"), &[], None);
-        let filter = KnotListFilter {
-            include_all: false,
-            state: None,
-            knot_type: None,
-            profile_id: Some("triage".to_string()),
-            tags: Vec::new(),
-            query: None,
-        };
-
-        let filtered = apply_filters(vec![triage, default], &filter);
-        assert_eq!(filtered.len(), 1);
-        assert_eq!(filtered[0].id, "K-1");
-    }
 }
 
 #[cfg(test)]

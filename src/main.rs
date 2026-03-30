@@ -21,6 +21,8 @@ mod knot_id;
 mod lease;
 mod list_layout;
 #[cfg(test)]
+mod list_layout_tests;
+#[cfg(test)]
 mod list_layout_tests_ext;
 mod listing;
 mod locks;
