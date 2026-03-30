@@ -107,7 +107,14 @@ fn stale_upgrade_check_prints_banner_when_stub_reports_newer_version() {
     assert!(output.status.success(), "help command should succeed");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("Upgrade available: v0.11.0 -> v9.9.9"));
+    let expected = format!(
+        "Upgrade available: v{} -> v9.9.9",
+        env!("CARGO_PKG_VERSION")
+    );
+    assert!(
+        stderr.contains(&expected),
+        "stderr should contain banner: {stderr}"
+    );
     assert!(stderr.contains("kno upgrade"));
     assert!(String::from_utf8_lossy(&output.stdout).contains("Commands:"));
 
