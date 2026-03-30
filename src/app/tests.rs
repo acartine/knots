@@ -513,6 +513,7 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn update_knot_can_remove_and_clear_invariants() {
     let root = unique_workspace();

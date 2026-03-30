@@ -56,6 +56,7 @@ pub fn run_fsck(repo_root: &Path) -> Result<FsckReport, FsckError> {
     run_fsck_at_store(&repo_root.join(".knots"))
 }
 
+#[allow(clippy::too_many_lines)]
 pub fn run_fsck_at_store(store_root: &Path) -> Result<FsckReport, FsckError> {
     let mut issues = Vec::new();
     let mut files = collect_json_files(store_root)?;

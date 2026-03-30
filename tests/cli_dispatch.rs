@@ -170,6 +170,7 @@ fn assert_contains_in_order(haystack: &str, needles: &[&str]) {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn core_cli_commands_dispatch_success_and_failure_paths() {
     let root = unique_workspace("knots-cli-dispatch");
@@ -1021,6 +1022,7 @@ fn claim_json_output() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn show_hides_older_metadata_unless_verbose() {
     let root = unique_workspace("knots-cli-show-metadata");
@@ -1135,6 +1137,7 @@ fn show_hides_older_metadata_unless_verbose() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn claim_hides_older_metadata_unless_verbose() {
     let root = unique_workspace("knots-cli-claim-metadata");
@@ -1550,6 +1553,7 @@ fn skill_command_accepts_state_name_as_fallback() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn gate_knots_support_human_evaluation_and_reopen_flow() {
     let root = unique_workspace("knots-cli-gate");

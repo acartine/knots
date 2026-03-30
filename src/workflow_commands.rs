@@ -33,6 +33,7 @@ fn prompt_install_default(workflow_id: &str) -> Result<bool, app::AppError> {
     ))
 }
 
+#[allow(clippy::too_many_lines)]
 #[cfg(not(tarpaulin_include))]
 pub(crate) fn run_workflow_command(
     args: &cli::WorkflowArgs,

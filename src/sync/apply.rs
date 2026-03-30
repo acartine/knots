@@ -140,6 +140,7 @@ impl<'a> IncrementalApplier<'a> {
         Ok(files)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn apply_index_event(&self, relative_path: &Path) -> Result<bool, SyncError> {
         let absolute_path = self.worktree.join(relative_path);
         if !absolute_path.exists() {
@@ -290,6 +291,7 @@ impl<'a> IncrementalApplier<'a> {
         Ok(true)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn apply_full_event(&self, relative_path: &Path) -> Result<FullApplyOutcome, SyncError> {
         let absolute_path = self.worktree.join(relative_path);
         if !absolute_path.exists() {

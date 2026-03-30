@@ -11,6 +11,7 @@ fmt:
 
 lint:
 	CARGO_TARGET_DIR=$(SANITY_TARGET_DIR) cargo clippy --all-targets --all-features -- -D warnings
+	bash scripts/repo/check-file-sizes.sh
 
 test:
 	CARGO_TARGET_DIR=$(SANITY_TARGET_DIR) cargo test --all-targets --all-features

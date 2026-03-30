@@ -6,6 +6,9 @@ edition = "2021"
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
 
+[lints.clippy]
+too_many_lines = "warn"
+
 [dependencies]
 clap = { version = "4.5", features = ["derive", "env"] }
 rusqlite = { version = "0.32", features = ["bundled"] }

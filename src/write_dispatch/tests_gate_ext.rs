@@ -156,6 +156,7 @@ fn operation_from_command_maps_gate_specific_arguments() {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn execute_operation_gate_evaluate_covers_text_and_json_output() {
     let root = unique_workspace("knots-write-dispatch-gate-ext");

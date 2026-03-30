@@ -89,6 +89,7 @@ impl<'a> ReplicationService<'a> {
         self.push_with_progress(&mut reporter)
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn push_with_progress(
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,

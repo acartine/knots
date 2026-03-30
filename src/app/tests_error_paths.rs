@@ -119,6 +119,7 @@ fn helper_validations_cover_success_and_error_paths() {
     ));
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn apply_rehydrate_event_covers_known_event_types() {
     let mut projection = RehydrateProjection {

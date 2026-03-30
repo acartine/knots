@@ -684,6 +684,7 @@ fn parse_bundle(raw: &str, format: BundleFormat) -> Result<WorkflowDefinition, P
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn render_json_bundle_from_toml(raw: &str) -> Result<String, ProfileError> {
     let parsed: BundleToml =
         toml::from_str(raw).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
@@ -993,6 +994,7 @@ struct JsonPromptParamSection {
     description: Option<String>,
 }
 
+#[allow(clippy::too_many_lines)]
 fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
     let parsed: JsonKnotsBundle =
         serde_json::from_str(raw).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
@@ -1249,6 +1251,7 @@ fn parse_bundle_json(raw: &str) -> Result<WorkflowDefinition, ProfileError> {
     })
 }
 
+#[allow(clippy::too_many_lines)]
 fn build_profile_definition(
     workflow_id: &str,
     profile_name: &str,
@@ -2527,6 +2530,7 @@ changes = "ready_for_work"
         let _ = std::fs::remove_dir_all(root);
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn build_profile_definition_validates_empty_phase_and_missing_states() {
         let mut states = BTreeMap::new();

@@ -100,6 +100,7 @@ where
     })
 }
 
+#[allow(clippy::too_many_lines)]
 fn run_compat_test_inner(
     config: &CompatTestConfig,
     workspace: &Path,

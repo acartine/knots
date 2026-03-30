@@ -694,6 +694,7 @@ impl App {
         )
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn create_knot_with_options(
         &self,
         title: &str,
@@ -839,6 +840,7 @@ impl App {
         self.apply_alias_to_knot(KnotView::from(record))
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn set_profile(
         &self,
         id: &str,
@@ -1063,6 +1065,7 @@ impl App {
         self.update_knot_with_options(id, patch, false)
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn update_knot_with_options(
         &self,
         id: &str,
@@ -1644,6 +1647,7 @@ impl App {
         Ok(updated)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn write_state_change_locked(
         &self,
         current: &KnotCacheRecord,
@@ -1865,6 +1869,7 @@ impl App {
         )
     }
 
+    #[allow(clippy::too_many_lines)]
     fn append_gate_failure_metadata_locked(
         &self,
         current: &KnotCacheRecord,
@@ -2158,6 +2163,7 @@ impl App {
         self.apply_alias_to_knot(KnotView::from(updated))
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn evaluate_gate(
         &self,
         id: &str,
@@ -3077,6 +3083,7 @@ struct RehydrateProjection {
     created_at: Option<String>,
 }
 
+#[allow(clippy::too_many_lines)]
 fn rehydrate_from_events(
     store_root: &std::path::Path,
     knot_id: &str,
@@ -3246,6 +3253,7 @@ fn rehydrate_from_events(
     Ok(projection)
 }
 
+#[allow(clippy::too_many_lines)]
 fn apply_rehydrate_event(projection: &mut RehydrateProjection, event: &FullEvent) {
     let Some(data) = event.data.as_object() else {
         return;

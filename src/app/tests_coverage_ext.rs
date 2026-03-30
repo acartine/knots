@@ -102,6 +102,7 @@ fn read_event_payloads(root: &Path, event_type: &str) -> Vec<Value> {
     payloads
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn update_knot_covers_title_priority_and_tag_normalization_branches() {
     let root = unique_workspace();

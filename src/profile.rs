@@ -493,6 +493,7 @@ fn builtin_workflow_id() -> String {
     installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string()
 }
 
+#[allow(clippy::too_many_lines)]
 fn normalize_profile_definition(
     raw: RawProfileDefinition,
 ) -> Result<ProfileDefinition, ProfileError> {

@@ -49,6 +49,7 @@ pub(crate) fn run_profile_command_with_context(
     run_profile_command_with_context_and_home(args, context, db_path, None)
 }
 
+#[allow(clippy::too_many_lines)]
 pub(crate) fn run_profile_command_with_context_and_home(
     args: &cli::ProfileArgs,
     context: &ProjectContext,

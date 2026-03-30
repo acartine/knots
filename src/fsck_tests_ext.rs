@@ -24,6 +24,7 @@ fn fsck_error_display_source_and_from_cover_io_variant() {
     assert!(err.source().is_some());
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn reports_schema_and_reference_issues_for_malformed_events() {
     let root = unique_workspace();

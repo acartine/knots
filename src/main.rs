@@ -99,6 +99,7 @@ fn progress_reporter(enabled: bool) -> Option<ui::StdoutProgressReporter> {
     enabled.then(ui::StdoutProgressReporter::auto)
 }
 
+#[allow(clippy::too_many_lines)]
 fn run() -> Result<(), app::AppError> {
     use clap::FromArgMatches;
     use cli::{ColdSubcommands, Commands, EdgeSubcommands, LeaseSubcommands};

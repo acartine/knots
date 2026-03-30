@@ -24,6 +24,19 @@
   commit your changes, push them, and make sure they are merged to main.
 - Do not leave uncommitted or unpushed work at the end of a task.
 
+## Source Code Size Standard
+
+All source files under tracked directories must satisfy:
+
+| Metric | Limit |
+|--------|-------|
+| File length | < 500 lines |
+| Function/method body | < 100 lines |
+| Line width | < 100 columns |
+
+Enforcement: run `make lint` before merge. It must pass the configured
+linter and size-checking script(s).
+
 ## Pre-Push Sanity (Required)
 - Install the managed pre-push hook with `make install-hooks`.
 - Do not push unless `make sanity` passes.

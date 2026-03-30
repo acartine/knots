@@ -164,6 +164,7 @@ fn sync_applies_index_and_edge_events_from_knots_branch() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn sync_reduces_description_tag_and_note_events() {
     let root = unique_workspace();
@@ -416,6 +417,7 @@ fn sync_classifies_old_knots_as_warm_and_terminal_as_cold() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn sync_ignores_events_with_stale_preconditions() {
     let root = unique_workspace();

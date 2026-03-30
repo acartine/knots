@@ -75,6 +75,7 @@ pub fn maybe_run_queued_command_with_context(
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
     match command {
         Commands::New(args) => Some(WriteOperation::New(NewOperation {
@@ -268,6 +269,7 @@ fn execute_queued_request(request: &QueuedWriteRequest) -> QueuedWriteResponse {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, AppError> {
     match operation {
         WriteOperation::New(args) => {
@@ -1247,6 +1249,7 @@ mod tests {
         assert!(result.is_none());
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn execute_operation_rollback_covers_dry_run_real_and_rejection_paths() {
         let root = unique_workspace("knots-write-dispatch-rollback");

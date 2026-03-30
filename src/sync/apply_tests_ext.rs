@@ -351,6 +351,7 @@ fn apply_index_event_moves_old_non_terminal_knots_to_warm_cache() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn apply_full_event_covers_priority_type_tag_remove_note_and_handoff_paths() {
     let root = setup_repo();
