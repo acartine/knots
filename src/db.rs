@@ -15,218 +15,34 @@ use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 
 pub const CURRENT_SCHEMA_VERSION: i64 = 13;
+
+mod catalog;
+mod migrations;
+
+pub use catalog::{
+    count_active_leases, delete_cold_catalog, delete_edge,
+    delete_knot_warm, get_cold_catalog, get_hot_window_days,
+    get_knot_warm, get_pull_drift_warn_threshold,
+    get_sync_fetch_blob_limit_kb, insert_edge,
+    list_cold_catalog, list_edges, list_edges_by_kind,
+    list_knot_warm, search_cold_catalog, upsert_cold_catalog, upsert_knot_warm,
+    EdgeDirection, EdgeRecord,
+};
+
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
 const SQLITE_LOCK_RETRY_MAX_DELAY_MS: u64 = 250;
-const REQUIRED_META_DEFAULT_KEYS: [&str; 7] = [
-    "hot_window_days",
-    "sync_policy",
-    "sync_auto_budget_ms",
-    "sync_try_lock_ms",
-    "push_retry_budget_ms",
-    "sync_fetch_blob_limit_kb",
-    "pull_drift_warn_threshold",
-];
 
-struct Migration {
-    version: i64,
-    name: &'static str,
-    sql: &'static str,
+#[cfg(test)]
+pub fn needs_schema_bootstrap(conn: &rusqlite::Connection) -> Result<bool> {
+    migrations::needs_schema_bootstrap(conn)
 }
-
-const MIGRATIONS: [Migration; 13] = [
-    Migration {
-        version: 1,
-        name: "baseline_cache_schema_v1",
-        sql: r#"
-CREATE TABLE IF NOT EXISTS meta (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS knot_hot (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    state TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    body TEXT,
-    workflow_etag TEXT,
-    created_at TEXT,
-    metadata_json TEXT
-);
-
-CREATE TABLE IF NOT EXISTS knot_warm (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS edge (
-    src TEXT NOT NULL,
-    kind TEXT NOT NULL,
-    dst TEXT NOT NULL,
-    PRIMARY KEY (src, kind, dst)
-);
-
-CREATE TABLE IF NOT EXISTS review_stats (
-    id TEXT PRIMARY KEY,
-    rework_count INTEGER NOT NULL DEFAULT 0,
-    last_decision_at TEXT,
-    last_outcome TEXT
-);
-
-CREATE TABLE IF NOT EXISTS cold_catalog (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    state TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_knot_hot_updated_at ON knot_hot(updated_at);
-CREATE INDEX IF NOT EXISTS idx_knot_hot_state ON knot_hot(state);
-CREATE INDEX IF NOT EXISTS idx_edge_dst_kind ON edge(dst, kind);
-CREATE INDEX IF NOT EXISTS idx_cold_catalog_updated_at ON cold_catalog(updated_at);
-"#,
-    },
-    Migration {
-        version: 2,
-        name: "reserved_v2",
-        sql: r#"
--- Reserved for backward compatibility with previously shipped schema version 2.
-"#,
-    },
-    Migration {
-        version: 3,
-        name: "knot_field_parity_v1",
-        sql: r#"
-ALTER TABLE knot_hot ADD COLUMN description TEXT;
-ALTER TABLE knot_hot ADD COLUMN priority INTEGER;
-ALTER TABLE knot_hot ADD COLUMN knot_type TEXT;
-ALTER TABLE knot_hot ADD COLUMN tags_json TEXT NOT NULL DEFAULT '[]';
-ALTER TABLE knot_hot ADD COLUMN notes_json TEXT NOT NULL DEFAULT '[]';
-ALTER TABLE knot_hot ADD COLUMN handoff_capsules_json TEXT NOT NULL DEFAULT '[]';
-
-UPDATE knot_hot
-SET description = COALESCE(description, body)
-WHERE description IS NULL;
-"#,
-    },
-    Migration {
-        version: 4,
-        name: "knot_workflow_identity_v1",
-        sql: r#"
-ALTER TABLE knot_hot ADD COLUMN workflow_id TEXT NOT NULL DEFAULT 'automation_granular';
-"#,
-    },
-    Migration {
-        version: 5,
-        name: "workflow_id_canonicalize_v1",
-        sql: r#"
-UPDATE knot_hot
-SET workflow_id = 'automation_granular'
-WHERE workflow_id IN ('default', 'delivery');
-"#,
-    },
-    Migration {
-        version: 6,
-        name: "workflow_to_profile_v1",
-        sql: r#"
-ALTER TABLE knot_hot RENAME COLUMN workflow_id TO profile_id;
-ALTER TABLE knot_hot RENAME COLUMN workflow_etag TO profile_etag;
-ALTER TABLE knot_hot ADD COLUMN deferred_from_state TEXT;
-
-UPDATE knot_hot
-SET profile_id = CASE
-    WHEN profile_id IN ('automation_granular', 'default', 'delivery', 'automation', 'granular')
-        THEN 'autopilot'
-    WHEN profile_id IN ('human_gate', 'human', 'coarse', 'pr_human_gate')
-        THEN 'semiauto'
-    ELSE profile_id
-END;
-
-UPDATE knot_hot
-SET state = CASE
-    WHEN state = 'idea' THEN 'ready_for_planning'
-    WHEN state = 'work_item' THEN 'ready_for_implementation'
-    WHEN state = 'implementing' THEN 'implementation'
-    WHEN state = 'implemented' THEN 'ready_for_implementation_review'
-    WHEN state = 'reviewing' THEN 'implementation_review'
-    WHEN state = 'rejected' THEN 'ready_for_implementation'
-    WHEN state = 'refining' THEN 'ready_for_implementation'
-    WHEN state = 'approved' THEN 'ready_for_shipment'
-    ELSE state
-END;
-
-UPDATE cold_catalog
-SET state = CASE
-    WHEN state = 'idea' THEN 'ready_for_planning'
-    WHEN state = 'work_item' THEN 'ready_for_implementation'
-    WHEN state = 'implementing' THEN 'implementation'
-    WHEN state = 'implemented' THEN 'ready_for_implementation_review'
-    WHEN state = 'reviewing' THEN 'implementation_review'
-    WHEN state = 'rejected' THEN 'ready_for_implementation'
-    WHEN state = 'refining' THEN 'ready_for_implementation'
-    WHEN state = 'approved' THEN 'ready_for_shipment'
-    ELSE state
-END;
-"#,
-    },
-    Migration {
-        version: 7,
-        name: "knot_invariants_v1",
-        sql: r#"
-ALTER TABLE knot_hot ADD COLUMN invariants_json TEXT NOT NULL DEFAULT '[]';
-"#,
-    },
-    Migration {
-        version: 8,
-        name: "knot_step_history_v1",
-        sql: r#"
-ALTER TABLE knot_hot ADD COLUMN step_history_json TEXT NOT NULL DEFAULT '[]';
-"#,
-    },
-    Migration {
-        version: 9,
-        name: "knot_gate_data_v1",
-        sql: r#"
-ALTER TABLE knot_hot ADD COLUMN gate_data_json TEXT NOT NULL DEFAULT '{}';
-"#,
-    },
-    Migration {
-        version: 10,
-        name: "knot_lease_data_v1",
-        sql: r#"
-ALTER TABLE knot_hot ADD COLUMN lease_data_json TEXT NOT NULL DEFAULT '{}';
-ALTER TABLE knot_hot ADD COLUMN lease_id TEXT;
-"#,
-    },
-    Migration {
-        version: 11,
-        name: "knot_workflow_id_v2",
-        sql: r#"
-ALTER TABLE knot_hot ADD COLUMN workflow_id TEXT NOT NULL DEFAULT 'compatibility';
-"#,
-    },
-    Migration {
-        version: 12,
-        name: "knot_acceptance_v1",
-        sql: r#"
-ALTER TABLE knot_hot ADD COLUMN acceptance TEXT;
-"#,
-    },
-    Migration {
-        version: 13,
-        name: "knot_blocked_provenance_v1",
-        sql: r#"
-ALTER TABLE knot_hot ADD COLUMN blocked_from_state TEXT;
-"#,
-    },
-];
 
 pub fn open_connection(path: &str) -> Result<Connection> {
     let mut conn = Connection::open(path)?;
     configure_for_speed(&conn)?;
-    if needs_schema_bootstrap(&conn)? {
-        with_write_retry(|| apply_migrations(&mut conn))?;
+    if migrations::needs_schema_bootstrap(&conn)? {
+        with_write_retry(|| migrations::apply_migrations(&mut conn))?;
     }
     Ok(conn)
 }
@@ -239,106 +55,6 @@ fn configure_for_speed(conn: &Connection) -> Result<()> {
     conn.pragma_update(None::<DatabaseName>, "busy_timeout", 5000i64)?;
     conn.busy_timeout(Duration::from_millis(5000))?;
     Ok(())
-}
-
-fn apply_migrations(conn: &mut Connection) -> Result<()> {
-    let tx = conn.transaction()?;
-    tx.execute_batch(
-        r#"
-CREATE TABLE IF NOT EXISTS schema_migrations (
-    version INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    applied_at TEXT NOT NULL
-);
-"#,
-    )?;
-
-    for migration in MIGRATIONS {
-        let already_applied: Option<i64> = tx
-            .query_row(
-                "SELECT version FROM schema_migrations WHERE version = ?1",
-                params![migration.version],
-                |row| row.get(0),
-            )
-            .optional()?;
-
-        if already_applied.is_some() {
-            continue;
-        }
-
-        tx.execute_batch(migration.sql)?;
-        tx.execute(
-            "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?1, ?2, ?3)",
-            params![migration.version, migration.name, now_utc_rfc3339()],
-        )?;
-    }
-
-    tx.execute(
-        r#"
-INSERT INTO meta (key, value)
-VALUES ('schema_version', ?1)
-ON CONFLICT(key) DO UPDATE SET value = excluded.value
-"#,
-        params![CURRENT_SCHEMA_VERSION.to_string()],
-    )?;
-    tx.execute(
-        r#"
-INSERT INTO meta (key, value)
-VALUES ('hot_window_days', '7')
-ON CONFLICT(key) DO NOTHING
-"#,
-        [],
-    )?;
-    tx.execute(
-        r#"
-INSERT INTO meta (key, value)
-VALUES ('sync_policy', 'auto')
-ON CONFLICT(key) DO NOTHING
-"#,
-        [],
-    )?;
-    tx.execute(
-        r#"
-INSERT INTO meta (key, value)
-VALUES ('sync_auto_budget_ms', '750')
-ON CONFLICT(key) DO NOTHING
-"#,
-        [],
-    )?;
-    tx.execute(
-        r#"
-INSERT INTO meta (key, value)
-VALUES ('sync_try_lock_ms', '0')
-ON CONFLICT(key) DO NOTHING
-"#,
-        [],
-    )?;
-    tx.execute(
-        r#"
-INSERT INTO meta (key, value)
-VALUES ('push_retry_budget_ms', '800')
-ON CONFLICT(key) DO NOTHING
-"#,
-        [],
-    )?;
-    tx.execute(
-        r#"
-INSERT INTO meta (key, value)
-VALUES ('sync_fetch_blob_limit_kb', '0')
-ON CONFLICT(key) DO NOTHING
-"#,
-        [],
-    )?;
-    tx.execute(
-        r#"
-INSERT INTO meta (key, value)
-VALUES ('pull_drift_warn_threshold', '25')
-ON CONFLICT(key) DO NOTHING
-"#,
-        [],
-    )?;
-
-    tx.commit()
 }
 
 fn with_write_retry<T, F>(mut operation: F) -> Result<T>
@@ -377,43 +93,6 @@ fn lock_retry_delay(retry: usize) -> Duration {
     Duration::from_millis(base + jitter)
 }
 
-fn needs_schema_bootstrap(conn: &Connection) -> Result<bool> {
-    if !table_exists(conn, "schema_migrations")? || !table_exists(conn, "meta")? {
-        return Ok(true);
-    }
-
-    let applied_count: i64 =
-        conn.query_row("SELECT COUNT(*) FROM schema_migrations", [], |row| {
-            row.get(0)
-        })?;
-    if applied_count < CURRENT_SCHEMA_VERSION {
-        return Ok(true);
-    }
-
-    let expected_schema_version = CURRENT_SCHEMA_VERSION.to_string();
-    let schema_version = get_meta(conn, "schema_version")?;
-    if schema_version.as_deref() != Some(expected_schema_version.as_str()) {
-        return Ok(true);
-    }
-
-    for key in REQUIRED_META_DEFAULT_KEYS {
-        if get_meta(conn, key)?.is_none() {
-            return Ok(true);
-        }
-    }
-
-    Ok(false)
-}
-
-fn table_exists(conn: &Connection, table_name: &str) -> Result<bool> {
-    let exists: i64 = conn.query_row(
-        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1)",
-        params![table_name],
-        |row| row.get(0),
-    )?;
-    Ok(exists == 1)
-}
-
 fn now_utc_rfc3339() -> String {
     OffsetDateTime::now_utc()
         .format(&Rfc3339)
@@ -429,6 +108,7 @@ fn from_json_text<T: DeserializeOwned>(raw: String, column: usize) -> Result<T> 
     serde_json::from_str(&raw)
         .map_err(|err| rusqlite::Error::FromSqlConversionFailure(column, Type::Text, Box::new(err)))
 }
+
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct KnotCacheRecord {
@@ -501,6 +181,7 @@ pub struct UpsertKnotHot<'a> {
     pub blocked_from_state: Option<&'a str>,
     pub created_at: Option<&'a str>,
 }
+
 
 pub fn upsert_knot_hot(conn: &Connection, args: &UpsertKnotHot<'_>) -> Result<()> {
     let tags_json = to_json_text(args.tags)?;
@@ -673,207 +354,11 @@ pub fn delete_knot_hot(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn delete_knot_warm(conn: &Connection, id: &str) -> Result<()> {
-    with_write_retry(|| {
-        conn.execute("DELETE FROM knot_warm WHERE id = ?1", params![id])?;
-        Ok(())
-    })?;
-    Ok(())
-}
-
-pub fn upsert_knot_warm(conn: &Connection, id: &str, title: &str) -> Result<()> {
-    with_write_retry(|| {
-        conn.execute(
-            r#"
-INSERT INTO knot_warm (id, title)
-VALUES (?1, ?2)
-ON CONFLICT(id) DO UPDATE SET title = excluded.title
-"#,
-            params![id, title],
-        )?;
-        Ok(())
-    })?;
-    Ok(())
-}
-
-pub fn get_knot_warm(conn: &Connection, id: &str) -> Result<Option<WarmKnotRecord>> {
-    conn.query_row(
-        "SELECT id, title FROM knot_warm WHERE id = ?1",
-        params![id],
-        |row| {
-            Ok(WarmKnotRecord {
-                id: row.get(0)?,
-                title: row.get(1)?,
-            })
-        },
-    )
-    .optional()
-}
-
-pub fn list_knot_warm(conn: &Connection) -> Result<Vec<WarmKnotRecord>> {
-    let mut stmt = conn.prepare("SELECT id, title FROM knot_warm ORDER BY id ASC")?;
-    let mut rows = stmt.query([])?;
-    let mut result = Vec::new();
-    while let Some(row) = rows.next()? {
-        result.push(WarmKnotRecord {
-            id: row.get(0)?,
-            title: row.get(1)?,
-        });
-    }
-    Ok(result)
-}
-
-pub fn upsert_cold_catalog(
-    conn: &Connection,
-    id: &str,
-    title: &str,
-    state: &str,
-    updated_at: &str,
-) -> Result<()> {
-    with_write_retry(|| {
-        conn.execute(
-            r#"
-INSERT INTO cold_catalog (id, title, state, updated_at)
-VALUES (?1, ?2, ?3, ?4)
-ON CONFLICT(id) DO UPDATE SET
-    title = excluded.title,
-    state = excluded.state,
-    updated_at = excluded.updated_at
-"#,
-            params![id, title, state, updated_at],
-        )?;
-        Ok(())
-    })?;
-    Ok(())
-}
 
 fn default_workflow_id() -> String {
     "compatibility".to_string()
 }
 
-pub fn get_cold_catalog(conn: &Connection, id: &str) -> Result<Option<ColdCatalogRecord>> {
-    conn.query_row(
-        "SELECT id, title, state, updated_at FROM cold_catalog WHERE id = ?1",
-        params![id],
-        |row| {
-            Ok(ColdCatalogRecord {
-                id: row.get(0)?,
-                title: row.get(1)?,
-                state: row.get(2)?,
-                updated_at: row.get(3)?,
-            })
-        },
-    )
-    .optional()
-}
-
-pub fn search_cold_catalog(conn: &Connection, term: &str) -> Result<Vec<ColdCatalogRecord>> {
-    let like = format!("%{}%", term.trim());
-    let mut stmt = conn.prepare(
-        r#"
-SELECT id, title, state, updated_at
-FROM cold_catalog
-WHERE id LIKE ?1 OR title LIKE ?1
-ORDER BY updated_at DESC, id ASC
-"#,
-    )?;
-    let mut rows = stmt.query(params![like])?;
-    let mut result = Vec::new();
-    while let Some(row) = rows.next()? {
-        result.push(ColdCatalogRecord {
-            id: row.get(0)?,
-            title: row.get(1)?,
-            state: row.get(2)?,
-            updated_at: row.get(3)?,
-        });
-    }
-    Ok(result)
-}
-
-pub fn list_cold_catalog(conn: &Connection) -> Result<Vec<ColdCatalogRecord>> {
-    let mut stmt = conn.prepare(
-        r#"
-SELECT id, title, state, updated_at
-FROM cold_catalog
-ORDER BY updated_at DESC, id ASC
-"#,
-    )?;
-    let mut rows = stmt.query([])?;
-    let mut result = Vec::new();
-    while let Some(row) = rows.next()? {
-        result.push(ColdCatalogRecord {
-            id: row.get(0)?,
-            title: row.get(1)?,
-            state: row.get(2)?,
-            updated_at: row.get(3)?,
-        });
-    }
-    Ok(result)
-}
-
-pub fn delete_cold_catalog(conn: &Connection, id: &str) -> Result<()> {
-    with_write_retry(|| {
-        conn.execute("DELETE FROM cold_catalog WHERE id = ?1", params![id])?;
-        Ok(())
-    })?;
-    Ok(())
-}
-
-pub fn get_hot_window_days(conn: &Connection) -> Result<i64> {
-    let value = get_meta(conn, "hot_window_days")?;
-    let parsed = value
-        .as_deref()
-        .unwrap_or("7")
-        .trim()
-        .parse::<i64>()
-        .unwrap_or(7);
-    Ok(parsed.max(0))
-}
-
-pub fn get_sync_fetch_blob_limit_kb(conn: &Connection) -> Result<Option<u64>> {
-    if let Ok(raw) = std::env::var("KNOTS_FETCH_BLOB_LIMIT_KB") {
-        let parsed = raw.trim().parse::<u64>().unwrap_or(0);
-        if parsed > 0 {
-            return Ok(Some(parsed));
-        }
-    }
-
-    let value = get_meta(conn, "sync_fetch_blob_limit_kb")?;
-    let parsed = value
-        .as_deref()
-        .unwrap_or("0")
-        .trim()
-        .parse::<u64>()
-        .unwrap_or(0);
-    if parsed > 0 {
-        Ok(Some(parsed))
-    } else {
-        Ok(None)
-    }
-}
-
-pub fn get_pull_drift_warn_threshold(conn: &Connection) -> Result<u64> {
-    let value = get_meta(conn, "pull_drift_warn_threshold")?;
-    let parsed = value
-        .as_deref()
-        .unwrap_or("25")
-        .trim()
-        .parse::<u64>()
-        .unwrap_or(25);
-    Ok(parsed)
-}
-
-pub fn count_active_leases(conn: &Connection) -> Result<i64> {
-    conn.query_row(
-        r#"
-SELECT COUNT(*) FROM knot_hot
-WHERE knot_type = 'lease'
-  AND state IN ('lease_ready', 'lease_active')
-"#,
-        [],
-        |row| row.get(0),
-    )
-}
 
 pub fn get_meta(conn: &Connection, key: &str) -> Result<Option<String>> {
     conn.query_row(
@@ -899,85 +384,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value
     Ok(())
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EdgeRecord {
-    pub src: String,
-    pub kind: String,
-    pub dst: String,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EdgeDirection {
-    Incoming,
-    Outgoing,
-    Both,
-}
-
-pub fn insert_edge(conn: &Connection, src: &str, kind: &str, dst: &str) -> Result<()> {
-    with_write_retry(|| {
-        conn.execute(
-            "INSERT OR IGNORE INTO edge (src, kind, dst) VALUES (?1, ?2, ?3)",
-            params![src, kind, dst],
-        )?;
-        Ok(())
-    })?;
-    Ok(())
-}
-
-pub fn delete_edge(conn: &Connection, src: &str, kind: &str, dst: &str) -> Result<()> {
-    with_write_retry(|| {
-        conn.execute(
-            "DELETE FROM edge WHERE src = ?1 AND kind = ?2 AND dst = ?3",
-            params![src, kind, dst],
-        )?;
-        Ok(())
-    })?;
-    Ok(())
-}
-
-pub fn list_edges(
-    conn: &Connection,
-    knot_id: &str,
-    direction: EdgeDirection,
-) -> Result<Vec<EdgeRecord>> {
-    let sql = match direction {
-        EdgeDirection::Incoming => {
-            "SELECT src, kind, dst FROM edge WHERE dst = ?1 ORDER BY src, kind, dst"
-        }
-        EdgeDirection::Outgoing => {
-            "SELECT src, kind, dst FROM edge WHERE src = ?1 ORDER BY src, kind, dst"
-        }
-        EdgeDirection::Both => {
-            "SELECT src, kind, dst FROM edge WHERE src = ?1 OR dst = ?1 ORDER BY src, kind, dst"
-        }
-    };
-    let mut stmt = conn.prepare(sql)?;
-    let mut rows = stmt.query(params![knot_id])?;
-    let mut result = Vec::new();
-    while let Some(row) = rows.next()? {
-        result.push(EdgeRecord {
-            src: row.get(0)?,
-            kind: row.get(1)?,
-            dst: row.get(2)?,
-        });
-    }
-    Ok(result)
-}
-
-pub fn list_edges_by_kind(conn: &Connection, kind: &str) -> Result<Vec<EdgeRecord>> {
-    let mut stmt =
-        conn.prepare("SELECT src, kind, dst FROM edge WHERE kind = ?1 ORDER BY src ASC, dst ASC")?;
-    let mut rows = stmt.query(params![kind])?;
-    let mut result = Vec::new();
-    while let Some(row) = rows.next()? {
-        result.push(EdgeRecord {
-            src: row.get(0)?,
-            kind: row.get(1)?,
-            dst: row.get(2)?,
-        });
-    }
-    Ok(result)
-}
 
 #[cfg(test)]
 mod tests;
+

@@ -1491,3 +1491,7 @@ mod tests_gate_ext;
 #[cfg(test)]
 #[path = "write_dispatch/tests_lease_ext.rs"]
 mod tests_lease_ext;
+
+#[cfg(test)]
+#[path = "write_dispatch/tests_lease_ext2.rs"]
+mod tests_lease_ext2;

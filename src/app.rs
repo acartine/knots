@@ -3725,6 +3725,9 @@ mod tests_acceptance_ext;
 #[path = "app/tests_coverage_ext.rs"]
 mod tests_coverage_ext;
 #[cfg(test)]
+#[path = "app/tests_coverage_ext2.rs"]
+mod tests_coverage_ext2;
+#[cfg(test)]
 #[path = "app/tests_deferred_sync.rs"]
 mod tests_deferred_sync;
 #[cfg(test)]
