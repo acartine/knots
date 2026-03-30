@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3ec8-f3df-7d51-9dfb-86b433e0285c",
+  "occurred_at": "2026-03-30T12:47:30.271507Z",
+  "knot_id": "knots-5403",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review approved. All 8 acceptance criteria verified: (1) timestamp persisted in upgrade-check.json under global data dir, (2) 24h interval check with first-run support, (3) single-line stderr banner with current/available versions, (4) no banner on up-to-date or network failure, (5) timestamp updated after every attempt regardless of outcome, (6) 2-second curl timeout, (7) comprehensive unit tests (first-run, stale, fresh, newer, current, network failure) plus CLI integration tests with stub curl, (8) no new external dependencies. Shared helpers cleanly extracted from doctor.rs into release_version.rs. KNOTS_SKIP_DOCTOR_UPGRADE escape hatch preserved. make sanity passes at 95.05% coverage. File sizes within 500-line limit.",
+    "datetime": "2026-03-30T12:47:30.271507Z",
+    "entry_id": "019d3ec8-f3df-7d51-9dfb-86adc529367a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

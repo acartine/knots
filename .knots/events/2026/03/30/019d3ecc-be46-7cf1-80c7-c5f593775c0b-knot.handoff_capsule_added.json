@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3ecc-be46-7cf1-80c7-c5f593775c0b",
+  "occurred_at": "2026-03-30T12:51:38.694128Z",
+  "knot_id": "knots-5403",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment failed after clean merge validation. Temporary merge commit 8aac41a5c1fa was created in an isolated worktree rooted at origin/main, but git push was blocked by the mandatory pre-push make sanity gate. Failing test: tests/cli_upgrade_notice.rs::stale_upgrade_check_prints_banner_when_stub_reports_newer_version; assertion expected stderr to contain 'Upgrade available: v0.11.0 -> v9.9.9'. origin/main was not updated. Resume from ready_for_implementation by fixing the banner/test mismatch, rerunning make sanity, and reattempting shipment.",
+    "datetime": "2026-03-30T12:51:30Z",
+    "entry_id": "019d3ecc-be46-7cf1-80c7-c5e0bfa0a94f",
+    "model": "GPT-5",
+    "username": "cartine",
+    "version": "unknown"
+  }
+}

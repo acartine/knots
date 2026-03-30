@@ -1,0 +1,21 @@
+{
+  "event_id": "019d3ee1-3b8e-7d33-a454-808e4de6e22c",
+  "occurred_at": "2026-03-30T13:14:01.473379Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a97a",
+    "profile_id": "autopilot",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Suppress post-upgrade hooks hint when hooks are already installed",
+    "type": "work",
+    "updated_at": "2026-03-30T13:14:01.473379Z",
+    "workflow_id": "compatibility"
+  }
+}

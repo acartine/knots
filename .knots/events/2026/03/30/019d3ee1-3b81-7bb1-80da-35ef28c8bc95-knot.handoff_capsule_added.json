@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3ee1-3b81-7bb1-80da-35ef28c8bc95",
+  "occurred_at": "2026-03-30T13:14:01.473379Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment complete. Feature branch knots-a97a merged to main (commit:d130837dbc21), pushed to remote, CI green. Also fixed a pre-existing test failure from knots-5403 (hardcoded version in upgrade notice test) and included the knots-5403 merge that was done by a concurrent agent.",
+    "datetime": "2026-03-30T13:14:01.473379Z",
+    "entry_id": "019d3ee1-3b81-7bb1-80da-35da98bc5771",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

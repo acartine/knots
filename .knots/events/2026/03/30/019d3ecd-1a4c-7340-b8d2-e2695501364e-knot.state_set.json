@@ -1,0 +1,17 @@
+{
+  "event_id": "019d3ecd-1a4c-7340-b8d2-e2695501364e",
+  "occurred_at": "2026-03-30T12:52:02.252001Z",
+  "knot_id": "knots-5403",
+  "type": "knot.state_set",
+  "data": {
+    "actor_kind": "agent",
+    "agent_model": "GPT-5",
+    "agent_name": "Codex",
+    "agent_version": "unknown",
+    "force": true,
+    "from": "shipment",
+    "profile_id": "autopilot",
+    "to": "ready_for_shipment",
+    "workflow_id": "compatibility"
+  }
+}

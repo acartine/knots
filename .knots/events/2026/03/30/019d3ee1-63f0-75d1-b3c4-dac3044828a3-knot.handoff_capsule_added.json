@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3ee1-63f0-75d1-b3c4-dac3044828a3",
+  "occurred_at": "2026-03-30T13:14:11.824719Z",
+  "knot_id": "knots-5403",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment completed. Feature branch knots-5403-upgrade-banner merged to main via f8b3102, with formatting fixes (a22e9e5) for rustfmt max_width=100 config added after branch point, and integration test fix (d59e99a) to use dynamic package version instead of hardcoded v0.11.0. All pushed to origin/main. CI green (run 23746460324). 95.10% coverage maintained.",
+    "datetime": "2026-03-30T13:14:11.824719Z",
+    "entry_id": "019d3ee1-63f0-75d1-b3c4-dab4d8cc9c89",
+    "model": "opus/claude",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}
