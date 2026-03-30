@@ -5,8 +5,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 fn unique_workspace(prefix: &str) -> PathBuf {
-    let path =
-        std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
+    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&path).expect("workspace should be creatable");
     path
 }
@@ -19,25 +18,20 @@ fn knots_binary() -> PathBuf {
     if configured.exists() {
         return std::fs::canonicalize(&configured).unwrap_or(configured);
     }
-    let manifest_relative =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join(&configured);
+    let manifest_relative = Path::new(env!("CARGO_MANIFEST_DIR")).join(&configured);
     if manifest_relative.exists() {
-        return std::fs::canonicalize(&manifest_relative)
-            .unwrap_or(manifest_relative);
+        return std::fs::canonicalize(&manifest_relative).unwrap_or(manifest_relative);
     }
     if let Ok(current_exe) = std::env::current_exe() {
         if !configured.is_absolute() {
             for ancestor in current_exe.ancestors().skip(1) {
                 let candidate = ancestor.join(&configured);
                 if candidate.exists() {
-                    return std::fs::canonicalize(&candidate)
-                        .unwrap_or(candidate);
+                    return std::fs::canonicalize(&candidate).unwrap_or(candidate);
                 }
             }
         }
-        if let Some(debug_dir) =
-            current_exe.parent().and_then(|deps| deps.parent())
-        {
+        if let Some(debug_dir) = current_exe.parent().and_then(|deps| deps.parent()) {
             for name in ["knots", "knots.exe"] {
                 let candidate = debug_dir.join(name);
                 if candidate.exists() {
@@ -49,12 +43,7 @@ fn knots_binary() -> PathBuf {
     configured
 }
 
-fn run_knots(
-    repo_root: &Path,
-    db_path: &Path,
-    home: &Path,
-    args: &[&str],
-) -> Output {
+fn run_knots(repo_root: &Path, db_path: &Path, home: &Path, args: &[&str]) -> Output {
     Command::new(knots_binary())
         .arg("--repo-root")
         .arg(repo_root)
@@ -178,14 +167,11 @@ changes = "triage"
 #[test]
 fn custom_workflow_supports_non_ready_queue_names() {
     let root = unique_workspace("knots-cli-workflow-generic-queues");
-    let home =
-        unique_workspace("knots-cli-workflow-generic-queues-home");
-    std::fs::create_dir_all(root.join(".knots"))
-        .expect(".knots dir should exist");
+    let home = unique_workspace("knots-cli-workflow-generic-queues-home");
+    std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
     let db = root.join(".knots/cache/state.sqlite");
     let bundle_path = root.join("alt-flow.toml");
-    std::fs::write(&bundle_path, ALT_QUEUE_NAMES_BUNDLE)
-        .expect("bundle should write");
+    std::fs::write(&bundle_path, ALT_QUEUE_NAMES_BUNDLE).expect("bundle should write");
 
     let install = run_knots(
         &root,
@@ -205,32 +191,22 @@ fn custom_workflow_supports_non_ready_queue_names() {
         &["workflow", "use", "alt_flow"],
     ));
 
-    let created =
-        run_knots(&root, &db, &home, &["new", "Alt workflow knot"]);
+    let created = run_knots(&root, &db, &home, &["new", "Alt workflow knot"]);
     assert_success(&created);
     let knot_id = parse_created_id(&created);
 
-    let shown =
-        run_knots(&root, &db, &home, &["show", &knot_id, "--json"]);
+    let shown = run_knots(&root, &db, &home, &["show", &knot_id, "--json"]);
     assert_success(&shown);
-    let shown_json: Value =
-        serde_json::from_slice(&shown.stdout).expect("show json");
+    let shown_json: Value = serde_json::from_slice(&shown.stdout).expect("show json");
     assert_eq!(shown_json["state"], "triage");
 
     assert_claim_and_advance(&root, &db, &home, &knot_id);
 }
 
-fn assert_claim_and_advance(
-    root: &Path,
-    db: &Path,
-    home: &Path,
-    knot_id: &str,
-) {
-    let claim =
-        run_knots(root, db, home, &["claim", knot_id, "--json"]);
+fn assert_claim_and_advance(root: &Path, db: &Path, home: &Path, knot_id: &str) {
+    let claim = run_knots(root, db, home, &["claim", knot_id, "--json"]);
     assert_success(&claim);
-    let claim_json: Value =
-        serde_json::from_slice(&claim.stdout).expect("claim json");
+    let claim_json: Value = serde_json::from_slice(&claim.stdout).expect("claim json");
     assert_eq!(claim_json["state"], "build");
     assert!(claim_json["prompt"]
         .as_str()
@@ -244,24 +220,19 @@ fn assert_claim_and_advance(
         &["next", knot_id, "--expected-state", "build", "--json"],
     );
     assert_success(&next);
-    let next_json: Value =
-        serde_json::from_slice(&next.stdout).expect("next json");
+    let next_json: Value = serde_json::from_slice(&next.stdout).expect("next json");
     assert_eq!(next_json["state"], "qa_handoff");
 
-    let claim_review =
-        run_knots(root, db, home, &["claim", knot_id, "--json"]);
+    let claim_review = run_knots(root, db, home, &["claim", knot_id, "--json"]);
     assert_success(&claim_review);
     let claim_review_json: Value =
-        serde_json::from_slice(&claim_review.stdout)
-            .expect("claim review json");
+        serde_json::from_slice(&claim_review.stdout).expect("claim review json");
     assert_eq!(claim_review_json["state"], "approve");
 
     let rollback = run_knots(root, db, home, &["rollback", knot_id]);
     assert_success(&rollback);
-    let after =
-        run_knots(root, db, home, &["show", knot_id, "--json"]);
+    let after = run_knots(root, db, home, &["show", knot_id, "--json"]);
     assert_success(&after);
-    let after_json: Value =
-        serde_json::from_slice(&after.stdout).expect("show json");
+    let after_json: Value = serde_json::from_slice(&after.stdout).expect("show json");
     assert_eq!(after_json["state"], "triage");
 }

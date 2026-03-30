@@ -2,8 +2,7 @@ use crate::app::KnotView;
 use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::MetadataEntry;
 use crate::prompt::{
-    render_prompt, render_prompt_json, render_prompt_json_verbose,
-    render_prompt_verbose,
+    render_prompt, render_prompt_json, render_prompt_json_verbose, render_prompt_verbose,
 };
 
 fn sample_knot() -> KnotView {
@@ -60,11 +59,7 @@ fn make_entry(id: &str, content: &str, agent: &str) -> MetadataEntry {
 #[test]
 fn render_contains_title_and_id() {
     let knot = sample_knot();
-    let output = render_prompt(
-        &knot,
-        "# Implementation\n",
-        "kno state K-abc123 done",
-    );
+    let output = render_prompt(&knot, "# Implementation\n", "kno state K-abc123 done");
     assert!(output.contains("# Add poll command"));
     assert!(output.contains("abc123"));
 }
@@ -73,12 +68,9 @@ fn render_contains_title_and_id() {
 fn render_contains_skill_and_completion() {
     let knot = sample_knot();
     let cmd = "kno state K-abc123 ready_for_implementation_review";
-    let output =
-        render_prompt(&knot, "# Implementation\nDo the work.\n", cmd);
+    let output = render_prompt(&knot, "# Implementation\nDo the work.\n", cmd);
     assert!(output.contains("## Workflow Boundary"));
-    assert!(output.contains(
-        "Complete exactly one workflow action, then stop."
-    ));
+    assert!(output.contains("Complete exactly one workflow action, then stop."));
     assert!(output.contains("Do not claim or execute another knot"));
     assert!(output.contains("# Implementation"));
     assert!(output.contains("Do the work."));
@@ -115,8 +107,7 @@ fn render_falls_back_to_description() {
 #[test]
 fn render_includes_acceptance_section() {
     let mut knot = sample_knot();
-    knot.acceptance =
-        Some("Must preserve round-trip reads.".to_string());
+    knot.acceptance = Some("Must preserve round-trip reads.".to_string());
     let output = render_prompt(&knot, "# S\n", "cmd");
     assert!(output.contains("## Acceptance Criteria"));
     assert!(output.contains("Must preserve round-trip reads."));
@@ -127,13 +118,8 @@ fn render_includes_invariants() {
     use crate::domain::invariant::{Invariant, InvariantType};
     let mut knot = sample_knot();
     knot.invariants = vec![
-        Invariant::new(
-            InvariantType::Scope,
-            "only touch src/prompt.rs",
-        )
-        .unwrap(),
-        Invariant::new(InvariantType::State, "tests must pass")
-            .unwrap(),
+        Invariant::new(InvariantType::Scope, "only touch src/prompt.rs").unwrap(),
+        Invariant::new(InvariantType::State, "tests must pass").unwrap(),
     ];
     let output = render_prompt(&knot, "# S\n", "cmd");
     assert!(output.contains("## Invariants"));
@@ -195,11 +181,8 @@ fn render_no_priority_shows_none() {
 fn json_output_includes_invariants() {
     use crate::domain::invariant::{Invariant, InvariantType};
     let mut knot = sample_knot();
-    knot.invariants = vec![
-        Invariant::new(InvariantType::Scope, "limit scope").unwrap(),
-    ];
-    let json =
-        render_prompt_json(&knot, "# Skill\n", "kno state x y");
+    knot.invariants = vec![Invariant::new(InvariantType::Scope, "limit scope").unwrap()];
+    let json = render_prompt_json(&knot, "# Skill\n", "kno state x y");
     let inv_arr = json["invariants"].as_array().unwrap();
     assert_eq!(inv_arr.len(), 1);
     assert_eq!(inv_arr[0]["type"], "Scope");
@@ -208,8 +191,7 @@ fn json_output_includes_invariants() {
 #[test]
 fn json_output_has_expected_fields() {
     let knot = sample_knot();
-    let json =
-        render_prompt_json(&knot, "# Skill\n", "kno state x y");
+    let json = render_prompt_json(&knot, "# Skill\n", "kno state x y");
     assert_eq!(json["id"], "K-abc123");
     assert_eq!(json["title"], "Add poll command");
     assert!(json["prompt"]
@@ -225,8 +207,7 @@ fn render_non_verbose_shows_only_latest_note() {
         make_entry("n1", "old note", "agent1"),
         make_entry("n2", "new note", "agent2"),
     ];
-    let output =
-        render_prompt_verbose(&knot, "# S\n", "cmd", false);
+    let output = render_prompt_verbose(&knot, "# S\n", "cmd", false);
     assert!(!output.contains("old note"));
     assert!(output.contains("new note"));
     assert!(output.contains("1 older note"));
@@ -239,8 +220,7 @@ fn render_verbose_shows_all_notes() {
         make_entry("n1", "old note", "agent1"),
         make_entry("n2", "new note", "agent2"),
     ];
-    let output =
-        render_prompt_verbose(&knot, "# S\n", "cmd", true);
+    let output = render_prompt_verbose(&knot, "# S\n", "cmd", true);
     assert!(output.contains("old note"));
     assert!(output.contains("new note"));
     assert!(!output.contains("not shown"));
@@ -253,8 +233,7 @@ fn render_non_verbose_shows_latest_handoff() {
         make_entry("h1", "old handoff", "a1"),
         make_entry("h2", "new handoff", "a2"),
     ];
-    let output =
-        render_prompt_verbose(&knot, "# S\n", "cmd", false);
+    let output = render_prompt_verbose(&knot, "# S\n", "cmd", false);
     assert!(!output.contains("old handoff"));
     assert!(output.contains("new handoff"));
 }
@@ -262,24 +241,16 @@ fn render_non_verbose_shows_latest_handoff() {
 #[test]
 fn json_verbose_omits_other_field() {
     let mut knot = sample_knot();
-    knot.notes = vec![
-        make_entry("n1", "old", "a"),
-        make_entry("n2", "new", "a"),
-    ];
-    let json =
-        render_prompt_json_verbose(&knot, "# S\n", "cmd", true);
+    knot.notes = vec![make_entry("n1", "old", "a"), make_entry("n2", "new", "a")];
+    let json = render_prompt_json_verbose(&knot, "# S\n", "cmd", true);
     assert!(json.get("other").is_none());
 }
 
 #[test]
 fn json_non_verbose_includes_other_field() {
     let mut knot = sample_knot();
-    knot.notes = vec![
-        make_entry("n1", "old", "a"),
-        make_entry("n2", "new", "a"),
-    ];
-    let json =
-        render_prompt_json_verbose(&knot, "# S\n", "cmd", false);
+    knot.notes = vec![make_entry("n1", "old", "a"), make_entry("n2", "new", "a")];
+    let json = render_prompt_json_verbose(&knot, "# S\n", "cmd", false);
     let other = json["other"].as_str().unwrap();
     assert!(other.contains("1 older note"));
 }
@@ -287,8 +258,7 @@ fn json_non_verbose_includes_other_field() {
 #[test]
 fn json_no_other_when_single_entries() {
     let knot = sample_knot();
-    let json =
-        render_prompt_json_verbose(&knot, "# S\n", "cmd", false);
+    let json = render_prompt_json_verbose(&knot, "# S\n", "cmd", false);
     assert!(json.get("other").is_none());
 }
 
@@ -332,24 +302,16 @@ fn workflow_boundary_allows_child_claims_for_parents() {
         state: "ready_for_planning".to_string(),
     }];
     let output = render_prompt(&knot, "# S\n", "cmd");
-    assert!(output.contains(
-        "You may claim the child knots listed above"
-    ));
-    assert!(!output.contains(
-        "Do not claim or execute another knot"
-    ));
+    assert!(output.contains("You may claim the child knots listed above"));
+    assert!(!output.contains("Do not claim or execute another knot"));
 }
 
 #[test]
 fn workflow_boundary_restricts_claims_without_children() {
     let knot = sample_knot();
     let output = render_prompt(&knot, "# S\n", "cmd");
-    assert!(output.contains(
-        "Do not claim or execute another knot"
-    ));
-    assert!(!output.contains(
-        "You may claim the child knots listed above"
-    ));
+    assert!(output.contains("Do not claim or execute another knot"));
+    assert!(!output.contains("You may claim the child knots listed above"));
 }
 
 #[test]

@@ -2,8 +2,7 @@ use super::*;
 use std::path::PathBuf;
 
 fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir()
-        .join(format!("knots-poll-test-{}", uuid::Uuid::now_v7()));
+    let root = std::env::temp_dir().join(format!("knots-poll-test-{}", uuid::Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("workspace should be creatable");
     root
 }
@@ -12,8 +11,7 @@ fn unique_workspace() -> PathBuf {
 fn run_ready_empty_queue_prints_message() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
-    let app =
-        App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+    let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let args = ReadyArgs {
         ready_type: None,
         json: false,
@@ -26,8 +24,7 @@ fn run_ready_empty_queue_prints_message() {
 fn run_ready_json_empty_queue() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
-    let app =
-        App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+    let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let args = ReadyArgs {
         ready_type: None,
         json: true,
@@ -40,8 +37,7 @@ fn run_ready_json_empty_queue() {
 fn peek_knot_does_not_advance_state() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
-    let app =
-        App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+    let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let created = app
         .create_knot("Peek test", None, Some("work_item"), Some("default"))
         .expect("create should succeed");
@@ -60,8 +56,7 @@ fn peek_knot_does_not_advance_state() {
 fn run_ready_with_knot_in_queue() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
-    let app =
-        App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+    let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     app.create_knot("Test ready", None, Some("work_item"), Some("default"))
         .expect("create should succeed");
     let args = ReadyArgs {
@@ -76,8 +71,7 @@ fn run_ready_with_knot_in_queue() {
 fn peek_knot_completion_command_has_agent_metadata_flags() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
-    let app =
-        App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+    let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let created = app
         .create_knot(
             "Peek completion command",
@@ -98,8 +92,7 @@ fn peek_knot_completion_command_has_agent_metadata_flags() {
 fn claim_rejects_knot_in_action_state() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
-    let app =
-        App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+    let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let created = app
         .create_knot(
             "Action guard test",
@@ -133,8 +126,7 @@ fn claim_rejects_knot_in_action_state() {
 fn peek_rejects_knot_in_action_state() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");
-    let app =
-        App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+    let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let created = app
         .create_knot("Peek guard test", None, Some("work_item"), Some("default"))
         .expect("create should succeed");

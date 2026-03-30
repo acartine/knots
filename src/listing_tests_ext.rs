@@ -190,8 +190,7 @@ fn filters_by_alias_query() {
         None,
     );
     with_alias.alias = Some("repo-root.1".to_string());
-    let without_alias =
-        knot("repo-c3d4", "Other", "work_item", Some("task"), &[], None);
+    let without_alias = knot("repo-c3d4", "Other", "work_item", Some("task"), &[], None);
     let filter = KnotListFilter {
         include_all: false,
         state: None,
@@ -208,11 +207,9 @@ fn filters_by_alias_query() {
 
 #[test]
 fn filters_by_profile_id() {
-    let mut triage =
-        knot("K-1", "Triage item", "work_item", Some("task"), &[], None);
+    let mut triage = knot("K-1", "Triage item", "work_item", Some("task"), &[], None);
     triage.profile_id = "triage".to_string();
-    let default =
-        knot("K-2", "Default item", "work_item", Some("task"), &[], None);
+    let default = knot("K-2", "Default item", "work_item", Some("task"), &[], None);
     let filter = KnotListFilter {
         include_all: false,
         state: None,

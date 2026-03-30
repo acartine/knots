@@ -5,16 +5,13 @@ use uuid::Uuid;
 
 use crate::doctor::DoctorStatus;
 use crate::git_hooks::{
-    check_hooks, cleanup_legacy_hooks, hook_template, hooks_status,
-    install_hooks, resolve_hooks_dir, uninstall_hooks,
-    HookInstallOutcome, KNOTS_HOOK_MARKER,
+    check_hooks, cleanup_legacy_hooks, hook_template, hooks_status, install_hooks,
+    resolve_hooks_dir, uninstall_hooks, HookInstallOutcome, KNOTS_HOOK_MARKER,
 };
 
 fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir()
-        .join(format!("knots-git-hooks-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root)
-        .expect("workspace should be creatable");
+    let root = std::env::temp_dir().join(format!("knots-git-hooks-{}", Uuid::now_v7()));
+    std::fs::create_dir_all(&root).expect("workspace should be creatable");
     root
 }
 
@@ -36,13 +33,9 @@ fn run_git(root: &Path, args: &[&str]) {
 fn setup_git_repo() -> PathBuf {
     let root = unique_workspace();
     run_git(&root, &["init"]);
-    run_git(
-        &root,
-        &["config", "user.email", "knots@example.com"],
-    );
+    run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
-    std::fs::write(root.join("README.md"), "# test\n")
-        .expect("readme should write");
+    std::fs::write(root.join("README.md"), "# test\n").expect("readme should write");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
     root
@@ -63,11 +56,7 @@ fn resolve_hooks_dir_respects_core_hooks_path() {
     std::fs::create_dir_all(&custom).expect("custom hooks dir");
     run_git(
         &root,
-        &[
-            "config",
-            "core.hooksPath",
-            custom.to_str().expect("utf8"),
-        ],
+        &["config", "core.hooksPath", custom.to_str().expect("utf8")],
     );
     let dir = resolve_hooks_dir(&root);
     assert_eq!(dir, custom);
@@ -77,8 +66,7 @@ fn resolve_hooks_dir_respects_core_hooks_path() {
 #[test]
 fn install_hooks_creates_managed_hooks() {
     let root = setup_git_repo();
-    let summary =
-        install_hooks(&root).expect("install should succeed");
+    let summary = install_hooks(&root).expect("install should succeed");
     assert_eq!(summary.outcomes.len(), 1);
     for (name, outcome) in &summary.outcomes {
         assert_eq!(*outcome, HookInstallOutcome::Installed);
@@ -107,14 +95,9 @@ fn install_hooks_preserves_existing_to_local() {
     let root = setup_git_repo();
     let hooks_dir = root.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks_dir).unwrap();
-    std::fs::write(
-        hooks_dir.join("post-merge"),
-        "#!/bin/sh\necho user hook\n",
-    )
-    .unwrap();
+    std::fs::write(hooks_dir.join("post-merge"), "#!/bin/sh\necho user hook\n").unwrap();
 
-    let summary =
-        install_hooks(&root).expect("install should succeed");
+    let summary = install_hooks(&root).expect("install should succeed");
     let pm = summary
         .outcomes
         .iter()
@@ -127,9 +110,7 @@ fn install_hooks_preserves_existing_to_local() {
     let local_contents = std::fs::read_to_string(&local).unwrap();
     assert!(local_contents.contains("echo user hook"));
 
-    let managed =
-        std::fs::read_to_string(hooks_dir.join("post-merge"))
-            .unwrap();
+    let managed = std::fs::read_to_string(hooks_dir.join("post-merge")).unwrap();
     assert!(managed.contains(KNOTS_HOOK_MARKER));
     let _ = std::fs::remove_dir_all(root);
 }
@@ -139,11 +120,7 @@ fn uninstall_hooks_removes_managed_and_restores_local() {
     let root = setup_git_repo();
     let hooks_dir = root.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks_dir).unwrap();
-    std::fs::write(
-        hooks_dir.join("post-merge"),
-        "#!/bin/sh\necho user hook\n",
-    )
-    .unwrap();
+    std::fs::write(hooks_dir.join("post-merge"), "#!/bin/sh\necho user hook\n").unwrap();
 
     install_hooks(&root).expect("install");
     let summary = uninstall_hooks(&root).expect("uninstall");
@@ -155,9 +132,7 @@ fn uninstall_hooks_removes_managed_and_restores_local() {
         .unwrap();
     assert_eq!(pm.1, HookInstallOutcome::Installed);
 
-    let restored =
-        std::fs::read_to_string(hooks_dir.join("post-merge"))
-            .unwrap();
+    let restored = std::fs::read_to_string(hooks_dir.join("post-merge")).unwrap();
     assert!(restored.contains("echo user hook"));
     assert!(!hooks_dir.join("post-merge.local").exists());
     let _ = std::fs::remove_dir_all(root);
@@ -228,11 +203,7 @@ fn install_preserves_existing_to_backup_when_local_exists() {
     let root = setup_git_repo();
     let hooks_dir = root.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks_dir).unwrap();
-    std::fs::write(
-        hooks_dir.join("post-merge"),
-        "#!/bin/sh\necho original\n",
-    )
-    .unwrap();
+    std::fs::write(hooks_dir.join("post-merge"), "#!/bin/sh\necho original\n").unwrap();
     std::fs::write(
         hooks_dir.join("post-merge.local"),
         "#!/bin/sh\necho local\n",
@@ -247,9 +218,7 @@ fn install_preserves_existing_to_backup_when_local_exists() {
         .unwrap();
     assert_eq!(pm.1, HookInstallOutcome::PreservedExisting);
 
-    let local =
-        std::fs::read_to_string(hooks_dir.join("post-merge.local"))
-            .unwrap();
+    let local = std::fs::read_to_string(hooks_dir.join("post-merge.local")).unwrap();
     assert!(local.contains("echo local"));
 
     let backups: Vec<_> = std::fs::read_dir(&hooks_dir)
@@ -275,11 +244,7 @@ fn check_hooks_warns_on_stale_content() {
          # {KNOTS_HOOK_MARKER}-post-merge-hook\n\
          kno sync >/dev/null 2>&1 &\n"
     );
-    std::fs::write(
-        hooks_dir.join("post-merge"),
-        old_template,
-    )
-    .unwrap();
+    std::fs::write(hooks_dir.join("post-merge"), old_template).unwrap();
 
     let check = check_hooks(&root);
     assert_eq!(check.status, DoctorStatus::Warn);
@@ -340,10 +305,7 @@ fn cleanup_legacy_hooks_restores_local() {
     .unwrap();
 
     cleanup_legacy_hooks(&root);
-    let restored = std::fs::read_to_string(
-        hooks_dir.join("post-commit"),
-    )
-    .unwrap();
+    let restored = std::fs::read_to_string(hooks_dir.join("post-commit")).unwrap();
     assert!(restored.contains("echo original"));
     assert!(!hooks_dir.join("post-commit.local").exists());
     let _ = std::fs::remove_dir_all(root);

@@ -1,6 +1,5 @@
 use crate::cli::{
-    ColdSubcommands, CompactArgs, DoctorArgs, FsckArgs,
-    LeaseSubcommands, PerfArgs, SkillArgs,
+    ColdSubcommands, CompactArgs, DoctorArgs, FsckArgs, LeaseSubcommands, PerfArgs, SkillArgs,
 };
 use crate::{app, dispatch, domain, lease, list_layout, listing};
 use crate::{print_json, progress, progress_reporter, skills, ui};
@@ -275,10 +274,7 @@ pub fn run_cold(app: &app::App, args: crate::cli::ColdArgs) -> Result<(), app::A
     Ok(())
 }
 
-pub fn run_rehydrate(
-    app: &app::App,
-    args: crate::cli::RehydrateArgs,
-) -> Result<(), app::AppError> {
+pub fn run_rehydrate(app: &app::App, args: crate::cli::RehydrateArgs) -> Result<(), app::AppError> {
     match app.rehydrate(&args.id)? {
         Some(knot) => {
             if args.json {
@@ -363,18 +359,12 @@ fn resolve_skill_by_name(id: &str) -> Result<String, app::AppError> {
     let normalized = id.trim().to_ascii_lowercase().replace('-', "_");
     skills::skill_for_state(&normalized)
         .ok_or_else(|| {
-            app::AppError::InvalidArgument(format!(
-                "'{}' is not a knot id or skill state name",
-                id
-            ))
+            app::AppError::InvalidArgument(format!("'{}' is not a knot id or skill state name", id))
         })
         .map(|s| s.to_string())
 }
 
-pub fn run_lease_read(
-    app: &app::App,
-    args: crate::cli::LeaseArgs,
-) -> Result<(), app::AppError> {
+pub fn run_lease_read(app: &app::App, args: crate::cli::LeaseArgs) -> Result<(), app::AppError> {
     match args.command {
         LeaseSubcommands::Show(ref show) => {
             let knot = app

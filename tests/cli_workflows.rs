@@ -362,4 +362,3 @@ fn workflow_install_does_not_switch_without_set_default() {
     assert_eq!(shown_json["profile_id"], "custom_flow/autopilot");
     assert_eq!(shown_json["state"], "ready_for_work");
 }
-

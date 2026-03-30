@@ -19,11 +19,7 @@ impl fmt::Display for EventWriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             EventWriteError::InvalidTimestamp { value, source } => {
-                write!(
-                    f,
-                    "invalid RFC3339 timestamp '{}': {}",
-                    value, source
-                )
+                write!(f, "invalid RFC3339 timestamp '{}': {}", value, source)
             }
             EventWriteError::InvalidFileComponent { field, value } => {
                 write!(

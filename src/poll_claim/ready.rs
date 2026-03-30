@@ -34,10 +34,7 @@ pub fn run_ready(app: &App, args: ReadyArgs) -> Result<(), AppError> {
     Ok(())
 }
 
-pub fn list_queue_candidates(
-    app: &App,
-    stage: Option<&str>,
-) -> Result<Vec<KnotView>, AppError> {
+pub fn list_queue_candidates(app: &App, stage: Option<&str>) -> Result<Vec<KnotView>, AppError> {
     let filter = KnotListFilter {
         include_all: false,
         state: None,
@@ -60,8 +57,7 @@ pub fn list_queue_candidates(
         )
     });
     if let Some(stage) = stage {
-        let normalized =
-            normalize_ready_type(Some(stage)).unwrap_or_else(|| stage.to_string());
+        let normalized = normalize_ready_type(Some(stage)).unwrap_or_else(|| stage.to_string());
         knots.retain(|k| queue_stage_matches(registry, k, &normalized));
     }
     knots.retain(|k| k.knot_type != KnotType::Lease);
@@ -73,11 +69,7 @@ pub fn list_queue_candidates(
     Ok(knots)
 }
 
-pub fn queue_stage_matches(
-    registry: &ProfileRegistry,
-    knot: &KnotView,
-    normalized: &str,
-) -> bool {
+pub fn queue_stage_matches(registry: &ProfileRegistry, knot: &KnotView, normalized: &str) -> bool {
     if knot.state == normalized {
         return true;
     }

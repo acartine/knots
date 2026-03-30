@@ -5,10 +5,7 @@ use crate::db;
 use super::SyncService;
 
 fn unique_workspace() -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "knots-sync-test-{}",
-        uuid::Uuid::now_v7()
-    ));
+    let root = std::env::temp_dir().join(format!("knots-sync-test-{}", uuid::Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("workspace should be creatable");
     root
 }
@@ -33,8 +30,7 @@ fn init_repo(root: &Path) {
     run_git(root, &["config", "user.email", "knots@example.com"]);
     run_git(root, &["config", "user.name", "Knots Test"]);
 
-    std::fs::write(root.join("README.md"), "# test\n")
-        .expect("readme should be writable");
+    std::fs::write(root.join("README.md"), "# test\n").expect("readme should be writable");
     run_git(root, &["add", "README.md"]);
     run_git(root, &["commit", "-m", "init"]);
     run_git(root, &["branch", "-M", "main"]);
@@ -48,21 +44,16 @@ fn open_sync_db(root: &Path) -> rusqlite::Connection {
             .expect("db parent should exist for sync test"),
     )
     .expect("db parent should be creatable");
-    let conn =
-        db::open_connection(db_path.to_str().expect("utf8 path"))
-            .expect("sync test database should open");
-    db::set_meta(&conn, "hot_window_days", "365")
-        .expect("hot_window_days should be settable");
+    let conn = db::open_connection(db_path.to_str().expect("utf8 path"))
+        .expect("sync test database should open");
+    db::set_meta(&conn, "hot_window_days", "365").expect("hot_window_days should be settable");
     conn
 }
 
 fn write_stale_index_event(root: &Path) {
-    let idx_path = root
-        .join(".knots/index/2026/02/24/0300-idx.knot_head.json");
-    std::fs::create_dir_all(
-        idx_path.parent().expect("idx parent should exist"),
-    )
-    .expect("idx dir should be creatable");
+    let idx_path = root.join(".knots/index/2026/02/24/0300-idx.knot_head.json");
+    std::fs::create_dir_all(idx_path.parent().expect("idx parent should exist"))
+        .expect("idx dir should be creatable");
     std::fs::write(
         &idx_path,
         concat!(
@@ -85,8 +76,7 @@ fn write_stale_index_event(root: &Path) {
 }
 
 fn write_stale_precondition_events(root: &Path) {
-    let stale_idx = root
-        .join(".knots/index/2026/02/24/0301-idx.knot_head.json");
+    let stale_idx = root.join(".knots/index/2026/02/24/0301-idx.knot_head.json");
     std::fs::write(
         &stale_idx,
         concat!(
@@ -109,13 +99,9 @@ fn write_stale_precondition_events(root: &Path) {
     )
     .expect("stale index event should be writable");
 
-    let stale_full = root.join(
-        ".knots/events/2026/02/24/0302-knot.description_set.json",
-    );
-    std::fs::create_dir_all(
-        stale_full.parent().expect("full event parent"),
-    )
-    .expect("full event dir should be creatable");
+    let stale_full = root.join(".knots/events/2026/02/24/0302-knot.description_set.json");
+    std::fs::create_dir_all(stale_full.parent().expect("full event parent"))
+        .expect("full event dir should be creatable");
     std::fs::write(
         &stale_full,
         concat!(
@@ -144,10 +130,7 @@ fn sync_ignores_events_with_stale_preconditions() {
     write_stale_precondition_events(&root);
 
     run_git(&root, &["add", ".knots"]);
-    run_git(
-        &root,
-        &["commit", "-m", "seed stale precondition events"],
-    );
+    run_git(&root, &["commit", "-m", "seed stale precondition events"]);
     run_git(&root, &["checkout", "main"]);
 
     let conn = open_sync_db(&root);
@@ -168,10 +151,8 @@ fn sync_ignores_events_with_stale_preconditions() {
 
 fn write_snapshot_files(root: &Path) {
     let snapshots_dir = root.join(".knots").join("snapshots");
-    std::fs::create_dir_all(&snapshots_dir)
-        .expect("snapshot dir should be creatable");
-    let active_path = snapshots_dir
-        .join("20260224T120000Z-active_catalog.snapshot.json");
+    std::fs::create_dir_all(&snapshots_dir).expect("snapshot dir should be creatable");
+    let active_path = snapshots_dir.join("20260224T120000Z-active_catalog.snapshot.json");
     std::fs::write(
         &active_path,
         concat!(
@@ -203,8 +184,7 @@ fn write_snapshot_files(root: &Path) {
         ),
     )
     .expect("active snapshot should be writable");
-    let cold_path = snapshots_dir
-        .join("20260224T120000Z-cold_catalog.snapshot.json");
+    let cold_path = snapshots_dir.join("20260224T120000Z-cold_catalog.snapshot.json");
     std::fs::write(
         &cold_path,
         concat!(

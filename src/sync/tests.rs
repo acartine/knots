@@ -155,8 +155,7 @@ fn sync_applies_index_and_edge_events_from_knots_branch() {
 }
 
 fn write_parity_index_event(root: &Path) {
-    let idx_path = root
-        .join(".knots/index/2026/02/23/0100-idx.knot_head.json");
+    let idx_path = root.join(".knots/index/2026/02/23/0100-idx.knot_head.json");
     std::fs::create_dir_all(
         idx_path
             .parent()
@@ -186,8 +185,7 @@ fn write_parity_index_event(root: &Path) {
 
 fn write_parity_full_events(root: &Path) {
     let events_dir = root.join(".knots/events/2026/02/23");
-    std::fs::create_dir_all(&events_dir)
-        .expect("events directory should be creatable");
+    std::fs::create_dir_all(&events_dir).expect("events directory should be creatable");
 
     std::fs::write(
         events_dir.join("0101-knot.description_set.json"),
@@ -248,11 +246,9 @@ fn open_sync_db(root: &Path) -> rusqlite::Connection {
             .expect("db parent should exist for sync test"),
     )
     .expect("db parent should be creatable");
-    let conn =
-        db::open_connection(db_path.to_str().expect("utf8 path"))
-            .expect("sync test database should open");
-    db::set_meta(&conn, "hot_window_days", "365")
-        .expect("hot_window_days should be settable");
+    let conn = db::open_connection(db_path.to_str().expect("utf8 path"))
+        .expect("sync test database should open");
+    db::set_meta(&conn, "hot_window_days", "365").expect("hot_window_days should be settable");
     conn
 }
 
@@ -390,4 +386,3 @@ fn sync_classifies_old_knots_as_warm_and_terminal_as_cold() {
 
     let _ = std::fs::remove_dir_all(root);
 }
-

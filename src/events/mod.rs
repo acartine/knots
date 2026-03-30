@@ -324,7 +324,6 @@ fn validate_filename_component(field: &'static str, value: &str) -> Result<(), E
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::{

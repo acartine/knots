@@ -9,8 +9,7 @@ use crate::sync::{GitAdapter, SyncError};
 use super::{read_json_file, IncrementalApplier};
 
 fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir()
-        .join(format!("knots-sync-apply-evpaths-{}", Uuid::now_v7()));
+    let root = std::env::temp_dir().join(format!("knots-sync-apply-evpaths-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("workspace should be creatable");
     root
 }
@@ -35,8 +34,7 @@ fn setup_repo() -> PathBuf {
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
-    std::fs::write(root.join("README.md"), "# apply\n")
-        .expect("readme should be writable");
+    std::fs::write(root.join("README.md"), "# apply\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
     root
@@ -44,12 +42,9 @@ fn setup_repo() -> PathBuf {
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
     let db_path = root.join(".knots/cache/state.sqlite");
-    std::fs::create_dir_all(
-        db_path.parent().expect("db parent should exist"),
-    )
-    .expect("db parent should be creatable");
-    db::open_connection(db_path.to_str().expect("utf8 db path"))
-        .expect("db should open")
+    std::fs::create_dir_all(db_path.parent().expect("db parent should exist"))
+        .expect("db parent should be creatable");
+    db::open_connection(db_path.to_str().expect("utf8 db path")).expect("db should open")
 }
 
 fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
@@ -90,26 +85,18 @@ fn read_json_file_reports_invalid_payloads() {
     let path = root.join("bad.json");
     std::fs::write(&path, "{").expect("fixture should write");
 
-    let err = read_json_file::<serde_json::Value>(&path)
-        .expect_err("invalid JSON should fail");
+    let err = read_json_file::<serde_json::Value>(&path).expect_err("invalid JSON should fail");
     assert!(matches!(err, SyncError::InvalidEvent { .. }));
 
     let _ = std::fs::remove_dir_all(root);
 }
 
-fn write_event_file(
-    events_dir: &Path,
-    filename: &str,
-    content: &str,
-) {
+fn write_event_file(events_dir: &Path, filename: &str, content: &str) {
     let path = events_dir.join(filename);
     std::fs::write(&path, content).expect("event should write");
 }
 
-fn apply_priority_and_type_events(
-    applier: &IncrementalApplier<'_>,
-    events_dir: &Path,
-) {
+fn apply_priority_and_type_events(applier: &IncrementalApplier<'_>, events_dir: &Path) {
     write_event_file(
         events_dir,
         "5000-knot.priority_set.json",
@@ -149,10 +136,7 @@ fn apply_priority_and_type_events(
         .expect("type event should apply");
 }
 
-fn apply_tag_note_handoff_events(
-    applier: &IncrementalApplier<'_>,
-    events_dir: &Path,
-) {
+fn apply_tag_note_handoff_events(applier: &IncrementalApplier<'_>, events_dir: &Path) {
     write_event_file(
         events_dir,
         "5002-knot.tag_remove.json",
@@ -227,10 +211,7 @@ fn apply_tag_note_handoff_events(
         .expect("handoff event should apply");
 }
 
-fn apply_missing_hot_note_event(
-    applier: &IncrementalApplier<'_>,
-    events_dir: &Path,
-) {
+fn apply_missing_hot_note_event(applier: &IncrementalApplier<'_>, events_dir: &Path) {
     write_event_file(
         events_dir,
         "5005-knot.note_added.json",
@@ -264,12 +245,10 @@ fn apply_full_event_covers_priority_type_tag_remove_note_and_handoff() {
     let root = setup_repo();
     let conn = open_conn(&root);
     seed_hot_knot(&conn, "K-1");
-    let applier =
-        IncrementalApplier::new(&conn, root.clone(), GitAdapter::new());
+    let applier = IncrementalApplier::new(&conn, root.clone(), GitAdapter::new());
 
     let events_dir = root.join(".knots/events/2026/02/25");
-    std::fs::create_dir_all(&events_dir)
-        .expect("events directory should be creatable");
+    std::fs::create_dir_all(&events_dir).expect("events directory should be creatable");
 
     apply_priority_and_type_events(&applier, &events_dir);
     apply_tag_note_handoff_events(&applier, &events_dir);

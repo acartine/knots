@@ -368,4 +368,3 @@ fn update_knot_terminal_cascade_with_approval_succeeds() {
 
     let _ = std::fs::remove_dir_all(root);
 }
-

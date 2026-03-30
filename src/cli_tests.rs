@@ -333,4 +333,3 @@ fn next_parses_actor_metadata_flags() {
         other => panic!("expected Next, got {:?}", other),
     }
 }
-

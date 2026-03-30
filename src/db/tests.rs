@@ -1,6 +1,6 @@
 use super::{
-    get_pull_drift_warn_threshold, get_sync_fetch_blob_limit_kb,
-    open_connection, set_meta, CURRENT_SCHEMA_VERSION,
+    get_pull_drift_warn_threshold, get_sync_fetch_blob_limit_kb, open_connection, set_meta,
+    CURRENT_SCHEMA_VERSION,
 };
 use rusqlite::params;
 use std::sync::mpsc;

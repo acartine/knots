@@ -206,4 +206,3 @@ fn entry_attribution(entry: &MetadataEntry) -> String {
         &entry.datetime[..10.min(entry.datetime.len())]
     )
 }
-

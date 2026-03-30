@@ -9,12 +9,12 @@ use crate::workflow_runtime;
 
 #[path = "poll_claim/ready.rs"]
 mod ready;
-pub use ready::{list_queue_candidates, run_ready};
-use ready::parse_owner_filter;
 #[cfg(test)]
 use crate::cli::ReadyArgs;
 #[cfg(test)]
 use ready::normalize_ready_type;
+use ready::parse_owner_filter;
+pub use ready::{list_queue_candidates, run_ready};
 
 const AGENT_COMPLETION_METADATA_FLAGS: &str = concat!(
     "--actor-kind agent ",
@@ -249,7 +249,6 @@ pub fn render_json_verbose(result: &PollResult, verbose: bool) -> serde_json::Va
     prompt::render_prompt_json_verbose(&result.knot, result.skill, &result.completion_cmd, verbose)
 }
 
-
 fn match_pollable(
     knot: &KnotView,
     registry: &ProfileRegistry,
@@ -368,7 +367,6 @@ fn prompt_body_for_state(
         ))
     })
 }
-
 
 #[cfg(test)]
 mod tests {

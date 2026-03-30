@@ -1,7 +1,7 @@
 use super::{cleanup_db_files, unique_db_path};
 use crate::db::{
-    get_sync_fetch_blob_limit_kb, needs_schema_bootstrap,
-    open_connection, set_meta, CURRENT_SCHEMA_VERSION,
+    get_sync_fetch_blob_limit_kb, needs_schema_bootstrap, open_connection, set_meta,
+    CURRENT_SCHEMA_VERSION,
 };
 use rusqlite::params;
 
@@ -113,8 +113,7 @@ fn count_active_leases_returns_count() {
     let path = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
-    let empty =
-        count_active_leases(&conn).expect("count should succeed on empty db");
+    let empty = count_active_leases(&conn).expect("count should succeed on empty db");
     assert_eq!(empty, 0);
 
     let gate_data = crate::domain::gate::GateData::default();
@@ -224,30 +223,16 @@ fn get_knot_hot_accepts_legacy_empty_lease_data_json() {
 fn needs_schema_bootstrap_detects_meta_drift() {
     let path = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
-    assert!(
-        !needs_schema_bootstrap(&conn)
-            .expect("fresh schema should not need bootstrap")
-    );
+    assert!(!needs_schema_bootstrap(&conn).expect("fresh schema should not need bootstrap"));
 
-    set_meta(&conn, "schema_version", "0")
-        .expect("schema version should update");
-    assert!(
-        needs_schema_bootstrap(&conn)
-            .expect("stale schema version should trigger bootstrap")
-    );
+    set_meta(&conn, "schema_version", "0").expect("schema version should update");
+    assert!(needs_schema_bootstrap(&conn).expect("stale schema version should trigger bootstrap"));
 
-    set_meta(
-        &conn,
-        "schema_version",
-        &CURRENT_SCHEMA_VERSION.to_string(),
-    )
-    .expect("schema version should restore");
+    set_meta(&conn, "schema_version", &CURRENT_SCHEMA_VERSION.to_string())
+        .expect("schema version should restore");
     conn.execute("DELETE FROM meta WHERE key = 'sync_policy'", [])
         .expect("required meta key should delete");
-    assert!(
-        needs_schema_bootstrap(&conn)
-            .expect("missing meta should trigger bootstrap")
-    );
+    assert!(needs_schema_bootstrap(&conn).expect("missing meta should trigger bootstrap"));
 
     cleanup_db_files(&path);
 }
@@ -256,12 +241,10 @@ fn needs_schema_bootstrap_detects_meta_drift() {
 fn fetch_blob_limit_env_override_covers_env_path() {
     let path = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
-    set_meta(&conn, "sync_fetch_blob_limit_kb", "4")
-        .expect("meta update should succeed");
+    set_meta(&conn, "sync_fetch_blob_limit_kb", "4").expect("meta update should succeed");
 
     std::env::set_var("KNOTS_FETCH_BLOB_LIMIT_KB", "8");
-    let env_value = get_sync_fetch_blob_limit_kb(&conn)
-        .expect("env override should parse");
+    let env_value = get_sync_fetch_blob_limit_kb(&conn).expect("env override should parse");
     std::env::remove_var("KNOTS_FETCH_BLOB_LIMIT_KB");
     assert_eq!(env_value, Some(8));
 

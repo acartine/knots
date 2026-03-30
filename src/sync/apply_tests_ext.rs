@@ -338,4 +338,3 @@ fn apply_index_event_moves_old_non_terminal_knots_to_warm_cache() {
 
     let _ = std::fs::remove_dir_all(root);
 }
-

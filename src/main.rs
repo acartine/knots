@@ -203,10 +203,7 @@ fn run() -> Result<(), app::AppError> {
     dispatch_read_command(cli.command, &app)
 }
 
-fn dispatch_read_command(
-    command: cli::Commands,
-    app: &app::App,
-) -> Result<(), app::AppError> {
+fn dispatch_read_command(command: cli::Commands, app: &app::App) -> Result<(), app::AppError> {
     use cli::{Commands, EdgeSubcommands};
     match command {
         Commands::Ls(args) => run_commands::run_ls(app, args),
@@ -226,9 +223,7 @@ fn dispatch_read_command(
         Commands::Cold(args) => run_commands::run_cold(app, args),
         Commands::Rehydrate(args) => run_commands::run_rehydrate(app, args),
         Commands::Edge(args) => match args.command {
-            EdgeSubcommands::List(edge_args) => {
-                run_commands::run_edge_list(app, edge_args)
-            }
+            EdgeSubcommands::List(edge_args) => run_commands::run_edge_list(app, edge_args),
             _ => unreachable!("queued write commands handled before app init"),
         },
         Commands::Skill(args) => run_commands::run_skill(app, args),

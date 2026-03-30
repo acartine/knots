@@ -6,8 +6,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 fn unique_workspace() -> PathBuf {
-    let root =
-        std::env::temp_dir().join(format!("knots-app-hierarchy-ext-{}", Uuid::now_v7()));
+    let root = std::env::temp_dir().join(format!("knots-app-hierarchy-ext-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
     root
 }
@@ -38,8 +37,7 @@ fn read_state_events(root: &std::path::Path) -> Vec<Value> {
                 continue;
             }
             let payload = std::fs::read(&path).expect("event file should read");
-            let value: Value =
-                serde_json::from_slice(&payload).expect("event should parse");
+            let value: Value = serde_json::from_slice(&payload).expect("event should parse");
             if value.get("type").and_then(Value::as_str) == Some("knot.state_set") {
                 payloads.push(value);
             }
@@ -133,8 +131,7 @@ fn recursive_cascade_reaches_great_grandchildren() {
         .iter()
         .filter(|e| {
             e["data"]["cascade_approved"].as_bool() == Some(true)
-                && e["data"]["cascade_root_id"].as_str()
-                    == Some(parent.id.as_str())
+                && e["data"]["cascade_root_id"].as_str() == Some(parent.id.as_str())
         })
         .count();
     assert_eq!(

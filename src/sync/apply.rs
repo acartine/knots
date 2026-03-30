@@ -14,10 +14,9 @@ use super::{GitAdapter, SyncError, SyncSummary};
 #[path = "apply_helpers.rs"]
 mod apply_helpers;
 use apply_helpers::{
-    invalid_event, is_stale_precondition, optional_i64, optional_string,
-    parse_gate_data, parse_invariants, parse_lease_data, parse_metadata_entry,
-    read_json_file, required_profile_id, required_string, required_workflow_id,
-    MetadataProjection,
+    invalid_event, is_stale_precondition, optional_i64, optional_string, parse_gate_data,
+    parse_invariants, parse_lease_data, parse_metadata_entry, read_json_file, required_profile_id,
+    required_string, required_workflow_id, MetadataProjection,
 };
 
 pub struct IncrementalApplier<'a> {
@@ -276,7 +275,11 @@ impl<'a> IncrementalApplier<'a> {
             "knot.handoff_capsule_added" => {
                 let entry = parse_metadata_entry(data, path)?;
                 self.apply_metadata_update(knot_id, |r| {
-                    if !r.handoff_capsules.iter().any(|e| e.entry_id == entry.entry_id) {
+                    if !r
+                        .handoff_capsules
+                        .iter()
+                        .any(|e| e.entry_id == entry.entry_id)
+                    {
                         r.handoff_capsules.push(entry.clone());
                     }
                 })
@@ -307,7 +310,9 @@ impl<'a> IncrementalApplier<'a> {
         knot_id: &str,
         path: &Path,
     ) -> Result<(), SyncError> {
-        let tag = required_string(data, "tag", path)?.trim().to_ascii_lowercase();
+        let tag = required_string(data, "tag", path)?
+            .trim()
+            .to_ascii_lowercase();
         if !tag.is_empty() {
             self.apply_metadata_update(knot_id, |r| {
                 if !r.tags.iter().any(|existing| existing == &tag) {
@@ -324,7 +329,9 @@ impl<'a> IncrementalApplier<'a> {
         knot_id: &str,
         path: &Path,
     ) -> Result<(), SyncError> {
-        let tag = required_string(data, "tag", path)?.trim().to_ascii_lowercase();
+        let tag = required_string(data, "tag", path)?
+            .trim()
+            .to_ascii_lowercase();
         if !tag.is_empty() {
             self.apply_metadata_update(knot_id, |r| {
                 r.tags.retain(|existing| existing != &tag);
@@ -361,7 +368,10 @@ fn resolve_tier(
     updated_at: &str,
 ) -> Result<CacheTier, SyncError> {
     let hot_window_days = db::get_hot_window_days(conn)?;
-    let terminal_flag = data.get("terminal").and_then(Value::as_bool).unwrap_or(false);
+    let terminal_flag = data
+        .get("terminal")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let now = OffsetDateTime::now_utc();
     if terminal_flag {
         Ok(CacheTier::Cold)
@@ -390,8 +400,14 @@ fn build_index_upsert(params: &IndexUpsertParams<'_>) -> Result<MetadataProjecti
     let acceptance = existing.as_ref().and_then(|r| r.acceptance.clone());
     let priority = existing.as_ref().and_then(|r| r.priority);
     let knot_type = existing.as_ref().and_then(|r| r.knot_type.clone());
-    let tags = existing.as_ref().map(|r| r.tags.clone()).unwrap_or_default();
-    let notes = existing.as_ref().map(|r| r.notes.clone()).unwrap_or_default();
+    let tags = existing
+        .as_ref()
+        .map(|r| r.tags.clone())
+        .unwrap_or_default();
+    let notes = existing
+        .as_ref()
+        .map(|r| r.notes.clone())
+        .unwrap_or_default();
     let handoff_capsules = existing
         .as_ref()
         .map(|r| r.handoff_capsules.clone())
@@ -419,8 +435,12 @@ fn build_index_upsert(params: &IndexUpsertParams<'_>) -> Result<MetadataProjecti
         .map(|r| r.lease_data.clone())
         .unwrap_or_default();
     let lease_id = existing.as_ref().and_then(|r| r.lease_id.clone());
-    let deferred_from_state = optional_string(params.data.get("deferred_from_state"))
-        .or_else(|| existing.as_ref().and_then(|r| r.deferred_from_state.clone()));
+    let deferred_from_state =
+        optional_string(params.data.get("deferred_from_state")).or_else(|| {
+            existing
+                .as_ref()
+                .and_then(|r| r.deferred_from_state.clone())
+        });
     let blocked_from_state = optional_string(params.data.get("blocked_from_state"))
         .or_else(|| existing.as_ref().and_then(|r| r.blocked_from_state.clone()));
     let created_at = existing

@@ -67,11 +67,7 @@ impl MetadataProjection {
         }
     }
 
-    pub fn upsert(
-        &self,
-        conn: &Connection,
-        id: &str,
-    ) -> Result<(), SyncError> {
+    pub fn upsert(&self, conn: &Connection, id: &str) -> Result<(), SyncError> {
         db::upsert_knot_hot(
             conn,
             &UpsertKnotHot {
@@ -109,9 +105,8 @@ where
     T: DeserializeOwned,
 {
     let bytes = std::fs::read(path)?;
-    serde_json::from_slice(&bytes).map_err(|err| {
-        invalid_event(path, &format!("invalid JSON payload: {}", err))
-    })
+    serde_json::from_slice(&bytes)
+        .map_err(|err| invalid_event(path, &format!("invalid JSON payload: {}", err)))
 }
 
 pub(super) fn required_string(
@@ -123,9 +118,7 @@ pub(super) fn required_string(
         .get(key)
         .and_then(Value::as_str)
         .map(|value| value.to_string())
-        .ok_or_else(|| {
-            invalid_event(path, &format!("missing '{}' string field", key))
-        })
+        .ok_or_else(|| invalid_event(path, &format!("missing '{}' string field", key)))
 }
 
 pub(super) fn required_profile_id(
@@ -152,10 +145,7 @@ pub(super) fn required_profile_id(
     ))
 }
 
-pub(super) fn required_workflow_id(
-    object: &Map<String, Value>,
-    profile_id: &str,
-) -> String {
+pub(super) fn required_workflow_id(object: &Map<String, Value>, profile_id: &str) -> String {
     if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
         let trimmed = value.trim();
         if !trimmed.is_empty() {
@@ -166,9 +156,7 @@ pub(super) fn required_workflow_id(
     profile_id
         .split_once('/')
         .map(|(wid, _)| wid.to_string())
-        .unwrap_or_else(|| {
-            installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string()
-        })
+        .unwrap_or_else(|| installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string())
 }
 
 pub(super) fn optional_string(value: Option<&Value>) -> Option<String> {
@@ -216,15 +204,9 @@ pub(super) fn parse_invariants(
 ) -> Result<Vec<Invariant>, SyncError> {
     let raw = object
         .get("invariants")
-        .ok_or_else(|| {
-            invalid_event(path, "missing 'invariants' array field")
-        })?;
-    serde_json::from_value(raw.clone()).map_err(|err| {
-        invalid_event(
-            path,
-            &format!("invalid 'invariants' payload: {}", err),
-        )
-    })
+        .ok_or_else(|| invalid_event(path, "missing 'invariants' array field"))?;
+    serde_json::from_value(raw.clone())
+        .map_err(|err| invalid_event(path, &format!("invalid 'invariants' payload: {}", err)))
 }
 
 pub(super) fn parse_gate_data(
@@ -234,9 +216,8 @@ pub(super) fn parse_gate_data(
     let raw = object
         .get("gate")
         .ok_or_else(|| invalid_event(path, "missing 'gate' object field"))?;
-    serde_json::from_value(raw.clone()).map_err(|err| {
-        invalid_event(path, &format!("invalid 'gate' payload: {}", err))
-    })
+    serde_json::from_value(raw.clone())
+        .map_err(|err| invalid_event(path, &format!("invalid 'gate' payload: {}", err)))
 }
 
 pub(super) fn parse_lease_data(
@@ -245,15 +226,9 @@ pub(super) fn parse_lease_data(
 ) -> Result<LeaseData, SyncError> {
     let raw = object
         .get("lease_data")
-        .ok_or_else(|| {
-            invalid_event(path, "missing 'lease_data' field")
-        })?;
-    serde_json::from_value(raw.clone()).map_err(|err| {
-        invalid_event(
-            path,
-            &format!("invalid 'lease_data' payload: {}", err),
-        )
-    })
+        .ok_or_else(|| invalid_event(path, "missing 'lease_data' field"))?;
+    serde_json::from_value(raw.clone())
+        .map_err(|err| invalid_event(path, &format!("invalid 'lease_data' payload: {}", err)))
 }
 
 pub(super) fn invalid_event(path: &Path, message: &str) -> SyncError {

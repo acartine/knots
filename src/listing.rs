@@ -470,7 +470,6 @@ mod tests {
         assert_eq!(filtered.len(), 1);
         assert_eq!(filtered[0].id, "K-2");
     }
-
 }
 
 #[cfg(test)]
