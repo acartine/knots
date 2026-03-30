@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3ee2-f036-7ad0-856b-09ca89f392a4",
+  "occurred_at": "2026-03-30T13:15:53.270327Z",
+  "knot_id": "knots-5403",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review approved on main at d59e99a7f33c. Verified tagged shipped commits commit:3839a55ed7b1, commit:c18ebb5b0f3f, commit:f8b31024228a, commit:a22e9e5aca7f, and commit:d59e99a7f33c are present on the knot. Confirmed CI workflow run 23746460324 completed successfully on main for d59e99a7f33c. Reviewed the startup hook in src/main.rs plus upgrade_notice/release_version wiring and revalidated with cargo test upgrade_notice and cargo test --test cli_upgrade_notice; both passed. No knot invariants were defined.",
+    "datetime": "2026-03-30T13:15:53.270327Z",
+    "entry_id": "019d3ee2-f036-7ad0-856b-09b2b751b72f",
+    "model": "opus/claude",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d3ee2-fd1e-78d2-9a70-017c20005c12",
+  "occurred_at": "2026-03-30T13:15:56.574902Z",
+  "knot_id": "knots-a97a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review approved. Verified merge commit d130837dbc21 is present on main, knot tags include implementation commit b9588b890c8a and merge commit d130837dbc21, and focused regression tests passed for main_tests::maybe_run_self_command_upgrade_hint_tracks_hook_health and self_manage::tests::upgrade_summary_omits_hint_when_not_needed. GitHub Actions shows successful main pipeline runs after merge; no regressions found in the shipped upgrade-hook hint behavior.",
+    "datetime": "2026-03-30T13:15:56.574902Z",
+    "entry_id": "019d3ee2-fd1e-78d2-9a70-01621b0f8c9e",
+    "model": "opus/claude",
+    "username": "unknown",
+    "version": "4.6"
+  }
+}
