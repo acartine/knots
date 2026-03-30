@@ -1,12 +1,20 @@
 use crate::app::{App, AppError, KnotView, StateActorMetadata};
-use crate::cli::{ClaimArgs, PollArgs, ReadyArgs};
+use crate::cli::{ClaimArgs, PollArgs};
 use crate::dispatch::profile_lookup_id;
 use crate::domain::knot_type::KnotType;
-use crate::listing::{apply_filters, KnotListFilter};
 use crate::prompt;
 use crate::skills;
 use crate::workflow::{OwnerKind, ProfileRegistry};
 use crate::workflow_runtime;
+
+#[path = "poll_claim/ready.rs"]
+mod ready;
+pub use ready::{list_queue_candidates, run_ready};
+use ready::parse_owner_filter;
+#[cfg(test)]
+use crate::cli::ReadyArgs;
+#[cfg(test)]
+use ready::normalize_ready_type;
 
 const AGENT_COMPLETION_METADATA_FLAGS: &str = concat!(
     "--actor-kind agent ",
@@ -241,68 +249,6 @@ pub fn render_json_verbose(result: &PollResult, verbose: bool) -> serde_json::Va
     prompt::render_prompt_json_verbose(&result.knot, result.skill, &result.completion_cmd, verbose)
 }
 
-pub fn run_ready(app: &App, args: ReadyArgs) -> Result<(), AppError> {
-    let stage = normalize_ready_type(args.ready_type.as_deref());
-    let candidates = list_queue_candidates(app, stage.as_deref())?;
-    if args.json {
-        let json =
-            serde_json::to_string_pretty(&candidates).expect("JSON serialization should work");
-        println!("{json}");
-    } else if candidates.is_empty() {
-        println!("no knots ready for action");
-    } else {
-        let palette = crate::ui::Palette::auto();
-        for knot in &candidates {
-            let sid = crate::knot_id::display_id(&knot.id);
-            let display_id = knot
-                .alias
-                .as_deref()
-                .map_or(sid.to_string(), |a| format!("{a} ({sid})"));
-            println!(
-                "{} {} {}",
-                palette.id(&display_id),
-                palette.state(&knot.state),
-                knot.title
-            );
-        }
-    }
-    Ok(())
-}
-
-pub fn list_queue_candidates(app: &App, stage: Option<&str>) -> Result<Vec<KnotView>, AppError> {
-    let filter = KnotListFilter {
-        include_all: false,
-        state: None,
-        knot_type: None,
-        profile_id: None,
-        tags: Vec::new(),
-        query: None,
-    };
-    let mut knots = apply_filters(app.list_knots()?, &filter);
-    let registry = app.profile_registry();
-    knots.retain(|k| {
-        matches!(
-            workflow_runtime::is_queue_state_for_profile(
-                registry,
-                &k.profile_id,
-                k.knot_type,
-                &k.state
-            ),
-            Ok(true)
-        )
-    });
-    if let Some(stage) = stage {
-        let normalized = normalize_ready_type(Some(stage)).unwrap_or_else(|| stage.to_string());
-        knots.retain(|k| queue_stage_matches(registry, k, &normalized));
-    }
-    knots.retain(|k| k.knot_type != KnotType::Lease);
-    knots.sort_by(|a, b| {
-        let pa = a.priority.unwrap_or(i64::MAX);
-        let pb = b.priority.unwrap_or(i64::MAX);
-        pa.cmp(&pb).then_with(|| a.updated_at.cmp(&b.updated_at))
-    });
-    Ok(knots)
-}
 
 fn match_pollable(
     knot: &KnotView,
@@ -423,58 +369,10 @@ fn prompt_body_for_state(
     })
 }
 
-fn queue_stage_matches(registry: &ProfileRegistry, knot: &KnotView, normalized: &str) -> bool {
-    if knot.state == normalized {
-        return true;
-    }
-    if knot.state.trim_start_matches("ready_for_") == normalized {
-        return true;
-    }
-    if normalized == "evaluate" && knot.state == workflow_runtime::READY_TO_EVALUATE {
-        return true;
-    }
-    if let Ok(profile) = registry.require(&profile_lookup_id(knot)) {
-        return profile.queue_states.iter().any(|state| {
-            state == &knot.state
-                && (state.trim_start_matches("ready_for_") == normalized
-                    || profile.action_for_queue_state(state) == Some(normalized))
-        });
-    }
-    false
-}
-
-fn normalize_ready_type(raw: Option<&str>) -> Option<String> {
-    let trimmed = raw?.trim();
-    if trimmed.is_empty() {
-        return None;
-    }
-    let lowered = trimmed.to_ascii_lowercase().replace('-', "_");
-    if lowered == workflow_runtime::READY_TO_EVALUATE {
-        Some("evaluate".to_string())
-    } else if lowered.starts_with("ready_for_") {
-        Some(lowered.trim_start_matches("ready_for_").to_string())
-    } else {
-        Some(lowered)
-    }
-}
-
-fn parse_owner_filter(raw: Option<&str>) -> OwnerKind {
-    match raw.map(|s| s.trim().to_ascii_lowercase()).as_deref() {
-        Some("human") => OwnerKind::Human,
-        _ => OwnerKind::Agent,
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
-
-    fn unique_workspace() -> PathBuf {
-        let root = std::env::temp_dir().join(format!("knots-poll-test-{}", uuid::Uuid::now_v7()));
-        std::fs::create_dir_all(&root).expect("workspace should be creatable");
-        root
-    }
 
     #[test]
     fn parse_owner_defaults_to_agent() {
@@ -526,70 +424,6 @@ mod tests {
     }
 
     #[test]
-    fn run_ready_empty_queue_prints_message() {
-        let root = unique_workspace();
-        let db_path = root.join(".knots/cache/state.sqlite");
-        let app =
-            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
-        let args = ReadyArgs {
-            ready_type: None,
-            json: false,
-        };
-        run_ready(&app, args).expect("run_ready should succeed");
-        let _ = std::fs::remove_dir_all(root);
-    }
-
-    #[test]
-    fn run_ready_json_empty_queue() {
-        let root = unique_workspace();
-        let db_path = root.join(".knots/cache/state.sqlite");
-        let app =
-            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
-        let args = ReadyArgs {
-            ready_type: None,
-            json: true,
-        };
-        run_ready(&app, args).expect("run_ready json should succeed");
-        let _ = std::fs::remove_dir_all(root);
-    }
-
-    #[test]
-    fn peek_knot_does_not_advance_state() {
-        let root = unique_workspace();
-        let db_path = root.join(".knots/cache/state.sqlite");
-        let app =
-            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
-        let created = app
-            .create_knot("Peek test", None, Some("work_item"), Some("default"))
-            .expect("create should succeed");
-        let original_state = created.state.clone();
-        let result = peek_knot(&app, &created.id);
-        assert!(result.is_ok(), "peek_knot should succeed");
-        let after = app
-            .show_knot(&created.id)
-            .expect("show should succeed")
-            .expect("knot should exist");
-        assert_eq!(after.state, original_state, "state should be unchanged");
-        let _ = std::fs::remove_dir_all(root);
-    }
-
-    #[test]
-    fn run_ready_with_knot_in_queue() {
-        let root = unique_workspace();
-        let db_path = root.join(".knots/cache/state.sqlite");
-        let app =
-            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
-        app.create_knot("Test ready", None, Some("work_item"), Some("default"))
-            .expect("create should succeed");
-        let args = ReadyArgs {
-            ready_type: None,
-            json: false,
-        };
-        run_ready(&app, args).expect("run_ready with knot should succeed");
-        let _ = std::fs::remove_dir_all(root);
-    }
-
-    #[test]
     fn completion_command_includes_agent_metadata_flags() {
         let cmd = completion_command("knots-27ef", "implementation", None);
         assert_eq!(
@@ -599,93 +433,11 @@ mod tests {
              --agent-version <AGENT_VERSION>"
         );
     }
-
-    #[test]
-    fn peek_knot_completion_command_has_agent_metadata_flags() {
-        let root = unique_workspace();
-        let db_path = root.join(".knots/cache/state.sqlite");
-        let app =
-            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
-        let created = app
-            .create_knot(
-                "Peek completion command",
-                None,
-                Some("work_item"),
-                Some("default"),
-            )
-            .expect("create should succeed");
-        let result = peek_knot(&app, &created.id).expect("peek_knot should succeed");
-        assert_eq!(
-            result.completion_cmd,
-            completion_command(&created.id, "implementation", None)
-        );
-        let _ = std::fs::remove_dir_all(root);
-    }
-
-    #[test]
-    fn claim_rejects_knot_in_action_state() {
-        let root = unique_workspace();
-        let db_path = root.join(".knots/cache/state.sqlite");
-        let app =
-            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
-        let created = app
-            .create_knot(
-                "Action guard test",
-                None,
-                Some("work_item"),
-                Some("default"),
-            )
-            .expect("create should succeed");
-        // Advance to action state (planning)
-        let actor = StateActorMetadata {
-            actor_kind: Some("agent".to_string()),
-            agent_name: None,
-            agent_model: None,
-            agent_version: None,
-        };
-        app.set_state_with_actor(&created.id, "implementation", false, None, actor.clone())
-            .expect("advance should succeed");
-        let result = claim_knot(&app, &created.id, actor, None);
-        let err = match result {
-            Err(e) => e.to_string(),
-            Ok(_) => panic!("claim should reject action state"),
-        };
-        assert!(
-            err.contains("not a claimable queue state"),
-            "error should mention queue state: {err}"
-        );
-        let _ = std::fs::remove_dir_all(root);
-    }
-
-    #[test]
-    fn peek_rejects_knot_in_action_state() {
-        let root = unique_workspace();
-        let db_path = root.join(".knots/cache/state.sqlite");
-        let app =
-            App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
-        let created = app
-            .create_knot("Peek guard test", None, Some("work_item"), Some("default"))
-            .expect("create should succeed");
-        let actor = StateActorMetadata {
-            actor_kind: Some("agent".to_string()),
-            agent_name: None,
-            agent_model: None,
-            agent_version: None,
-        };
-        app.set_state_with_actor(&created.id, "implementation", false, None, actor)
-            .expect("advance should succeed");
-        let result = peek_knot(&app, &created.id);
-        let err = match result {
-            Err(e) => e.to_string(),
-            Ok(_) => panic!("peek should reject action state"),
-        };
-        assert!(
-            err.contains("not a claimable queue state"),
-            "error should mention queue state: {err}"
-        );
-        let _ = std::fs::remove_dir_all(root);
-    }
 }
+
+#[cfg(test)]
+#[path = "poll_claim/tests_ext2.rs"]
+mod tests_ext2;
 
 #[cfg(test)]
 #[path = "poll_claim/tests_gate_ext.rs"]

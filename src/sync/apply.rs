@@ -1,22 +1,24 @@
 use std::path::{Path, PathBuf};
 
 use rusqlite::Connection;
-use serde::de::DeserializeOwned;
-use serde_json::{Map, Value};
+use serde_json::Value;
 use time::OffsetDateTime;
 
-use crate::db::{self, UpsertKnotHot};
-use crate::domain::gate::GateData;
-use crate::domain::invariant::Invariant;
-use crate::domain::lease::LeaseData;
-use crate::domain::metadata::MetadataEntry;
-use crate::domain::step_history::StepRecord;
-use crate::events::{FullEvent, IndexEvent, IndexEventKind, WorkflowPrecondition};
-use crate::installed_workflows;
+use crate::db;
+use crate::events::{FullEvent, IndexEvent, IndexEventKind};
 use crate::snapshots::apply_latest_snapshots;
 use crate::tiering::{classify_knot_tier, CacheTier};
 
 use super::{GitAdapter, SyncError, SyncSummary};
+
+#[path = "apply_helpers.rs"]
+mod apply_helpers;
+use apply_helpers::{
+    invalid_event, is_stale_precondition, optional_i64, optional_string,
+    parse_gate_data, parse_invariants, parse_lease_data, parse_metadata_entry,
+    read_json_file, required_profile_id, required_string, required_workflow_id,
+    MetadataProjection,
+};
 
 pub struct IncrementalApplier<'a> {
     conn: &'a Connection,
@@ -140,7 +142,6 @@ impl<'a> IncrementalApplier<'a> {
         Ok(files)
     }
 
-    #[allow(clippy::too_many_lines)]
     fn apply_index_event(&self, relative_path: &Path) -> Result<bool, SyncError> {
         let absolute_path = self.worktree.join(relative_path);
         if !absolute_path.exists() {
@@ -168,17 +169,7 @@ impl<'a> IncrementalApplier<'a> {
             return Ok(false);
         }
 
-        let hot_window_days = db::get_hot_window_days(self.conn)?;
-        let terminal_flag = data
-            .get("terminal")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let now = OffsetDateTime::now_utc();
-        let tier = if terminal_flag {
-            CacheTier::Cold
-        } else {
-            classify_knot_tier(&state, &updated_at, hot_window_days, now)
-        };
+        let tier = resolve_tier(self.conn, data, &state, &updated_at)?;
 
         if tier == CacheTier::Cold {
             db::delete_knot_hot(self.conn, &knot_id)?;
@@ -187,98 +178,22 @@ impl<'a> IncrementalApplier<'a> {
             return Ok(true);
         }
 
-        let existing = db::get_knot_hot(self.conn, &knot_id)?;
-        let body = existing.as_ref().and_then(|record| record.body.clone());
-        let description = existing
-            .as_ref()
-            .and_then(|record| record.description.clone());
-        let acceptance = existing
-            .as_ref()
-            .and_then(|record| record.acceptance.clone());
-        let priority = existing.as_ref().and_then(|record| record.priority);
-        let knot_type = existing
-            .as_ref()
-            .and_then(|record| record.knot_type.clone());
-        let tags = existing
-            .as_ref()
-            .map(|record| record.tags.clone())
-            .unwrap_or_default();
-        let notes = existing
-            .as_ref()
-            .map(|record| record.notes.clone())
-            .unwrap_or_default();
-        let handoff_capsules = existing
-            .as_ref()
-            .map(|record| record.handoff_capsules.clone())
-            .unwrap_or_default();
-        let mut invariants = existing
-            .as_ref()
-            .map(|record| record.invariants.clone())
-            .unwrap_or_default();
-        if data.contains_key("invariants") {
-            invariants = parse_invariants(data, &absolute_path)?;
-        }
-        let step_history = existing
-            .as_ref()
-            .map(|record| record.step_history.clone())
-            .unwrap_or_default();
-        let mut gate_data = existing
-            .as_ref()
-            .map(|record| record.gate_data.clone())
-            .unwrap_or_default();
-        if data.contains_key("gate") {
-            gate_data = parse_gate_data(data, &absolute_path)?;
-        }
-        let lease_data = existing
-            .as_ref()
-            .map(|record| record.lease_data.clone())
-            .unwrap_or_default();
-        let lease_id = existing.as_ref().and_then(|record| record.lease_id.clone());
-        let deferred_from_state = existing
-            .as_ref()
-            .and_then(|record| record.deferred_from_state.clone());
-        let deferred_from_state =
-            optional_string(data.get("deferred_from_state")).or(deferred_from_state);
-        let blocked_from_state = existing
-            .as_ref()
-            .and_then(|record| record.blocked_from_state.clone());
-        let blocked_from_state =
-            optional_string(data.get("blocked_from_state")).or(blocked_from_state);
-        let created_at = existing
-            .as_ref()
-            .and_then(|record| record.created_at.clone())
-            .unwrap_or_else(|| updated_at.clone());
+        let upsert = build_index_upsert(&IndexUpsertParams {
+            conn: self.conn,
+            data,
+            absolute_path: &absolute_path,
+            knot_id: &knot_id,
+            title: &title,
+            state: &state,
+            updated_at: &updated_at,
+            profile_id: &profile_id,
+            workflow_id: &workflow_id,
+            event_id: &event.event_id,
+        })?;
 
         match tier {
             CacheTier::Hot => {
-                db::upsert_knot_hot(
-                    self.conn,
-                    &UpsertKnotHot {
-                        id: &knot_id,
-                        title: &title,
-                        state: &state,
-                        updated_at: &updated_at,
-                        body: body.as_deref(),
-                        description: description.as_deref(),
-                        acceptance: acceptance.as_deref(),
-                        priority,
-                        knot_type: knot_type.as_deref(),
-                        tags: &tags,
-                        notes: &notes,
-                        handoff_capsules: &handoff_capsules,
-                        invariants: &invariants,
-                        step_history: &step_history,
-                        gate_data: &gate_data,
-                        lease_data: &lease_data,
-                        lease_id: lease_id.as_deref(),
-                        workflow_id: &workflow_id,
-                        profile_id: &profile_id,
-                        profile_etag: Some(&event.event_id),
-                        deferred_from_state: deferred_from_state.as_deref(),
-                        blocked_from_state: blocked_from_state.as_deref(),
-                        created_at: Some(&created_at),
-                    },
-                )?;
+                upsert.upsert(self.conn, &knot_id)?;
                 db::delete_cold_catalog(self.conn, &knot_id)?;
             }
             CacheTier::Warm => {
@@ -291,7 +206,6 @@ impl<'a> IncrementalApplier<'a> {
         Ok(true)
     }
 
-    #[allow(clippy::too_many_lines)]
     fn apply_full_event(&self, relative_path: &Path) -> Result<FullApplyOutcome, SyncError> {
         let absolute_path = self.worktree.join(relative_path);
         if !absolute_path.exists() {
@@ -321,111 +235,102 @@ impl<'a> IncrementalApplier<'a> {
                 db::delete_edge(self.conn, &event.knot_id, &kind, &dst)?;
                 Ok(FullApplyOutcome::EdgeRemoved)
             }
-            "knot.description_set" => {
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    record.description = optional_string(data.get("description"));
-                    record.body = record.description.clone();
-                })?;
+            t => {
+                self.apply_metadata_event(t, data, &event.knot_id, &absolute_path)?;
                 Ok(FullApplyOutcome::Ignored)
             }
-            "knot.acceptance_set" => {
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    record.acceptance = optional_string(data.get("acceptance"));
-                })?;
-                Ok(FullApplyOutcome::Ignored)
-            }
-            "knot.priority_set" => {
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    record.priority = optional_i64(data.get("priority"));
-                })?;
-                Ok(FullApplyOutcome::Ignored)
-            }
-            "knot.type_set" => {
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    record.knot_type = optional_string(data.get("type"));
-                })?;
-                Ok(FullApplyOutcome::Ignored)
-            }
-            "knot.tag_add" => {
-                let tag = required_string(data, "tag", &absolute_path)?
-                    .trim()
-                    .to_ascii_lowercase();
-                if !tag.is_empty() {
-                    self.apply_metadata_update(&event.knot_id, |record| {
-                        if !record.tags.iter().any(|existing| existing == &tag) {
-                            record.tags.push(tag.clone());
-                        }
-                    })?;
-                }
-                Ok(FullApplyOutcome::Ignored)
-            }
-            "knot.tag_remove" => {
-                let tag = required_string(data, "tag", &absolute_path)?
-                    .trim()
-                    .to_ascii_lowercase();
-                if !tag.is_empty() {
-                    self.apply_metadata_update(&event.knot_id, |record| {
-                        record.tags.retain(|existing| existing != &tag);
-                    })?;
-                }
-                Ok(FullApplyOutcome::Ignored)
-            }
+        }
+    }
+
+    fn apply_metadata_event(
+        &self,
+        event_type: &str,
+        data: &serde_json::Map<String, Value>,
+        knot_id: &str,
+        path: &Path,
+    ) -> Result<(), SyncError> {
+        match event_type {
+            "knot.description_set" => self.apply_metadata_update(knot_id, |r| {
+                r.description = optional_string(data.get("description"));
+                r.body = r.description.clone();
+            }),
+            "knot.acceptance_set" => self.apply_metadata_update(knot_id, |r| {
+                r.acceptance = optional_string(data.get("acceptance"));
+            }),
+            "knot.priority_set" => self.apply_metadata_update(knot_id, |r| {
+                r.priority = optional_i64(data.get("priority"));
+            }),
+            "knot.type_set" => self.apply_metadata_update(knot_id, |r| {
+                r.knot_type = optional_string(data.get("type"));
+            }),
+            "knot.tag_add" => self.apply_tag_add(data, knot_id, path),
+            "knot.tag_remove" => self.apply_tag_remove(data, knot_id, path),
             "knot.note_added" => {
-                let entry = parse_metadata_entry(data, &absolute_path)?;
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    if !record
-                        .notes
-                        .iter()
-                        .any(|existing| existing.entry_id == entry.entry_id)
-                    {
-                        record.notes.push(entry.clone());
+                let entry = parse_metadata_entry(data, path)?;
+                self.apply_metadata_update(knot_id, |r| {
+                    if !r.notes.iter().any(|e| e.entry_id == entry.entry_id) {
+                        r.notes.push(entry.clone());
                     }
-                })?;
-                Ok(FullApplyOutcome::Ignored)
+                })
             }
             "knot.handoff_capsule_added" => {
-                let entry = parse_metadata_entry(data, &absolute_path)?;
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    if !record
-                        .handoff_capsules
-                        .iter()
-                        .any(|existing| existing.entry_id == entry.entry_id)
-                    {
-                        record.handoff_capsules.push(entry.clone());
+                let entry = parse_metadata_entry(data, path)?;
+                self.apply_metadata_update(knot_id, |r| {
+                    if !r.handoff_capsules.iter().any(|e| e.entry_id == entry.entry_id) {
+                        r.handoff_capsules.push(entry.clone());
                     }
-                })?;
-                Ok(FullApplyOutcome::Ignored)
+                })
             }
             "knot.invariants_set" => {
-                let invariants = parse_invariants(data, &absolute_path)?;
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    record.invariants = invariants;
-                })?;
-                Ok(FullApplyOutcome::Ignored)
+                let invariants = parse_invariants(data, path)?;
+                self.apply_metadata_update(knot_id, |r| r.invariants = invariants)
             }
             "knot.gate_data_set" => {
-                let gate_data = parse_gate_data(data, &absolute_path)?;
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    record.gate_data = gate_data;
-                })?;
-                Ok(FullApplyOutcome::Ignored)
+                let gate_data = parse_gate_data(data, path)?;
+                self.apply_metadata_update(knot_id, |r| r.gate_data = gate_data)
             }
             "knot.lease_data_set" => {
-                let ld = parse_lease_data(data, &absolute_path)?;
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    record.lease_data = ld;
-                })?;
-                Ok(FullApplyOutcome::Ignored)
+                let ld = parse_lease_data(data, path)?;
+                self.apply_metadata_update(knot_id, |r| r.lease_data = ld)
             }
             "knot.lease_id_set" => {
                 let lid = optional_string(data.get("lease_id"));
-                self.apply_metadata_update(&event.knot_id, |record| {
-                    record.lease_id = lid;
-                })?;
-                Ok(FullApplyOutcome::Ignored)
+                self.apply_metadata_update(knot_id, |r| r.lease_id = lid)
             }
-            _ => Ok(FullApplyOutcome::Ignored),
+            _ => Ok(()),
         }
+    }
+
+    fn apply_tag_add(
+        &self,
+        data: &serde_json::Map<String, Value>,
+        knot_id: &str,
+        path: &Path,
+    ) -> Result<(), SyncError> {
+        let tag = required_string(data, "tag", path)?.trim().to_ascii_lowercase();
+        if !tag.is_empty() {
+            self.apply_metadata_update(knot_id, |r| {
+                if !r.tags.iter().any(|existing| existing == &tag) {
+                    r.tags.push(tag.clone());
+                }
+            })?;
+        }
+        Ok(())
+    }
+
+    fn apply_tag_remove(
+        &self,
+        data: &serde_json::Map<String, Value>,
+        knot_id: &str,
+        path: &Path,
+    ) -> Result<(), SyncError> {
+        let tag = required_string(data, "tag", path)?.trim().to_ascii_lowercase();
+        if !tag.is_empty() {
+            self.apply_metadata_update(knot_id, |r| {
+                r.tags.retain(|existing| existing != &tag);
+            })?;
+        }
+        Ok(())
     }
 
     fn apply_metadata_update<F>(&self, knot_id: &str, mutate: F) -> Result<(), SyncError>
@@ -436,60 +341,9 @@ impl<'a> IncrementalApplier<'a> {
             return Ok(());
         };
 
-        let mut projection = MetadataProjection {
-            title: existing.title,
-            state: existing.state,
-            updated_at: existing.updated_at,
-            body: existing.body,
-            description: existing.description,
-            acceptance: existing.acceptance,
-            priority: existing.priority,
-            knot_type: existing.knot_type,
-            tags: existing.tags,
-            notes: existing.notes,
-            handoff_capsules: existing.handoff_capsules,
-            invariants: existing.invariants,
-            step_history: existing.step_history,
-            gate_data: existing.gate_data,
-            lease_data: existing.lease_data,
-            lease_id: existing.lease_id,
-            workflow_id: existing.workflow_id,
-            profile_id: existing.profile_id,
-            profile_etag: existing.profile_etag,
-            deferred_from_state: existing.deferred_from_state,
-            blocked_from_state: existing.blocked_from_state,
-            created_at: existing.created_at,
-        };
+        let mut projection = MetadataProjection::from_existing(&existing);
         mutate(&mut projection);
-
-        db::upsert_knot_hot(
-            self.conn,
-            &UpsertKnotHot {
-                id: knot_id,
-                title: &projection.title,
-                state: &projection.state,
-                updated_at: &projection.updated_at,
-                body: projection.body.as_deref(),
-                description: projection.description.as_deref(),
-                acceptance: projection.acceptance.as_deref(),
-                priority: projection.priority,
-                knot_type: projection.knot_type.as_deref(),
-                tags: &projection.tags,
-                notes: &projection.notes,
-                handoff_capsules: &projection.handoff_capsules,
-                invariants: &projection.invariants,
-                step_history: &projection.step_history,
-                gate_data: &projection.gate_data,
-                lease_data: &projection.lease_data,
-                lease_id: projection.lease_id.as_deref(),
-                workflow_id: &projection.workflow_id,
-                profile_id: &projection.profile_id,
-                profile_etag: projection.profile_etag.as_deref(),
-                deferred_from_state: projection.deferred_from_state.as_deref(),
-                blocked_from_state: projection.blocked_from_state.as_deref(),
-                created_at: projection.created_at.as_deref(),
-            },
-        )?;
+        projection.upsert(self.conn, knot_id)?;
         Ok(())
     }
 }
@@ -500,169 +354,104 @@ enum FullApplyOutcome {
     Ignored,
 }
 
-struct MetadataProjection {
-    title: String,
-    state: String,
-    updated_at: String,
-    body: Option<String>,
-    description: Option<String>,
-    acceptance: Option<String>,
-    priority: Option<i64>,
-    knot_type: Option<String>,
-    tags: Vec<String>,
-    notes: Vec<MetadataEntry>,
-    handoff_capsules: Vec<MetadataEntry>,
-    invariants: Vec<Invariant>,
-    step_history: Vec<StepRecord>,
-    gate_data: GateData,
-    lease_data: LeaseData,
-    lease_id: Option<String>,
-    workflow_id: String,
-    profile_id: String,
-    profile_etag: Option<String>,
-    deferred_from_state: Option<String>,
-    blocked_from_state: Option<String>,
-    created_at: Option<String>,
-}
-
-fn read_json_file<T>(path: &Path) -> Result<T, SyncError>
-where
-    T: DeserializeOwned,
-{
-    let bytes = std::fs::read(path)?;
-    serde_json::from_slice(&bytes)
-        .map_err(|err| invalid_event(path, &format!("invalid JSON payload: {}", err)))
-}
-
-fn required_string(
-    object: &Map<String, Value>,
-    key: &str,
-    path: &Path,
-) -> Result<String, SyncError> {
-    object
-        .get(key)
-        .and_then(Value::as_str)
-        .map(|value| value.to_string())
-        .ok_or_else(|| invalid_event(path, &format!("missing '{}' string field", key)))
-}
-
-fn required_profile_id(object: &Map<String, Value>, path: &Path) -> Result<String, SyncError> {
-    if let Some(value) = object.get("profile_id").and_then(Value::as_str) {
-        let trimmed = value.trim();
-        if !trimmed.is_empty() {
-            return Ok(trimmed.to_string());
-        }
-    }
-
-    if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
-        let trimmed = value.trim();
-        if !trimmed.is_empty() {
-            return Ok(trimmed.to_string());
-        }
-    }
-
-    Err(invalid_event(
-        path,
-        "missing 'profile_id' string field (or legacy 'workflow_id')",
-    ))
-}
-
-fn required_workflow_id(object: &Map<String, Value>, profile_id: &str) -> String {
-    if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
-        let trimmed = value.trim();
-        if !trimmed.is_empty() {
-            return trimmed.to_ascii_lowercase();
-        }
-    }
-
-    profile_id
-        .split_once('/')
-        .map(|(workflow_id, _)| workflow_id.to_string())
-        .unwrap_or_else(|| installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string())
-}
-
-fn optional_string(value: Option<&Value>) -> Option<String> {
-    value
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .and_then(|raw| {
-            if raw.is_empty() {
-                None
-            } else {
-                Some(raw.to_string())
-            }
-        })
-}
-
-fn optional_i64(value: Option<&Value>) -> Option<i64> {
-    value.and_then(Value::as_i64)
-}
-
-fn parse_metadata_entry(
-    object: &Map<String, Value>,
-    path: &Path,
-) -> Result<MetadataEntry, SyncError> {
-    let entry_id = required_string(object, "entry_id", path)?;
-    let content = required_string(object, "content", path)?;
-    let username = required_string(object, "username", path)?;
-    let datetime = required_string(object, "datetime", path)?;
-    let agentname = required_string(object, "agentname", path)?;
-    let model = required_string(object, "model", path)?;
-    let version = required_string(object, "version", path)?;
-    Ok(MetadataEntry {
-        entry_id,
-        content,
-        username,
-        datetime,
-        agentname,
-        model,
-        version,
-    })
-}
-
-fn parse_invariants(object: &Map<String, Value>, path: &Path) -> Result<Vec<Invariant>, SyncError> {
-    let raw = object
-        .get("invariants")
-        .ok_or_else(|| invalid_event(path, "missing 'invariants' array field"))?;
-    serde_json::from_value(raw.clone())
-        .map_err(|err| invalid_event(path, &format!("invalid 'invariants' payload: {}", err)))
-}
-
-fn parse_gate_data(object: &Map<String, Value>, path: &Path) -> Result<GateData, SyncError> {
-    let raw = object
-        .get("gate")
-        .ok_or_else(|| invalid_event(path, "missing 'gate' object field"))?;
-    serde_json::from_value(raw.clone())
-        .map_err(|err| invalid_event(path, &format!("invalid 'gate' payload: {}", err)))
-}
-
-fn parse_lease_data(object: &Map<String, Value>, path: &Path) -> Result<LeaseData, SyncError> {
-    let raw = object
-        .get("lease_data")
-        .ok_or_else(|| invalid_event(path, "missing 'lease_data' field"))?;
-    serde_json::from_value(raw.clone())
-        .map_err(|err| invalid_event(path, &format!("invalid 'lease_data' payload: {}", err)))
-}
-
-fn invalid_event(path: &Path, message: &str) -> SyncError {
-    SyncError::InvalidEvent {
-        path: path.to_path_buf(),
-        message: message.to_string(),
-    }
-}
-
-fn is_stale_precondition(
+fn resolve_tier(
     conn: &Connection,
-    knot_id: &str,
-    precondition: Option<&WorkflowPrecondition>,
-) -> Result<bool, SyncError> {
-    let Some(precondition) = precondition else {
-        return Ok(false);
-    };
-    let current = db::get_knot_hot(conn, knot_id)?
-        .and_then(|record| record.profile_etag)
+    data: &serde_json::Map<String, Value>,
+    state: &str,
+    updated_at: &str,
+) -> Result<CacheTier, SyncError> {
+    let hot_window_days = db::get_hot_window_days(conn)?;
+    let terminal_flag = data.get("terminal").and_then(Value::as_bool).unwrap_or(false);
+    let now = OffsetDateTime::now_utc();
+    if terminal_flag {
+        Ok(CacheTier::Cold)
+    } else {
+        Ok(classify_knot_tier(state, updated_at, hot_window_days, now))
+    }
+}
+
+struct IndexUpsertParams<'a> {
+    conn: &'a Connection,
+    data: &'a serde_json::Map<String, Value>,
+    absolute_path: &'a Path,
+    knot_id: &'a str,
+    title: &'a str,
+    state: &'a str,
+    updated_at: &'a str,
+    profile_id: &'a str,
+    workflow_id: &'a str,
+    event_id: &'a str,
+}
+
+fn build_index_upsert(params: &IndexUpsertParams<'_>) -> Result<MetadataProjection, SyncError> {
+    let existing = db::get_knot_hot(params.conn, params.knot_id)?;
+    let body = existing.as_ref().and_then(|r| r.body.clone());
+    let description = existing.as_ref().and_then(|r| r.description.clone());
+    let acceptance = existing.as_ref().and_then(|r| r.acceptance.clone());
+    let priority = existing.as_ref().and_then(|r| r.priority);
+    let knot_type = existing.as_ref().and_then(|r| r.knot_type.clone());
+    let tags = existing.as_ref().map(|r| r.tags.clone()).unwrap_or_default();
+    let notes = existing.as_ref().map(|r| r.notes.clone()).unwrap_or_default();
+    let handoff_capsules = existing
+        .as_ref()
+        .map(|r| r.handoff_capsules.clone())
         .unwrap_or_default();
-    Ok(current != precondition.profile_etag)
+    let mut invariants = existing
+        .as_ref()
+        .map(|r| r.invariants.clone())
+        .unwrap_or_default();
+    if params.data.contains_key("invariants") {
+        invariants = parse_invariants(params.data, params.absolute_path)?;
+    }
+    let step_history = existing
+        .as_ref()
+        .map(|r| r.step_history.clone())
+        .unwrap_or_default();
+    let mut gate_data = existing
+        .as_ref()
+        .map(|r| r.gate_data.clone())
+        .unwrap_or_default();
+    if params.data.contains_key("gate") {
+        gate_data = parse_gate_data(params.data, params.absolute_path)?;
+    }
+    let lease_data = existing
+        .as_ref()
+        .map(|r| r.lease_data.clone())
+        .unwrap_or_default();
+    let lease_id = existing.as_ref().and_then(|r| r.lease_id.clone());
+    let deferred_from_state = optional_string(params.data.get("deferred_from_state"))
+        .or_else(|| existing.as_ref().and_then(|r| r.deferred_from_state.clone()));
+    let blocked_from_state = optional_string(params.data.get("blocked_from_state"))
+        .or_else(|| existing.as_ref().and_then(|r| r.blocked_from_state.clone()));
+    let created_at = existing
+        .as_ref()
+        .and_then(|r| r.created_at.clone())
+        .unwrap_or_else(|| params.updated_at.to_string());
+
+    Ok(MetadataProjection {
+        title: params.title.to_string(),
+        state: params.state.to_string(),
+        updated_at: params.updated_at.to_string(),
+        body,
+        description,
+        acceptance,
+        priority,
+        knot_type,
+        tags,
+        notes,
+        handoff_capsules,
+        invariants,
+        step_history,
+        gate_data,
+        lease_data,
+        lease_id,
+        workflow_id: params.workflow_id.to_string(),
+        profile_id: params.profile_id.to_string(),
+        profile_etag: Some(params.event_id.to_string()),
+        deferred_from_state,
+        blocked_from_state,
+        created_at: Some(created_at),
+    })
 }
 
 #[cfg(test)]

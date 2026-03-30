@@ -771,5 +771,9 @@ pub struct LeaseListArgs {
 mod tests;
 
 #[cfg(test)]
+#[path = "cli_tests_ext.rs"]
+mod tests_ext;
+
+#[cfg(test)]
 #[path = "cli_lease_tests.rs"]
 mod lease_tests;

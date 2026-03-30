@@ -278,3 +278,6 @@ impl From<rusqlite::Error> for SyncError {
 mod error_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+#[path = "tests_ext.rs"]
+mod tests_ext;
