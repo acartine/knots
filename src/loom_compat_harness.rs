@@ -161,7 +161,10 @@ fn run_compat_test_inner(
         )?;
         Ok(format!(
             "selected {}",
-            config_selection.current_profile.unwrap_or(installed_id)
+            config_selection
+                .current_profile_id()
+                .map(str::to_string)
+                .unwrap_or(installed_id)
         ))
     })?;
     steps.push(install_detail);

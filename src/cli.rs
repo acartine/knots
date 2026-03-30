@@ -196,6 +196,13 @@ pub struct NewArgs {
     )]
     pub profile: Option<String>,
 
+    #[arg(
+        short = 'w',
+        long = "workflow",
+        help = "Workflow id (defaults to the repo default workflow)."
+    )]
+    pub workflow: Option<String>,
+
     #[arg(short = 'k', long = "type", help = "Knot type (work or gate).")]
     pub knot_type: Option<String>,
 

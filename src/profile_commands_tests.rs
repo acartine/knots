@@ -141,9 +141,10 @@ fn run_profile_command_handles_list_show_and_set_default() {
     )
     .expect("profile set-default should succeed");
 
-    let config_path = root.join(".config/knots/config.toml");
-    let config = std::fs::read_to_string(&config_path).expect("config should be readable");
-    assert!(config.contains("semiauto"));
+    let workflow_config_path = root.join(".knots/workflows/current");
+    let workflow_config =
+        std::fs::read_to_string(&workflow_config_path).expect("workflow config should be readable");
+    assert!(workflow_config.contains("semiauto"));
 
     run_profile_command_with_home(
         &ProfileArgs {
@@ -157,6 +158,7 @@ fn run_profile_command_handles_list_show_and_set_default() {
     )
     .expect("profile set-default-quick should succeed");
 
+    let config_path = root.join(".config/knots/config.toml");
     let config2 = std::fs::read_to_string(&config_path).expect("config should be readable");
     assert!(
         config2.contains("default_quick_profile"),
@@ -167,8 +169,8 @@ fn run_profile_command_handles_list_show_and_set_default() {
         "config should preserve quick profile id: {config2}"
     );
     assert!(
-        config2.contains("semiauto"),
-        "config should still contain default_profile: {config2}"
+        workflow_config.contains("semiauto"),
+        "workflow config should still contain default profile: {workflow_config}"
     );
 
     let app = crate::app::App::open(&db_str, root.clone())

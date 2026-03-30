@@ -280,6 +280,13 @@ fn custom_workflow_install_use_and_runtime_flow() {
         "installed bundle should be copied into repo-local workflow registry"
     );
 
+    let before_use = run_knots(&root, &db, &home, &["workflow", "current"]);
+    assert_success(&before_use);
+    assert_eq!(
+        String::from_utf8_lossy(&before_use.stdout).trim(),
+        "compatibility v1 default_profile=autopilot"
+    );
+
     let list = run_knots(&root, &db, &home, &["workflow", "list", "--json"]);
     assert_success(&list);
     let listed: Value = serde_json::from_slice(&list.stdout).expect("workflow list json");
@@ -299,7 +306,7 @@ fn custom_workflow_install_use_and_runtime_flow() {
     assert_success(&current);
     let current_stdout = String::from_utf8_lossy(&current.stdout);
     let current_stdout = current_stdout.trim();
-    assert!(current_stdout.starts_with("custom_flow v1 profile="));
+    assert!(current_stdout.starts_with("custom_flow v1 default_profile="));
     assert!(current_stdout.ends_with("autopilot"));
 
     let created = run_knots(&root, &db, &home, &["new", "Custom workflow knot"]);
@@ -361,8 +368,8 @@ fn workflow_commands_render_text_and_json_views() {
     let list_text = run_knots(&root, &db, &home, &["workflow", "list"]);
     assert_success(&list_text);
     let list_stdout = String::from_utf8_lossy(&list_text.stdout);
-    assert!(list_stdout.contains("compatibility v1"));
-    assert!(list_stdout.contains("custom_flow v1 (current)"));
+    assert!(list_stdout.contains("compatibility v1 default_profile=autopilot"));
+    assert!(list_stdout.contains("custom_flow v1 default_profile=autopilot"));
 
     let show_text = run_knots(&root, &db, &home, &["workflow", "show", "custom_flow"]);
     assert_success(&show_text);
@@ -386,19 +393,64 @@ fn workflow_commands_render_text_and_json_views() {
     let current_json = run_knots(&root, &db, &home, &["workflow", "current", "--json"]);
     assert_success(&current_json);
     let current_json: Value = serde_json::from_slice(&current_json.stdout).expect("current json");
-    assert_eq!(current_json["id"], "custom_flow");
+    assert_eq!(current_json["id"], "compatibility");
     assert_eq!(current_json["version"], 1);
-    assert_eq!(current_json["current_profile"], "autopilot");
+    assert_eq!(current_json["default_profile"], "autopilot");
 
     let use_builtin = run_knots(&root, &db, &home, &["workflow", "use", "compatibility"]);
     assert_success(&use_builtin);
     let use_stdout = String::from_utf8_lossy(&use_builtin.stdout);
-    assert!(use_stdout.contains("current workflow: compatibility v1"));
+    assert!(use_stdout.contains("default workflow: compatibility v1"));
 
     let current_text = run_knots(&root, &db, &home, &["workflow", "current"]);
     assert_success(&current_text);
     let current_stdout = String::from_utf8_lossy(&current_text.stdout);
-    assert!(current_stdout.contains("compatibility v1 profile=autopilot"));
+    assert!(current_stdout.contains("compatibility v1 default_profile=autopilot"));
+}
+
+#[test]
+fn workflow_install_does_not_switch_without_set_default() {
+    let root = unique_workspace("knots-cli-workflows-install-defaults");
+    let home = unique_workspace("knots-cli-workflows-install-defaults-home");
+    std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
+    let db = root.join(".knots/cache/state.sqlite");
+    let bundle_path = root.join("custom-flow.toml");
+    std::fs::write(&bundle_path, CUSTOM_BUNDLE).expect("bundle should write");
+
+    let install = run_knots(
+        &root,
+        &db,
+        &home,
+        &[
+            "workflow",
+            "install",
+            bundle_path.to_str().expect("utf8 path"),
+            "--set-default=false",
+        ],
+    );
+    assert_success(&install);
+
+    let current = run_knots(&root, &db, &home, &["workflow", "current", "--json"]);
+    assert_success(&current);
+    let current_json: Value = serde_json::from_slice(&current.stdout).expect("current json");
+    assert_eq!(current_json["id"], "compatibility");
+    assert_eq!(current_json["default_profile"], "autopilot");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &home,
+        &["new", "Workflow override", "--workflow", "custom_flow"],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    let shown = run_knots(&root, &db, &home, &["show", &knot_id, "--json"]);
+    assert_success(&shown);
+    let shown_json: Value = serde_json::from_slice(&shown.stdout).expect("show json");
+    assert_eq!(shown_json["workflow_id"], "custom_flow");
+    assert_eq!(shown_json["profile_id"], "custom_flow/autopilot");
+    assert_eq!(shown_json["state"], "ready_for_work");
 }
 
 #[test]

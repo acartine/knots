@@ -338,60 +338,106 @@ impl App {
         Ok(registry.current_workflow_id().to_string())
     }
 
+    pub fn default_workflow_id(&self) -> Result<String, AppError> {
+        self.current_workflow_id()
+    }
+
     fn resolve_profile_id(
         &self,
         raw_profile_id: &str,
         workflow_id: Option<&str>,
     ) -> Result<String, AppError> {
-        if let Ok(profile) = self.profile_registry.require(raw_profile_id) {
-            return Ok(profile.id.clone());
-        }
-        if let Some((_, suffix)) = raw_profile_id.rsplit_once('/') {
-            if let Ok(profile) = self.profile_registry.require(suffix) {
+        if let Some(workflow_id) = workflow_id {
+            let namespaced =
+                installed_workflows::namespaced_profile_id(workflow_id, raw_profile_id);
+            if let Ok(profile) = self.profile_registry.require(&namespaced) {
                 return Ok(profile.id.clone());
             }
         }
-        if let Some(workflow_id) = workflow_id {
-            if let Ok(profile) = self.profile_registry.require(raw_profile_id) {
-                if profile.workflow_id == workflow_id {
+        if let Ok(profile) = self.profile_registry.require(raw_profile_id) {
+            if workflow_id.is_none_or(|id| profile.workflow_id == id) {
+                return Ok(profile.id.clone());
+            }
+        }
+        if let Some((prefix, suffix)) = raw_profile_id.rsplit_once('/') {
+            if let Some(workflow_id) = workflow_id {
+                if prefix == workflow_id {
+                    let namespaced =
+                        installed_workflows::namespaced_profile_id(workflow_id, suffix);
+                    if let Ok(profile) = self.profile_registry.require(&namespaced) {
+                        return Ok(profile.id.clone());
+                    }
+                }
+            } else if let Ok(profile) = self.profile_registry.require(raw_profile_id) {
+                return Ok(profile.id.clone());
+            } else if let Ok(profile) = self.profile_registry.require(suffix) {
+                if profile.workflow_id == installed_workflows::COMPATIBILITY_WORKFLOW_ID {
                     return Ok(profile.id.clone());
                 }
             }
         }
         let profile = self.profile_registry.require(raw_profile_id)?;
+        if let Some(workflow_id) = workflow_id {
+            if profile.workflow_id != workflow_id {
+                return Err(AppError::InvalidArgument(format!(
+                    "profile '{}' does not belong to workflow '{}'",
+                    profile.id, workflow_id
+                )));
+            }
+        }
         Ok(profile.id.clone())
     }
 
     pub fn default_profile_id(&self) -> Result<String, AppError> {
-        let config = self.read_user_config()?;
-        if let Some(id) = self.resolve_config_profile(&config.default_profile) {
-            return Ok(id);
-        }
-        if let Ok(registry) = installed_workflows::InstalledWorkflowRegistry::load(&self.repo_root)
-        {
-            if let Some(current_profile) = registry.current_profile_id() {
-                if self.profile_registry.require(current_profile).is_ok() {
-                    return Ok(current_profile.to_string());
-                }
-            }
-            if let Ok(workflow) = registry.current_workflow() {
-                if let Some(default_profile) = workflow.default_profile.as_deref() {
-                    if self.profile_registry.require(default_profile).is_ok() {
-                        return Ok(default_profile.to_string());
-                    }
-                }
-            }
-        }
-        self.fallback_profile_id()
+        let workflow_id = self.default_workflow_id()?;
+        self.default_profile_id_for_workflow(&workflow_id)
     }
 
     pub fn set_default_profile_id(&self, profile_id: &str) -> Result<String, AppError> {
-        let resolved = self.resolve_profile_id(profile_id, None)?;
+        let workflow_id = self.default_workflow_id()?;
+        let resolved = self.resolve_profile_id(profile_id, Some(&workflow_id))?;
         let profile = self.profile_registry.require(&resolved)?;
-        let mut config = self.read_user_config()?;
-        config.default_profile = Some(profile.id.clone());
-        self.write_user_config(&config)?;
+        installed_workflows::set_workflow_default_profile(
+            &self.repo_root,
+            &workflow_id,
+            Some(profile.id.as_str()),
+        )?;
         Ok(profile.id.clone())
+    }
+
+    pub fn default_profile_id_for_workflow(&self, workflow_id: &str) -> Result<String, AppError> {
+        let config = self.read_user_config()?;
+        if let Some(id) = self.resolve_config_profile(&config.default_profile) {
+            let profile = self.profile_registry.require(&id)?;
+            if profile.workflow_id == workflow_id {
+                return Ok(id);
+            }
+        }
+        if let Ok(registry) = installed_workflows::InstalledWorkflowRegistry::load(&self.repo_root)
+        {
+            if let Some(profile_id) = registry.default_profile_id_for_workflow(workflow_id) {
+                if self.profile_registry.require(&profile_id).is_ok() {
+                    return Ok(profile_id);
+                }
+            }
+            if let Ok(workflow) = registry.require_workflow(workflow_id) {
+                if let Some(default_profile) = workflow.default_profile.as_deref() {
+                    let resolved = self.resolve_profile_id(default_profile, Some(workflow_id))?;
+                    return Ok(resolved);
+                }
+                if let Some(profile) = workflow.list_profiles().into_iter().next() {
+                    let resolved = self.resolve_profile_id(&profile.id, Some(workflow_id))?;
+                    return Ok(resolved);
+                }
+            }
+        }
+        if workflow_id == installed_workflows::COMPATIBILITY_WORKFLOW_ID {
+            return self.fallback_profile_id();
+        }
+        Err(AppError::InvalidArgument(format!(
+            "workflow '{}' has no available profiles",
+            workflow_id
+        )))
     }
 
     pub fn default_quick_profile_id(&self) -> Result<String, AppError> {
@@ -627,11 +673,23 @@ impl App {
         initial_state: Option<&str>,
         profile_id: Option<&str>,
     ) -> Result<KnotView, AppError> {
+        self.create_knot_in_workflow(title, body, initial_state, profile_id, None)
+    }
+
+    pub fn create_knot_in_workflow(
+        &self,
+        title: &str,
+        body: Option<&str>,
+        initial_state: Option<&str>,
+        profile_id: Option<&str>,
+        workflow_id: Option<&str>,
+    ) -> Result<KnotView, AppError> {
         self.create_knot_with_options(
             title,
             body,
             initial_state,
             profile_id,
+            workflow_id,
             CreateKnotOptions::default(),
         )
     }
@@ -642,21 +700,38 @@ impl App {
         body: Option<&str>,
         initial_state: Option<&str>,
         profile_id: Option<&str>,
+        workflow_id: Option<&str>,
         options: CreateKnotOptions,
     ) -> Result<KnotView, AppError> {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        let resolved_workflow = match workflow_id {
+            Some(id) => Some(id.to_string()),
+            None if profile_id.is_none() => Some(self.default_workflow_id()?),
+            None => None,
+        };
         let default_profile = if profile_id.is_none() {
-            Some(self.default_profile_id()?)
+            Some(match resolved_workflow.as_deref() {
+                Some(workflow_id) => self.default_profile_id_for_workflow(workflow_id)?,
+                None => self.default_profile_id()?,
+            })
         } else {
             None
         };
         let resolved_profile = match profile_id {
-            Some(raw) => Some(self.resolve_profile_id(raw, None)?),
+            Some(raw) => Some(self.resolve_profile_id(raw, resolved_workflow.as_deref())?),
             None => default_profile.clone(),
         };
         let profile = self.profile_registry.resolve(resolved_profile.as_deref())?;
+        if let Some(workflow_id) = resolved_workflow.as_deref() {
+            if profile.workflow_id != workflow_id {
+                return Err(AppError::InvalidArgument(format!(
+                    "profile '{}' does not belong to workflow '{}'",
+                    profile.id, workflow_id
+                )));
+            }
+        }
         let state = if let Some(requested) = non_empty(initial_state.unwrap_or("")) {
             normalize_state_input(&requested)?
         } else {
@@ -801,7 +876,7 @@ impl App {
             &next_state,
         )?;
 
-        let current_profile_id = canonical_profile_id(&current.profile_id);
+        let current_profile_id = canonical_profile_id(&current.profile_id, &current.workflow_id);
         if current_profile_id == profile.id && current.state == next_state {
             return self.apply_alias_to_knot(KnotView::from(current));
         }
@@ -2610,9 +2685,14 @@ fn non_empty(raw: &str) -> Option<String> {
     }
 }
 
-fn canonical_profile_id(raw: &str) -> String {
+fn canonical_profile_id(raw: &str, workflow_id: &str) -> String {
     let trimmed = raw.trim();
-    let unqualified = trimmed.rsplit('/').next().unwrap_or(trimmed);
+    let unqualified =
+        if workflow_id != installed_workflows::COMPATIBILITY_WORKFLOW_ID && trimmed.contains('/') {
+            trimmed
+        } else {
+            trimmed.rsplit('/').next().unwrap_or(trimmed)
+        };
     normalize_profile_id(unqualified).unwrap_or_else(|| unqualified.to_ascii_lowercase())
 }
 
@@ -3380,7 +3460,7 @@ fn parse_gate_data_value(value: Option<&Value>) -> GateData {
 
 impl From<KnotCacheRecord> for KnotView {
     fn from(value: KnotCacheRecord) -> Self {
-        let profile_id = canonical_profile_id(&value.profile_id);
+        let profile_id = canonical_profile_id(&value.profile_id, &value.workflow_id);
         let knot_type = parse_knot_type(value.knot_type.as_deref());
         let gate = (knot_type == KnotType::Gate).then_some(value.gate_data.clone());
         let lease = (knot_type == KnotType::Lease).then_some(value.lease_data.clone());

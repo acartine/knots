@@ -139,6 +139,7 @@ fn gate_parent_transition_blocks_work_child_with_lower_effective_rank() {
             None,
             None,
             None,
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),

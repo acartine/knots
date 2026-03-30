@@ -38,6 +38,7 @@ fn list_and_poll_gate_candidates_respect_stage_and_owner() {
             None,
             None,
             None,
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData {
@@ -74,6 +75,7 @@ fn peek_and_claim_gate_follow_gate_workflow_states() {
     let gate = app
         .create_knot_with_options(
             "Agent gate",
+            None,
             None,
             None,
             None,
@@ -119,6 +121,7 @@ fn run_poll_and_claim_cover_json_and_text_rendering_paths() {
             None,
             None,
             None,
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
@@ -152,6 +155,7 @@ fn run_poll_and_claim_cover_json_and_text_rendering_paths() {
     let claimable = app
         .create_knot_with_options(
             "Claim gate",
+            None,
             None,
             None,
             None,

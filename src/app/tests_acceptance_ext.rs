@@ -22,6 +22,7 @@ fn create_and_update_round_trip_acceptance() {
             Some("Description"),
             Some("ready_for_implementation"),
             Some("autopilot"),
+            None,
             CreateKnotOptions {
                 acceptance: Some("Must survive round-trip".to_string()),
                 ..CreateKnotOptions::default()
@@ -194,6 +195,7 @@ fn json_shape_acceptance_string_when_set() {
             Some("desc"),
             Some("ready_for_implementation"),
             Some("autopilot"),
+            None,
             CreateKnotOptions {
                 acceptance: Some("Tests pass and coverage met".to_string()),
                 ..CreateKnotOptions::default()
@@ -229,6 +231,7 @@ fn json_shape_acceptance_null_after_clear() {
             Some("desc"),
             Some("ready_for_implementation"),
             Some("autopilot"),
+            None,
             CreateKnotOptions {
                 acceptance: Some("Initial criteria".to_string()),
                 ..CreateKnotOptions::default()

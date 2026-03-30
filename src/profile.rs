@@ -262,8 +262,10 @@ impl ProfileRegistry {
     pub fn load_for_repo(repo_root: &Path) -> Result<Self, ProfileError> {
         let mut registry = Self::from_toml(PROFILES_TOML)?;
         let installed = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
-        let workflow = installed.current_workflow()?;
-        if !workflow.builtin {
+        for workflow in installed.list() {
+            if workflow.builtin {
+                continue;
+            }
             for mut profile in workflow.list_profiles() {
                 let raw_id = profile.id.clone();
                 let namespaced = installed_workflows::namespaced_profile_id(&workflow.id, &raw_id);
@@ -550,12 +552,7 @@ fn normalize_profile_definition(
         READY_FOR_PLANNING.to_string()
     };
 
-    if !state_set.contains(&initial_state) {
-        return Err(ProfileError::InvalidDefinition(format!(
-            "profile '{}' has invalid initial state '{}'",
-            id, initial_state
-        )));
-    }
+    debug_assert!(state_set.contains(&initial_state));
 
     let terminal_states = vec![SHIPPED.to_string(), ABANDONED.to_string()];
     let escape_states = vec![DEFERRED.to_string()];

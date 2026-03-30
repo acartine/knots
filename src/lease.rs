@@ -20,6 +20,7 @@ pub fn create_lease(
         None,
         Some("lease_ready"),
         None,
+        None,
         CreateKnotOptions {
             knot_type: KnotType::Lease,
             lease_data,

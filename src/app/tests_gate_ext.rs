@@ -43,6 +43,7 @@ fn evaluate_gate_yes_ships_without_reopening() {
             None,
             None,
             Some("default"),
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
@@ -86,6 +87,7 @@ fn evaluate_gate_no_covers_missing_invariant_and_failure_mode_errors() {
             None,
             None,
             Some("default"),
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
@@ -161,6 +163,7 @@ fn gate_metadata_updates_round_trip_and_work_knots_reject_them() {
             None,
             None,
             Some("default"),
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
@@ -252,6 +255,7 @@ fn evaluate_gate_no_reopens_targets_and_appends_metadata() {
             None,
             None,
             Some("default"),
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData {
@@ -339,6 +343,7 @@ fn evaluate_gate_no_skips_transition_for_already_ready_target() {
             None,
             None,
             Some("default"),
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData {
@@ -413,6 +418,7 @@ fn evaluate_gate_rejects_non_gate_and_wrong_state() {
             None,
             None,
             Some("default"),
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),

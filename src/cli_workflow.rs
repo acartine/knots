@@ -43,6 +43,13 @@ pub struct WorkflowShowArgs {
 pub struct WorkflowInstallArgs {
     #[arg(help = "Bundle JSON file or workflow directory.")]
     pub source: std::path::PathBuf,
+
+    #[arg(
+        long = "set-default",
+        value_name = "BOOL",
+        help = "Whether to switch to the installed workflow (yes|true|1|no|false|0)."
+    )]
+    pub set_default: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -76,11 +83,18 @@ mod tests {
 
     #[test]
     fn workflow_install_parses() {
-        let cli = Cli::parse_from(["kno", "workflow", "install", "/tmp/bundle.json"]);
+        let cli = Cli::parse_from([
+            "kno",
+            "workflow",
+            "install",
+            "/tmp/bundle.json",
+            "--set-default=true",
+        ]);
         match cli.command {
             Commands::Workflow(args) => match args.command {
                 WorkflowSubcommands::Install(install) => {
                     assert_eq!(install.source, std::path::PathBuf::from("/tmp/bundle.json"));
+                    assert_eq!(install.set_default.as_deref(), Some("true"));
                 }
                 other => panic!("expected install, got {:?}", other),
             },

@@ -19,6 +19,50 @@ use crate::snapshots::SnapshotError;
 use crate::sync::SyncError;
 use crate::workflow::WorkflowError;
 
+const CUSTOM_WORKFLOW_BUNDLE: &str = r#"
+[workflow]
+name = "custom_flow"
+version = 1
+default_profile = "autopilot"
+
+[states.ready_for_work]
+kind = "queue"
+
+[states.work]
+kind = "action"
+executor = "agent"
+prompt = "work"
+
+[states.done]
+kind = "terminal"
+
+[states.blocked]
+kind = "escape"
+
+[states.deferred]
+kind = "escape"
+
+[states.abandoned]
+kind = "terminal"
+
+[steps.work_step]
+queue = "ready_for_work"
+action = "work"
+
+[phases.main]
+produce = "work_step"
+gate = "work_step"
+
+[profiles.autopilot]
+phases = ["main"]
+
+[prompts.work]
+body = "Do work"
+
+[prompts.work.success]
+complete = "done"
+"#;
+
 fn unique_workspace() -> PathBuf {
     let root = std::env::temp_dir().join(format!("knots-app-coverage-ext-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("workspace should be creatable");
@@ -649,9 +693,101 @@ fn default_profile_resolution_covers_config_and_fallback_paths() {
         .expect("configured profile should resolve");
     assert_eq!(configured, "semiauto");
 
-    let no_home_app = app.with_home_override(None);
-    let missing_home = no_home_app.set_default_profile_id("autopilot");
-    assert!(matches!(missing_home, Err(AppError::InvalidArgument(_))));
+    app.set_default_profile_id("autopilot")
+        .expect("repo default profile should persist without HOME");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn workflow_specific_defaults_and_create_knot_resolve_custom_workflows() {
+    let root = unique_workspace();
+    let bundle = root.join("custom-flow.toml");
+    std::fs::write(&bundle, CUSTOM_WORKFLOW_BUNDLE).expect("bundle should write");
+    crate::installed_workflows::install_bundle(&root, &bundle).expect("bundle should install");
+    crate::installed_workflows::set_current_workflow_selection(&root, "custom_flow", None, None)
+        .expect("workflow selection should succeed");
+
+    let (app, _) = open_app(&root);
+    assert_eq!(
+        app.default_profile_id()
+            .expect("default profile should resolve"),
+        "custom_flow/autopilot"
+    );
+    assert_eq!(
+        app.default_profile_id_for_workflow("custom_flow")
+            .expect("workflow profile should resolve"),
+        "custom_flow/autopilot"
+    );
+
+    let created = app
+        .create_knot_in_workflow("Custom work", None, None, None, Some("custom_flow"))
+        .expect("workflow-specific create should succeed");
+    assert_eq!(created.workflow_id, "custom_flow");
+    assert_eq!(created.profile_id, "custom_flow/autopilot");
+    assert_eq!(created.state, "ready_for_work");
+
+    let wrong_profile = app.create_knot_in_workflow(
+        "Wrong profile",
+        None,
+        None,
+        Some("default"),
+        Some("custom_flow"),
+    );
+    assert!(matches!(wrong_profile, Err(AppError::InvalidArgument(_))));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn create_knot_with_namespaced_profile_uses_profile_workflow_without_explicit_workflow() {
+    let root = unique_workspace();
+    let bundle = root.join("custom-flow.toml");
+    std::fs::write(&bundle, CUSTOM_WORKFLOW_BUNDLE).expect("bundle should write");
+    crate::installed_workflows::install_bundle(&root, &bundle).expect("bundle should install");
+
+    let (app, _) = open_app(&root);
+    let created = app
+        .create_knot_in_workflow(
+            "Namespaced profile",
+            None,
+            None,
+            Some("custom_flow/autopilot"),
+            None,
+        )
+        .expect("create should resolve workflow from namespaced profile");
+    assert_eq!(created.workflow_id, "custom_flow");
+    assert_eq!(created.profile_id, "custom_flow/autopilot");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn default_profile_for_workflow_falls_back_to_first_available_profile() {
+    let root = unique_workspace();
+    let bundle = root.join("custom-flow.toml");
+    let no_default_bundle = CUSTOM_WORKFLOW_BUNDLE
+        .replace("default_profile = \"autopilot\"\n", "")
+        .replace(
+            "[profiles.autopilot]\nphases = [\"main\"]\n",
+            "[profiles.beta]\nphases = [\"main\"]\n\n[profiles.alpha]\nphases = [\"main\"]\n",
+        );
+    std::fs::write(&bundle, no_default_bundle).expect("bundle should write");
+    crate::installed_workflows::install_bundle(&root, &bundle).expect("bundle should install");
+    crate::installed_workflows::set_current_workflow_selection(&root, "custom_flow", None, None)
+        .expect("workflow selection should succeed");
+
+    let (app, _) = open_app(&root);
+    assert_eq!(
+        app.default_profile_id_for_workflow("custom_flow")
+            .expect("workflow profile should resolve"),
+        "custom_flow/alpha"
+    );
+    assert_eq!(
+        app.default_profile_id()
+            .expect("default workflow profile should resolve"),
+        "custom_flow/alpha"
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -672,6 +808,7 @@ fn evaluate_gate_failure_reopens_linked_knots_and_adds_metadata() {
             Some("Gate must pass before shipment"),
             None,
             Some("default"),
+            None,
             CreateKnotOptions {
                 knot_type: crate::domain::knot_type::KnotType::Gate,
                 gate_data: GateData {

@@ -168,6 +168,7 @@ fn execute_operation_gate_evaluate_covers_text_and_json_output() {
             None,
             None,
             None,
+            None,
             CreateKnotOptions {
                 knot_type: KnotType::Gate,
                 gate_data: GateData::default(),
@@ -208,6 +209,7 @@ fn execute_operation_gate_evaluate_covers_text_and_json_output() {
     let gate = app
         .create_knot_with_options(
             "Fail gate",
+            None,
             None,
             None,
             None,
@@ -288,6 +290,7 @@ fn execute_operation_rollback_rewinds_gate_evaluating_state() {
     let gate = app
         .create_knot_with_options(
             "Release gate",
+            None,
             None,
             None,
             None,

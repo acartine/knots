@@ -299,6 +299,7 @@ fn new_with_lease_flag_binds_lease() {
         acceptance: None,
         state: None,
         profile: None,
+        workflow: None,
         fast: false,
         knot_type: None,
         gate_owner_kind: None,

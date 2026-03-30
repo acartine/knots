@@ -83,6 +83,7 @@ fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
             acceptance: args.acceptance.clone(),
             state: args.state.clone(),
             profile: args.profile.clone(),
+            workflow: args.workflow.clone(),
             fast: args.fast,
             knot_type: args.knot_type.clone(),
             gate_owner_kind: args.gate_owner_kind.clone(),
@@ -276,6 +277,11 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 None
             };
             let profile = profile_override.as_deref().or(args.profile.as_deref());
+            let workflow = if args.fast {
+                None
+            } else {
+                args.workflow.as_deref()
+            };
             let knot_type = parse_knot_type_arg(args.knot_type.as_deref())?;
             let gate_data = parse_gate_data_args(
                 args.gate_owner_kind.as_deref(),
@@ -287,6 +293,7 @@ fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, Ap
                 args.description.as_deref(),
                 args.state.as_deref(),
                 profile,
+                workflow,
                 CreateKnotOptions {
                     acceptance: args.acceptance.clone(),
                     knot_type,
@@ -964,6 +971,7 @@ mod tests {
                 acceptance: None,
                 state: None,
                 profile: None,
+                workflow: None,
                 fast: false,
                 knot_type: None,
                 gate_owner_kind: None,

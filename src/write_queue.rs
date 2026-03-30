@@ -20,6 +20,7 @@ pub struct NewOperation {
     pub acceptance: Option<String>,
     pub state: Option<String>,
     pub profile: Option<String>,
+    pub workflow: Option<String>,
     pub fast: bool,
     pub knot_type: Option<String>,
     pub gate_owner_kind: Option<String>,

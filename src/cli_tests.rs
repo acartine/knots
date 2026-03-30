@@ -161,6 +161,18 @@ fn new_fast_flag_parses() {
 }
 
 #[test]
+fn new_workflow_flag_parses() {
+    let cli = parse(&["kno", "new", "Workflow task", "--workflow", "custom_flow"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert_eq!(args.title, "Workflow task");
+            assert_eq!(args.workflow.as_deref(), Some("custom_flow"));
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}
+
+#[test]
 fn update_parses_invariant_flags() {
     let cli = parse(&[
         "kno",

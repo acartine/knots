@@ -22,7 +22,39 @@ pub struct WorkflowRepoConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current_version: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub current_profile: Option<String>,
+    #[serde(alias = "current_profile")]
+    pub legacy_current_profile: Option<String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub default_profiles: BTreeMap<String, String>,
+}
+
+impl WorkflowRepoConfig {
+    fn normalize(mut self) -> Self {
+        if let (Some(workflow_id), Some(profile_id)) = (
+            self.current_workflow.as_deref(),
+            self.legacy_current_profile.take(),
+        ) {
+            self.default_profiles
+                .entry(workflow_id.to_string())
+                .or_insert(profile_id);
+        }
+        self
+    }
+
+    pub(crate) fn current_profile_id(&self) -> Option<&str> {
+        self.current_workflow
+            .as_deref()
+            .and_then(|id| self.default_profiles.get(id).map(String::as_str))
+    }
+
+    fn set_default_profile(&mut self, workflow_id: &str, profile_id: String) {
+        self.default_profiles
+            .insert(workflow_id.to_string(), profile_id);
+    }
+
+    pub(crate) fn default_profile_id_for_workflow(&self, workflow_id: &str) -> Option<&str> {
+        self.default_profiles.get(workflow_id).map(String::as_str)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -204,10 +236,28 @@ impl InstalledWorkflowRegistry {
             .and_then(|config| config.current_version)
     }
 
-    pub fn current_profile_id(&self) -> Option<&str> {
-        self.current
+    pub fn current_profile_id(&self) -> Option<String> {
+        self.default_profile_id_for_workflow(self.current_workflow_id())
+    }
+
+    pub fn default_profile_id_for_workflow(&self, workflow_id: &str) -> Option<String> {
+        if let Some(profile_id) = self
+            .current
             .as_ref()
-            .and_then(|config| config.current_profile.as_deref())
+            .and_then(|config| config.default_profile_id_for_workflow(workflow_id))
+        {
+            return Some(profile_id.to_string());
+        }
+        let workflow = self.require_workflow(workflow_id).ok()?;
+        let default_profile = workflow
+            .default_profile
+            .as_deref()
+            .or_else(|| workflow.profiles.keys().next().map(String::as_str))?;
+        if workflow.builtin {
+            Some(default_profile.to_string())
+        } else {
+            Some(namespaced_profile_id(workflow_id, default_profile))
+        }
     }
 
     pub fn current_workflow(&self) -> Result<&WorkflowDefinition, ProfileError> {
@@ -273,7 +323,9 @@ pub fn read_repo_config(repo_root: &Path) -> Result<WorkflowRepoConfig, ProfileE
     }
     let raw =
         fs::read_to_string(&path).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
-    toml::from_str(&raw).map_err(|err| ProfileError::InvalidBundle(err.to_string()))
+    let config: WorkflowRepoConfig =
+        toml::from_str(&raw).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
+    Ok(config.normalize())
 }
 
 pub fn write_repo_config(
@@ -284,7 +336,7 @@ pub fn write_repo_config(
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
     }
-    let rendered = toml::to_string_pretty(config)
+    let rendered = toml::to_string_pretty(&config.clone().normalize())
         .map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
     fs::write(path, rendered).map_err(|err| ProfileError::InvalidBundle(err.to_string()))
 }
@@ -309,7 +361,6 @@ pub fn install_bundle(repo_root: &Path, source: &Path) -> Result<String, Profile
         fs::write(workflow_dir.join(TOML_BUNDLE_FILE), &raw)
             .map_err(|err| ProfileError::InvalidBundle(err.to_string()))?;
     }
-    let _ = set_current_workflow_selection(repo_root, &workflow.id, Some(workflow.version), None);
     Ok(workflow.id)
 }
 
@@ -349,11 +400,32 @@ pub fn set_current_workflow_selection(
     } else {
         namespaced_profile_id(&workflow.id, &selected_profile_id)
     };
-    let config = WorkflowRepoConfig {
-        current_workflow: Some(workflow.id.clone()),
-        current_version: Some(workflow.version),
-        current_profile: Some(selected_profile_id),
+    let mut config = read_repo_config(repo_root)?;
+    config.current_workflow = Some(workflow.id.clone());
+    config.current_version = Some(workflow.version);
+    config.set_default_profile(&workflow.id, selected_profile_id);
+    write_repo_config(repo_root, &config)?;
+    Ok(config)
+}
+
+pub fn set_workflow_default_profile(
+    repo_root: &Path,
+    workflow_id: &str,
+    profile_id: Option<&str>,
+) -> Result<WorkflowRepoConfig, ProfileError> {
+    let registry = InstalledWorkflowRegistry::load(repo_root)?;
+    let workflow = registry.require_workflow(workflow_id)?;
+    let Some(profile_id) = profile_id else {
+        return read_repo_config(repo_root);
     };
+    let selected_profile_id = workflow.require_profile(profile_id)?.id.clone();
+    let selected_profile_id = if workflow.builtin {
+        selected_profile_id
+    } else {
+        namespaced_profile_id(workflow_id, &selected_profile_id)
+    };
+    let mut config = read_repo_config(repo_root)?;
+    config.set_default_profile(workflow_id, selected_profile_id);
     write_repo_config(repo_root, &config)?;
     Ok(config)
 }
@@ -1654,7 +1726,11 @@ changes = "ready_for_work"
         let config = WorkflowRepoConfig {
             current_workflow: Some("custom_flow".to_string()),
             current_version: Some(3),
-            current_profile: Some("custom_flow/autopilot".to_string()),
+            legacy_current_profile: None,
+            default_profiles: BTreeMap::from([(
+                "custom_flow".to_string(),
+                "custom_flow/autopilot".to_string(),
+            )]),
         };
         write_repo_config(&root, &config).expect("config should write");
         let loaded = read_repo_config(&root).expect("config should load");
@@ -1663,7 +1739,71 @@ changes = "ready_for_work"
     }
 
     #[test]
-    fn install_bundle_writes_repo_local_registry_and_sets_current_selection() {
+    fn workflow_repo_config_normalize_preserves_explicit_profile_mappings() {
+        let config = WorkflowRepoConfig {
+            current_workflow: Some("custom_flow".to_string()),
+            current_version: Some(3),
+            legacy_current_profile: Some("custom_flow/legacy".to_string()),
+            default_profiles: BTreeMap::from([(
+                "custom_flow".to_string(),
+                "custom_flow/explicit".to_string(),
+            )]),
+        };
+
+        let normalized = config.normalize();
+        assert_eq!(normalized.legacy_current_profile, None);
+        assert_eq!(
+            normalized.current_profile_id(),
+            Some("custom_flow/explicit")
+        );
+        assert_eq!(
+            normalized.default_profile_id_for_workflow("custom_flow"),
+            Some("custom_flow/explicit")
+        );
+    }
+
+    #[test]
+    fn workflow_repo_config_current_profile_is_none_without_selected_workflow() {
+        let config = WorkflowRepoConfig {
+            current_workflow: None,
+            current_version: None,
+            legacy_current_profile: None,
+            default_profiles: BTreeMap::from([(
+                "custom_flow".to_string(),
+                "custom_flow/autopilot".to_string(),
+            )]),
+        };
+
+        assert_eq!(config.current_profile_id(), None);
+        assert_eq!(config.default_profile_id_for_workflow("missing"), None);
+    }
+
+    #[test]
+    fn read_repo_config_migrates_legacy_current_profile() {
+        let root = unique_workspace("knots-installed-workflows-legacy-config");
+        let path = repo_config_path(&root);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("config dir should exist");
+        }
+        std::fs::write(
+            &path,
+            "current_workflow = \"custom_flow\"\ncurrent_version = 3\ncurrent_profile = \"custom_flow/autopilot\"\n",
+        )
+        .expect("legacy config should write");
+
+        let loaded = read_repo_config(&root).expect("config should load");
+        assert_eq!(loaded.current_workflow.as_deref(), Some("custom_flow"));
+        assert_eq!(loaded.current_profile_id(), Some("custom_flow/autopilot"));
+        assert_eq!(
+            loaded.default_profile_id_for_workflow("custom_flow"),
+            Some("custom_flow/autopilot")
+        );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn install_bundle_writes_repo_local_registry_without_switching_selection() {
         let root = unique_workspace("knots-installed-workflows-install");
         let source = root.join("custom-flow.toml");
         std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
@@ -1679,19 +1819,17 @@ changes = "ready_for_work"
             .exists());
 
         let current = read_repo_config(&root).expect("current config should load");
-        assert_eq!(current.current_workflow.as_deref(), Some("custom_flow"));
-        assert_eq!(current.current_version, Some(3));
-        assert_eq!(
-            current.current_profile.as_deref(),
-            Some("custom_flow/autopilot")
-        );
+        assert_eq!(current.current_workflow, None);
+        assert_eq!(current.current_version, None);
+        assert!(current.default_profiles.is_empty());
 
         let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
         let workflow = registry
-            .current_workflow()
-            .expect("current workflow should resolve");
+            .require_workflow("custom_flow")
+            .expect("installed workflow should resolve");
         assert_eq!(workflow.id, "custom_flow");
-        assert_eq!(registry.current_profile_id(), Some("custom_flow/autopilot"));
+        assert_eq!(registry.current_workflow_id(), COMPATIBILITY_WORKFLOW_ID);
+        assert_eq!(registry.current_profile_id(), Some("autopilot".to_string()));
 
         let _ = std::fs::remove_dir_all(root);
     }
@@ -1706,7 +1844,27 @@ changes = "ready_for_work"
             config.current_workflow.as_deref(),
             Some(COMPATIBILITY_WORKFLOW_ID)
         );
-        assert_eq!(config.current_profile.as_deref(), Some("autopilot"));
+        assert_eq!(config.current_profile_id(), Some("autopilot"));
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn set_workflow_default_profile_keeps_builtin_profiles_unscoped() {
+        let root = unique_workspace("knots-installed-workflows-builtin-default");
+        let config =
+            set_workflow_default_profile(&root, COMPATIBILITY_WORKFLOW_ID, Some("semiauto"))
+                .expect("builtin default profile should persist");
+        assert_eq!(
+            config.default_profile_id_for_workflow(COMPATIBILITY_WORKFLOW_ID),
+            Some("semiauto")
+        );
+
+        let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+        assert_eq!(
+            registry.default_profile_id_for_workflow(COMPATIBILITY_WORKFLOW_ID),
+            Some("semiauto".to_string())
+        );
+
         let _ = std::fs::remove_dir_all(root);
     }
 
@@ -1857,8 +2015,8 @@ changes = "ready_for_work"
         install_bundle(&root, &source).expect("bundle should install");
 
         let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
-        assert_eq!(registry.current_workflow_version(), Some(3));
-        assert_eq!(registry.current_profile_id(), Some("custom_flow/autopilot"));
+        assert_eq!(registry.current_workflow_version(), None);
+        assert_eq!(registry.current_profile_id(), Some("autopilot".to_string()));
         assert_eq!(
             registry
                 .require_workflow("custom_flow")
@@ -1884,6 +2042,27 @@ changes = "ready_for_work"
         assert_eq!(workflow.display_description(), None);
         assert_eq!(workflow.list_profiles().len(), 1);
         assert!(workflow.require_profile("missing").is_err());
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn registry_uses_bundle_default_profiles_for_custom_workflows_without_repo_overrides() {
+        let root = unique_workspace("knots-installed-workflows-default-profiles");
+        let source = root.join("custom-flow.toml");
+        std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
+        install_bundle(&root, &source).expect("bundle should install");
+
+        let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+        assert_eq!(
+            registry.default_profile_id_for_workflow("custom_flow"),
+            Some("custom_flow/autopilot".to_string())
+        );
+        assert_eq!(
+            registry.default_profile_id_for_workflow(COMPATIBILITY_WORKFLOW_ID),
+            Some("autopilot".to_string())
+        );
+        assert_eq!(registry.default_profile_id_for_workflow("missing"), None);
 
         let _ = std::fs::remove_dir_all(root);
     }
@@ -2011,6 +2190,49 @@ changes = "ready_for_work"
     }
 
     #[test]
+    fn output_builders_prefer_profile_entries_and_skip_missing_states() {
+        let toml_outputs = build_outputs_from_toml_profile(
+            &BTreeMap::from([(
+                "work".to_string(),
+                BundleOutputEntry {
+                    artifact_type: "artifact".to_string(),
+                    access_hint: Some("hint".to_string()),
+                },
+            )]),
+            &["work".to_string(), "missing".to_string()],
+            &BTreeMap::new(),
+        );
+        assert_eq!(toml_outputs.len(), 1);
+        assert_eq!(
+            toml_outputs.get("work"),
+            Some(&ActionOutputDef {
+                artifact_type: "artifact".to_string(),
+                access_hint: Some("hint".to_string()),
+            })
+        );
+
+        let json_outputs = build_outputs_from_json_profile(
+            &BTreeMap::from([(
+                "review".to_string(),
+                JsonOutputEntry {
+                    artifact_type: "note".to_string(),
+                    access_hint: Some("open".to_string()),
+                },
+            )]),
+            &["review".to_string(), "missing".to_string()],
+            &BTreeMap::new(),
+        );
+        assert_eq!(json_outputs.len(), 1);
+        assert_eq!(
+            json_outputs.get("review"),
+            Some(&ActionOutputDef {
+                artifact_type: "note".to_string(),
+                access_hint: Some("open".to_string()),
+            })
+        );
+    }
+
+    #[test]
     fn read_bundle_source_can_shell_out_to_loom_for_package_directories() {
         let _guard = env_lock().lock().expect("env lock");
         let root = unique_workspace("knots-installed-workflows-loom-dir");
@@ -2073,7 +2295,8 @@ changes = "ready_for_work"
             &WorkflowRepoConfig {
                 current_workflow: Some("custom_flow".to_string()),
                 current_version: None,
-                current_profile: None,
+                legacy_current_profile: None,
+                default_profiles: BTreeMap::new(),
             },
         )
         .expect("config writes");
@@ -2098,10 +2321,51 @@ changes = "ready_for_work"
             set_current_workflow_selection(&root, "custom_flow", Some(3), Some("autopilot"))
                 .expect("selection should succeed");
         assert_eq!(config.current_version, Some(3));
-        assert_eq!(
-            config.current_profile.as_deref(),
-            Some("custom_flow/autopilot")
+        assert_eq!(config.current_profile_id(), Some("custom_flow/autopilot"));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn set_workflow_default_profile_updates_repo_profile_mapping() {
+        let root = unique_workspace("knots-installed-workflows-set-default-profile");
+        let source = root.join("custom-flow.toml");
+        let bundle = SAMPLE_BUNDLE.replace(
+            "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\n",
+            "[profiles.autopilot]\ndescription = \"Custom profile\"\nphases = [\"main\"]\n\n[profiles.beta]\ndescription = \"Beta profile\"\nphases = [\"main\"]\n",
         );
+        std::fs::write(&source, bundle).expect("bundle should write");
+        install_bundle(&root, &source).expect("bundle should install");
+
+        let config = set_workflow_default_profile(&root, "custom_flow", Some("beta"))
+            .expect("default profile should update");
+        assert_eq!(
+            config.default_profile_id_for_workflow("custom_flow"),
+            Some("custom_flow/beta")
+        );
+
+        let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+        assert_eq!(
+            registry.default_profile_id_for_workflow("custom_flow"),
+            Some("custom_flow/beta".to_string())
+        );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn set_workflow_default_profile_none_preserves_existing_repo_config() {
+        let root = unique_workspace("knots-installed-workflows-keep-default-profile");
+        let source = root.join("custom-flow.toml");
+        std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
+        install_bundle(&root, &source).expect("bundle should install");
+
+        let selected =
+            set_current_workflow_selection(&root, "custom_flow", Some(3), Some("autopilot"))
+                .expect("selection should succeed");
+        let preserved = set_workflow_default_profile(&root, "custom_flow", None)
+            .expect("existing config should be preserved");
+        assert_eq!(preserved, selected);
 
         let _ = std::fs::remove_dir_all(root);
     }
@@ -2197,7 +2461,7 @@ changes = "ready_for_work"
 
         let config =
             set_current_workflow_selection(&root, "custom_flow", Some(3), None).expect("select");
-        assert_eq!(config.current_profile.as_deref(), Some("custom_flow/alpha"));
+        assert_eq!(config.current_profile_id(), Some("custom_flow/alpha"));
 
         let _ = std::fs::remove_dir_all(root);
     }
