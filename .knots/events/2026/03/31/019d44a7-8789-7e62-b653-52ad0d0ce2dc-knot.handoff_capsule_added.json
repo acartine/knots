@@ -1,0 +1,15 @@
+{
+  "event_id": "019d44a7-8789-7e62-b653-52ad0d0ce2dc",
+  "occurred_at": "2026-03-31T16:08:43.145685Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Approved in implementation_review. Reviewed branch knots-76a8/worktree-hint at dc823ba. The change keeps the existing knot-not-found text and appends a worktree recovery hint via main::format_error only for AppError::NotFound, leaving other error paths unchanged. Tests cover hint-present, hint-absent, and knot ID preservation in src/main_tests.rs. Verified clean worktree and make sanity passing in /private/tmp/knots-76a8, including coverage at 95.09%.",
+    "datetime": "2026-03-31T16:08:43.145685Z",
+    "entry_id": "019d44a7-8789-7e62-b653-5295ce0a310d",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}
