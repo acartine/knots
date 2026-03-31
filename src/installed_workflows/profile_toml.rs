@@ -151,11 +151,15 @@ fn process_toml_phase(
             profile_name, phase_name
         ))
     })?;
-    for step_name in [&phase.produce, &phase.gate] {
+    let mut step_names = vec![(&phase.produce, false)];
+    if let Some(gate_step) = phase.gate.as_ref() {
+        step_names.push((gate_step, true));
+    }
+    for (step_name, is_gate) in step_names {
         process_toml_step(
             profile_name,
             step_name,
-            step_name == &phase.gate,
+            is_gate,
             profile_section,
             states,
             steps,

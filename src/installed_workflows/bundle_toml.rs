@@ -57,7 +57,8 @@ pub(crate) struct BundleStepSection {
 #[derive(Debug, Deserialize)]
 pub(crate) struct BundlePhaseSection {
     pub produce: String,
-    pub gate: String,
+    #[serde(default)]
+    pub gate: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

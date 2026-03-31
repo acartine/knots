@@ -127,14 +127,12 @@ fn process_json_phase(
         .phases_by_id
         .get(phase_name)
         .ok_or_else(|| ProfileError::InvalidBundle(format!("unknown phase '{}'", phase_name)))?;
-    for step_name in [&phase.produce_step, &phase.gate_step] {
-        process_json_step(
-            step_name,
-            step_name == &phase.gate_step,
-            profile,
-            indexes,
-            ctx,
-        )?;
+    let mut step_names = vec![(&phase.produce_step, false)];
+    if let Some(gate_step) = phase.gate_step.as_ref() {
+        step_names.push((gate_step, true));
+    }
+    for (step_name, is_gate) in step_names {
+        process_json_step(step_name, is_gate, profile, indexes, ctx)?;
     }
     Ok(())
 }

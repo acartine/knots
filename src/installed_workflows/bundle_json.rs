@@ -41,7 +41,8 @@ pub(crate) struct JsonStateSection {
 pub(crate) struct JsonPhaseSection {
     pub id: String,
     pub produce_step: String,
-    pub gate_step: String,
+    #[serde(default)]
+    pub gate_step: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

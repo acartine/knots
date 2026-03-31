@@ -128,7 +128,7 @@ fn broken_steps_and_phases(
         String::from("broken"),
         BundlePhaseSection {
             produce: "broken".to_string(),
-            gate: "broken".to_string(),
+            gate: Some("broken".to_string()),
         },
     )]);
     (steps, phases)
@@ -149,7 +149,7 @@ fn profile_def_validates_missing_queue() {
         "broken".to_string(),
         BundlePhaseSection {
             produce: "broken".to_string(),
-            gate: "broken".to_string(),
+            gate: Some("broken".to_string()),
         },
     );
     let err = build_profile_definition(
@@ -249,7 +249,7 @@ fn build_minimal_test_data() -> (StateMap, StepMap, PhaseMap, PromptMap) {
         "phase".to_string(),
         BundlePhaseSection {
             produce: "step".to_string(),
-            gate: "step".to_string(),
+            gate: Some("step".to_string()),
         },
     );
     let mut prompts = BTreeMap::new();
