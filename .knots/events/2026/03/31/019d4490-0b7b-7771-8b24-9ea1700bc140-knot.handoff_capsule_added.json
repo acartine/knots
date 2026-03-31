@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4490-0b7b-7771-8b24-9ea1700bc140",
+  "occurred_at": "2026-03-31T15:43:04.059658Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan reviewed and approved. Approach of appending worktree hint at CLI error-render time (main.rs:82-84) is correct — keeps AppError::NotFound Display impl unchanged, adds hint only when repo_root and argv context are available. Test strategy covers positive (multiple not-found paths) and negative (unrelated error) cases. Minor note for implementer: repo_root is reliably available since most NotFound errors occur after context resolution (main.rs:154). Ready for implementation.",
+    "datetime": "2026-03-31T15:43:04.059658Z",
+    "entry_id": "019d4490-0b7b-7771-8b24-9e9401148c5b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
