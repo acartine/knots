@@ -80,9 +80,20 @@ fn main() {
         return;
     }
     if let Err(err) = run() {
-        eprintln!("error: {}", err);
+        eprint!("{}", format_error(&err));
         std::process::exit(1);
     }
+}
+
+fn format_error(err: &app::AppError) -> String {
+    let mut msg = format!("error: {}\n", err);
+    if matches!(err, app::AppError::NotFound(_)) {
+        msg.push_str(
+            "hint: if running in a git worktree, \
+             try: kno -C <repo_root> ...\n",
+        );
+    }
+    msg
 }
 
 pub(crate) fn print_json(val: &impl serde::Serialize) {
