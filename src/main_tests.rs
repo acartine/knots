@@ -313,3 +313,41 @@ fn knot_json_serialization_always_includes_step_history_field() {
         "step_history should serialize as an empty array when no steps exist"
     );
 }
+
+#[test]
+fn format_error_appends_worktree_hint_for_not_found() {
+    let err = crate::app::AppError::NotFound("abc123".to_string());
+    let output = super::format_error(&err);
+    assert!(
+        output.contains("knot 'abc123' not found"),
+        "should include the standard not-found message"
+    );
+    assert!(
+        output.contains("kno -C <repo_root>"),
+        "should include the worktree recovery hint"
+    );
+}
+
+#[test]
+fn format_error_no_worktree_hint_for_other_errors() {
+    let err = crate::app::AppError::InvalidArgument("bad arg".to_string());
+    let output = super::format_error(&err);
+    assert!(
+        output.contains("bad arg"),
+        "should include the original error message"
+    );
+    assert!(
+        !output.contains("worktree"),
+        "should not include worktree hint for non-NotFound errors"
+    );
+}
+
+#[test]
+fn format_error_not_found_preserves_knot_id() {
+    let err = crate::app::AppError::NotFound("knots-xyz9".to_string());
+    let output = super::format_error(&err);
+    assert!(
+        output.contains("knots-xyz9"),
+        "should preserve the knot ID in the error output"
+    );
+}
