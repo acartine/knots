@@ -1,0 +1,15 @@
+{
+  "event_id": "019d44a4-279d-7de2-8ddb-f756ab4dcafa",
+  "occurred_at": "2026-03-31T16:05:01.981512Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implemented worktree recovery hint for knot not-found errors. Added format_error() in main.rs that appends 'hint: if running in a git worktree, try: kno -C <repo_root> ...' when AppError::NotFound is matched. Display impl unchanged. 3 tests added covering positive (hint present for NotFound), negative (hint absent for other errors), and ID preservation. make sanity passes (95.09% coverage). Branch: knots-76a8/worktree-hint",
+    "datetime": "2026-03-31T16:05:01.981512Z",
+    "entry_id": "019d44a4-279d-7de2-8ddb-f74373e0cf15",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}
