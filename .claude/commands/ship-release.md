@@ -8,11 +8,15 @@ and shepherding the Version Packages PR through merge.
 ### 1. Identify unreleased commits
 
 Find the latest release tag (format `v*`) and list all commits on `main` since
-that tag:
+that tag. Use semver sorting — **not** `git describe`, which returns the nearest
+ancestor by commit distance and can return a lower version if tags exist
+out of semver order in history.
 
 ```
 git fetch --tags
-git log $(git describe --tags --abbrev=0 --match 'v*')..HEAD --oneline
+latest_tag=$(git tag --list 'v*' --sort=-version:refname | head -1)
+echo "Latest tag: $latest_tag"
+git log ${latest_tag}..HEAD --oneline
 ```
 
 If there are no new commits, stop and tell the user there is nothing to release.
@@ -86,9 +90,30 @@ gh pr list --search "Version Packages" --state open --json number,title
 
 Wait until the PR appears (check every 30 seconds, up to 5 minutes).
 
-### 7. Merge the Version Packages PR
+### 7. Verify the planned version tag does not already exist
 
-Once the PR exists and CI is green:
+Before merging, read the version from the Version Packages PR branch to confirm
+the planned tag is free:
+
+```
+gh pr checkout <number>
+planned_version=$(grep '^version' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+planned_tag="v${planned_version}"
+echo "Planned tag: $planned_tag"
+if git ls-remote --exit-code --tags origin "refs/tags/${planned_tag}" >/dev/null 2>&1; then
+  echo "ERROR: tag ${planned_tag} already exists on remote — do not merge, the release workflow will silently skip publishing"
+  exit 1
+fi
+git checkout main
+```
+
+If the tag already exists, **stop and report the collision to the user** rather
+than merging. The release workflow will succeed without publishing anything,
+which is a silent failure.
+
+### 8. Merge the Version Packages PR
+
+Once the tag check passes and CI is green:
 
 ```
 gh pr merge <number> --squash --auto
