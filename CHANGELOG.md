@@ -1,5 +1,14 @@
 # kno
 
+## 0.12.0
+
+### Minor Changes
+
+- 0f69a0e: - Add periodic CLI upgrade notice: the CLI now checks for newer releases and
+  prompts the user to upgrade when one is available
+  - Add multi-workflow defaults and note selection
+  - Fix: suppress upgrade hook hint when hooks are already current
+
 ## 0.11.0
 
 ### Minor Changes
