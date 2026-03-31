@@ -1,0 +1,15 @@
+{
+  "event_id": "019d44b0-d5e5-7a20-876d-0a558e112d2c",
+  "occurred_at": "2026-03-31T16:18:53.029559Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipped: merged knots-76a8/worktree-hint to main (commits 888b009c2b9f feat + 02676b5 fmt-fix). CI green (Sanity ✓). Release workflow failure is pre-existing tag collision, unrelated to this knot.",
+    "datetime": "2026-03-31T16:18:53.029559Z",
+    "entry_id": "019d44b0-d5e5-7a20-876d-0a420c4e0a19",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

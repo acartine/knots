@@ -1,0 +1,21 @@
+{
+  "event_id": "019d44a8-e60a-7352-b15c-0b8e436da668",
+  "occurred_at": "2026-03-31T16:10:12.86988Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-76a8",
+    "profile_id": "autopilot",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Add worktree guidance to knot not-found message",
+    "type": "work",
+    "updated_at": "2026-03-31T16:10:12.86988Z",
+    "workflow_id": "compatibility"
+  }
+}
