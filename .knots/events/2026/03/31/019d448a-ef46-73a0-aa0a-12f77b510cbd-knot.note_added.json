@@ -1,0 +1,15 @@
+{
+  "event_id": "019d448a-ef46-73a0-aa0a-12f77b510cbd",
+  "occurred_at": "2026-03-31T15:37:29.158477Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan:\n1. Keep the existing base not-found text unchanged by leaving `AppError::NotFound` message construction intact or reusing its current text as the prefix.\n2. Add a narrow CLI-side formatter for terminal errors in `src/main.rs` (or a small helper it calls) that detects `AppError::NotFound` and appends a recovery hint only for that error type. The hint should explicitly say to rerun the same command as `kno -C <repo_root> ...` when operating from a worktree, using the resolved repository root from `project::resolve_context` / `context.repo_root`.\n3. Build the suggested rerun command from the original argv so the hint matches whichever knot command failed, preserving subcommand/arguments and only inserting `-C <repo_root>` after `kno`.\n4. Keep successful paths and unrelated failures unchanged by routing all other errors through the existing `error: {err}` output with no extra text.\n5. Add or update focused tests around CLI stderr rendering for missing-knot failures from more than one command path (for example `show missing-id`, `rehydrate missing-id`, and a write/read path like `next missing-id ...` or `skill missing-id`) and assert that the not-found text remains present and the new `kno -C <repo_root>` hint is appended.\n6. Add a negative test for an unrelated error path, such as invalid arguments or another existing failure assertion, to confirm the worktree hint does not appear outside knot-not-found cases.\n7. Validation: run the targeted Rust tests covering CLI dispatch/main error rendering, then run the repo sanity target required by the project (`make sanity`) if the implementation step touches enough shared CLI code to warrant the broader check.\n\nExpected files:\n- `src/main.rs` and possibly a small extracted helper module if needed to keep file size/readability within project limits.\n- Existing CLI test files such as `tests/cli_dispatch.rs`, `tests/cli_main_paths.rs`, or a nearby main/CLI test module that already asserts stderr content.\n\nComplexity and risks:\n- Low to medium complexity. The main risk is appending the hint too broadly by changing generic `Display` output instead of terminal rendering that has access to repo-root and argv context.\n- A secondary risk is producing a malformed rerun suggestion if argv reconstruction drops quoting or inserts `-C` in the wrong place; tests should assert the exact recommended prefix and repo-root string.",
+    "datetime": "2026-03-31T15:37:29.158477Z",
+    "entry_id": "019d448a-ef46-73a0-aa0a-12ef18e0247f",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4488-a377-7be2-9529-c677fd941f4e",
+  "occurred_at": "2026-03-31T15:34:58.679677Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "The knot-not-found path must include a clear, explicit note to run `kno -C <repo_root> ...` when using worktrees, where `<repo_root>` is the repository root passed to the command. Existing non-worktree and successful-command behavior must remain unchanged, with no new side effects beyond message content for the not-found case. Validation should confirm the hint appears for any command that returns a knot-not-found error, and does not appear for unrelated error types."
+  }
+}

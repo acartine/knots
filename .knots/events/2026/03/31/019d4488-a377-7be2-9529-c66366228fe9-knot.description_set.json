@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4488-a377-7be2-9529-c66366228fe9",
+  "occurred_at": "2026-03-31T15:34:58.679677Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Refine the existing knot-not-found flow so that when a `kno` command cannot locate a knot, the response retains its normal not-found text and appends a concise recovery hint for agents running in worktrees: suggest re-running the same command with `-C <repo_root>`. Keep behavior unchanged otherwise."
+  }
+}

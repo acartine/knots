@@ -1,0 +1,10 @@
+{
+  "event_id": "019d4488-a377-7be2-9529-c651ac123e48",
+  "occurred_at": "2026-03-31T15:34:58.679677Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.title_set",
+  "data": {
+    "from": "suggest to user to try -C <repo_root> if knot not found",
+    "to": "Add worktree guidance to knot not-found message"
+  }
+}

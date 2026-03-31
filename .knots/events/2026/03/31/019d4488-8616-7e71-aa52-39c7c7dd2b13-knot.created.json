@@ -1,0 +1,17 @@
+{
+  "event_id": "019d4488-8616-7e71-aa52-39c7c7dd2b13",
+  "occurred_at": "2026-03-31T15:34:51.158792Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.created",
+  "data": {
+    "body": "apparently agents get stuck working from worktrees - despite the prompts telling them to use -C <repo_root>.\n\nso now if they run a kno command on a knot and it's not found, let's say somethign like:\n\n...<normal not found message>\n\nnote: when working from worktrees, use 'kno -C <repo_root> ...' to resolve your knot!",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "suggest to user to try -C <repo_root> if knot not found",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

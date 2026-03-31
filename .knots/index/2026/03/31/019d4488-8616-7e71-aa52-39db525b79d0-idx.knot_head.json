@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4488-8616-7e71-aa52-39db525b79d0",
+  "occurred_at": "2026-03-31T15:34:51.158792Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-76a8",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "suggest to user to try -C <repo_root> if knot not found",
+    "type": "work",
+    "updated_at": "2026-03-31T15:34:51.158792Z",
+    "workflow_id": "compatibility"
+  }
+}

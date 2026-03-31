@@ -1,0 +1,15 @@
+{
+  "event_id": "019d448b-082a-7fe3-9d24-7e911950227c",
+  "occurred_at": "2026-03-31T15:37:35.530686Z",
+  "knot_id": "knots-76a8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan ready for implementation review. Recommended approach is to keep the existing `AppError::NotFound` text as the base message and append the worktree recovery hint only at CLI error-render time, where the resolved repo root and original argv are available. Expected touch points are `src/main.rs` (or a small helper) plus focused CLI stderr tests covering both positive not-found cases and a negative unrelated-error case.",
+    "datetime": "2026-03-31T15:36:51Z",
+    "entry_id": "019d448b-082a-7fe3-9d24-7e8575fee786",
+    "model": "GPT-5",
+    "username": "codex",
+    "version": "5"
+  }
+}
