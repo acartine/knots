@@ -13,7 +13,10 @@ failure:
   ci_failure: ready_for_implementation
   release_blocked: blocked
 
-params: {}
+params:
+  output:
+    type: enum
+    values: [remote_main, pr]
 ---
 
 # Shipment

@@ -16,7 +16,10 @@ failure:
   deployment_issue: ready_for_shipment
   dirty_workspace: ready_for_implementation
 
-params: {}
+params:
+  output:
+    type: enum
+    values: [remote_main, pr]
 ---
 
 # Shipment Review

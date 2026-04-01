@@ -6,7 +6,15 @@ profile autopilot_with_pr "Autopilot with PR" {
         output pr
     }
 
+    override implementation_review {
+        output pr
+    }
+
     override shipment {
+        output pr
+    }
+
+    override shipment_review {
         output pr
     }
 }

@@ -4,7 +4,7 @@ COVERAGE_MIN ?= $(shell tr -d '[:space:]' < $(COVERAGE_FILE))
 SANITY_TARGET_DIR ?= target/sanity
 SANITY_COVERAGE_TARGET_DIR ?= target/sanity-coverage
 
-.PHONY: fmt lint test coverage sanity install-hooks check-threshold
+.PHONY: fmt lint test coverage sanity install-hooks check-threshold loom-bundle
 
 fmt:
 	cargo fmt --all -- --check
@@ -33,3 +33,6 @@ install-hooks:
 
 check-threshold:
 	bash scripts/repo/check-coverage-threshold.sh origin/main
+
+loom-bundle:
+	loom build loom/knots_sdlc --emit knots-bundle > loom/knots_sdlc/dist/bundle.json

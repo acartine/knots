@@ -13,7 +13,10 @@ failure:
   implementation_infeasible: ready_for_planning
   merge_conflict: ready_for_implementation
 
-params: {}
+params:
+  output:
+    type: enum
+    values: [remote_main, pr]
 ---
 
 # Implementation

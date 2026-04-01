@@ -4,11 +4,12 @@ workflow knots_sdlc v1 {
 
     action planning {
         produce agent
-        output note "kno show"
+        output remote_main "kno show"
     }
 
     action plan_review {
         gate review agent
+        output remote_main
         constraint read_only
         constraint no_git_write
         constraint metadata_only
@@ -16,11 +17,12 @@ workflow knots_sdlc v1 {
 
     action implementation {
         produce agent
-        output branch
+        output remote_main
     }
 
     action implementation_review {
         gate review agent
+        output remote_main
         constraint read_only
         constraint no_git_write
         constraint metadata_only
@@ -28,11 +30,19 @@ workflow knots_sdlc v1 {
 
     action shipment {
         produce agent
-        output commit
+        output remote_main
     }
 
     action shipment_review {
         gate review agent
+        output remote_main
+        constraint read_only
+        constraint no_git_write
+        constraint metadata_only
+    }
+
+    action evaluating {
+        produce agent
         constraint read_only
         constraint no_git_write
         constraint metadata_only
@@ -65,6 +75,10 @@ workflow knots_sdlc v1 {
     phase shipment_phase {
         produce shipment
         gate shipment_review
+    }
+
+    phase evaluating_phase {
+        produce evaluating
     }
 
     // -- Profiles --
