@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a83-3fb4-7f00-b2ef-19ac3f6d0b96",
+  "occurred_at": "2026-04-01T19:26:48.756837Z",
+  "knot_id": "knots-720e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment complete. Rebased worktree-knots-720e-embed-loom-bundle onto main (2 new commits from knots-040c), fast-forward merged to main. Added missing test-only helper prompt_body_for_state to loom_compat_bundle (commit 2c0a1d23ce9e) to satisfy loom_compat_prompt_resolution_tests which call loom_compat_bundle::prompt_body_for_state for all action states including evaluating. All 833 tests pass, sanity green (95.40% coverage), CI green on remote. Commits: 60f357692ea9 (feat: embed builtin compat workflow as Loom bundle), 2c0a1d23ce9e (fix: add test-only prompt_body_for_state).",
+    "datetime": "2026-04-01T19:26:48.756837Z",
+    "entry_id": "019d4a83-3fb4-7f00-b2ef-199cfd6ed456",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}
