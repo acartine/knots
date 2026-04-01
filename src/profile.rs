@@ -213,10 +213,10 @@ impl From<InvalidWorkflowTransition> for ProfileError {
 }
 
 impl ProfileRegistry {
+    #[allow(dead_code)]
     pub fn load() -> Result<Self, ProfileError> {
         Self::from_toml(PROFILES_TOML)
     }
-
     pub fn load_for_repo(repo_root: &Path) -> Result<Self, ProfileError> {
         let mut registry = Self::from_toml(PROFILES_TOML)?;
         let installed = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;

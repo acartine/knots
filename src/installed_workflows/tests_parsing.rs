@@ -137,10 +137,24 @@ fn compatibility_workflow_has_prompts_and_profiles() {
     let workflow =
         compatibility::compatibility_workflow().expect("compatibility workflow should build");
     assert!(workflow.builtin);
+    assert_eq!(workflow.id, COMPATIBILITY_WORKFLOW_ID);
+    assert_eq!(workflow.version, 1);
     assert_eq!(workflow.default_profile.as_deref(), Some("autopilot"));
     assert!(workflow.prompts.contains_key("planning"));
     assert!(workflow.action_prompts.contains_key("implementation"));
     assert!(workflow.require_profile("autopilot").is_ok());
+}
+
+#[test]
+fn embedded_knots_sdlc_bundle_parses_through_installed_workflow_path() {
+    let workflow = parse_bundle(
+        crate::loom_compat_bundle::builtin_bundle_json(),
+        BundleFormat::Json,
+    )
+    .expect("embedded bundle should parse");
+    assert_eq!(workflow.id, "knots_sdlc");
+    assert_eq!(workflow.default_profile.as_deref(), Some("autopilot"));
+    assert!(workflow.require_profile("autopilot_with_pr").is_ok());
 }
 
 #[test]

@@ -272,3 +272,19 @@ fn read_bundle_source_supports_file_and_dir() {
     assert!(err.to_string().contains("does not exist"));
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn read_bundle_source_prefers_embedded_bundle_before_loom_build() {
+    let root = unique_workspace("knots-installed-workflows-read-builtin-bundle");
+    let package_dir = root.join("package");
+    std::fs::create_dir_all(&package_dir).expect("package dir should exist");
+    std::fs::write(package_dir.join("loom.toml"), "not valid loom metadata")
+        .expect("loom manifest should write");
+    let rendered = render_json_bundle_from_toml(SAMPLE_BUNDLE).expect("json render should work");
+    std::fs::write(package_dir.join("bundle.json"), &rendered).expect("bundle should write");
+
+    let (raw, format) = read_bundle_source(&package_dir).expect("bundle dir should load");
+    assert!(matches!(format, BundleFormat::Json));
+    assert_eq!(raw, rendered);
+    let _ = std::fs::remove_dir_all(root);
+}

@@ -153,12 +153,20 @@ pub fn set_workflow_default_profile(
 }
 
 pub(crate) fn read_bundle_source(source: &Path) -> Result<(String, BundleFormat), ProfileError> {
-    if source.is_dir() && source.join("loom.toml").exists() {
-        return read_loom_bundle(source);
+    if source.is_dir() {
+        if let Ok(source_path) = resolve_bundle_source_path(source) {
+            return read_bundle_file(&source_path);
+        }
+        if source.join("loom.toml").exists() {
+            return read_loom_bundle(source);
+        }
     }
-    let source_path = resolve_bundle_source_path(source)?;
+    read_bundle_file(&resolve_bundle_source_path(source)?)
+}
+
+fn read_bundle_file(source_path: &Path) -> Result<(String, BundleFormat), ProfileError> {
     let raw =
-        fs::read_to_string(&source_path).map_err(|e| ProfileError::InvalidBundle(e.to_string()))?;
+        fs::read_to_string(source_path).map_err(|e| ProfileError::InvalidBundle(e.to_string()))?;
     let format = match source_path.extension().and_then(|ext| ext.to_str()) {
         Some("json") => BundleFormat::Json,
         _ => BundleFormat::Toml,

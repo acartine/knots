@@ -1,0 +1,839 @@
+{
+  "format": "knots-bundle",
+  "format_version": 2,
+  "workflow": {
+    "name": "knots_sdlc",
+    "version": 1,
+    "default_profile": "autopilot"
+  },
+  "states": [
+    {
+      "id": "planning",
+      "display_name": "Planning",
+      "kind": "action",
+      "action_kind": "produce",
+      "gate_kind": null,
+      "executor": "agent",
+      "constraints": [],
+      "prompt": "planning",
+      "output": "note",
+      "output_hint": "kno show"
+    },
+    {
+      "id": "plan_review",
+      "display_name": "Plan Review",
+      "kind": "action",
+      "action_kind": "gate",
+      "gate_kind": "review",
+      "executor": "agent",
+      "constraints": [
+        "read_only",
+        "no_git_write",
+        "metadata_only"
+      ],
+      "prompt": "plan_review",
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "implementation",
+      "display_name": "Implementation",
+      "kind": "action",
+      "action_kind": "produce",
+      "gate_kind": null,
+      "executor": "agent",
+      "constraints": [],
+      "prompt": "implementation",
+      "output": "branch",
+      "output_hint": null
+    },
+    {
+      "id": "implementation_review",
+      "display_name": "Implementation Review",
+      "kind": "action",
+      "action_kind": "gate",
+      "gate_kind": "review",
+      "executor": "agent",
+      "constraints": [
+        "read_only",
+        "no_git_write",
+        "metadata_only"
+      ],
+      "prompt": "implementation_review",
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "shipment",
+      "display_name": "Shipment",
+      "kind": "action",
+      "action_kind": "produce",
+      "gate_kind": null,
+      "executor": "agent",
+      "constraints": [],
+      "prompt": "shipment",
+      "output": "commit",
+      "output_hint": null
+    },
+    {
+      "id": "shipment_review",
+      "display_name": "Shipment Review",
+      "kind": "action",
+      "action_kind": "gate",
+      "gate_kind": "review",
+      "executor": "agent",
+      "constraints": [
+        "read_only",
+        "no_git_write",
+        "metadata_only"
+      ],
+      "prompt": "shipment_review",
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "shipped",
+      "display_name": "Shipped",
+      "kind": "terminal",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "abandoned",
+      "display_name": "Abandoned",
+      "kind": "terminal",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "blocked",
+      "display_name": "Blocked",
+      "kind": "escape",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "deferred",
+      "display_name": "Deferred",
+      "kind": "escape",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "ready_for_planning",
+      "display_name": "Ready for Planning",
+      "kind": "queue",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "ready_for_plan_review",
+      "display_name": "Ready for Plan Review",
+      "kind": "queue",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "ready_for_implementation",
+      "display_name": "Ready for Implementation",
+      "kind": "queue",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "ready_for_implementation_review",
+      "display_name": "Ready for Implementation Review",
+      "kind": "queue",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "ready_for_shipment",
+      "display_name": "Ready for Shipment",
+      "kind": "queue",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "ready_for_shipment_review",
+      "display_name": "Ready for Shipment Review",
+      "kind": "queue",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    }
+  ],
+  "steps": [
+    {
+      "id": "planning",
+      "queue": "ready_for_planning",
+      "action": "planning"
+    },
+    {
+      "id": "plan_review",
+      "queue": "ready_for_plan_review",
+      "action": "plan_review"
+    },
+    {
+      "id": "implementation",
+      "queue": "ready_for_implementation",
+      "action": "implementation"
+    },
+    {
+      "id": "implementation_review",
+      "queue": "ready_for_implementation_review",
+      "action": "implementation_review"
+    },
+    {
+      "id": "shipment",
+      "queue": "ready_for_shipment",
+      "action": "shipment"
+    },
+    {
+      "id": "shipment_review",
+      "queue": "ready_for_shipment_review",
+      "action": "shipment_review"
+    }
+  ],
+  "phases": [
+    {
+      "id": "planning_phase",
+      "produce_step": "planning",
+      "gate_step": "plan_review"
+    },
+    {
+      "id": "implementation_phase",
+      "produce_step": "implementation",
+      "gate_step": "implementation_review"
+    },
+    {
+      "id": "shipment_phase",
+      "produce_step": "shipment",
+      "gate_step": "shipment_review"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "autopilot",
+      "display_name": "Autopilot",
+      "description": "Agent-owned full flow with remote main output",
+      "phases": [
+        "planning_phase",
+        "implementation_phase",
+        "shipment_phase"
+      ],
+      "outputs": {
+        "planning": {
+          "artifact_type": "note",
+          "access_hint": "kno show"
+        },
+        "implementation": {
+          "artifact_type": "branch",
+          "access_hint": null
+        },
+        "shipment": {
+          "artifact_type": "commit",
+          "access_hint": null
+        }
+      },
+      "executors": {
+        "planning": "agent",
+        "plan_review": "agent",
+        "implementation": "agent",
+        "implementation_review": "agent",
+        "shipment": "agent",
+        "shipment_review": "agent"
+      }
+    },
+    {
+      "id": "autopilot_with_pr",
+      "display_name": "Autopilot with PR",
+      "description": "Agent-owned full flow with PR output",
+      "phases": [
+        "planning_phase",
+        "implementation_phase",
+        "shipment_phase"
+      ],
+      "outputs": {
+        "planning": {
+          "artifact_type": "note",
+          "access_hint": "kno show"
+        },
+        "implementation": {
+          "artifact_type": "pr",
+          "access_hint": null
+        },
+        "shipment": {
+          "artifact_type": "pr",
+          "access_hint": null
+        }
+      },
+      "executors": {
+        "planning": "agent",
+        "plan_review": "agent",
+        "implementation": "agent",
+        "implementation_review": "agent",
+        "shipment": "agent",
+        "shipment_review": "agent"
+      }
+    },
+    {
+      "id": "semiauto",
+      "display_name": "Semi-automatic",
+      "description": "Human-gated plan and implementation reviews",
+      "phases": [
+        "planning_phase",
+        "implementation_phase",
+        "shipment_phase"
+      ],
+      "outputs": {
+        "planning": {
+          "artifact_type": "note",
+          "access_hint": "kno show"
+        },
+        "implementation": {
+          "artifact_type": "branch",
+          "access_hint": null
+        },
+        "shipment": {
+          "artifact_type": "commit",
+          "access_hint": null
+        }
+      },
+      "executors": {
+        "planning": "agent",
+        "plan_review": "human",
+        "implementation": "agent",
+        "implementation_review": "human",
+        "shipment": "agent",
+        "shipment_review": "agent"
+      }
+    },
+    {
+      "id": "autopilot_no_planning",
+      "display_name": "Autopilot (no planning)",
+      "description": "Agent-owned flow starting at implementation",
+      "phases": [
+        "implementation_phase",
+        "shipment_phase"
+      ],
+      "outputs": {
+        "implementation": {
+          "artifact_type": "branch",
+          "access_hint": null
+        },
+        "shipment": {
+          "artifact_type": "commit",
+          "access_hint": null
+        }
+      },
+      "executors": {
+        "implementation": "agent",
+        "implementation_review": "agent",
+        "shipment": "agent",
+        "shipment_review": "agent"
+      }
+    },
+    {
+      "id": "autopilot_with_pr_no_planning",
+      "display_name": "Autopilot with PR (no planning)",
+      "description": "Agent-owned flow with PR output and no planning",
+      "phases": [
+        "implementation_phase",
+        "shipment_phase"
+      ],
+      "outputs": {
+        "implementation": {
+          "artifact_type": "pr",
+          "access_hint": null
+        },
+        "shipment": {
+          "artifact_type": "pr",
+          "access_hint": null
+        }
+      },
+      "executors": {
+        "implementation": "agent",
+        "implementation_review": "agent",
+        "shipment": "agent",
+        "shipment_review": "agent"
+      }
+    },
+    {
+      "id": "semiauto_no_planning",
+      "display_name": "Semi-automatic (no planning)",
+      "description": "Human-gated implementation review with skipped planning",
+      "phases": [
+        "implementation_phase",
+        "shipment_phase"
+      ],
+      "outputs": {
+        "implementation": {
+          "artifact_type": "branch",
+          "access_hint": null
+        },
+        "shipment": {
+          "artifact_type": "commit",
+          "access_hint": null
+        }
+      },
+      "executors": {
+        "implementation": "agent",
+        "implementation_review": "human",
+        "shipment": "agent",
+        "shipment_review": "agent"
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "planning",
+      "accept": [
+        "Actionable implementation steps with clear deliverables",
+        "Scope estimated with complexity assessment",
+        "Dependencies and risks identified",
+        "Test strategy covers requirements",
+        "All invariants respected in the plan"
+      ],
+      "params": [
+        {
+          "name": "complexity",
+          "param_type": "enum",
+          "values": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "required": false,
+          "default": null,
+          "description": "Expected implementation complexity"
+        }
+      ],
+      "outcomes": [
+        {
+          "name": "plan_complete",
+          "target": "ready_for_plan_review",
+          "is_success": true
+        },
+        {
+          "name": "insufficient_context",
+          "target": "ready_for_planning",
+          "is_success": false
+        },
+        {
+          "name": "out_of_scope",
+          "target": "ready_for_planning",
+          "is_success": false
+        },
+        {
+          "name": "blocked_by_dependency",
+          "target": "blocked",
+          "is_success": false
+        }
+      ],
+      "body": "# Planning\n\n## Input\n- Knot in `ready_for_planning` state\n- Knot title, description, and any existing notes/context\n\n## Invariant Adherence\n\n- If the knot has invariants, read and understand each one before planning.\n- Every step in the plan must respect all invariant conditions.\n- Scope invariants constrain what the work may touch.\n- State invariants constrain what must remain true throughout execution.\n- If any planned step would violate an invariant, redesign the approach or\n  flag the conflict in the plan note.\n\n## Step Boundary\n\n- This session is authorized only for `planning`.\n- Complete exactly one planning action, then stop.\n- Allowed resting states after this session: `ready_for_plan_review` on\n  success, `ready_for_planning` for retry, or `blocked` when dependencies stop\n  progress.\n- Creating child knots is planning output only. Do not claim, start, or\n  execute those child knots in this session.\n- Do not edit repository code or perform git write operations during\n  planning.\n- After the note, handoff, and transition commands for this step succeed,\n  stop immediately.\n\n## Actions\n\n1. Analyze the knot requirements and constraints\n2. Review knot invariants and ensure the plan respects them\n3. Research relevant code, dependencies, and prior art\n4. Draft an implementation plan with steps, file changes, and test strategy\n5. Estimate complexity and identify risks\n6. Write the plan as a knot note via `kno update <id> --add-note \"<plan>\"`\n7. Create a hierarchy of knots via `kno new \"<title>\"` for parent knots,\n   `kno q \"title\"` for child knots and `kno edge <id> parent_of <id>`\n   for edges\n\n## Output\n\n- Detailed implementation plan attached as a knot note\n- Hierarchy of knots created\n- Add a handoff capsule summarizing the plan:\n  `kno update <id> --add-handoff-capsule \"<handoff_capsule>\"`\n- Transition:\n  `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`\n  `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`\n\n## Failure Modes\n\n- Insufficient context:\n  `kno update <id> --status ready_for_planning --add-note \"<note>\"`\n  `kno update <id> --add-handoff-capsule \"<reason for deferral>\"`\n- Out of scope / too complex:\n  `kno update <id> --status ready_for_planning --add-note \"<note>\"`\n  `kno update <id> --add-handoff-capsule \"<reason out of scope>\"`",
+      "body_params": []
+    },
+    {
+      "name": "plan_review",
+      "accept": [
+        "Plan is complete, correct, and feasible",
+        "Test strategy covers requirements",
+        "No security, performance, or maintainability concerns",
+        "All invariants respected"
+      ],
+      "params": [],
+      "outcomes": [
+        {
+          "name": "approved",
+          "target": "ready_for_implementation",
+          "is_success": true
+        },
+        {
+          "name": "plan_flawed",
+          "target": "ready_for_planning",
+          "is_success": false
+        },
+        {
+          "name": "requirements_changed",
+          "target": "ready_for_planning",
+          "is_success": false
+        },
+        {
+          "name": "blocked_by_dependency",
+          "target": "blocked",
+          "is_success": false
+        }
+      ],
+      "body": "# Plan Review\n\n## Input\n- Knot in `ready_for_plan_review` state\n- Implementation plan from the planning phase (in knot notes)\n\n## Write Constraints\n- Review work is read-only for repository code and git state.\n- Do not edit code, tests, docs, configs, or other repository files.\n- Do not run git write operations (`git add`, `git commit`, `git merge`,\n  `git rebase`, `git push`, `git checkout -b`, etc.).\n- Allowed writes are knot metadata updates only (`kno update`\n  notes/handoff_capsules/tags).\n- If code/git writes are needed to complete review, stop and use the\n  reject/failure path to move the knot back to a prior queue state.\n\n## Invariant Review\n- If the knot has invariants, verify the plan does not violate any of them.\n- For each invariant, confirm the planned steps respect the condition.\n- Reject the plan if any step would breach a scope or state invariant.\n\n## Step Boundary\n- This session is authorized only for `plan_review`.\n- Complete exactly one review action, then stop.\n- Allowed resting states after this session: `ready_for_implementation` or\n  `ready_for_planning`.\n- Do not start implementation work after approving the plan.\n- After the review decision, handoff, and transition commands succeed, stop\n  immediately.\n\n## Actions\n\n1. Review the plan for completeness, correctness, and feasibility\n2. Verify the plan respects all knot invariants\n3. Verify test strategy covers requirements\n4. Check for security, performance, and maintainability concerns\n5. Approve or request revisions\n\n## Output\n- Approved:\n  `kno update <id> --add-handoff-capsule \"<review summary>\"`\n  `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`\n  `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`\n- Needs revision:\n  `kno update <id> --status ready_for_planning --add-note \"<feedback>\"`\n  `kno update <id> --add-handoff-capsule \"<revision needed>\"`\n\n## Failure Modes\n- Plan fundamentally flawed:\n  `kno update <id> --status ready_for_planning --add-note \"<feedback>\"`\n  `kno update <id> --add-handoff-capsule \"<plan flawed>\"`\n- Requirements changed:\n  `kno update <id> --status ready_for_planning --add-note \"<feedback>\"`\n  `kno update <id> --add-handoff-capsule \"<requirements changed>\"`",
+      "body_params": []
+    },
+    {
+      "name": "implementation",
+      "accept": [
+        "Working implementation on feature branch",
+        "All tests passing with coverage threshold met",
+        "All invariants respected in the implementation",
+        "Commits tagged on the knot"
+      ],
+      "params": [
+        {
+          "name": "output",
+          "param_type": "enum",
+          "values": [
+            "remote_main",
+            "pr"
+          ],
+          "required": false,
+          "default": null,
+          "description": null
+        }
+      ],
+      "outcomes": [
+        {
+          "name": "implementation_complete",
+          "target": "ready_for_implementation_review",
+          "is_success": true
+        },
+        {
+          "name": "blocked_by_dependency",
+          "target": "blocked",
+          "is_success": false
+        },
+        {
+          "name": "implementation_infeasible",
+          "target": "ready_for_planning",
+          "is_success": false
+        },
+        {
+          "name": "merge_conflict",
+          "target": "ready_for_implementation",
+          "is_success": false
+        }
+      ],
+      "body": "# Implementation\n\n## Input\n- Knot in `ready_for_implementation` state\n- Approved implementation plan (in knot notes)\n\n## Invariant Adherence\n- If the knot has invariants, strictly adhere to every invariant condition\n  throughout implementation.\n- Scope invariants limit what code, modules, or systems may be touched.\n- State invariants define properties that must remain true at all times.\n- If an implementation step would violate an invariant, stop and redesign\n  the approach rather than proceeding.\n\n## Step Boundary\n- This session is authorized only for `implementation`.\n- Complete exactly one implementation action, then stop.\n- Allowed resting states after this session:\n  `ready_for_implementation_review`, `blocked`, or `ready_for_planning`.\n- Do not merge the feature branch to main, perform shipment work, or\n  continue into later workflow stages in this session.\n- Opening or updating a review artifact for the implementation branch is\n  allowed only if the profile explicitly requires it.\n- After the implementation handoff and transition commands succeed, stop\n  immediately.\n\n## Actions\n\n1. Create a feature branch from main in a worktree\n2. Implement changes following the plan while respecting all invariants\n3. Write tests for all new behavior\n4. Run any sanity gates defined in the project or the plan\n5. Add a handoff_capsule to the knot with:\n   `kno update <id> --add-handoff-capsule \"<handoff_capsule>\"`\n6. Commit and push the feature branch\n7. Tag the knot with each commit hash using the `commit:` prefix:\n   `short_hash=$(git rev-parse --short=12 <commit>)`\n   `kno update <id> --add-tag \"commit:${short_hash}\"`\n   Run this for every commit created during implementation.\n   Use short hashes only; do not use the full 40-character hash.\n8. Make the implementation artifact explicit for the profile output mode:\n   `{{ output }}` = `remote_main` means the review target is the pushed\n   feature branch itself, so leave the result ready for direct branch\n   review.\n   `{{ output }}` = `pr` means the review target is a pull request, so\n   open or update the PR for the feature branch.\n\n## Output\n\n- Working implementation on feature branch\n- All tests passing with coverage threshold met\n- Transition:\n  `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`\n  `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`\n\n## Failure Modes\n\n- Blocked by dependency:\n  `kno update <id> --status blocked --add-note \"<blocker details>\"`\n  `kno update <id> --add-handoff-capsule \"<blocking dependency details>\"`\n- Implementation infeasible:\n  `kno update <id> --status ready_for_planning`\n  `--add-note \"<blocker details>\"`\n  `kno update <id> --add-handoff-capsule \"<reason infeasible>\"`",
+      "body_params": [
+        "output"
+      ]
+    },
+    {
+      "name": "implementation_review",
+      "accept": [
+        "Code matches knot description and acceptance criteria",
+        "All invariants respected in the implementation",
+        "Tests cover required behavior",
+        "All sanity gates pass",
+        "No security issues or regressions"
+      ],
+      "params": [
+        {
+          "name": "output",
+          "param_type": "enum",
+          "values": [
+            "remote_main",
+            "pr"
+          ],
+          "required": false,
+          "default": null,
+          "description": null
+        }
+      ],
+      "outcomes": [
+        {
+          "name": "approved",
+          "target": "ready_for_shipment",
+          "is_success": true
+        },
+        {
+          "name": "changes_requested",
+          "target": "ready_for_implementation",
+          "is_success": false
+        },
+        {
+          "name": "architecture_concern",
+          "target": "ready_for_implementation",
+          "is_success": false
+        },
+        {
+          "name": "critical_issues",
+          "target": "ready_for_implementation",
+          "is_success": false
+        }
+      ],
+      "body": "# Implementation Review\n\n## Input\n- Knot in `ready_for_implementation_review` state\n- Feature branch with implementation\n- Knot description and acceptance criteria (use acceptance criteria when\n  supplied; otherwise use the description)\n\n## Write Constraints\n- Review work is read-only for repository code and git state.\n- Do not edit code, tests, docs, configs, or other repository files.\n- Do not run git write operations (`git add`, `git commit`, `git merge`,\n  `git rebase`, `git push`, `git checkout -b`, etc.).\n- Allowed writes are knot metadata updates only (`kno update`\n  notes/handoff_capsules/tags).\n- If code/git writes are needed to complete review, stop and use the\n  reject/failure path to move the knot back to a prior queue state.\n\n## Invariant Review\n- If the knot has invariants, verify the implementation does not violate\n  any of them.\n- For each scope invariant, confirm changes are limited to the allowed\n  scope.\n- For each state invariant, confirm the required property holds in the\n  implemented code.\n- Reject the implementation if any invariant condition is breached.\n\n## Review Basis\n- Base approval strictly on the code under review and the knot\n  description plus acceptance criteria.\n- Treat the acceptance criteria as the source of truth when they are\n  present; otherwise use the description as the requirement baseline.\n- Do not use knot notes or prior handoff_capsules to decide whether the\n  implementation is approved.\n- Use notes or handoff_capsules only as supplemental context when\n  locating the implementation or understanding prior workflow history.\n\n## Step Boundary\n- This session is authorized only for `implementation_review`.\n- Complete exactly one review action, then stop.\n- Allowed resting states after this session: `ready_for_shipment` or\n  `ready_for_implementation`.\n- Do not patch code, amend commits, or continue into shipment after a\n  review decision.\n- After the review decision, handoff, and transition commands succeed,\n  stop immediately.\n\n## Actions\n\n1. Review code changes against the knot description and acceptance\n   criteria\n2. Verify the implementation respects all knot invariants\n3. Verify tests cover the required behavior\n4. Use the correct review target for the profile output mode:\n   `{{ output }}` = `remote_main` means review the implementation branch\n   directly using the branch diff, status, and test results.\n   `{{ output }}` = `pr` means review the pull request itself, including\n   the PR diff, status, and metadata.\n5. Verify all sanity gates pass\n6. Validate no security issues or regressions introduced\n7. Approve or request changes based only on specification and code drift\n\n## Output\n- Approved:\n  `kno update <id> --add-handoff-capsule \"<review summary>\"`\n  `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`\n  `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`\n- Needs changes:\n  `kno update <id> --status ready_for_implementation`\n  `--add-note \"<feedback>\"`\n  `kno update <id> --add-handoff-capsule \"<enumerated violations of the`\n  `knot description and/or acceptance criteria>\"`\n\n## Failure Modes\n- Critical issues found:\n  `kno update <id> --status ready_for_implementation`\n  `--add-note \"<feedback>\"`\n  `kno update <id> --add-handoff-capsule \"<enumerated violations of the`\n  `knot description and/or acceptance criteria>\"`\n- Architecture concern:\n  `kno update <id> --status ready_for_implementation`\n  `--add-note \"<feedback>\"`\n  `kno update <id> --add-handoff-capsule \"<enumerated violations of the`\n  `knot description and/or acceptance criteria>\"`",
+      "body_params": [
+        "output"
+      ]
+    },
+    {
+      "name": "shipment",
+      "accept": [
+        "Code merged and pushed to main",
+        "CI green on remote",
+        "All invariants still hold after merge",
+        "All commits tagged on the knot"
+      ],
+      "params": [
+        {
+          "name": "output",
+          "param_type": "enum",
+          "values": [
+            "remote_main",
+            "pr"
+          ],
+          "required": false,
+          "default": null,
+          "description": null
+        }
+      ],
+      "outcomes": [
+        {
+          "name": "shipment_complete",
+          "target": "ready_for_shipment_review",
+          "is_success": true
+        },
+        {
+          "name": "merge_conflicts",
+          "target": "ready_for_implementation",
+          "is_success": false
+        },
+        {
+          "name": "ci_failure",
+          "target": "ready_for_implementation",
+          "is_success": false
+        },
+        {
+          "name": "release_blocked",
+          "target": "blocked",
+          "is_success": false
+        }
+      ],
+      "body": "# Shipment\n\n## Input\n- Knot in `ready_for_shipment` state\n- Approved implementation on feature branch\n\n## Invariant Adherence\n- If the knot has invariants, verify they still hold after merge and\n  before pushing to remote.\n- Scope invariants: confirm no out-of-scope changes leaked into the\n  merge.\n- State invariants: confirm the required properties hold in the merged\n  code on main.\n\n## Step Boundary\n- This session is authorized only for `shipment`.\n- Complete exactly one shipment action, then stop.\n- Allowed resting states after this session: `ready_for_shipment_review`\n  or `ready_for_implementation`.\n- Do not perform shipment review or final sign-off in this step.\n- After the merge, push, handoff, and transition commands for shipment\n  succeed, stop immediately.\n\n## Actions\n\n1. Perform the shipment action that matches the profile output mode:\n   `{{ output }}` = `remote_main` means merge the feature branch to main.\n   `{{ output }}` = `pr` means merge the approved pull request instead of\n   performing a branch-only review flow.\n2. Tag the knot with any new commit hashes created during merge using\n   the `commit:` prefix:\n   `short_hash=$(git rev-parse --short=12 <commit>)`\n   `kno update <id> --add-tag \"commit:${short_hash}\"`\n   Run this for each new commit created during shipment.\n   Use short hashes only; do not use the full 40-character hash.\n3. Push or verify the shipped main-branch result required by the output\n   mode:\n   `{{ output }}` = `remote_main` means push main after the merge.\n   `{{ output }}` = `pr` means verify the merged PR produced the intended\n   main-branch result and that the remote reflects it.\n4. Verify CI passes on remote\n\n## Output\n\n- Code merged and pushed to main\n- CI green on remote\n- Add a handoff capsule summarizing shipment:\n  `kno update <id> --add-handoff-capsule \"<handoff_capsule>\"`\n- Transition:\n  `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`\n  `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`\n\n## Failure Modes\n- Merge conflicts:\n  `kno update <id> --status ready_for_implementation`\n  `--add-note \"<blocker details>\"`\n  `kno update <id> --add-handoff-capsule \"<merge conflict details>\"`\n- CI failure after merge:\n  `kno update <id> --status ready_for_implementation`\n  `--add-note \"<blocker details>\"`\n  `kno update <id> --add-handoff-capsule \"<CI failure details>\"`",
+      "body_params": [
+        "output"
+      ]
+    },
+    {
+      "name": "shipment_review",
+      "accept": [
+        "Change is live on main branch",
+        "Every commit tagged on the knot",
+        "All invariants hold in shipped code",
+        "CI/CD pipeline completed successfully",
+        "No regressions in dependent systems"
+      ],
+      "params": [
+        {
+          "name": "output",
+          "param_type": "enum",
+          "values": [
+            "remote_main",
+            "pr"
+          ],
+          "required": false,
+          "default": null,
+          "description": null
+        }
+      ],
+      "outcomes": [
+        {
+          "name": "approved",
+          "target": "shipped",
+          "is_success": true
+        },
+        {
+          "name": "approved_already_merged",
+          "target": "shipped",
+          "is_success": true
+        },
+        {
+          "name": "needs_revision",
+          "target": "ready_for_implementation",
+          "is_success": false
+        },
+        {
+          "name": "critical_regression",
+          "target": "ready_for_implementation",
+          "is_success": false
+        },
+        {
+          "name": "deployment_issue",
+          "target": "ready_for_shipment",
+          "is_success": false
+        },
+        {
+          "name": "dirty_workspace",
+          "target": "ready_for_implementation",
+          "is_success": false
+        }
+      ],
+      "body": "# Shipment Review\n\n## Input\n- Knot in `ready_for_shipment_review` state\n- Code merged to main, CI green\n\n## Write Constraints\n- Review work is read-only for repository code and git state.\n- Do not edit code, tests, docs, configs, or other repository files.\n- Do not run git write operations (`git add`, `git commit`, `git merge`,\n  `git rebase`, `git push`, `git checkout -b`, etc.).\n- Allowed writes are knot metadata updates only (`kno update`\n  notes/handoff_capsules/tags).\n- If code/git writes are needed to complete review, stop and use the\n  reject/failure path to move the knot back to a prior queue state.\n\n## Invariant Review\n- If the knot has invariants, verify the shipped code does not violate\n  any of them.\n- For each scope invariant, confirm only allowed areas were changed.\n- For each state invariant, confirm the property still holds on main.\n- Reject if any invariant condition is breached.\n\n## Step Boundary\n- This session is authorized only for `shipment_review`.\n- Complete exactly one review action, then stop.\n- Allowed resting states after this session: `shipped`,\n  `ready_for_shipment`, or `ready_for_implementation`.\n- Do not fix code, re-run shipment, or continue into other workflow\n  stages in this session.\n- After the review decision, handoff, and transition commands succeed,\n  stop immediately.\n\n## Actions\n\n1. Verify the shipped result at the correct review target for the\n   profile output mode:\n   `{{ output }}` = `remote_main` means review the code now on main.\n   `{{ output }}` = `pr` means review the merged pull request as the\n   shipment record and confirm the corresponding code is now on main.\n2. Confirm every commit from implementation/shipment is tagged on the\n   knot:\n   - Use the `commit:` prefix for each tag.\n   - Each tag must include a short hash from\n     `git rev-parse --short=12 <commit>` (not the full 40-character hash).\n3. Verify all knot invariants hold in the shipped code\n4. Confirm CI/CD pipeline completed successfully\n5. Validate no regressions in dependent systems\n6. Final sign-off\n\n## Output\n- Approved:\n  `kno update <id> --add-handoff-capsule \"<review summary>\"`\n  `kno next <id> <currentState> --actor-kind agent --agent-name <AGENT_NAME>`\n  `--agent-model <AGENT_MODEL> --agent-version <AGENT_VERSION>`\n- Needs revision:\n  `kno update <id> --status ready_for_implementation`\n  `--add-note \"<blocker details>\"`\n  `kno update <id> --add-handoff-capsule \"<revision needed>\"`\n- Critical regression:\n  `kno update <id> --status ready_for_implementation`\n  `--add-note \"<blocker details>\"`\n  `kno update <id> --add-handoff-capsule \"<critical regression>\"`\n\n## Failure Modes\n- Deployment issue:\n  `kno update <id> --status ready_for_shipment`\n  `--add-note \"<blocker details>\"`\n  `kno update <id> --add-handoff-capsule \"<deployment issue>\"`\n- Regression detected:\n  `kno update <id> --status ready_for_implementation`\n  `--add-note \"<blocker details>\"`\n  `kno update <id> --add-handoff-capsule \"<regression details>\"`\n- Unable to complete review due to dirty workspace:\n  Roll status back to Ready For Impl before handoff.\n  `kno update <id> --status ready_for_implementation`\n  `--add-note \"<dirty workspace details>\"`\n  `kno update <id> --add-handoff-capsule \"<dirty workspace handoff>\"`",
+      "body_params": [
+        "output"
+      ]
+    }
+  ],
+  "transitions": {
+    "wildcard_targets": [
+      "abandoned",
+      "deferred"
+    ],
+    "queue_to_action": [
+      {
+        "id": "planning",
+        "queue": "ready_for_planning",
+        "action": "planning"
+      },
+      {
+        "id": "plan_review",
+        "queue": "ready_for_plan_review",
+        "action": "plan_review"
+      },
+      {
+        "id": "implementation",
+        "queue": "ready_for_implementation",
+        "action": "implementation"
+      },
+      {
+        "id": "implementation_review",
+        "queue": "ready_for_implementation_review",
+        "action": "implementation_review"
+      },
+      {
+        "id": "shipment",
+        "queue": "ready_for_shipment",
+        "action": "shipment"
+      },
+      {
+        "id": "shipment_review",
+        "queue": "ready_for_shipment_review",
+        "action": "shipment_review"
+      }
+    ],
+    "outcome_tables": [
+      {
+        "action": "planning",
+        "prompt": "planning",
+        "success": {
+          "plan_complete": "ready_for_plan_review"
+        },
+        "failure": {
+          "insufficient_context": "ready_for_planning",
+          "out_of_scope": "ready_for_planning",
+          "blocked_by_dependency": "blocked"
+        }
+      },
+      {
+        "action": "plan_review",
+        "prompt": "plan_review",
+        "success": {
+          "approved": "ready_for_implementation"
+        },
+        "failure": {
+          "plan_flawed": "ready_for_planning",
+          "requirements_changed": "ready_for_planning",
+          "blocked_by_dependency": "blocked"
+        }
+      },
+      {
+        "action": "implementation",
+        "prompt": "implementation",
+        "success": {
+          "implementation_complete": "ready_for_implementation_review"
+        },
+        "failure": {
+          "blocked_by_dependency": "blocked",
+          "implementation_infeasible": "ready_for_planning",
+          "merge_conflict": "ready_for_implementation"
+        }
+      },
+      {
+        "action": "implementation_review",
+        "prompt": "implementation_review",
+        "success": {
+          "approved": "ready_for_shipment"
+        },
+        "failure": {
+          "changes_requested": "ready_for_implementation",
+          "architecture_concern": "ready_for_implementation",
+          "critical_issues": "ready_for_implementation"
+        }
+      },
+      {
+        "action": "shipment",
+        "prompt": "shipment",
+        "success": {
+          "shipment_complete": "ready_for_shipment_review"
+        },
+        "failure": {
+          "merge_conflicts": "ready_for_implementation",
+          "ci_failure": "ready_for_implementation",
+          "release_blocked": "blocked"
+        }
+      },
+      {
+        "action": "shipment_review",
+        "prompt": "shipment_review",
+        "success": {
+          "approved": "shipped",
+          "approved_already_merged": "shipped"
+        },
+        "failure": {
+          "needs_revision": "ready_for_implementation",
+          "critical_regression": "ready_for_implementation",
+          "deployment_issue": "ready_for_shipment",
+          "dirty_workspace": "ready_for_implementation"
+        }
+      }
+    ]
+  }
+}

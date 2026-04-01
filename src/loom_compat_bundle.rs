@@ -1,6 +1,7 @@
 use std::io;
 use std::path::Path;
 
+const BUNDLE_JSON: &str = include_str!("../loom/knots_sdlc/bundle.json");
 const LOOM_TOML: &str = include_str!("../loom/knots_sdlc/loom.toml");
 const WORKFLOW_LOOM: &str = include_str!("../loom/knots_sdlc/workflow.loom");
 
@@ -24,6 +25,7 @@ const PROMPT_SHIPMENT: &str = include_str!("../loom/knots_sdlc/prompts/shipment.
 const PROMPT_SHIPMENT_REVIEW: &str = include_str!("../loom/knots_sdlc/prompts/shipment_review.md");
 
 const FILES: &[(&str, &str)] = &[
+    ("bundle.json", BUNDLE_JSON),
     ("loom.toml", LOOM_TOML),
     ("workflow.loom", WORKFLOW_LOOM),
     ("profiles/autopilot.loom", PROFILE_AUTOPILOT),
@@ -51,6 +53,10 @@ const FILES: &[(&str, &str)] = &[
     ("prompts/shipment.md", PROMPT_SHIPMENT),
     ("prompts/shipment_review.md", PROMPT_SHIPMENT_REVIEW),
 ];
+
+pub fn builtin_bundle_json() -> &'static str {
+    BUNDLE_JSON
+}
 
 pub fn write_builtin_loom_package(dest: &Path) -> io::Result<()> {
     for (relative, content) in FILES {
@@ -80,5 +86,11 @@ mod tests {
 
         assert!(PROMPT_SHIPMENT_REVIEW.contains("review the code now on main"));
         assert!(PROMPT_SHIPMENT_REVIEW.contains("review the merged pull request"));
+    }
+
+    #[test]
+    fn builtin_package_includes_generated_bundle() {
+        assert!(FILES.iter().any(|(path, _)| *path == "bundle.json"));
+        assert!(builtin_bundle_json().contains("\"name\": \"knots_sdlc\""));
     }
 }
