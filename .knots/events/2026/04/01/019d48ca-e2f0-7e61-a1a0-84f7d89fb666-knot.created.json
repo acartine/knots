@@ -1,0 +1,17 @@
+{
+  "event_id": "019d48ca-e2f0-7e61-a1a0-84f7d89fb666",
+  "occurred_at": "2026-04-01T11:25:49.168481Z",
+  "knot_id": "knots-ae85",
+  "type": "knot.created",
+  "data": {
+    "body": "Enforce that lease binding is only established during claim. For any non-claim command, if a caller supplies a lease_id and the knot does not already have that exact lease bound, the command must fail instead of attaching or switching the lease. In particular,  and  should not create or apply lease bindings; lease assignment must happen only when the knot is claimed. If a knot is claimed without a lease, no later , , or other non-claim command may set one until a future claim operation binds it.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Restrict lease attachment to claim flow only",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}
