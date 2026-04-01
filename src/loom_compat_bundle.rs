@@ -72,7 +72,7 @@ mod tests {
         assert!(PROMPT_IMPLEMENTATION.contains("`{{ output }}` = `remote_main`"));
         assert!(PROMPT_IMPLEMENTATION.contains("open or update the PR"));
 
-        assert!(PROMPT_IMPLEMENTATION_REVIEW.contains("do not rely on PR metadata"));
+        assert!(PROMPT_IMPLEMENTATION_REVIEW.contains("branch diff, status, and test results"));
         assert!(PROMPT_IMPLEMENTATION_REVIEW.contains("review the pull request itself"));
 
         assert!(PROMPT_SHIPMENT.contains("merge the feature branch to main"));

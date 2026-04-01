@@ -149,3 +149,67 @@ fn peek_rejects_knot_in_action_state() {
     );
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn prompt_body_for_state_distinguishes_branch_and_pr_profiles() {
+    let root = unique_workspace();
+    let registry =
+        crate::profile::ProfileRegistry::load_for_repo(&root).expect("registry should load");
+
+    for profile_id in [
+        "autopilot",
+        "semiauto",
+        "autopilot_no_planning",
+        "semiauto_no_planning",
+    ] {
+        let implementation =
+            prompt_body_for_state(&registry, profile_id, "implementation").expect("prompt body");
+        assert!(
+            !implementation.contains("pull request"),
+            "{profile_id}: {implementation}"
+        );
+
+        let review = prompt_body_for_state(&registry, profile_id, "implementation_review")
+            .expect("review prompt body");
+        assert!(!review.contains("pull request"), "{profile_id}: {review}");
+
+        let shipment =
+            prompt_body_for_state(&registry, profile_id, "shipment").expect("shipment prompt");
+        assert!(shipment.contains("merge the feature branch to main"));
+        assert!(
+            !shipment.contains("pull request"),
+            "{profile_id}: {shipment}"
+        );
+
+        let shipment_review = prompt_body_for_state(&registry, profile_id, "shipment_review")
+            .expect("shipment review prompt");
+        assert!(shipment_review.contains("review the code now on main"));
+        assert!(
+            !shipment_review.contains("pull request"),
+            "{profile_id}: {shipment_review}"
+        );
+    }
+
+    for profile_id in ["autopilot_with_pr", "autopilot_with_pr_no_planning"] {
+        let implementation =
+            prompt_body_for_state(&registry, profile_id, "implementation").expect("prompt body");
+        assert!(
+            implementation.contains("pull request"),
+            "{profile_id}: {implementation}"
+        );
+
+        let review = prompt_body_for_state(&registry, profile_id, "implementation_review")
+            .expect("review prompt body");
+        assert!(review.contains("pull request"), "{profile_id}: {review}");
+
+        let shipment =
+            prompt_body_for_state(&registry, profile_id, "shipment").expect("shipment prompt");
+        assert!(shipment.contains("merge the approved pull request"));
+
+        let shipment_review = prompt_body_for_state(&registry, profile_id, "shipment_review")
+            .expect("shipment review prompt");
+        assert!(shipment_review.contains("review the merged pull request"));
+    }
+
+    let _ = std::fs::remove_dir_all(root);
+}

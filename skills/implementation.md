@@ -39,7 +39,8 @@
    Use short hashes only; do not use the full 40-character hash.
 8. Make the implementation artifact explicit for the profile output mode:
    `{{ output }}` = `remote_main` means the review target is the pushed
-   feature branch itself, so do not open a PR for this step.
+   feature branch itself, so leave the result ready for direct branch
+   review.
    `{{ output }}` = `pr` means the review target is a pull request, so
    open or update the PR for the feature branch.
 
