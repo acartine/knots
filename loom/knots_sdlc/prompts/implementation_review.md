@@ -14,7 +14,10 @@ failure:
   architecture_concern: ready_for_implementation
   critical_issues: ready_for_implementation
 
-params: {}
+params:
+  output:
+    type: enum
+    values: [remote_main, pr]
 ---
 
 # Implementation Review

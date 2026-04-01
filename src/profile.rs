@@ -1,7 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
-use std::error::Error;
-use std::fmt;
 use std::path::Path;
+use std::{error::Error, fmt};
 
 use serde::{Deserialize, Serialize};
 
@@ -213,6 +212,7 @@ impl From<InvalidWorkflowTransition> for ProfileError {
 }
 
 impl ProfileRegistry {
+    #[cfg(test)]
     pub fn load() -> Result<Self, ProfileError> {
         Self::from_toml(PROFILES_TOML)
     }
