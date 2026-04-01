@@ -37,6 +37,18 @@ const FILES: &[(&str, &str)] = &[
     ),
 ];
 
+/// Return the raw prompt body for the given action state from the embedded bundle.
+/// State names correspond directly to prompt names in the knots_sdlc bundle.
+#[cfg(test)]
+pub fn prompt_body_for_state(state: &str) -> Option<String> {
+    let workflow = crate::installed_workflows::parse_bundle(
+        BUNDLE_JSON,
+        crate::installed_workflows::BundleFormat::Json,
+    )
+    .ok()?;
+    workflow.prompts.get(state).map(|p| p.body.clone())
+}
+
 pub fn write_builtin_loom_package(dest: &Path) -> io::Result<()> {
     for (relative, content) in FILES {
         let target = dest.join(relative);
