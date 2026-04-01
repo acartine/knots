@@ -1,0 +1,15 @@
+{
+  "event_id": "019d48bf-7d3a-7320-b8ce-a4daeca9dede",
+  "occurred_at": "2026-04-01T11:13:22.234496Z",
+  "knot_id": "knots-87bd",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Enforcement requirement: when creating a note, handoff capsule, or step-history record for a knot that already has a bound lease, automatically copy that owning knot lease onto the new sub-object as its canonical lease_id. This should be schema-level behavior, not agent-authored ad hoc JSON, and should apply consistently across all three record types.",
+    "datetime": "2026-04-01T11:13:22.234496Z",
+    "entry_id": "019d48bf-7d3a-7320-b8ce-a4c1d395424a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

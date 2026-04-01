@@ -1,0 +1,21 @@
+{
+  "event_id": "019d48bf-7d4c-71a0-a7e5-6f9bd95c8fff",
+  "occurred_at": "2026-04-01T11:13:22.234496Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-87bd",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Normalize immutable metadata items around lease IDs",
+    "type": "work",
+    "updated_at": "2026-04-01T11:13:22.234496Z",
+    "workflow_id": "compatibility"
+  }
+}
