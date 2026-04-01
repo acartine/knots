@@ -13,8 +13,8 @@ use crate::workflow_runtime;
 use super::error::AppError;
 use super::helpers::{
     apply_step_transition, build_knot_head_data, build_state_event_data, ensure_profile_etag,
-    next_blocked_from_state, next_deferred_from_state, normalize_state_input, KnotHeadData,
-    StateEventParams,
+    next_blocked_from_state, next_deferred_from_state, normalize_state_input,
+    resolve_step_metadata, KnotHeadData, StateEventParams,
 };
 use super::types::{KnotView, UpdateKnotPatch};
 use super::App;
@@ -144,7 +144,7 @@ fn update_knot_locked(
     )?;
 
     if full_events.is_empty() {
-        return app.apply_alias_to_knot(KnotView::from(current));
+        return app.apply_alias_and_enrich_knot(KnotView::from(current));
     }
 
     write_update_events_and_cache(
@@ -164,7 +164,7 @@ fn update_knot_locked(
     if app.transitioned_to_terminal_resolution_state(&current, &updated)? {
         app.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
     }
-    app.apply_alias_to_knot(KnotView::from(updated))
+    app.apply_alias_and_enrich_knot(KnotView::from(updated))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -329,6 +329,14 @@ fn write_update_events_and_cache(
         us.knot_type,
         &us.state,
     )?;
+    let (step_metadata, next_step_metadata) = resolve_step_metadata(
+        &app.profile_registry,
+        workflow_id,
+        profile_id,
+        us.knot_type,
+        &us.gate_data,
+        &us.state,
+    )?;
     let index_event_id = new_event_id();
     let mut idx_event = IndexEvent::with_identity(
         index_event_id.clone(),
@@ -347,8 +355,8 @@ fn write_update_events_and_cache(
             invariants: &us.invariants,
             knot_type: us.knot_type,
             gate_data: &us.gate_data,
-            step_metadata: None,
-            next_step_metadata: None,
+            step_metadata: step_metadata.as_ref(),
+            next_step_metadata: next_step_metadata.as_ref(),
         }),
     );
     if let Some(expected) = us.current_precondition.as_deref() {

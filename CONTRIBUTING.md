@@ -60,3 +60,25 @@ Knots remains supported as a compatibility alias:
 ```bash
 knots --version
 ```
+
+## Workflow metadata contract
+
+Knots exposes workflow routing metadata for downstream consumers. When you
+change workflow/profile definitions or knot-view serialization, keep these
+surfaces aligned:
+
+- `step_metadata` and `next_step_metadata` on knot JSON responses such as
+  `kno show --json` and `kno ls --json`
+- `step_owner`, `next_owner`, `step_artifact`, and review hint fields in CLI
+  show output
+- `step_metadata` and `next_step_metadata` in persisted
+  `.knots/index/.../idx.knot_head.json` events
+
+The metadata contract is:
+
+- `owner.kind` identifies the responsible actor for the current or next action
+- `output.artifact_type` and `output.access_hint` describe the expected artifact
+- `review_hint` tells reviewers what to inspect on review-oriented steps
+
+Any change to these fields should include documentation updates and response-
+level tests that cover at least three workflow patterns.

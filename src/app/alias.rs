@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use crate::db;
 use crate::hierarchy_alias::{build_alias_maps, AliasMaps};
 use crate::knot_id::{generate_knot_id, generate_knot_id_from_slug};
+use crate::workflow_runtime;
 
 use super::error::AppError;
 use super::types::KnotView;
@@ -67,6 +68,13 @@ impl App {
     pub(super) fn apply_alias_to_knot(&self, knot: KnotView) -> Result<KnotView, AppError> {
         let maps = self.alias_maps()?;
         Ok(Self::with_alias_maps(knot, &maps))
+    }
+
+    pub(super) fn apply_alias_and_enrich_knot(&self, knot: KnotView) -> Result<KnotView, AppError> {
+        let maps = self.alias_maps()?;
+        let mut knot = Self::with_alias_maps(knot, &maps);
+        workflow_runtime::enrich_step_metadata(&mut knot, &self.profile_registry);
+        Ok(knot)
     }
 
     pub(super) fn next_knot_id(&self) -> Result<String, AppError> {

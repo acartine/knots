@@ -14,7 +14,7 @@ use crate::workflow_runtime;
 use super::error::AppError;
 use super::helpers::{
     build_knot_head_data, non_empty, normalize_state_input, require_state_for_knot_type,
-    KnotHeadData,
+    resolve_step_metadata, KnotHeadData,
 };
 use super::types::{CreateKnotOptions, KnotView};
 use super::App;
@@ -124,6 +124,14 @@ impl App {
             state,
         )?;
         let acceptance = options.acceptance.as_deref().and_then(non_empty);
+        let (step_metadata, next_step_metadata) = resolve_step_metadata(
+            &self.profile_registry,
+            profile.workflow_id.as_str(),
+            profile.id.as_str(),
+            options.knot_type,
+            &options.gate_data,
+            state,
+        )?;
         let full_event = FullEvent::with_identity(
             new_event_id(),
             occurred_at.clone(),
@@ -157,8 +165,8 @@ impl App {
                 invariants: &[],
                 knot_type: options.knot_type,
                 gate_data: &options.gate_data,
-                step_metadata: None,
-                next_step_metadata: None,
+                step_metadata: step_metadata.as_ref(),
+                next_step_metadata: next_step_metadata.as_ref(),
             }),
         );
         self.writer.write(&EventRecord::full(full_event))?;
@@ -194,7 +202,7 @@ impl App {
         )?;
         let record = db::get_knot_hot(&self.conn, &knot_id)?
             .ok_or_else(|| AppError::NotFound(knot_id.clone()))?;
-        self.apply_alias_to_knot(KnotView::from(record))
+        self.apply_alias_and_enrich_knot(KnotView::from(record))
     }
 
     fn write_optional_create_events(
