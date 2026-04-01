@@ -3,6 +3,7 @@
 [![CI][ci-badge]][ci-url]
 [![Coverage][coverage-badge]][coverage-url]
 [![License: MIT][license-badge]][license-url]
+[![Join thecartine Discord](https://img.shields.io/badge/Discord-Join%20thecartine-5865F2?logo=discord&logoColor=white)](https://discord.gg/KPgNPMAzrP)
 
 Knots is a local-first, git-backed system for helping humans and agents understand what they did, what they are doing, and what they plan to do next. It uses append-only events plus a SQLite cache to stay fast locally while remaining syncable through git.
 
