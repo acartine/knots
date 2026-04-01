@@ -112,12 +112,135 @@ pub struct PromptDefinition {
     pub body: String,
 }
 
+pub(crate) fn build_prompt_params(
+    workflow_id: &str,
+    profile: &crate::profile::ProfileDefinition,
+    prompt: &PromptDefinition,
+) -> BTreeMap<String, String> {
+    let mut params = BTreeMap::new();
+    params.insert("workflow_id".to_string(), workflow_id.to_string());
+    params.insert("profile_id".to_string(), profile.id.clone());
+    if let Some(output_def) = profile.outputs.get(&prompt.action_state) {
+        params.insert("output".to_string(), output_def.artifact_type.clone());
+        if let Some(hint) = &output_def.access_hint {
+            params.insert("output_hint".to_string(), hint.clone());
+        }
+    }
+    for param in &prompt.params {
+        if let Some(default) = param.default.as_deref() {
+            params
+                .entry(param.name.clone())
+                .or_insert_with(|| default.to_string());
+        }
+    }
+    params
+}
+
+pub(crate) fn render_prompt_template(
+    template: &str,
+    params: &BTreeMap<String, String>,
+    unresolved: &mut Vec<String>,
+) -> String {
+    let mut rendered = String::new();
+    let mut rest = template;
+    while let Some(start) = rest.find("{{") {
+        rendered.push_str(&rest[..start]);
+        let after_start = &rest[start + 2..];
+        let Some(end) = after_start.find("}}") else {
+            rendered.push_str(&rest[start..]);
+            return rendered;
+        };
+        let token = &after_start[..end];
+        let key = token.trim();
+        if let Some(value) = params.get(key) {
+            rendered.push_str(value);
+        } else {
+            unresolved.push(key.to_string());
+            rendered.push_str("{{");
+            rendered.push_str(token);
+            rendered.push_str("}}");
+        }
+        rest = &after_start[end + 2..];
+    }
+    rendered.push_str(rest);
+    unresolved.sort();
+    unresolved.dedup();
+    rendered
+}
+
+fn parse_output_specific_line(line: &str) -> Option<(&str, &str, usize)> {
+    let trimmed = line.trim_start();
+    let indent_len = line.len() - trimmed.len();
+    let rest = trimmed.strip_prefix("`{{ output }}` = `")?;
+    let (mode, message) = rest.split_once("` means ")?;
+    Some((mode, message, indent_len))
+}
+
+fn starts_with_list_marker(line: &str) -> bool {
+    line.starts_with("- ")
+        || line.starts_with("* ")
+        || line
+            .chars()
+            .next()
+            .is_some_and(|ch| ch.is_ascii_digit() && line.contains(". "))
+}
+
+fn resolve_output_specific_sections(template: &str, output_mode: Option<&str>) -> String {
+    let lines = template.lines().collect::<Vec<_>>();
+    let mut resolved = Vec::new();
+    let mut index = 0;
+    while index < lines.len() {
+        let line = lines[index];
+        let Some((mode, message, indent_len)) = parse_output_specific_line(line) else {
+            resolved.push(line.to_string());
+            index += 1;
+            continue;
+        };
+
+        let mut block = vec![format!("{}{}", " ".repeat(indent_len), message)];
+        index += 1;
+        while index < lines.len() {
+            let next = lines[index];
+            let next_trimmed = next.trim_start();
+            let next_indent_len = next.len() - next_trimmed.len();
+            if next_trimmed.is_empty()
+                || parse_output_specific_line(next).is_some()
+                || next_indent_len < indent_len
+                || starts_with_list_marker(next_trimmed)
+            {
+                break;
+            }
+            block.push(next.to_string());
+            index += 1;
+        }
+
+        if output_mode == Some(mode) {
+            resolved.extend(block);
+        }
+    }
+    resolved.join("\n")
+}
+
+pub(crate) fn render_prompt_body(
+    workflow_id: &str,
+    profile: &crate::profile::ProfileDefinition,
+    prompt: &PromptDefinition,
+) -> String {
+    let params = build_prompt_params(workflow_id, profile, prompt);
+    let resolved_template =
+        resolve_output_specific_sections(&prompt.body, params.get("output").map(String::as_str));
+    let mut unresolved = Vec::new();
+    render_prompt_template(&resolved_template, &params, &mut unresolved)
+}
+
 #[cfg(test)]
 impl PromptDefinition {
     pub fn render(&self, workflow: &WorkflowDefinition, profile: &ProfileDefinition) -> String {
-        let params = tests_helpers::build_prompt_params(workflow, profile, self);
+        let params = build_prompt_params(&workflow.id, profile, self);
+        let template =
+            resolve_output_specific_sections(&self.body, params.get("output").map(String::as_str));
         let mut unresolved = Vec::new();
-        let mut body = tests_helpers::render_prompt_template(&self.body, &params, &mut unresolved);
+        let mut body = render_prompt_template(&template, &params, &mut unresolved);
         if !self.accept.is_empty() {
             if !body.is_empty() {
                 body.push_str("\n\n");

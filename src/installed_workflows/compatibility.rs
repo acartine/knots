@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::profile::{ProfileDefinition, ProfileError};
 
-use super::{PromptDefinition, WorkflowDefinition, COMPATIBILITY_WORKFLOW_ID};
+use super::{render_prompt_body, PromptDefinition, WorkflowDefinition, COMPATIBILITY_WORKFLOW_ID};
 
 pub(super) fn compatibility_workflow() -> Result<WorkflowDefinition, ProfileError> {
     let builtin = crate::workflow::ProfileRegistry::load()?;
@@ -11,9 +11,11 @@ pub(super) fn compatibility_workflow() -> Result<WorkflowDefinition, ProfileErro
         fill_compatibility_states(&mut profile);
         profiles.insert(profile.id.clone(), profile);
     }
+    let workflow_id = COMPATIBILITY_WORKFLOW_ID.to_string();
     let (prompts, action_prompts) = build_compatibility_prompts();
+    populate_profile_prompts(&workflow_id, &prompts, &mut profiles);
     Ok(WorkflowDefinition {
-        id: COMPATIBILITY_WORKFLOW_ID.to_string(),
+        id: workflow_id,
         version: 1,
         description: Some("Built-in Knots compatibility workflow".to_string()),
         default_profile: Some("autopilot".to_string()),
@@ -22,6 +24,28 @@ pub(super) fn compatibility_workflow() -> Result<WorkflowDefinition, ProfileErro
         prompts,
         action_prompts,
     })
+}
+
+fn populate_profile_prompts(
+    workflow_id: &str,
+    prompts: &BTreeMap<String, PromptDefinition>,
+    profiles: &mut BTreeMap<String, ProfileDefinition>,
+) {
+    for profile in profiles.values_mut() {
+        profile.action_prompts.clear();
+        profile.prompt_acceptance.clear();
+        for prompt in prompts.values() {
+            let rendered = render_prompt_body(workflow_id, profile, prompt);
+            profile
+                .action_prompts
+                .insert(prompt.action_state.clone(), rendered);
+            if !prompt.accept.is_empty() {
+                profile
+                    .prompt_acceptance
+                    .insert(prompt.action_state.clone(), prompt.accept.clone());
+            }
+        }
+    }
 }
 
 fn fill_compatibility_states(profile: &mut ProfileDefinition) {

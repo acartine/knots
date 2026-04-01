@@ -218,6 +218,12 @@ impl ProfileRegistry {
         let installed = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
         for workflow in installed.list() {
             if workflow.builtin {
+                for profile in workflow.list_profiles() {
+                    if let Some(existing) = registry.profiles.get_mut(&profile.id) {
+                        existing.action_prompts = profile.action_prompts.clone();
+                        existing.prompt_acceptance = profile.prompt_acceptance.clone();
+                    }
+                }
                 continue;
             }
             for mut profile in workflow.list_profiles() {
