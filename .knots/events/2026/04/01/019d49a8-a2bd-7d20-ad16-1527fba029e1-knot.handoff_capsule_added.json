@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49a8-a2bd-7d20-ad16-1527fba029e1",
+  "occurred_at": "2026-04-01T15:28:01.725492Z",
+  "knot_id": "knots-a840",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review handoff: move builtin compatibility workflow/profile loading onto an embedded Loom bundle path, then delete `skills::*` fallback resolution from `claim`, `poll`, and `skill` while preserving current multi-workflow selection behavior. Main implementation risk is avoiding a loader cycle between `ProfileRegistry` and `InstalledWorkflowRegistry`; child execution is split across `knots-720e`, `knots-bf17`, and `knots-040c`.",
+    "datetime": "2026-04-01T15:28:01.725492Z",
+    "entry_id": "019d49a8-a2bd-7d20-ad16-151ff5039a79",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

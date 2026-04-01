@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49db-4252-7773-a295-1a836dee181a",
+  "occurred_at": "2026-04-01T16:23:19.378152Z",
+  "knot_id": "knots-3239",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implementation review approved. All 4 children advanced to ready_for_shipment. Combined changes across parent branch (feat/knots-a9e6-owner-artifact-metadata) and child branch (knots-3239-profile-delivery-targets) satisfy all 6 acceptance criteria: (1) Skills and loom prompts updated with output-mode-specific language. (2) No-PR profiles (autopilot, semiauto, *_no_planning) no longer reference PR artifacts in rendered prompts. (3) PR profiles explicitly target PR inspection. (4) Delivery targets are deterministic via resolve_output_specific_sections and per-profile rendering in compatibility.rs. (5) Human-gated semiauto variants preserve gate points unchanged. (6) Comprehensive tests assert prompt content per profile, human gate preservation, and delivery target correctness. Tests pass on both branches (799 tests, 95.07% coverage on child). No merge conflicts between branches.",
+    "datetime": "2026-04-01T16:23:19.378152Z",
+    "entry_id": "019d49db-4252-7773-a295-1a76341dbc5c",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

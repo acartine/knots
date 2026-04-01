@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49d2-da45-7412-a622-2b11f674b8a3",
+  "occurred_at": "2026-04-01T16:14:08.453821Z",
+  "knot_id": "knots-495e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Locked in delivery-target behavior for built-in compatibility profiles. Branch-mode profiles now render implementation and implementation_review prompts without PR-shaped artifacts, and new integration assertions in src/poll_claim/tests_ext2.rs verify branch profiles stay branch/main focused while PR profiles explicitly mention pull requests across implementation, review, shipment, and shipment_review. Added src/profile_tests.rs coverage to confirm semiauto and semiauto_no_planning still keep human-owned review gates. Validated with cargo test prompt_body_for_state_distinguishes_branch_and_pr_profiles, cargo test load_for_repo_preserves_human_gated_profile_owners, and make sanity.",
+    "datetime": "2026-04-01T16:14:08.453821Z",
+    "entry_id": "019d49d2-da45-7412-a622-2b0282900561",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

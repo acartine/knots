@@ -1,0 +1,10 @@
+{
+  "event_id": "019d4991-dd8a-7942-a08e-81ddfac1de4d",
+  "occurred_at": "2026-04-01T15:03:09.450302Z",
+  "knot_id": "knots-a840",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Remove compatibility prompt/runtime fallback",
+    "to": "Make Loom prompts authoritative for all workflow actions"
+  }
+}

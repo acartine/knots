@@ -1,0 +1,17 @@
+{
+  "event_id": "019d496d-879f-7fd1-a287-ad8d5ace0c91",
+  "occurred_at": "2026-04-01T14:23:28.159149Z",
+  "knot_id": "knots-3ecc",
+  "type": "knot.created",
+  "data": {
+    "body": "Migrate Knots so the shipped/default workflow runs entirely through Loom-defined workflow bundles and Loom prompt definitions. Remove legacy compatibility/default/static-skill prompt paths for workflow actions while preserving support for multiple installed workflows, current workflow selection, and per-knot workflow identity. The result should be a single runtime path for workflow-driven prompts and state transitions.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Unify Knots workflow runtime on Loom",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

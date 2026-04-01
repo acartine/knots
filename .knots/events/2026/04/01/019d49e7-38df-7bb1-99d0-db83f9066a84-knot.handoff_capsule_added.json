@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e7-38df-7bb1-99d0-db83f9066a84",
+  "occurred_at": "2026-04-01T16:36:23.391567Z",
+  "knot_id": "knots-9eb3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped: compatibility workflow per-profile prompt rendering via commit 2cce51f69f56. Rebased onto main (commit aecdb6e4c875). CI green.",
+    "datetime": "2026-04-01T16:36:23.391567Z",
+    "entry_id": "019d49e7-38df-7bb1-99d0-db744c2c665b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49bc-abf8-7ec0-aa08-300695d26dcc",
+  "occurred_at": "2026-04-01T15:49:54.808906Z",
+  "knot_id": "knots-bb8d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Updated skills/implementation.md, skills/implementation_review.md, skills/shipment.md, and skills/shipment_review.md to describe delivery-target-specific behavior for remote_main vs pr outputs. Added assertions in src/skills.rs for explicit branch, PR, main, and merged-PR wording. Validation: cargo test skills::tests; make sanity. Branch: knots-3239-profile-delivery-targets. Commit: caa2ad7e9b94.",
+    "datetime": "2026-04-01T15:49:54.808906Z",
+    "entry_id": "019d49bc-abf8-7ec0-aa08-2ff700afb3d3",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

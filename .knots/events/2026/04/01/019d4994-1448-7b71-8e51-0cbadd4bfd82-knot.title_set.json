@@ -1,0 +1,10 @@
+{
+  "event_id": "019d4994-1448-7b71-8e51-0cbadd4bfd82",
+  "occurred_at": "2026-04-01T15:05:34.536188Z",
+  "knot_id": "knots-8f7d",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Tighten lease lifecycle enforcement on claim and next",
+    "to": "Tighten lease enforcement for claim and next transitions"
+  }
+}

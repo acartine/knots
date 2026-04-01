@@ -1,0 +1,21 @@
+{
+  "event_id": "019d496e-3602-72f1-8b8b-8a4ec1a69014",
+  "occurred_at": "2026-04-01T14:24:12.7983Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-3239",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Redesign built-in SDLC profiles to match delivery reality",
+    "type": "work",
+    "updated_at": "2026-04-01T14:24:12.7983Z",
+    "workflow_id": "compatibility"
+  }
+}

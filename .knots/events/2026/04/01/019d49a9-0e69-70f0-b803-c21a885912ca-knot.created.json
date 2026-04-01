@@ -1,0 +1,17 @@
+{
+  "event_id": "019d49a9-0e69-70f0-b803-c21a885912ca",
+  "occurred_at": "2026-04-01T15:28:29.289384Z",
+  "knot_id": "knots-21d8",
+  "type": "knot.created",
+  "data": {
+    "body": "Update loom/knots_sdlc/prompts/*.md to match the updated skills/*.md content. Affected files: implementation.md, shipment.md, shipment_review.md, implementation_review.md. Ensure frontmatter (accept, success, failure, params) remains valid and body text matches the delivery-target-explicit language from the skills update. The {{ output }} template variable should produce correct text when rendered for both remote_main and pr modes.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Align loom prompts with updated skills prompts",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

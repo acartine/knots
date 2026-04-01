@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4994-1448-7b71-8e51-0cdaf66af872",
+  "occurred_at": "2026-04-01T15:05:34.536188Z",
+  "knot_id": "knots-8f7d",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1) `claim` with an explicit `lease_id` rejects non-ready lease states, including `lease_active`, and returns an explicit error instead of accepting the knot.\n2) `claim` with a `lease_ready` lease succeeds only when the lease is atomically moved to `lease_active` during claim.\n3) `next` on a knot with a bound lease rejects calls that omit `lease_id` or provide a non-matching `lease_id`.\n4) On successful `next` for a bounded knot, the system clears `knot.lease_id` and terminates the lease.\n5) Any corrupt/invalid lease-state condition observed during `claim` or `next` is logged or surfaced as a warning signal (and is not silently dropped).\n6) Existing test coverage for this path is updated to assert these six outcomes, including the warning/log path for corrupt lease data."
+  }
+}

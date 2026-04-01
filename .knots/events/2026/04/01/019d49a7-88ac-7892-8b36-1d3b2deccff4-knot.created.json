@@ -1,0 +1,17 @@
+{
+  "event_id": "019d49a7-88ac-7892-8b36-1d3b2deccff4",
+  "occurred_at": "2026-04-01T15:26:49.516861Z",
+  "knot_id": "knots-720e",
+  "type": "knot.created",
+  "data": {
+    "body": "Replace the synthesized compatibility workflow so builtin workflow definitions and prompt bodies are loaded from the embedded knots_sdlc Loom bundle through the normal installed-workflow parsing path, while preserving compatibility workflow id/version/default-profile behavior.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Embed builtin compatibility workflow as a Loom bundle",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

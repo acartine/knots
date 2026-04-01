@@ -1,0 +1,21 @@
+{
+  "event_id": "019d49e7-46c4-7671-9220-de46e6ce0b46",
+  "occurred_at": "2026-04-01T16:36:26.942814Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-495e",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Add tests for profile-specific prompt delivery targets",
+    "type": "work",
+    "updated_at": "2026-04-01T16:36:26.942814Z",
+    "workflow_id": "compatibility"
+  }
+}

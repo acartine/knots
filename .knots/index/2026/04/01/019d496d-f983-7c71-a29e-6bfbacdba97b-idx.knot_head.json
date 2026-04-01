@@ -1,0 +1,21 @@
+{
+  "event_id": "019d496d-f983-7c71-a29e-6bfbacdba97b",
+  "occurred_at": "2026-04-01T14:23:57.315138Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a840",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Remove compatibility prompt/runtime fallback",
+    "type": "work",
+    "updated_at": "2026-04-01T14:23:57.315138Z",
+    "workflow_id": "compatibility"
+  }
+}

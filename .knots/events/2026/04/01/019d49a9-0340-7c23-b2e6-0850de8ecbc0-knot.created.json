@@ -1,0 +1,17 @@
+{
+  "event_id": "019d49a9-0340-7c23-b2e6-0850de8ecbc0",
+  "occurred_at": "2026-04-01T15:28:26.432774Z",
+  "knot_id": "knots-9eb3",
+  "type": "knot.created",
+  "data": {
+    "body": "Modify src/installed_workflows/compatibility.rs build_compatibility_prompts() to accept the loaded profiles map and produce per-profile rendered prompt bodies. For each profile, render skills prompt text with the profile's output mode (from profile.outputs) substituted into {{ output }} and output-mode-specific instructions resolved. Populate each profile's action_prompts BTreeMap so prompt_body_for_state() in poll_claim.rs picks up the rendered variant instead of falling through to the raw skills fallback. Move or duplicate the render_prompt_template logic from tests_helpers.rs into production code.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Wire compatibility workflow to render per-profile prompt variants",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

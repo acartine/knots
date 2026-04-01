@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4973-3973-7040-9b9e-88936709132f",
+  "occurred_at": "2026-04-01T14:29:41.363414Z",
+  "knot_id": "knots-3239",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Observed churn example: shipment_review expected changes on main, but the prior shipment session left 4 modified files and 2 untracked test files in the working tree with nothing committed or pushed. The review agent rolled the knot back to ready_for_shipment. This is the exact failure mode the no-PR / remote-main profile must prevent: prompts and step outputs must make it explicit whether the reviewer is supposed to inspect a branch, a PR, code already on main, or code already live, and shipment must not advance unless the expected artifact actually exists.",
+    "datetime": "2026-04-01T14:29:41.363414Z",
+    "entry_id": "019d4973-3973-7040-9b9e-88862c979928",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

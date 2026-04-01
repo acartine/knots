@@ -1,0 +1,10 @@
+{
+  "event_id": "019d4992-899f-7f22-a6e4-d085096a70ec",
+  "occurred_at": "2026-04-01T15:03:53.503377Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Add end-to-end tests for Loom-backed prompt resolution",
+    "to": "Add end-to-end tests for Loom prompt resolution"
+  }
+}

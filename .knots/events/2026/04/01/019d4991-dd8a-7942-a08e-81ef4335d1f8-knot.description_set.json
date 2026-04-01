@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4991-dd8a-7942-a08e-81ef4335d1f8",
+  "occurred_at": "2026-04-01T15:03:09.450302Z",
+  "knot_id": "knots-a840",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Currently, workflow action prompts fall back to static skills or non-Loom definitions when a Loom prompt is unavailable. This creates maintenance burden and inconsistency. Replace this fallback behavior by shipping the default Knots workflow as a Loom bundle and ensuring claim/poll/skill resolution exclusively use workflow-installed Loom prompt bodies for both built-in and custom workflows. Preserve existing multi-workflow installation and selection behavior. Remove all dead compatibility branches and fallback code once the Loom path is the only authoritative source."
+  }
+}

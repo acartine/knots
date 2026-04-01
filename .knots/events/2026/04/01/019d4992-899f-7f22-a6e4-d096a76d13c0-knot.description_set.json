@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4992-899f-7f22-a6e4-d096a76d13c0",
+  "occurred_at": "2026-04-01T15:03:53.503377Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Write a comprehensive end-to-end test suite that validates Loom-backed prompt resolution across multiple scenarios.\n\nTests must cover:\n1. Default shipped workflow uses Loom-defined prompts (not static fallbacks)\n2. Claim output is rendered from Loom-defined prompts\n3. Profile-specific output customization affects rendered prompts\n4. Multiple installed workflows function correctly together\n\nTests must fail with clear diagnostics if:\n- A workflow falls back to static non-Loom prompts (regression detection)\n- Profile or workflow output semantics fail to reach rendered claim prompts (regression detection)\n\nTo validate rendered output, use Playwright MCP tools (browser_snapshot, browser_evaluate) to confirm UI rendering matches Loom-defined prompts and profile expectations."
+  }
+}

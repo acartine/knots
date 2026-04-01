@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49a8-20a7-7690-9c1f-b9a5c443c080",
+  "occurred_at": "2026-04-01T15:27:28.423585Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan recorded: add workflow-defined per-step metadata for owner, artifact/output expectations, and reviewer guidance; resolve current and next step metadata in runtime; surface it in KnotView, claim/show output, and knot head logs; keep bundle compatibility through defaults; test across compatibility, custom-bundle, and review-heavy workflow patterns. Existing blockers `knots-5464` and `knots-3239` already cover upstream output-target and delivery-semantics dependencies, so no new child knots were created in this planning step.",
+    "datetime": "2026-04-01T15:27:28Z",
+    "entry_id": "019d49a8-20a7-7690-9c1f-b990a9025a8c",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "unknown"
+  }
+}

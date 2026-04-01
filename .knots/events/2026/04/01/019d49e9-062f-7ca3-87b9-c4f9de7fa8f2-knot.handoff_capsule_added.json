@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e9-062f-7ca3-87b9-c4f9de7fa8f2",
+  "occurred_at": "2026-04-01T16:38:21.487781Z",
+  "knot_id": "knots-21d8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review passed. Commit f992afcc1201 live on main. Loom prompt fixtures aligned with delivery targets — no-PR prompts reference branch/main outcomes only, PR prompts reference PR artifacts. CI green (run 23859546344, 815 tests passed). No invariant violations.",
+    "datetime": "2026-04-01T16:38:21.487781Z",
+    "entry_id": "019d49e9-062f-7ca3-87b9-c4e42df7e14b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

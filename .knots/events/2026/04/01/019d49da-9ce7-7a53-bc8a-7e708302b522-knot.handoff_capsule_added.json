@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49da-9ce7-7a53-bc8a-7e708302b522",
+  "occurred_at": "2026-04-01T16:22:37.031581Z",
+  "knot_id": "knots-9eb3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Approved: compatibility.rs adds populate_profile_prompts() that renders per-profile prompt variants using each profile's output mode. mod.rs promotes render_prompt_template and build_prompt_params to production code, adds resolve_output_specific_sections for conditional block resolution. profile.rs bridges builtin workflow action_prompts into ProfileRegistry. tests_helpers.rs delegates to production functions. Tests in tests_registry_ext.rs verify autopilot vs autopilot_with_pr produce distinct prompts. Clean, correct implementation.",
+    "datetime": "2026-04-01T16:22:37.031581Z",
+    "entry_id": "019d49da-9ce7-7a53-bc8a-7e6cf24c9187",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

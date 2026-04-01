@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e8-ae14-73f1-819a-5c37a91b1cb3",
+  "occurred_at": "2026-04-01T16:37:58.932156Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Merged feat/knots-a9e6-owner-artifact-metadata to main. 38 files changed: StepMetadata/StepOwner/ActionOutputDef types in profile.rs, KnotView gains step_metadata and next_step_metadata fields, all mutation paths persist metadata into events, README+CONTRIBUTING document the JSON contract, 16 tests across 5 workflow patterns. Needed to trim profile.rs doc comment by 2 lines to meet 499-line limit. CI green on aecdb6e4c875.",
+    "datetime": "2026-04-01T16:37:58.932156Z",
+    "entry_id": "019d49e8-ae14-73f1-819a-5c2277a6fe23",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

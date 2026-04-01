@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e7-3fa1-7af0-ac70-4eddcd6bb53b",
+  "occurred_at": "2026-04-01T16:36:25.121134Z",
+  "knot_id": "knots-21d8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped: loom prompt fixtures aligned with delivery targets via commit f992afcc1201. Rebased onto main (commit aecdb6e4c875). CI green.",
+    "datetime": "2026-04-01T16:36:25.121134Z",
+    "entry_id": "019d49e7-3fa1-7af0-ac70-4eccc6e2ce66",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

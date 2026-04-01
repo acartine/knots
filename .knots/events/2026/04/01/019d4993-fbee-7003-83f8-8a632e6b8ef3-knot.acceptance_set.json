@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4993-fbee-7003-83f8-8a632e6b8ef3",
+  "occurred_at": "2026-04-01T15:05:28.302621Z",
+  "knot_id": "knots-ae85",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Any non-claim command with `lease_id` must fail when the knot has no lease or a different lease than the provided value; no lease binding change may occur.\n2. `new --lease` and `update --lease` must return a validation error (no lease is bound or altered) when used outside claim flow.\n3. A non-claim command with `lease_id` matching the already-bound lease must continue to be accepted without changing binding.\n4. If a knot is claimed without a lease, later non-claim commands (`update`, `next`, and others) must not bind or switch a lease.\n5. Lease binding may only occur during claim operations, according to existing claim semantics.\n6. Add/adjust tests to cover lease mismatch failure, claim-only binding behavior, and that `new --lease`/`update --lease` do not bind lease outside claim."
+  }
+}

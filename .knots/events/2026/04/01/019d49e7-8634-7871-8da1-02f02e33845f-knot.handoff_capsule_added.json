@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e7-8634-7871-8da1-02f02e33845f",
+  "occurred_at": "2026-04-01T16:36:43.187987Z",
+  "knot_id": "knots-3239",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipped: 4 child knots advanced to ready_for_shipment_review. Commits rebased onto main: b92e2743f328 (skills prompts), 2cce51f69f56 (compatibility render), f992afcc1201 (loom fixtures), 38c7e82c9b7c (tests). Top commit aecdb6e4c875. CI green (run 23859546344, 815 tests passed).",
+    "datetime": "2026-04-01T16:36:43.187987Z",
+    "entry_id": "019d49e7-8633-7150-bd49-d6127534b002",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

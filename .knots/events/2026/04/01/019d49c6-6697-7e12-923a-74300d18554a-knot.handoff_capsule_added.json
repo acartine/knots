@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49c6-6697-7e12-923a-74300d18554a",
+  "occurred_at": "2026-04-01T16:00:32.407795Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "1. Acceptance criterion 4 is not met: knot head/index payload writers still pass step_metadata: None and next_step_metadata: None in the create, update, and state-transition code paths, so persisted knot-head log payloads never carry the new metadata.\n2. Acceptance criterion 5 is not met: there are no downstream documentation updates; README.md and CONTRIBUTING.md contain no references to step_metadata, next_step_metadata, or review_hint.\n3. Acceptance criterion 6 is not met: the new tests exercise step_metadata_for_state directly instead of asserting the metadata on knot responses or persisted payloads across three workflow patterns.",
+    "datetime": "2026-04-01T15:59:13Z",
+    "entry_id": "019d49c6-6697-7e12-923a-742ff67a8e66",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "gpt-5"
+  }
+}

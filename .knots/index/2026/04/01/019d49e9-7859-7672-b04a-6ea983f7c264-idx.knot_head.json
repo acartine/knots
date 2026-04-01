@@ -1,0 +1,21 @@
+{
+  "event_id": "019d49e9-7859-7672-b04a-6ea983f7c264",
+  "occurred_at": "2026-04-01T16:38:50.707116Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-3239",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Align built-in SDLC Loom profiles with actual delivery workflows",
+    "type": "work",
+    "updated_at": "2026-04-01T16:38:50.707116Z",
+    "workflow_id": "compatibility"
+  }
+}

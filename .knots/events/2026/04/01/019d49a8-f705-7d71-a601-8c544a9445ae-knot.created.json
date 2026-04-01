@@ -1,0 +1,17 @@
+{
+  "event_id": "019d49a8-f705-7d71-a601-8c544a9445ae",
+  "occurred_at": "2026-04-01T15:28:23.301765Z",
+  "knot_id": "knots-bb8d",
+  "type": "knot.created",
+  "data": {
+    "body": "Replace vague 'Profile variant: ... if the knot profile expects it' language in skills/*.md with {{ output }} template variables and output-mode-specific sections. Affected files: skills/implementation.md, skills/shipment.md, skills/shipment_review.md, skills/implementation_review.md. For remote_main: explicit merge-to-main and push instructions, no PR references. For pr: explicit PR creation/update instructions. Keep existing step boundary, invariant, commit tagging, and write-constraint sections unchanged.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Update skills prompts with delivery-target-explicit language",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

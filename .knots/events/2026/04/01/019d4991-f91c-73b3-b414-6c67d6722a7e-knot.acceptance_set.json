@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4991-f91c-73b3-b414-6c67d6722a7e",
+  "occurred_at": "2026-04-01T15:03:16.508845Z",
+  "knot_id": "knots-5464",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- Loom's existing output semantics are confirmed (documented/tested) and any gaps for per-action or per-profile behavior are explicit.\n- Loom and bundle/runtime mapping accept an optional, validated expected-output declaration per workflow step for at least these targets: branch, PR, merged main commit, and live deployment.\n- During execution, output metadata is resolved per step at runtime and is used by prompt rendering.\n- Prompt rendering consumes the resolved per-step metadata directly and does not derive it from a global profile-level output mode.\n- Existing workflows that do not specify per-step output metadata remain backward compatible with current behavior.\n- Tests are added/updated to cover model declaration, runtime resolution, and rendering usage of per-step output metadata.\n- If a browser-based prompt-rendering path is used, validate the acceptance cases with Playwright (and/or chrome-devtools workflow checks)."
+  }
+}

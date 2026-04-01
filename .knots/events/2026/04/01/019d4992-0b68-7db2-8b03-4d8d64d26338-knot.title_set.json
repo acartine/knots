@@ -1,0 +1,10 @@
+{
+  "event_id": "019d4992-0b68-7db2-8b03-4d8d64d26338",
+  "occurred_at": "2026-04-01T15:03:21.192904Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Expose owner and artifact metadata for downstream apps",
+    "to": "Add owner and artifact metadata to knot views and workflows"
+  }
+}

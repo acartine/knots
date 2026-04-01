@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4993-e2cb-7972-8f32-940dba4f0d7b",
+  "occurred_at": "2026-04-01T15:05:21.867303Z",
+  "knot_id": "knots-87bd",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Refactor the three metadata record types (notes, handoff capsules, step history) to enforce a shared immutable model. These records must be append-only: corrections are represented by new follow-up records, never by editing or deleting existing records. This ensures agent-authored metadata remains durable and creates an auditable record of all changes. Additionally, establish a canonical typed interface for lease identity so the lease reference is consistent and strongly-typed across all metadata record types, eliminating ad-hoc per-record structures. Work includes designing the base interface/invariants, updating the schema, and enforcing immutability constraints in both creation and update paths."
+  }
+}

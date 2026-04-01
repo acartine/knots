@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49c0-feb6-7da3-b60b-39702a13a528",
+  "occurred_at": "2026-04-01T15:54:38.134202Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implemented StepMetadata (owner, artifact, action_kind, review_hint) computed at read time from profile registry. Enriched on KnotView for CLI show/prompt/JSON. Extended bundle TOML/JSON parsers with review_hint. 13 tests, 806 total pass, 95.03% coverage. Branch: feat/knots-a9e6-owner-artifact-metadata, commit 3510b62.",
+    "datetime": "2026-04-01T15:54:38.134202Z",
+    "entry_id": "019d49c0-feb6-7da3-b60b-396f260c8d1e",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49d9-efa2-7311-bc1a-bba3c628bddc",
+  "occurred_at": "2026-04-01T16:21:52.674604Z",
+  "knot_id": "knots-bb8d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Approved: skills/implementation.md, implementation_review.md, shipment.md, and shipment_review.md correctly replace 'Profile variant:' language with output-mode-specific {{ output }} template sections. Tests in src/skills.rs verify delivery-target-explicit wording for both remote_main and pr modes. Existing step boundary, invariant, commit tagging, and write-constraint sections remain unchanged.",
+    "datetime": "2026-04-01T16:21:52.674604Z",
+    "entry_id": "019d49d9-efa2-7311-bc1a-bb9eadc122ad",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

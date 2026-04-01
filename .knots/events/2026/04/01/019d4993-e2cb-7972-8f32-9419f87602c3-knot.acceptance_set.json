@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4993-e2cb-7972-8f32-9419f87602c3",
+  "occurred_at": "2026-04-01T15:05:21.867303Z",
+  "knot_id": "knots-87bd",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. All three metadata record types (notes, handoff capsules, step history) implement or inherit from a shared immutable base interface.\n2. Lease identity is consistently typed as a LeaseReference (or equivalent typed reference) across all three record types; no untyped strings or ad-hoc structures.\n3. Immutability is enforced: attempting to modify or delete an existing record fails with a clear error message explaining the append-only model.\n4. Creation paths validate and apply the immutable contract; records include required lease identity at creation time.\n5. Integration tests verify: (a) modifications to existing records are rejected, (b) corrections create new records with correct lease references, (c) lease identity is present and typed in all new records.\n6. Code review confirms the base interface is mandatory for any new metadata record types added in the future."
+  }
+}

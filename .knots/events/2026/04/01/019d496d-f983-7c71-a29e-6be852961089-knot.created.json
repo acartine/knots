@@ -1,0 +1,17 @@
+{
+  "event_id": "019d496d-f983-7c71-a29e-6be852961089",
+  "occurred_at": "2026-04-01T14:23:57.315138Z",
+  "knot_id": "knots-a840",
+  "type": "knot.created",
+  "data": {
+    "body": "Eliminate the built-in compatibility path where workflow action prompts fall back to static skills or non-Loom definitions. Ship the default Knots workflow as a Loom bundle and make claim/poll/skill resolution use workflow-installed Loom prompt bodies for built-in and custom workflows alike. Preserve multiple workflow installation and selection behavior, and remove dead compatibility branches once the Loom path is authoritative.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Remove compatibility prompt/runtime fallback",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

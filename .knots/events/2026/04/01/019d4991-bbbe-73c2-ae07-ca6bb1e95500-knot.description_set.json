@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4991-bbbe-73c2-ae07-ca6bb1e95500",
+  "occurred_at": "2026-04-01T15:03:00.798617Z",
+  "knot_id": "knots-3239",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Refactor the shipped Knots SDLC Loom profiles so profile structure, phase flow, and prompts reflect real delivery modes. In no-PR workflows, remove any suggestion that review relies on a PR-shaped artifact. In review/shipment phases, make the target explicit and correct for that profile: branch review, PR review, post-merge main review, or already-live code. Preserve human-gated variants and keep all profile behavior explicit and testable."
+  }
+}

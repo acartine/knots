@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e0-9519-7913-a841-f80586aa6bd3",
+  "occurred_at": "2026-04-01T16:29:08.248987Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implementation review APPROVED. All 6 acceptance criteria met: owner metadata queryable via StepOwner on all view/API surfaces, artifact specs defined in workflow schemas and exposed in StepMetadata.output, review hints attached per-state and visible in responses, metadata persists through all mutation paths (create/update/state_ops) into knot_head events, README+CONTRIBUTING document the JSON contract for downstream consumers, and 16 tests across 5 workflow patterns (autopilot, semiauto, custom bundle, gate, lease) including 3 dedicated response-level tests. make sanity passes: 809 tests, 0 failures, 95.10% coverage. No security concerns, fully backwards compatible, all code size limits respected.",
+    "datetime": "2026-04-01T16:29:08.248987Z",
+    "entry_id": "019d49e0-9518-7a72-9dd4-3ba6b4b9dc82",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

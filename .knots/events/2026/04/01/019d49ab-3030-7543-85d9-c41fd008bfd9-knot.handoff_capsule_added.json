@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49ab-3030-7543-85d9-c41fd008bfd9",
+  "occurred_at": "2026-04-01T15:30:49.008055Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan review approved. The 6-step plan is well-structured, correctly identifies existing owner/artifact primitives (StepOwner, ProfileOwners, ActionOutputDef, owner_kind_for_state), and follows a sound schema→runtime→views→logs→docs→tests dependency chain. Test strategy covers 3 required workflow patterns. Minor notes for implementation: (1) both upstream blockers (knots-5464, knots-3239) are still in-progress — coordinate rather than duplicate; (2) reviewer inspection guidance attachment point in the profile model needs clarification during implementation; (3) bundle parser extensions should define explicit defaulting logic for backward compatibility. None of these are plan-level blockers.",
+    "datetime": "2026-04-01T15:30:49.008055Z",
+    "entry_id": "019d49ab-3030-7543-85d9-c40b39a5289e",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

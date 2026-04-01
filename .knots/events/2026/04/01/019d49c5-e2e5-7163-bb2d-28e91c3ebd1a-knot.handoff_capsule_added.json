@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49c5-e2e5-7163-bb2d-28e91c3ebd1a",
+  "occurred_at": "2026-04-01T15:59:58.693305Z",
+  "knot_id": "knots-9eb3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Moved prompt template rendering into production in src/installed_workflows/mod.rs, added output-mode block resolution for builtin skill prompts, populated per-profile rendered action prompts in src/installed_workflows/compatibility.rs, and merged builtin prompt variants into ProfileRegistry::load_for_repo() via src/profile.rs. Added registry tests covering compatibility-workflow rendering and builtin prompt merging. Validation: cargo test installed_workflows::tests_registry_ext; make sanity. Branch: knots-3239-profile-delivery-targets. Commit: 83c4749dfa52.",
+    "datetime": "2026-04-01T15:59:58.693305Z",
+    "entry_id": "019d49c5-e2e5-7163-bb2d-28d1e4e2b7ee",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

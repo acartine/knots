@@ -1,0 +1,21 @@
+{
+  "event_id": "019d496d-f9f3-7ee0-9ec1-abf29009b416",
+  "occurred_at": "2026-04-01T14:23:57.427921Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a9e6",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Expose owner and artifact metadata for downstream apps",
+    "type": "work",
+    "updated_at": "2026-04-01T14:23:57.427921Z",
+    "workflow_id": "compatibility"
+  }
+}

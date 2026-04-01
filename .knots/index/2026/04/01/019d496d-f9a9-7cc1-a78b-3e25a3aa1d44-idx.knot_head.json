@@ -1,0 +1,21 @@
+{
+  "event_id": "019d496d-f9a9-7cc1-a78b-3e25a3aa1d44",
+  "occurred_at": "2026-04-01T14:23:57.353484Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5464",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Model workflow outputs explicitly in Loom",
+    "type": "work",
+    "updated_at": "2026-04-01T14:23:57.353484Z",
+    "workflow_id": "compatibility"
+  }
+}

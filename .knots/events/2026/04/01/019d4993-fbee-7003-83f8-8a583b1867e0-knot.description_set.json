@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4993-fbee-7003-83f8-8a583b1867e0",
+  "occurred_at": "2026-04-01T15:05:28.302621Z",
+  "knot_id": "knots-ae85",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Enforce that lease binding is created or changed only during claim flow. For any non-claim command, if a caller provides `lease_id` and the knot does not already have that exact lease bound, the command must fail instead of creating, switching, or applying a lease binding. Specifically, `new --lease` and `update --lease` must never bind a lease outside claim context. If a knot is claimed without a lease, no later non-claim command (including `update`, `next`, etc.) may set or replace a lease until a future claim operation does so."
+  }
+}

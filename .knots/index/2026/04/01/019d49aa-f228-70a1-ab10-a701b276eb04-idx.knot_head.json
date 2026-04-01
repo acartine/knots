@@ -1,0 +1,21 @@
+{
+  "event_id": "019d49aa-f228-70a1-ab10-a701b276eb04",
+  "occurred_at": "2026-04-01T15:30:33.12876Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a840",
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "Make Loom prompts authoritative for all workflow actions",
+    "type": "work",
+    "updated_at": "2026-04-01T15:30:33.12876Z",
+    "workflow_id": "compatibility"
+  }
+}

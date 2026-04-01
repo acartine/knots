@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4991-bbbe-73c2-ae07-ca716de327e9",
+  "occurred_at": "2026-04-01T15:03:00.798617Z",
+  "knot_id": "knots-3239",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1) Update each built-in SDLC Loom profile’s phases/prompts so wording and behavior match its documented delivery mode without adding or removing profile scope. 2) In all no-PR profiles, PR-shaped review artifacts are no longer referenced, generated, or required. Review guidance must explicitly target branch/main/live outcomes only. 3) In PR-based profiles, reviewer guidance and required data must explicitly target PR inspection, including PR artifact metadata where applicable. 4) Review and shipment semantics in each affected profile must be deterministic by delivery target (branch, PR, merged main, or live) and reflected in profile configuration and prompt text. 5) Human-gated profile variants remain present and unchanged in scope, with their gating points still explicit. 6) Add or update tests for profile definitions/fixtures to assert: (a) no-PR profiles do not emit PR review artifacts, (b) PR profiles require/mention PR artifacts, and (c) each profile’s review/shipment target is correctly represented."
+  }
+}

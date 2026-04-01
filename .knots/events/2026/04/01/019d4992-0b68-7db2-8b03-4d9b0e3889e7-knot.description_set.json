@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4992-0b68-7db2-8b03-4d9b0e3889e7",
+  "occurred_at": "2026-04-01T15:03:21.192904Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Knots must expose stable metadata that downstream applications need for routing and escalation decisions. Specifically: (1) owner information for the current and next action, (2) expected artifact/output type for each step, and (3) guidance on what reviewers should inspect. This metadata should be defined in workflow/profile definitions and surfaced in knot views (CLI output, API responses, and logs). The goal is to enable downstream systems to make intelligent routing and escalation decisions without Knots implementing those workflows itself."
+  }
+}

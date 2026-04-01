@@ -1,0 +1,10 @@
+{
+  "event_id": "019d4991-f91c-73b3-b414-6c499189c43b",
+  "occurred_at": "2026-04-01T15:03:16.508845Z",
+  "knot_id": "knots-5464",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Model workflow outputs explicitly in Loom",
+    "to": "Model Per-Step Output Targets in Loom Workflows"
+  }
+}

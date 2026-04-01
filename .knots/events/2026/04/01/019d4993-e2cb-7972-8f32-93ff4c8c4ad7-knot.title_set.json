@@ -1,0 +1,10 @@
+{
+  "event_id": "019d4993-e2cb-7972-8f32-93ff4c8c4ad7",
+  "occurred_at": "2026-04-01T15:05:21.867303Z",
+  "knot_id": "knots-87bd",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Normalize immutable metadata items around lease IDs",
+    "to": "Implement immutable append-only metadata with unified lease identity"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49c6-2cb3-7a71-8f2a-914ebbe1c314",
+  "occurred_at": "2026-04-01T16:00:17.587604Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation review rejected: knot head/index payloads still omit the new step metadata on persisted events, downstream consumer documentation for the new fields is missing, and tests do not verify the metadata on knot responses across the required workflow patterns.",
+    "datetime": "2026-04-01T16:00:17.587604Z",
+    "entry_id": "019d49c6-2cb3-7a71-8f2a-913ae1a97f82",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49ac-6233-71b1-b39b-d7def89e8dba",
+  "occurred_at": "2026-04-01T15:32:07.346884Z",
+  "knot_id": "knots-3239",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan needs revision: the proposed file list and architecture only update compatibility workflow prompt wiring, but runtime claim/poll prompts come from ProfileRegistry::load_for_repo() and ProfileDefinition::prompt_for_action_state() in src/profile.rs and src/poll_claim.rs. Built-in profiles loaded from src/profiles.toml currently keep empty action_prompts, and load_for_repo() skips builtin workflow profiles, so changing src/installed_workflows/compatibility.rs alone will not change agent prompts for builtin profiles. Revise the plan to include the runtime path that seeds rendered per-profile prompts into the built-in registry used by claim/poll, then keep the skills/loom/test updates aligned with that path.",
+    "datetime": "2026-04-01T15:32:07.346884Z",
+    "entry_id": "019d49ac-6233-71b1-b39b-d7c640d9627e",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

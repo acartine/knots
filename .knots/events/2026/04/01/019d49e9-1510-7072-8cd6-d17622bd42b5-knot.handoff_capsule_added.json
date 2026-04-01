@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e9-1510-7072-8cd6-d17622bd42b5",
+  "occurred_at": "2026-04-01T16:38:25.296476Z",
+  "knot_id": "knots-9eb3",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review passed. Commit 2cce51f69f56 live on main. Compatibility workflow now renders per-profile prompt variants using profile output mode substituted into {{ output }}. CI green (run 23859546344, 815 tests passed). No invariant violations.",
+    "datetime": "2026-04-01T16:38:25.296476Z",
+    "entry_id": "019d49e9-1510-7072-8cd6-d1654c8a5b67",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

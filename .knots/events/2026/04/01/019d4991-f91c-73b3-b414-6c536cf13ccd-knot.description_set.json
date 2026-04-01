@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4991-f91c-73b3-b414-6c536cf13ccd",
+  "occurred_at": "2026-04-01T15:03:16.508845Z",
+  "knot_id": "knots-5464",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Verify whether Loom currently supports output semantics per action and per profile. If gaps exist, extend Loom and the bundle/runtime mapping so each workflow step can declare its expected artifact/review target (branch, PR, merged main commit, or live deployment). Prompt rendering must receive resolved per-step output metadata at runtime, replacing reliance on a single flattened profile-wide output mode."
+  }
+}

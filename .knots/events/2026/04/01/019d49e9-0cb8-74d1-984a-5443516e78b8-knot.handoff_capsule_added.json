@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e9-0cb8-74d1-984a-5443516e78b8",
+  "occurred_at": "2026-04-01T16:38:23.160869Z",
+  "knot_id": "knots-495e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review passed. Commit 38c7e82c9b7c live on main. Profile-specific delivery target tests added: no-PR profiles assert no PR artifacts, PR profiles assert PR artifact presence, each profile's review/shipment target verified. CI green (run 23859546344, 815 tests passed). No invariant violations.",
+    "datetime": "2026-04-01T16:38:23.160869Z",
+    "entry_id": "019d49e9-0cb8-74d1-984a-543943015550",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "event_id": "019d49c6-d159-7260-b9dc-27c3f9af2d30",
+  "occurred_at": "2026-04-01T16:00:59.737109Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a9e6",
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "terminal": false,
+    "title": "Add owner and artifact metadata to knot views and workflows",
+    "type": "work",
+    "updated_at": "2026-04-01T16:00:59.737109Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d49c6-669f-7b82-8086-642e65d7d059"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e9-bdaa-7683-a851-b399aa5ee79e",
+  "occurred_at": "2026-04-01T16:39:08.458138Z",
+  "knot_id": "knots-3239",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment complete. All 4 child knots shipped: b92e2743f328 (skills prompts delivery-target-explicit language), 2cce51f69f56 (compatibility workflow per-profile prompt rendering), f992afcc1201 (loom prompt fixtures), 38c7e82c9b7c (profile-specific delivery target tests). Rebased top commit aecdb6e4c875. CI green (run 23859546344, 815 tests passed). No-PR profiles no longer reference PR artifacts; PR profiles explicitly require PR metadata; each profile's review/shipment target deterministic by delivery mode.",
+    "datetime": "2026-04-01T16:39:08.458138Z",
+    "entry_id": "019d49e9-bdaa-7683-a851-b38c7fb2d0eb",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

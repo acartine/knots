@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49aa-defd-72f2-a1b2-260dd5b54d58",
+  "occurred_at": "2026-04-01T15:30:28.221099Z",
+  "knot_id": "knots-a840",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan review approved. Plan is comprehensive and correctly identifies the fallback chain, root cause, and existing embedded bundle infrastructure. All 7 acceptance criteria are mapped to planned steps and child knots. Main risk (loader cycle) is properly mitigated. Child ordering 720e→bf17→040c is logical. No invariant violations, no security/performance concerns. Minor note: kno skill <state> resolution via current selected workflow is a reasonable approach.",
+    "datetime": "2026-04-01T15:30:28.221099Z",
+    "entry_id": "019d49aa-defd-72f2-a1b2-25f40973f5d1",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

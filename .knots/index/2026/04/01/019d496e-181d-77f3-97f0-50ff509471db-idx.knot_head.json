@@ -1,0 +1,21 @@
+{
+  "event_id": "019d496e-181d-77f3-97f0-50ff509471db",
+  "occurred_at": "2026-04-01T14:24:05.122975Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-3ecc",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Unify Knots workflow runtime on Loom",
+    "type": "work",
+    "updated_at": "2026-04-01T14:24:05.122975Z",
+    "workflow_id": "compatibility"
+  }
+}

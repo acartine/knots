@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49d8-46a1-7e60-b893-517c3e56051e",
+  "occurred_at": "2026-04-01T16:20:03.873064Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Persisted current/next step metadata on all knot-head writes, enriched mutation KnotView responses with owner/artifact/review metadata, documented the JSON/log contract, and added response-level tests covering autopilot, custom review-flow, and gate patterns.",
+    "datetime": "2026-04-01T16:20:03Z",
+    "entry_id": "019d49d8-46a1-7e60-b893-51672cfb448a",
+    "model": "gpt-5",
+    "username": "codex",
+    "version": "unknown"
+  }
+}

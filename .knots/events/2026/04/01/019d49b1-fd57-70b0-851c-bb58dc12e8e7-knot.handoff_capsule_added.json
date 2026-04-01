@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49b1-fd57-70b0-851c-bb58dc12e8e7",
+  "occurred_at": "2026-04-01T15:38:14.743092Z",
+  "knot_id": "knots-3239",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Revised plan addresses prior rejection. Key additions over previous plan:\n\n1. **Layer 2 (the missing piece)**: Explicitly modifies `ProfileRegistry::load_for_repo()` in `src/profile.rs` to merge builtin workflow profile `action_prompts` into the registry. Without this, per-profile prompts rendered in compatibility.rs never reach the ProfileDefinition objects used by `prompt_body_for_state()` in poll_claim.rs.\n\n2. **Full runtime path covered**: Plan traces the chain from `profiles.toml` (empty action_prompts) → `compatibility_workflow()` (per-profile rendered prompts) → `load_for_repo()` (merge bridge) → `prompt_body_for_state()` (finds prompt, no fallback).\n\n3. **Template rendering moved to production**: `render_prompt_template` from `tests_helpers.rs` becomes production code in `mod.rs`, used by `build_compatibility_prompts()` which now iterates profiles and renders per-profile variants using each profile's `outputs` map (artifact_type: \"remote_main\" vs \"pr\").\n\n4. **Test strategy proves the real path**: Tests call `prompt_body_for_state()` through the actual registry, not just the compatibility workflow bundle, asserting different text for autopilot vs autopilot_with_pr.\n\nChild knot order: bb8d → [9eb3, 21d8] → 495e. Children already exist in ready_for_implementation.",
+    "datetime": "2026-04-01T15:38:14.743092Z",
+    "entry_id": "019d49b1-fd57-70b0-851c-bb48511f5696",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

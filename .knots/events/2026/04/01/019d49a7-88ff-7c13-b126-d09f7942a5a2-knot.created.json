@@ -1,0 +1,17 @@
+{
+  "event_id": "019d49a7-88ff-7c13-b126-d09f7942a5a2",
+  "occurred_at": "2026-04-01T15:26:49.599912Z",
+  "knot_id": "knots-040c",
+  "type": "knot.created",
+  "data": {
+    "body": "Add unit and integration coverage proving builtin and custom workflows resolve prompts through Loom bodies only, including multi-workflow selection, skill state lookup, claim/poll, and compat harness scenarios.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Expand Loom-first prompt resolution coverage",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

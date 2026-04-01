@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4992-0b68-7db2-8b03-4da2d5cd1cb7",
+  "occurred_at": "2026-04-01T15:03:21.192904Z",
+  "knot_id": "knots-a9e6",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Owner metadata (person/role responsible for current action) is queryable from knot views and API responses\n2. Artifact/output specifications (type, format, location expectations) are defined in workflow schemas and exposed in knot views\n3. Reviewer inspection guidance is attached to each review step and visible when retrieving knot state\n4. All metadata persists correctly through knot state transitions\n5. Documentation shows downstream consumers how to query and parse this metadata\n6. Tests verify that owner, artifact, and reviewer metadata are present and correctly populated in knot responses for at least 3 different workflow patterns"
+  }
+}

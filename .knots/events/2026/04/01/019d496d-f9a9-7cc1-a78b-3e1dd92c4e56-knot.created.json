@@ -1,0 +1,17 @@
+{
+  "event_id": "019d496d-f9a9-7cc1-a78b-3e1dd92c4e56",
+  "occurred_at": "2026-04-01T14:23:57.353484Z",
+  "knot_id": "knots-5464",
+  "type": "knot.created",
+  "data": {
+    "body": "Verify whether Loom already supports the output semantics Knots needs per action and per profile. If it does not, extend Loom and the bundle/runtime mapping so a workflow can declare the expected artifact/review target for each step, such as branch, PR, merged main commit, or live deployment. Prompt rendering must receive the resolved output metadata at runtime rather than relying on a single flattened profile-wide output mode.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Model workflow outputs explicitly in Loom",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

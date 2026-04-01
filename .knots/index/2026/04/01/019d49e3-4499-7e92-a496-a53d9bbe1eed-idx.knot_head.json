@@ -1,0 +1,21 @@
+{
+  "event_id": "019d49e3-4499-7e92-a496-a53d9bbe1eed",
+  "occurred_at": "2026-04-01T16:32:04.244451Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-9eb3",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Wire compatibility workflow to render per-profile prompt variants",
+    "type": "work",
+    "updated_at": "2026-04-01T16:32:04.244451Z",
+    "workflow_id": "compatibility"
+  }
+}

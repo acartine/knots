@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49db-06a5-7ea2-a3b7-3a823fd19d84",
+  "occurred_at": "2026-04-01T16:23:04.101582Z",
+  "knot_id": "knots-495e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Approved: Comprehensive tests added: poll_claim/tests_ext2.rs tests prompt_body_for_state distinguishing branch vs PR profiles across all 6 profiles for implementation, implementation_review, shipment, and shipment_review states. profile_tests.rs tests human-gated profile owners preserved. tests_registry_ext.rs tests compatibility workflow renders distinct prompt variants. loom_compat_bundle.rs tests all builtin prompts include output-specific delivery targets. skills.rs tests delivery-target-explicit wording. All assertions correctly validate AC6 requirements.",
+    "datetime": "2026-04-01T16:23:04.101582Z",
+    "entry_id": "019d49db-06a5-7ea2-a3b7-3a7cc96dcd29",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

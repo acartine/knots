@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4992-899f-7f22-a6e4-d0a314f590d5",
+  "occurred_at": "2026-04-01T15:03:53.503377Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- [ ] End-to-end test suite created and all tests pass\n- [ ] Tests verify default workflow uses Loom-defined prompts, not static fallbacks\n- [ ] Tests verify claim output is rendered from Loom-defined prompts\n- [ ] Tests verify profile-specific output customization affects rendered prompts\n- [ ] Tests verify multiple installed workflows function correctly together\n- [ ] Tests fail if workflow falls back to non-Loom prompts (with diagnostic output)\n- [ ] Tests fail if profile/workflow semantics fail to reach rendered claim prompts (with diagnostic output)\n- [ ] Test code coverage maintains 95% minimum threshold"
+  }
+}

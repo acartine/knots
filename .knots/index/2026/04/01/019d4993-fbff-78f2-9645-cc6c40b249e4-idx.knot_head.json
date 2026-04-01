@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4993-fbff-78f2-9645-cc6c40b249e4",
+  "occurred_at": "2026-04-01T15:05:28.302621Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ae85",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Restrict lease binding to claim operations only",
+    "type": "work",
+    "updated_at": "2026-04-01T15:05:28.302621Z",
+    "workflow_id": "compatibility"
+  }
+}

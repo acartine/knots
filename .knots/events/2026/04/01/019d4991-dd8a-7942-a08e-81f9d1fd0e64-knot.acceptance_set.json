@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4991-dd8a-7942-a08e-81f9d1fd0e64",
+  "occurred_at": "2026-04-01T15:03:09.450302Z",
+  "knot_id": "knots-a840",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Default Knots workflow is packaged and installable as a Loom bundle\n2. claim/poll/skill resolution uses only Loom prompt bodies (no static skill fallback)\n3. Multiple workflow installation and selection still functions as before\n4. All compatibility fallback code and dead branches are removed\n5. Unit tests verify claim/poll/skill resolution never invokes fallback paths\n6. Integration tests confirm all built-in and custom workflow actions work end-to-end\n7. No change to public CLI behavior or user-facing workflow selection"
+  }
+}

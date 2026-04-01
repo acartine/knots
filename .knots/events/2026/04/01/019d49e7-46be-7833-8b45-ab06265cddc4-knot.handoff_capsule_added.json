@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e7-46be-7833-8b45-ab06265cddc4",
+  "occurred_at": "2026-04-01T16:36:26.942814Z",
+  "knot_id": "knots-495e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped: profile-specific delivery target tests via commit 38c7e82c9b7c. Rebased onto main (commit aecdb6e4c875). CI green.",
+    "datetime": "2026-04-01T16:36:26.942814Z",
+    "entry_id": "019d49e7-46be-7833-8b45-aafadc67e1ad",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

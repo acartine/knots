@@ -1,0 +1,21 @@
+{
+  "event_id": "019d49e9-1b52-7640-8783-3c63f7fd9f55",
+  "occurred_at": "2026-04-01T16:38:26.892609Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-bb8d",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment_review",
+    "terminal": false,
+    "title": "Update skills prompts with delivery-target-explicit language",
+    "type": "work",
+    "updated_at": "2026-04-01T16:38:26.892609Z",
+    "workflow_id": "compatibility"
+  }
+}

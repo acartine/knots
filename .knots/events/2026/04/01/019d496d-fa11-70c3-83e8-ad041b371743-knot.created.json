@@ -1,0 +1,17 @@
+{
+  "event_id": "019d496d-fa11-70c3-83e8-ad041b371743",
+  "occurred_at": "2026-04-01T14:23:57.457037Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.created",
+  "data": {
+    "body": "Add regression coverage proving the default shipped workflow is Loom-backed, claim output is rendered from Loom-defined prompts, profile-specific output expectations change the rendered prompt, and multiple installed workflows still work. Tests should fail if a workflow action falls back to static non-Loom prompts or if profile/workflow output semantics stop reaching the rendered claim prompt.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add end-to-end tests for Loom-backed prompt resolution",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

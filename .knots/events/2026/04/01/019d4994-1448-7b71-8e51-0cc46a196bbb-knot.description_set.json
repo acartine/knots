@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4994-1448-7b71-8e51-0cc46a196bbb",
+  "occurred_at": "2026-04-01T15:05:34.536188Z",
+  "knot_id": "knots-8f7d",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Harden lease lifecycle handling for work-knot execution so `claim` and `next` enforce explicit external lease states. A `claim` request that includes a `lease_id` must only proceed when that lease is in `lease_ready`; all other states, including `lease_active`, must be rejected before acceptance. On successful claim, the lease must transition to `lease_active` as part of the same operation. For `next`, if a knot has a bound lease, the caller must provide the matching `lease_id`; after a successful transition, the knot must clear its lease reference and the lease must be terminated. Lease-id validation may remain lightweight, but suspicious or corrupt lease-state should be emitted as warning/log signals and never silently ignored."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "event_id": "019d4991-bbbe-73c2-ae07-ca54cfcf3770",
+  "occurred_at": "2026-04-01T15:03:00.798617Z",
+  "knot_id": "knots-3239",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Redesign built-in SDLC profiles to match delivery reality",
+    "to": "Align built-in SDLC Loom profiles with actual delivery workflows"
+  }
+}

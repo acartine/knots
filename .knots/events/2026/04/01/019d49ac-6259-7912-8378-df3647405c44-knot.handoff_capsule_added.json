@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49ac-6259-7912-8378-df3647405c44",
+  "occurred_at": "2026-04-01T15:32:07.385978Z",
+  "knot_id": "knots-3239",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan rejected for revision. The diagnosis about generic builtin prompts is correct, but the implementation plan is incomplete because it routes the fix through src/installed_workflows/compatibility.rs without covering the runtime registry path used by claim/poll. In the current code, src/poll_claim.rs reads prompts from ProfileRegistry::prompt_for_action_state(), and src/profile.rs::load_for_repo() keeps builtin profiles from src/profiles.toml while skipping builtin workflow profiles from InstalledWorkflowRegistry. That means per-profile prompts added only inside the compatibility workflow would not reach the builtin profiles agents actually execute. Revised planning should identify where builtin ProfileDefinition values get prompt bodies at runtime, include that file set explicitly, and then keep skills, loom prompts, and tests in sync with the chosen runtime path. Test coverage should prove the real claim/poll prompt body differs by profile for builtin remote_main vs pr variants, not just that the compatibility workflow bundle renders correctly.",
+    "datetime": "2026-04-01T15:32:07.385978Z",
+    "entry_id": "019d49ac-6259-7912-8378-df27ec161532",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

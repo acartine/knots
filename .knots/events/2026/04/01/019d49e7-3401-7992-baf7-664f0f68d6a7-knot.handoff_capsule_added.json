@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e7-3401-7992-baf7-664f0f68d6a7",
+  "occurred_at": "2026-04-01T16:36:22.145598Z",
+  "knot_id": "knots-bb8d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped: skills prompts updated with delivery-target-explicit language via commit b92e2743f328. Rebased onto main (commit aecdb6e4c875). CI green.",
+    "datetime": "2026-04-01T16:36:22.145598Z",
+    "entry_id": "019d49e7-3401-7992-baf7-6636c15967fa",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

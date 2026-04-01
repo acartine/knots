@@ -1,0 +1,21 @@
+{
+  "event_id": "019d49cb-166d-76b0-9db3-fad8a3a26360",
+  "occurred_at": "2026-04-01T16:05:39.565008Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-21d8",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation_review",
+    "terminal": false,
+    "title": "Align loom prompts with updated skills prompts",
+    "type": "work",
+    "updated_at": "2026-04-01T16:05:39.565008Z",
+    "workflow_id": "compatibility"
+  }
+}

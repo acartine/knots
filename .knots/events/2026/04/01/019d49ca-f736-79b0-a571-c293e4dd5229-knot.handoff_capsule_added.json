@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49ca-f736-79b0-a571-c293e4dd5229",
+  "occurred_at": "2026-04-01T16:05:31.574495Z",
+  "knot_id": "knots-21d8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Updated loom/knots_sdlc/prompts/implementation.md, implementation_review.md, shipment.md, and shipment_review.md to mirror the delivery-target-explicit wording from the built-in skills prompts while keeping the frontmatter intact. Added src/loom_compat_bundle.rs coverage to assert the embedded loom prompt fixtures still include the output-specific branch, PR, main, and merged-PR guidance. Validation: cargo test builtin_loom_prompts_include_output_specific_delivery_targets; make sanity. Branch: knots-3239-profile-delivery-targets. Commit: f79e42ad07a8.",
+    "datetime": "2026-04-01T16:05:31.574495Z",
+    "entry_id": "019d49ca-f736-79b0-a571-c28d8e5dc17b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d49a9-1866-7c00-aff8-beae4e22ca86",
+  "occurred_at": "2026-04-01T15:28:31.846469Z",
+  "knot_id": "knots-495e",
+  "type": "knot.created",
+  "data": {
+    "body": "Add tests asserting delivery-target correctness: (a) no-PR profiles (autopilot, semiauto, *_no_planning) do not emit PR review artifacts in their rendered prompts, (b) PR profiles (autopilot_with_pr, *_no_planning) require/mention PR artifacts in their rendered prompts, (c) each profile's review/shipment target is correctly represented as branch/PR/main/live, (d) human-gated profiles preserve gate points unchanged. Test locations: src/skills.rs tests module, src/profile_tests.rs, and/or src/installed_workflows/ test modules.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Add tests for profile-specific prompt delivery targets",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

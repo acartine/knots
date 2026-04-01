@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49a9-747f-7ac3-a8bb-19d17032a487",
+  "occurred_at": "2026-04-01T15:28:55.423322Z",
+  "knot_id": "knots-3239",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan complete. Four child knots created:\n1. knots-bb8d: Update skills prompts with delivery-target-explicit language (replace vague \"Profile variant:\" with {{ output }} template vars)\n2. knots-9eb3: Wire compatibility workflow to render per-profile prompt variants (modify build_compatibility_prompts to produce per-profile rendered prompts)\n3. knots-21d8: Align loom prompts with updated skills prompts (sync loom/knots_sdlc/prompts/*.md)\n4. knots-495e: Add tests for profile-specific prompt delivery targets (assert no-PR profiles exclude PR artifacts, PR profiles require them)\n\nExecution order: bb8d → 9eb3 → 21d8 → 495e (9eb3 depends on bb8d; 21d8 can parallel with 9eb3; 495e depends on all three).\n\nKey architecture decision: leverage existing {{ output }} template rendering in compatibility workflow rather than introducing new infrastructure. Per-profile prompts stored in ProfileDefinition.action_prompts, picked up by poll_claim.rs:prompt_body_for_state().",
+    "datetime": "2026-04-01T15:28:55.423322Z",
+    "entry_id": "019d49a9-747f-7ac3-a8bb-19c2d15c9e81",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

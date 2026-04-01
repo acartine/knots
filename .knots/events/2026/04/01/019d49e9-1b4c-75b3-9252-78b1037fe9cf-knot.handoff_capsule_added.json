@@ -1,0 +1,15 @@
+{
+  "event_id": "019d49e9-1b4c-75b3-9252-78b1037fe9cf",
+  "occurred_at": "2026-04-01T16:38:26.892609Z",
+  "knot_id": "knots-bb8d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review passed. Commit b92e2743f328 live on main. Skills prompts updated with delivery-target-explicit language using {{ output }} template variables. No-PR profiles: explicit merge-to-main/push, no PR references. PR profiles: explicit PR creation/update. CI green (run 23859546344, 815 tests passed). No invariant violations.",
+    "datetime": "2026-04-01T16:38:26.892609Z",
+    "entry_id": "019d49e9-1b4c-75b3-9252-78a057236600",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

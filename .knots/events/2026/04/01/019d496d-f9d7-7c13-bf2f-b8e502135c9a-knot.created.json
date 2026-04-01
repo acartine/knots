@@ -1,0 +1,17 @@
+{
+  "event_id": "019d496d-f9d7-7c13-bf2f-b8e502135c9a",
+  "occurred_at": "2026-04-01T14:23:57.399978Z",
+  "knot_id": "knots-3239",
+  "type": "knot.created",
+  "data": {
+    "body": "Update the shipped Knots SDLC Loom workflow so profile structure, phases, and prompts reflect actual delivery modes. In particular, no-PR flows should not pretend there is a separate PR-shaped review artifact, and review/shipment semantics should line up with whether the reviewer is expected to inspect a branch, a PR, code already merged to main, or code already live. Preserve human-gated variants and keep profile behavior explicit and testable.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Redesign built-in SDLC profiles to match delivery reality",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

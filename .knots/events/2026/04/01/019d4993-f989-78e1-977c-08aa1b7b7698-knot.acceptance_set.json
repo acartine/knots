@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4993-f989-78e1-977c-08aa1b7b7698",
+  "occurred_at": "2026-04-01T15:05:27.6897Z",
+  "knot_id": "knots-43fe",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- [ ] When displaying a work/gate knot with a bound lease via `kno show <knot-id>`, plain-text output includes normalized lease agent metadata (e.g., agent identifier, not lease ID)\n- [ ] JSON output of the same knot includes identical lease agent metadata in an appropriate field\n- [ ] Lease ID/handle never appears in plain-text output for bound-lease knots\n- [ ] Lease ID/handle never appears in JSON output for bound-lease knots\n- [ ] Lease knots are not displayed directly when running `kno show` on CLI or JSON surfaces\n- [ ] Plain-text and JSON outputs achieve display parity—identical lease agent metadata is present in both formats\n- [ ] Verify by running `kno show` on a test work knot with a bound lease and confirming metadata visibility matches spec"
+  }
+}
