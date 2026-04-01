@@ -77,6 +77,7 @@ fn render_prompt_inner(
         }
         out.push('\n');
     }
+    render_step_metadata_section(&mut out, knot);
     if !knot.notes.is_empty() || !knot.handoff_capsules.is_empty() {
         out.push_str("## Notes\n\n");
         if verbose {
@@ -140,6 +141,8 @@ pub fn render_prompt_json_verbose(
         "gate": knot.gate,
         "child_summaries": knot.child_summaries,
         "lease_id": knot.lease_id,
+        "step_metadata": knot.step_metadata,
+        "next_step_metadata": knot.next_step_metadata,
         "prompt": prompt_text,
     });
     if !verbose {
@@ -205,4 +208,43 @@ fn entry_attribution(entry: &MetadataEntry) -> String {
         who,
         &entry.datetime[..10.min(entry.datetime.len())]
     )
+}
+
+fn render_step_metadata_section(out: &mut String, knot: &KnotView) {
+    let current = knot.step_metadata.as_ref();
+    let next = knot.next_step_metadata.as_ref();
+    if current.is_none() && next.is_none() {
+        return;
+    }
+    out.push_str("## Step Metadata\n\n");
+    if let Some(meta) = current {
+        render_step_meta_block(out, "Current", meta);
+    }
+    if let Some(meta) = next {
+        render_step_meta_block(out, "Next", meta);
+    }
+}
+
+fn render_step_meta_block(out: &mut String, label: &str, meta: &crate::workflow::StepMetadata) {
+    out.push_str(&format!("**{}** (`{}`)\n", label, meta.action_state));
+    if let Some(owner) = &meta.owner {
+        let kind_label = match owner.kind {
+            crate::workflow::OwnerKind::Human => "human",
+            crate::workflow::OwnerKind::Agent => "agent",
+        };
+        out.push_str(&format!("- owner: {kind_label}\n"));
+    }
+    if let Some(kind) = &meta.action_kind {
+        out.push_str(&format!("- action_kind: {kind}\n"));
+    }
+    if let Some(output) = &meta.output {
+        out.push_str(&format!("- artifact: {}\n", output.artifact_type));
+        if let Some(hint) = &output.access_hint {
+            out.push_str(&format!("- access_hint: {hint}\n"));
+        }
+    }
+    if let Some(hint) = &meta.review_hint {
+        out.push_str(&format!("- review_hint: {hint}\n"));
+    }
+    out.push('\n');
 }

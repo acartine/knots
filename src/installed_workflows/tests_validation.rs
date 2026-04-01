@@ -193,6 +193,7 @@ fn profile_def_validates_missing_prompt() {
             prompt: None,
             output: None,
             output_hint: None,
+            review_hint: None,
         },
     );
     let (steps, phases) = broken_steps_and_phases("ready", "orphan");
@@ -224,6 +225,7 @@ fn build_minimal_test_data() -> (StateMap, StepMap, PhaseMap, PromptMap) {
             prompt: None,
             output: None,
             output_hint: None,
+            review_hint: None,
         },
     );
     states.insert(
@@ -234,6 +236,7 @@ fn build_minimal_test_data() -> (StateMap, StepMap, PhaseMap, PromptMap) {
             prompt: Some("work".to_string()),
             output: None,
             output_hint: None,
+            review_hint: None,
         },
     );
     let mut steps = BTreeMap::new();

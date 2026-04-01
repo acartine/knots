@@ -103,6 +103,36 @@ fn toml_reads_per_action_outputs() {
 }
 
 #[test]
+fn toml_reads_review_hints_per_action() {
+    let with_hint = SAMPLE_BUNDLE.replace(
+        "[states.review]\n\
+         display_name = \"Review\"\n\
+         kind = \"action\"\n\
+         action_type = \"gate\"\n\
+         executor = \"human\"\n\
+         prompt = \"review\"\n\
+         output = \"note\"\n",
+        "[states.review]\n\
+         display_name = \"Review\"\n\
+         kind = \"action\"\n\
+         action_type = \"gate\"\n\
+         executor = \"human\"\n\
+         prompt = \"review\"\n\
+         output = \"note\"\n\
+         review_hint = \"Verify coverage above 95%\"\n",
+    );
+    let workflow = parse_bundle_toml(&with_hint).expect("bundle should parse");
+    let profile = workflow
+        .require_profile("autopilot")
+        .expect("profile should exist");
+    assert_eq!(
+        profile.review_hints.get("review").map(String::as_str),
+        Some("Verify coverage above 95%"),
+    );
+    assert!(!profile.review_hints.contains_key("work"));
+}
+
+#[test]
 fn compatibility_workflow_has_prompts_and_profiles() {
     let workflow =
         compatibility::compatibility_workflow().expect("compatibility workflow should build");

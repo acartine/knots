@@ -1,7 +1,7 @@
 use crate::domain::gate::GateData;
 use crate::domain::knot_type::KnotType;
 use crate::installed_workflows;
-use crate::workflow::{OwnerKind, ProfileDefinition, ProfileError, ProfileRegistry};
+use crate::workflow::{OwnerKind, ProfileDefinition, ProfileError, ProfileRegistry, StepMetadata};
 
 pub const READY_TO_EVALUATE: &str = "ready_to_evaluate";
 pub const EVALUATING: &str = "evaluating";
@@ -192,6 +192,92 @@ pub fn owner_kind_for_state(
     }
 }
 
+/// Resolve step metadata for any workflow state. Queue states resolve
+/// through their action state. Returns `None` for terminal/escape states.
+pub fn step_metadata_for_state(
+    registry: &ProfileRegistry,
+    profile_id: &str,
+    knot_type: KnotType,
+    gate: &GateData,
+    state: &str,
+) -> Result<Option<StepMetadata>, ProfileError> {
+    match knot_type {
+        KnotType::Work => {
+            let profile = registry.require(profile_id)?;
+            let action = resolve_action_state(profile, state);
+            Ok(action.map(|a| profile.step_metadata_for(a)))
+        }
+        KnotType::Gate => Ok(gate_step_metadata(state, gate)),
+        KnotType::Lease => Ok(lease_step_metadata(state)),
+    }
+}
+
+fn resolve_action_state<'a>(profile: &'a ProfileDefinition, state: &'a str) -> Option<&'a str> {
+    if profile.is_queue_state(state) {
+        profile.action_for_queue_state(state)
+    } else if profile.is_terminal_state(state) || profile.is_escape_state(state) {
+        None
+    } else {
+        Some(state)
+    }
+}
+
+fn gate_step_metadata(state: &str, gate: &GateData) -> Option<StepMetadata> {
+    match state {
+        READY_TO_EVALUATE | EVALUATING => {
+            let kind = match gate.owner_kind {
+                crate::domain::gate::GateOwnerKind::Human => OwnerKind::Human,
+                crate::domain::gate::GateOwnerKind::Agent => OwnerKind::Agent,
+            };
+            Some(StepMetadata {
+                action_state: EVALUATING.to_string(),
+                action_kind: Some("gate".to_string()),
+                owner: Some(crate::workflow::StepOwner {
+                    kind,
+                    agent_name: None,
+                    agent_model: None,
+                    agent_version: None,
+                }),
+                output: None,
+                review_hint: None,
+            })
+        }
+        _ => None,
+    }
+}
+
+fn lease_step_metadata(state: &str) -> Option<StepMetadata> {
+    match state {
+        LEASE_READY | LEASE_ACTIVE => Some(StepMetadata {
+            action_state: LEASE_ACTIVE.to_string(),
+            action_kind: Some("produce".to_string()),
+            owner: None,
+            output: None,
+            review_hint: None,
+        }),
+        _ => None,
+    }
+}
+
+/// Populate `step_metadata` and `next_step_metadata` on a KnotView
+/// by resolving against the profile registry at read time.
+pub fn enrich_step_metadata(knot: &mut crate::app::KnotView, registry: &ProfileRegistry) {
+    let gate = knot.gate.clone().unwrap_or_default();
+    let profile_id = crate::dispatch::profile_lookup_id(knot);
+    knot.step_metadata =
+        step_metadata_for_state(registry, &profile_id, knot.knot_type, &gate, &knot.state)
+            .ok()
+            .flatten();
+    let next_state = next_happy_path_state(registry, &profile_id, knot.knot_type, &knot.state)
+        .ok()
+        .flatten();
+    knot.next_step_metadata = next_state.and_then(|ns| {
+        step_metadata_for_state(registry, &profile_id, knot.knot_type, &gate, &ns)
+            .ok()
+            .flatten()
+    });
+}
+
 fn validate_gate_transition(from: &str, to: &str, force: bool) -> Result<(), ProfileError> {
     if force || from == to {
         return Ok(());
@@ -238,3 +324,7 @@ mod tests;
 #[cfg(test)]
 #[path = "workflow_runtime_tests_ext.rs"]
 mod tests_ext;
+
+#[cfg(test)]
+#[path = "step_metadata_tests.rs"]
+mod step_metadata_tests;

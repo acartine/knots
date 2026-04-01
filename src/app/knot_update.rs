@@ -347,6 +347,8 @@ fn write_update_events_and_cache(
             invariants: &us.invariants,
             knot_type: us.knot_type,
             gate_data: &us.gate_data,
+            step_metadata: None,
+            next_step_metadata: None,
         }),
     );
     if let Some(expected) = us.current_precondition.as_deref() {

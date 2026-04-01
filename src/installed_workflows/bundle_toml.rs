@@ -46,6 +46,8 @@ pub(crate) struct BundleStateSection {
     pub output: Option<String>,
     #[serde(default)]
     pub output_hint: Option<String>,
+    #[serde(default)]
+    pub review_hint: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -133,6 +135,7 @@ fn build_json_bundle(parsed: BundleToml) -> JsonKnotsBundle {
                 prompt: state.prompt,
                 output: state.output,
                 output_hint: state.output_hint,
+                review_hint: state.review_hint,
             })
             .collect(),
         steps: parsed

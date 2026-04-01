@@ -71,6 +71,8 @@ fn knot_ref_prefers_alias_when_available() {
         deferred_from_state: None,
         blocked_from_state: None,
         created_at: None,
+        step_metadata: None,
+        next_step_metadata: None,
         edges: Vec::new(),
         child_summaries: vec![],
     };
@@ -298,6 +300,8 @@ fn knot_json_serialization_always_includes_step_history_field() {
         deferred_from_state: None,
         blocked_from_state: None,
         created_at: None,
+        step_metadata: None,
+        next_step_metadata: None,
         edges: Vec::new(),
         child_summaries: vec![],
     };

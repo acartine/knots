@@ -7,6 +7,7 @@ use crate::domain::knot_type::{parse_knot_type, KnotType};
 use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
+use crate::workflow::StepMetadata;
 
 use super::helpers::canonical_profile_id;
 
@@ -40,6 +41,10 @@ pub struct KnotView {
     pub deferred_from_state: Option<String>,
     pub blocked_from_state: Option<String>,
     pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_metadata: Option<StepMetadata>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_step_metadata: Option<StepMetadata>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub edges: Vec<EdgeView>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -181,6 +186,8 @@ impl From<KnotCacheRecord> for KnotView {
             deferred_from_state: value.deferred_from_state,
             blocked_from_state: value.blocked_from_state,
             created_at: value.created_at,
+            step_metadata: None,
+            next_step_metadata: None,
             edges: Vec::new(),
             child_summaries: Vec::new(),
         }

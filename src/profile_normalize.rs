@@ -86,6 +86,7 @@ pub(crate) fn normalize(raw: RawProfileDefinition) -> Result<ProfileDefinition, 
         states,
         action_prompts: BTreeMap::new(),
         prompt_acceptance: BTreeMap::new(),
+        review_hints: BTreeMap::new(),
     })
 }
 

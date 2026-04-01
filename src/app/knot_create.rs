@@ -157,6 +157,8 @@ impl App {
                 invariants: &[],
                 knot_type: options.knot_type,
                 gate_data: &options.gate_data,
+                step_metadata: None,
+                next_step_metadata: None,
             }),
         );
         self.writer.write(&EventRecord::full(full_event))?;

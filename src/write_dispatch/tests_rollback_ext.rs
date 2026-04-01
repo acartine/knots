@@ -199,6 +199,8 @@ fn normalize_and_format_helpers() {
         deferred_from_state: None,
         blocked_from_state: None,
         created_at: None,
+        step_metadata: None,
+        next_step_metadata: None,
         edges: vec![],
         child_summaries: vec![],
     };

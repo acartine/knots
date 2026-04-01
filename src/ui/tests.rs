@@ -92,6 +92,8 @@ fn minimal_knot() -> KnotView {
         deferred_from_state: None,
         blocked_from_state: None,
         created_at: None,
+        step_metadata: None,
+        next_step_metadata: None,
         edges: vec![],
         child_summaries: vec![],
     }
@@ -139,6 +141,8 @@ fn knot_show_fields_include_optional_sections() {
         deferred_from_state: None,
         blocked_from_state: None,
         created_at: Some("2026-02-25T14:00:00Z".into()),
+        step_metadata: None,
+        next_step_metadata: None,
         edges: vec![],
         child_summaries: vec![],
     };

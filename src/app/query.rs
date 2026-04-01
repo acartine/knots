@@ -16,10 +16,13 @@ use super::App;
 impl App {
     pub fn list_knots(&self) -> Result<Vec<KnotView>, AppError> {
         self.maybe_auto_sync_for_read()?;
-        let knots = db::list_knot_hot(&self.conn)?
+        let mut knots: Vec<KnotView> = db::list_knot_hot(&self.conn)?
             .into_iter()
             .map(KnotView::from)
             .collect();
+        for knot in &mut knots {
+            workflow_runtime::enrich_step_metadata(knot, &self.profile_registry);
+        }
         self.apply_aliases_to_knots(knots)
     }
 
@@ -45,6 +48,7 @@ impl App {
                         })
                 })
                 .collect();
+            workflow_runtime::enrich_step_metadata(&mut view, &self.profile_registry);
             return Ok(Some(view));
         }
         self.rehydrate(&id)
@@ -100,6 +104,8 @@ impl App {
                 invariants: &current.invariants,
                 knot_type,
                 gate_data: &current.gate_data,
+                step_metadata: None,
+                next_step_metadata: None,
             }),
         );
         self.writer.write(&EventRecord::index(idx_event))?;
