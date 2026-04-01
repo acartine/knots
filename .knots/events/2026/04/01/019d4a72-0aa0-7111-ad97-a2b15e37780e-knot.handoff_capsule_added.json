@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a72-0aa0-7111-ad97-a2b15e37780e",
+  "occurred_at": "2026-04-01T19:08:01.056534Z",
+  "knot_id": "knots-720e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implementation review approved. The compatibility workflow is now loaded from an embedded pre-built Loom bundle JSON via parse_bundle(), replacing the old synthesized approach. Compatibility workflow id/version/default-profile behavior is preserved. Loom source files updated with correct output types and params. make sanity passes: 818 tests, 95.38% coverage, no lint issues.",
+    "datetime": "2026-04-01T19:08:01.056534Z",
+    "entry_id": "019d4a72-0aa0-7111-ad97-a2a2ded18f4a",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}
