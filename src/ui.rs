@@ -233,6 +233,7 @@ fn knot_show_fields(knot: &KnotView, verbose: bool) -> Vec<ShowField> {
     if !knot.tags.is_empty() {
         f.push(ShowField::new("tags", knot.tags.join(", ")));
     }
+    append_step_metadata_fields(&mut f, knot);
     append_metadata_fields(&mut f, knot, verbose);
     append_gate_fields(&mut f, knot);
     append_edge_fields(&mut f, knot);
@@ -268,6 +269,37 @@ fn append_metadata_fields(f: &mut Vec<ShowField>, knot: &KnotView, verbose: bool
         ));
     }
 }
+fn append_step_metadata_fields(f: &mut Vec<ShowField>, knot: &KnotView) {
+    if let Some(meta) = &knot.step_metadata {
+        f.push(ShowField::new("step_owner", format_step_owner(meta)));
+        if let Some(output) = &meta.output {
+            f.push(ShowField::new("step_artifact", &output.artifact_type));
+        }
+        if let Some(hint) = &meta.review_hint {
+            f.push(ShowField::new("step_review_hint", hint));
+        }
+    }
+    if let Some(meta) = &knot.next_step_metadata {
+        f.push(ShowField::new("next_owner", format_step_owner(meta)));
+        if let Some(output) = &meta.output {
+            f.push(ShowField::new("next_artifact", &output.artifact_type));
+        }
+        if let Some(hint) = &meta.review_hint {
+            f.push(ShowField::new("next_review_hint", hint));
+        }
+    }
+}
+
+fn format_step_owner(meta: &crate::workflow::StepMetadata) -> String {
+    match &meta.owner {
+        Some(o) => match o.kind {
+            crate::workflow::OwnerKind::Human => "human".to_string(),
+            crate::workflow::OwnerKind::Agent => "agent".to_string(),
+        },
+        None => "unspecified".to_string(),
+    }
+}
+
 fn append_gate_fields(f: &mut Vec<ShowField>, knot: &KnotView) {
     if let Some(g) = knot.gate.as_ref() {
         f.push(ShowField::new("gate_owner_kind", g.owner_kind.to_string()));

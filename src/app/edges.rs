@@ -144,6 +144,8 @@ impl App {
                 invariants: &current.invariants,
                 knot_type,
                 gate_data: &current.gate_data,
+                step_metadata: None,
+                next_step_metadata: None,
             }),
         );
         self.writer.write(&EventRecord::index(idx_event))?;

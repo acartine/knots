@@ -215,6 +215,8 @@ mod tests {
             deferred_from_state: None,
             blocked_from_state: None,
             created_at: None,
+            step_metadata: None,
+            next_step_metadata: None,
             edges: Vec::new(),
             child_summaries: vec![],
         }

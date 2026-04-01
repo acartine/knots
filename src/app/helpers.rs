@@ -179,6 +179,8 @@ pub(crate) struct KnotHeadData<'a> {
     pub invariants: &'a [Invariant],
     pub knot_type: KnotType,
     pub gate_data: &'a GateData,
+    pub step_metadata: Option<&'a crate::workflow::StepMetadata>,
+    pub next_step_metadata: Option<&'a crate::workflow::StepMetadata>,
 }
 
 pub(crate) fn build_knot_head_data(head: KnotHeadData<'_>) -> Value {
@@ -220,6 +222,18 @@ pub(crate) fn build_knot_head_data(head: KnotHeadData<'_>) -> Value {
         head.deferred_from_state,
     );
     insert_optional_string(&mut payload, "blocked_from_state", head.blocked_from_state);
+    if let Some(meta) = head.step_metadata {
+        payload.insert(
+            "step_metadata".to_string(),
+            serde_json::to_value(meta).expect("step_metadata should serialize"),
+        );
+    }
+    if let Some(meta) = head.next_step_metadata {
+        payload.insert(
+            "next_step_metadata".to_string(),
+            serde_json::to_value(meta).expect("next_step_metadata should serialize"),
+        );
+    }
     Value::Object(payload)
 }
 

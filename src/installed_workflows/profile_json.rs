@@ -96,6 +96,7 @@ fn assemble_json_profile(
         transitions: ctx.transitions,
         action_prompts: ctx.prompt_bodies,
         prompt_acceptance: ctx.prompt_acceptance,
+        review_hints: ctx.review_hints,
     };
     Ok((built, action_prompts))
 }
@@ -112,6 +113,7 @@ struct JsonProfileBuildContext {
     prompt_bodies: BTreeMap<String, String>,
     prompt_acceptance: BTreeMap<String, Vec<String>>,
     action_prompts: BTreeMap<String, String>,
+    review_hints: BTreeMap<String, String>,
     first_queue: Option<String>,
     terminal_states: Vec<String>,
     escape_states: Vec<String>,
@@ -201,6 +203,10 @@ fn collect_step_prompt(
     indexes: &BundleIndexes<'_>,
     ctx: &mut JsonProfileBuildContext,
 ) {
+    if let Some(hint) = state.review_hint.as_ref() {
+        ctx.review_hints
+            .insert(action_name.to_string(), hint.clone());
+    }
     let Some(prompt_name) = state.prompt.as_deref() else {
         return;
     };

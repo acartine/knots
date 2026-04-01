@@ -49,6 +49,19 @@ pub struct ActionOutputDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct StepMetadata {
+    pub action_state: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action_kind: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner: Option<StepOwner>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<ActionOutputDef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub review_hint: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum OutputMode {
     Local,
@@ -119,6 +132,8 @@ pub struct ProfileDefinition {
     pub action_prompts: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub prompt_acceptance: BTreeMap<String, Vec<String>>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub review_hints: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone)]
@@ -162,15 +177,9 @@ impl fmt::Display for ProfileError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ProfileError::Toml(err) => write!(f, "invalid profile TOML: {}", err),
-            ProfileError::InvalidDefinition(message) => {
-                write!(f, "invalid profile definition: {}", message)
-            }
-            ProfileError::InvalidBundle(message) => {
-                write!(f, "invalid workflow bundle: {}", message)
-            }
-            ProfileError::MissingProfileReference => {
-                write!(f, "profile id is required")
-            }
+            ProfileError::InvalidDefinition(m) => write!(f, "invalid profile definition: {m}"),
+            ProfileError::InvalidBundle(m) => write!(f, "invalid workflow bundle: {m}"),
+            ProfileError::MissingProfileReference => write!(f, "profile id is required"),
             ProfileError::UnknownProfile(id) => write!(f, "unknown profile '{}'", id),
             ProfileError::UnknownWorkflow(id) => write!(f, "unknown workflow '{}'", id),
             ProfileError::UnknownState { profile_id, state } => {
@@ -184,14 +193,9 @@ impl fmt::Display for ProfileError {
 impl Error for ProfileError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            ProfileError::Toml(err) => Some(err),
-            ProfileError::InvalidDefinition(_) => None,
-            ProfileError::InvalidBundle(_) => None,
-            ProfileError::MissingProfileReference => None,
-            ProfileError::UnknownProfile(_) => None,
-            ProfileError::UnknownWorkflow(_) => None,
-            ProfileError::UnknownState { .. } => None,
-            ProfileError::InvalidTransition(err) => Some(err),
+            ProfileError::Toml(e) => Some(e),
+            ProfileError::InvalidTransition(e) => Some(e),
+            _ => None,
         }
     }
 }
@@ -374,6 +378,23 @@ impl ProfileDefinition {
             .get(state)
             .map(Vec::as_slice)
             .unwrap_or(&[])
+    }
+
+    /// Build resolved step metadata for an action state.
+    pub fn step_metadata_for(&self, action_state: &str) -> StepMetadata {
+        let owner = self
+            .owners
+            .states
+            .get(action_state)
+            .or_else(|| self.owners.for_action_state(action_state))
+            .cloned();
+        StepMetadata {
+            action_state: action_state.to_string(),
+            action_kind: self.action_kinds.get(action_state).cloned(),
+            owner,
+            output: self.outputs.get(action_state).cloned(),
+            review_hint: self.review_hints.get(action_state).cloned(),
+        }
     }
 
     pub fn is_terminal_state(&self, state: &str) -> bool {

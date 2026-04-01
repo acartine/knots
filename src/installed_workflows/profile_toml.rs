@@ -81,6 +81,7 @@ fn assemble_profile(
 ) -> Result<ProfileDefinition, ProfileError> {
     let outputs =
         build_outputs_from_toml_profile(&profile_section.outputs, &ctx.action_states, states);
+    let review_hints = build_review_hints(&ctx.action_states, states);
     let owners = ProfileOwners {
         planning: default_owner(OwnerKind::Agent),
         plan_review: default_owner(OwnerKind::Human),
@@ -119,6 +120,7 @@ fn assemble_profile(
         transitions: ctx.transitions,
         action_prompts,
         prompt_acceptance,
+        review_hints,
     })
 }
 
@@ -392,6 +394,19 @@ fn build_prompt_acceptance(
             let prompt = states.get(state).and_then(|def| def.prompt.as_ref())?;
             let definition = prompts.get(prompt)?;
             Some((state.clone(), definition.accept.clone()))
+        })
+        .collect()
+}
+
+fn build_review_hints(
+    action_states: &[String],
+    states: &BTreeMap<String, BundleStateSection>,
+) -> BTreeMap<String, String> {
+    action_states
+        .iter()
+        .filter_map(|state| {
+            let hint = states.get(state)?.review_hint.as_ref()?;
+            Some((state.clone(), hint.clone()))
         })
         .collect()
 }
