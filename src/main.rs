@@ -36,6 +36,8 @@ mod loom_compat_harness;
 #[cfg(test)]
 mod loom_compat_harness_tests;
 #[cfg(test)]
+mod loom_compat_prompt_resolution_tests;
+#[cfg(test)]
 mod main_tests;
 mod managed_skills;
 mod perf;

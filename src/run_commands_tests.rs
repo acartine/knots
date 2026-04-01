@@ -125,6 +125,87 @@ fn resolve_skill_by_name_uses_current_workflow_prompt() {
 }
 
 #[test]
+fn resolve_skill_by_name_builtin_returns_loom_body_for_implementation() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
+
+    let skill = resolve_skill_by_name(&app, "implementation")
+        .expect("builtin implementation should resolve");
+    assert!(
+        skill.contains("# Implementation"),
+        "builtin skill should contain Loom heading: {skill}"
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn resolve_skill_by_name_builtin_covers_all_loom_action_states() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
+
+    let states_and_headings = [
+        ("planning", "# Planning"),
+        ("plan_review", "# Plan Review"),
+        ("implementation", "# Implementation"),
+        ("implementation_review", "# Implementation Review"),
+        ("shipment", "# Shipment"),
+        ("shipment_review", "# Shipment Review"),
+        ("evaluating", "# Evaluating"),
+    ];
+    for (state, heading) in states_and_headings {
+        let skill = resolve_skill_by_name(&app, state).unwrap_or_else(|e| panic!("{state}: {e}"));
+        assert!(
+            skill.contains(heading),
+            "{state}: skill should contain Loom heading '{heading}'"
+        );
+    }
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn resolve_skill_for_knot_returns_loom_body_for_builtin_profile() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
+
+    let knot = app
+        .create_knot("Skill knot test", None, Some("work_item"), None)
+        .expect("create");
+    let skill =
+        resolve_skill_for_knot(&app, &knot, &knot.id).expect("should resolve skill for knot");
+    assert!(
+        skill.contains("# Implementation"),
+        "skill for knot should contain Loom heading"
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn resolve_skill_for_knot_custom_workflow_returns_loom_body() {
+    let root = unique_workspace();
+    install_custom_workflow(&root);
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
+
+    let knot = app
+        .create_knot("Custom skill knot", None, None, None)
+        .expect("create");
+    let skill = resolve_skill_for_knot(&app, &knot, &knot.id)
+        .expect("should resolve skill for custom knot");
+    assert!(
+        skill.contains("Ship"),
+        "custom knot skill should resolve Loom body content, got: {skill}"
+    );
+    assert!(
+        skill.contains("Built output"),
+        "custom knot skill should include acceptance criteria"
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn resolve_skill_by_name_rejects_legacy_fallbacks_for_custom_workflows() {
     let root = unique_workspace();
     install_custom_workflow(&root);
