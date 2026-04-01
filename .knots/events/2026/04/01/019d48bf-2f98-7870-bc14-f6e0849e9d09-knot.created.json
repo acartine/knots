@@ -1,0 +1,17 @@
+{
+  "event_id": "019d48bf-2f98-7870-bc14-f6e0849e9d09",
+  "occurred_at": "2026-04-01T11:13:02.360949Z",
+  "knot_id": "knots-87bd",
+  "type": "knot.created",
+  "data": {
+    "body": "Refactor serial metadata items so notes, handoff capsules, and step history follow a shared immutable metadata model. Requirements: (1) these records are append-only and immutable once created; corrections must be represented by new follow-up records rather than edits or deletions, so agent-authored notes remain durable; (2) these record types should share a canonical base/interface for lease identity so the lease key is consistent and typed as a lease reference everywhere, rather than ad hoc per-record structure. Scope includes designing the schema/invariants and enforcing them in creation/update paths.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Normalize immutable metadata items around lease IDs",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}
