@@ -187,8 +187,28 @@ mod tests {
     fn implementation_skill_does_not_include_shipment_work() {
         let text = skill_for_state("implementation").unwrap();
         assert!(text.contains("Do not merge the feature branch to main"));
-        assert!(text.contains("Open or update a PR for the feature branch"));
+        assert!(text.contains("`{{ output }}` = `remote_main`"));
+        assert!(text.contains("`{{ output }}` = `pr`"));
         assert!(!text.contains("Merge the feature branch into main if the knot"));
+    }
+
+    #[test]
+    fn delivery_target_skills_describe_output_specific_review_artifacts() {
+        let implementation = skill_for_state("implementation").unwrap();
+        assert!(implementation.contains("review target is the pushed"));
+        assert!(implementation.contains("review target is a pull request"));
+
+        let implementation_review = skill_for_state("implementation_review").unwrap();
+        assert!(implementation_review.contains("review the implementation branch"));
+        assert!(implementation_review.contains("review the pull request itself"));
+
+        let shipment = skill_for_state("shipment").unwrap();
+        assert!(shipment.contains("merge the feature branch to main"));
+        assert!(shipment.contains("merge the approved pull request"));
+
+        let shipment_review = skill_for_state("shipment_review").unwrap();
+        assert!(shipment_review.contains("review the code now on main"));
+        assert!(shipment_review.contains("review the merged pull request"));
     }
 
     #[test]
