@@ -11,6 +11,8 @@ mod tests_helpers;
 #[cfg(test)]
 mod tests_parsing;
 #[cfg(test)]
+mod tests_prompt_resolution;
+#[cfg(test)]
 mod tests_registry;
 #[cfg(test)]
 mod tests_registry_ext;

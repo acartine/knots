@@ -444,3 +444,7 @@ mod tests_gate_ext;
 #[cfg(test)]
 #[path = "poll_claim/tests_lease_ext.rs"]
 mod tests_lease_ext;
+
+#[cfg(test)]
+#[path = "poll_claim/tests_prompt_resolution.rs"]
+mod tests_prompt_resolution;
