@@ -26,4 +26,9 @@ Review the implementation against the knot description and acceptance criteria.
 1. Review code changes against the knot description and acceptance criteria
 2. Verify the implementation respects all knot invariants
 3. Verify tests cover the required behavior
-4. Approve or request changes
+4. Use the correct review target for the profile output mode:
+   `{{ output }}` = `remote_main` means review the implementation branch
+   directly and do not rely on PR metadata or a PR-shaped artifact.
+   `{{ output }}` = `pr` means review the pull request itself, including
+   the PR diff, status, and metadata.
+5. Approve or request changes
