@@ -261,8 +261,8 @@ fn compatibility_workflow_renders_builtin_prompt_variants_per_profile() {
     let branch_prompt = branch_profile
         .prompt_for_action_state("implementation")
         .expect("branch prompt should render");
-    assert!(branch_prompt.contains("do not open a PR for this step"));
-    assert!(!branch_prompt.contains("open or update the PR for the feature branch"));
+    assert!(branch_prompt.contains("ready for direct branch"));
+    assert!(!branch_prompt.contains("pull request"));
 
     let pr_prompt = pr_profile
         .prompt_for_action_state("implementation")

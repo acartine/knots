@@ -221,6 +221,39 @@ fn load_for_repo_adds_namespaced_profiles_for_custom_workflow() {
 }
 
 #[test]
+fn load_for_repo_preserves_human_gated_profile_owners() {
+    let root = unique_workspace("knots-profile-load-for-repo-builtins");
+    let registry = ProfileRegistry::load_for_repo(&root).expect("repo registry should load");
+
+    for profile_id in ["semiauto", "semiauto_no_planning"] {
+        let profile = registry.require(profile_id).expect("profile should exist");
+        assert_eq!(
+            profile
+                .owners
+                .for_action_state("plan_review")
+                .map(|owner| &owner.kind),
+            Some(&super::OwnerKind::Human)
+        );
+        assert_eq!(
+            profile
+                .owners
+                .for_action_state("implementation_review")
+                .map(|owner| &owner.kind),
+            Some(&super::OwnerKind::Human)
+        );
+        assert_eq!(
+            profile
+                .owners
+                .for_action_state("implementation")
+                .map(|owner| &owner.kind),
+            Some(&super::OwnerKind::Agent)
+        );
+    }
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn load_for_repo_adds_profiles_for_multiple_installed_workflows() {
     let root = unique_workspace("knots-profile-load-for-repo-multi");
     let first_bundle = root.join("custom-flow.toml");

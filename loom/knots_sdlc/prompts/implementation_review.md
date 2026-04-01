@@ -28,7 +28,7 @@ Review the implementation against the knot description and acceptance criteria.
 3. Verify tests cover the required behavior
 4. Use the correct review target for the profile output mode:
    `{{ output }}` = `remote_main` means review the implementation branch
-   directly and do not rely on PR metadata or a PR-shaped artifact.
+   directly using the branch diff, status, and test results.
    `{{ output }}` = `pr` means review the pull request itself, including
    the PR diff, status, and metadata.
 5. Approve or request changes
