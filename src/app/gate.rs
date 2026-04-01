@@ -57,7 +57,7 @@ impl App {
             None,
         )?;
         Ok(GateEvaluationResult {
-            gate: self.apply_alias_to_knot(KnotView::from(updated))?,
+            gate: self.apply_alias_and_enrich_knot(KnotView::from(updated))?,
             decision: "yes".to_string(),
             invariant: None,
             reopened: Vec::new(),
@@ -100,7 +100,7 @@ impl App {
             None,
         )?;
         Ok(GateEvaluationResult {
-            gate: self.apply_alias_to_knot(KnotView::from(updated))?,
+            gate: self.apply_alias_and_enrich_knot(KnotView::from(updated))?,
             decision: "no".to_string(),
             invariant: Some(violated),
             reopened,

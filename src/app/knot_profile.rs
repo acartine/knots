@@ -14,7 +14,7 @@ use crate::workflow_runtime;
 use super::error::AppError;
 use super::helpers::{
     build_knot_head_data, ensure_profile_etag, next_blocked_from_state, next_deferred_from_state,
-    normalize_state_input, require_state_for_knot_type, KnotHeadData,
+    normalize_state_input, require_state_for_knot_type, resolve_step_metadata, KnotHeadData,
 };
 use super::types::KnotView;
 use super::App;
@@ -38,7 +38,7 @@ impl App {
         let current_pid =
             super::helpers::canonical_profile_id(&current.profile_id, &current.workflow_id);
         if current_pid == profile.id && current.state == next_state {
-            return self.apply_alias_to_knot(KnotView::from(current));
+            return self.apply_alias_and_enrich_knot(KnotView::from(current));
         }
         self.write_set_profile_events(&id, &current, profile, &next_state, expected_profile_etag)
     }
@@ -111,6 +111,14 @@ impl App {
             knot_type,
             next_state,
         )?;
+        let (step_metadata, next_step_metadata) = resolve_step_metadata(
+            &self.profile_registry,
+            profile.workflow_id.as_str(),
+            profile.id.as_str(),
+            knot_type,
+            &current.gate_data,
+            next_state,
+        )?;
         let mut idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
             occurred_at.clone(),
@@ -128,8 +136,8 @@ impl App {
                 invariants: &current.invariants,
                 knot_type,
                 gate_data: &current.gate_data,
-                step_metadata: None,
-                next_step_metadata: None,
+                step_metadata: step_metadata.as_ref(),
+                next_step_metadata: next_step_metadata.as_ref(),
             }),
         );
         if let Some(expected) = expected_profile_etag {
@@ -167,6 +175,6 @@ impl App {
         )?;
         let updated =
             db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        self.apply_alias_to_knot(KnotView::from(updated))
+        self.apply_alias_and_enrich_knot(KnotView::from(updated))
     }
 }

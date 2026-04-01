@@ -7,7 +7,7 @@ use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
 use crate::domain::step_history::{derive_phase, StepActorInfo, StepRecord, StepStatus};
 use crate::installed_workflows;
-use crate::workflow::{normalize_profile_id, ProfileDefinition};
+use crate::workflow::{normalize_profile_id, ProfileDefinition, ProfileRegistry, StepMetadata};
 use crate::workflow_runtime;
 
 use super::error::AppError;
@@ -50,6 +50,39 @@ pub(crate) fn canonical_profile_id(raw: &str, workflow_id: &str) -> String {
             trimmed.rsplit('/').next().unwrap_or(trimmed)
         };
     normalize_profile_id(unqualified).unwrap_or_else(|| unqualified.to_ascii_lowercase())
+}
+
+pub(crate) fn profile_lookup_id(workflow_id: &str, profile_id: &str) -> String {
+    if workflow_id != installed_workflows::COMPATIBILITY_WORKFLOW_ID && !profile_id.contains('/') {
+        format!("{workflow_id}/{profile_id}")
+    } else {
+        profile_id.to_string()
+    }
+}
+
+pub(crate) fn resolve_step_metadata(
+    registry: &ProfileRegistry,
+    workflow_id: &str,
+    profile_id: &str,
+    knot_type: KnotType,
+    gate_data: &GateData,
+    state: &str,
+) -> Result<(Option<StepMetadata>, Option<StepMetadata>), AppError> {
+    let lookup_id = profile_lookup_id(workflow_id, profile_id);
+    let step_metadata = workflow_runtime::step_metadata_for_state(
+        registry, &lookup_id, knot_type, gate_data, state,
+    )?;
+    let next_state =
+        workflow_runtime::next_happy_path_state(registry, &lookup_id, knot_type, state)?;
+    let next_step_metadata = next_state
+        .map(|next| {
+            workflow_runtime::step_metadata_for_state(
+                registry, &lookup_id, knot_type, gate_data, &next,
+            )
+        })
+        .transpose()?
+        .flatten();
+    Ok((step_metadata, next_step_metadata))
 }
 
 pub(crate) fn normalize_state_input(raw: &str) -> Result<String, AppError> {

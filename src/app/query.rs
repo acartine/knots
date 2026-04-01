@@ -8,7 +8,9 @@ use crate::locks::FileLock;
 use crate::workflow_runtime;
 
 use super::error::AppError;
-use super::helpers::{annotate_step_history, build_knot_head_data, KnotHeadData};
+use super::helpers::{
+    annotate_step_history, build_knot_head_data, resolve_step_metadata, KnotHeadData,
+};
 use super::rehydrate::rehydrate_from_events;
 use super::types::{ChildSummary, ColdKnotView, EdgeView, KnotView};
 use super::App;
@@ -86,6 +88,14 @@ impl App {
             knot_type,
             &current.state,
         )?;
+        let (step_metadata, next_step_metadata) = resolve_step_metadata(
+            &self.profile_registry,
+            &profile.workflow_id,
+            profile.id.as_str(),
+            knot_type,
+            &current.gate_data,
+            &current.state,
+        )?;
         let index_event_id = new_event_id();
         let idx_event = IndexEvent::with_identity(
             index_event_id.clone(),
@@ -104,8 +114,8 @@ impl App {
                 invariants: &current.invariants,
                 knot_type,
                 gate_data: &current.gate_data,
-                step_metadata: None,
-                next_step_metadata: None,
+                step_metadata: step_metadata.as_ref(),
+                next_step_metadata: next_step_metadata.as_ref(),
             }),
         );
         self.writer.write(&EventRecord::index(idx_event))?;
@@ -139,7 +149,7 @@ impl App {
         )?;
         let updated =
             db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        self.apply_alias_to_knot(KnotView::from(updated))
+        self.apply_alias_and_enrich_knot(KnotView::from(updated))
     }
 
     pub fn cold_sync(&self) -> Result<crate::sync::SyncSummary, AppError> {
@@ -165,7 +175,9 @@ impl App {
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         if let Some(knot) = db::get_knot_hot(&self.conn, &id)? {
-            return Ok(Some(self.apply_alias_to_knot(KnotView::from(knot))?));
+            return Ok(Some(
+                self.apply_alias_and_enrich_knot(KnotView::from(knot))?,
+            ));
         }
         self.rehydrate_from_warm_cold(&id)
     }
@@ -219,6 +231,6 @@ impl App {
         )?;
         let hot =
             db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        Ok(Some(self.apply_alias_to_knot(KnotView::from(hot))?))
+        Ok(Some(self.apply_alias_and_enrich_knot(KnotView::from(hot))?))
     }
 }

@@ -234,6 +234,36 @@ kno claim <id> \
   --agent-version "1.0"
 ```
 
+### Step metadata for downstream consumers
+
+Downstream tools can read stable routing metadata from both live knot views and
+persisted knot-head events.
+
+- `kno show <id> --json` returns `step_metadata` for the current state and
+  `next_step_metadata` for the next happy-path state.
+- `kno ls --json` includes the same fields on each listed knot.
+- `.knots/index/.../idx.knot_head.json` persists the same metadata in event
+  logs for replay or external ingestion.
+
+Each metadata object has a stable shape:
+
+```json
+{
+  "action_state": "implementation_review",
+  "action_kind": "review",
+  "owner": { "kind": "human" },
+  "output": {
+    "artifact_type": "approval",
+    "access_hint": "git log"
+  },
+  "review_hint": "Check tests pass and coverage meets threshold"
+}
+```
+
+Use `owner.kind` to route the current or next action to a human or agent,
+`output.artifact_type` and `output.access_hint` to decide what artifact a step
+should produce, and `review_hint` to tell reviewers what to inspect.
+
 ## Leases
 
 Leases track agent sessions. When an agent claims a knot, a lease is
