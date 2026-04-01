@@ -315,10 +315,8 @@ impl ProfileOwners {
         }
     }
 
-    /// Returns the owner kind for any workflow state (action or queue).
-    ///
-    /// Queue states (`ready_for_*`) map to the owner of their
-    /// corresponding action state. Terminal states return `None`.
+    /// Returns the owner kind for any workflow state. Queue states map to their
+    /// corresponding action state owner. Terminal states return `None`.
     pub fn owner_kind_for_state(&self, state: &str) -> Option<&OwnerKind> {
         if let Some(owner) = self.states.get(state) {
             return Some(&owner.kind);
