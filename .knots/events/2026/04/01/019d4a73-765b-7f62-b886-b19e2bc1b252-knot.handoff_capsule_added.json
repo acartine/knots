@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a73-765b-7f62-b886-b19e2bc1b252",
+  "occurred_at": "2026-04-01T19:09:34.17191Z",
+  "knot_id": "knots-720e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review failed: deployment issue. Implementation commit 5e6c72b is on worktree-knots-720e-embed-loom-bundle but not merged to main. The worktree branch must be rebased onto current main (which has 2 new commits from knots-040c) and then merged/pushed before shipment review can proceed.",
+    "datetime": "2026-04-01T19:09:34.17191Z",
+    "entry_id": "019d4a73-765b-7f62-b886-b182e525e4be",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

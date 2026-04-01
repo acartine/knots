@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a73-6592-7720-93e3-a69ae797f596",
+  "occurred_at": "2026-04-01T19:09:29.874443Z",
+  "knot_id": "knots-720e",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Deployment blocker: implementation commit 5e6c72b (feat: embed builtin compatibility workflow as a Loom bundle) exists only on worktree-knots-720e-embed-loom-bundle and was never merged to main. Main has advanced past the branch base with 2 unrelated commits from knots-040c. The change is not live on main.",
+    "datetime": "2026-04-01T19:09:29.874443Z",
+    "entry_id": "019d4a73-6592-7720-93e3-a687c32e6dfa",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}
