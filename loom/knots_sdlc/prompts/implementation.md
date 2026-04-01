@@ -26,10 +26,14 @@ Implement the approved plan on a feature branch.
 2. Implement changes following the plan while respecting all invariants
 3. Write tests for all new behavior
 4. Commit and push the feature branch
-5. If output is `pr`, open or update a pull request
+5. Make the implementation artifact explicit for the profile output mode:
+   `{{ output }}` = `remote_main` means the review target is the pushed
+   feature branch itself, so do not open a PR for this step.
+   `{{ output }}` = `pr` means the review target is a pull request, so
+   open or update the PR for the feature branch.
 
 ## Output
 
 The expected output artifact is `{{ output }}`:
-- **branch**: a feature branch pushed to remote
-- **pr**: a pull request opened from the feature branch
+- **remote_main**: a feature branch pushed to remote for direct branch review
+- **pr**: a pull request opened or updated from the feature branch

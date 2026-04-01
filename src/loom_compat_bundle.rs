@@ -62,3 +62,23 @@ pub fn write_builtin_loom_package(dest: &Path) -> io::Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn builtin_loom_prompts_include_output_specific_delivery_targets() {
+        assert!(PROMPT_IMPLEMENTATION.contains("`{{ output }}` = `remote_main`"));
+        assert!(PROMPT_IMPLEMENTATION.contains("open or update the PR"));
+
+        assert!(PROMPT_IMPLEMENTATION_REVIEW.contains("do not rely on PR metadata"));
+        assert!(PROMPT_IMPLEMENTATION_REVIEW.contains("review the pull request itself"));
+
+        assert!(PROMPT_SHIPMENT.contains("merge the feature branch to main"));
+        assert!(PROMPT_SHIPMENT.contains("merge the approved pull request"));
+
+        assert!(PROMPT_SHIPMENT_REVIEW.contains("review the code now on main"));
+        assert!(PROMPT_SHIPMENT_REVIEW.contains("review the merged pull request"));
+    }
+}

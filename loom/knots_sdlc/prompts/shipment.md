@@ -18,17 +18,25 @@ params: {}
 
 # Shipment
 
-Merge the approved implementation to main and push to remote.
+Merge the approved implementation using the shipment flow required by
+the profile output mode.
 
 ## Actions
 
-1. Merge the feature branch to main
-2. Push main to remote
+1. Perform the shipment action that matches the profile output mode:
+   `{{ output }}` = `remote_main` means merge the feature branch to main.
+   `{{ output }}` = `pr` means merge the approved pull request instead of
+   performing a branch-only review flow.
+2. Push or verify the shipped main-branch result required by the output
+   mode:
+   `{{ output }}` = `remote_main` means push main after the merge.
+   `{{ output }}` = `pr` means verify the merged PR produced the intended
+   main-branch result and that the remote reflects it.
 3. Verify CI passes on remote
 
 ## Output
 
-The expected output artifact is a **commit** on main:
-- Code merged and pushed to main
-- CI green on remote
-- Handoff capsule summarizing shipment
+The expected output artifact is `{{ output }}`:
+- **remote_main**: code merged from the feature branch to main and
+  pushed to remote
+- **pr**: an approved pull request merged and reflected on main
