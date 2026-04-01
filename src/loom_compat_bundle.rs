@@ -22,6 +22,7 @@ const PROMPT_IMPLEMENTATION_REVIEW: &str =
     include_str!("../loom/knots_sdlc/prompts/implementation_review.md");
 const PROMPT_SHIPMENT: &str = include_str!("../loom/knots_sdlc/prompts/shipment.md");
 const PROMPT_SHIPMENT_REVIEW: &str = include_str!("../loom/knots_sdlc/prompts/shipment_review.md");
+const PROMPT_EVALUATING: &str = include_str!("../loom/knots_sdlc/prompts/evaluating.md");
 
 const FILES: &[(&str, &str)] = &[
     ("loom.toml", LOOM_TOML),
@@ -50,7 +51,21 @@ const FILES: &[(&str, &str)] = &[
     ),
     ("prompts/shipment.md", PROMPT_SHIPMENT),
     ("prompts/shipment_review.md", PROMPT_SHIPMENT_REVIEW),
+    ("prompts/evaluating.md", PROMPT_EVALUATING),
 ];
+
+pub fn prompt_body_for_state(state: &str) -> Option<&'static str> {
+    match state {
+        "planning" => Some(PROMPT_PLANNING),
+        "plan_review" => Some(PROMPT_PLAN_REVIEW),
+        "implementation" => Some(PROMPT_IMPLEMENTATION),
+        "implementation_review" => Some(PROMPT_IMPLEMENTATION_REVIEW),
+        "shipment" => Some(PROMPT_SHIPMENT),
+        "shipment_review" => Some(PROMPT_SHIPMENT_REVIEW),
+        "evaluating" => Some(PROMPT_EVALUATING),
+        _ => None,
+    }
+}
 
 pub fn write_builtin_loom_package(dest: &Path) -> io::Result<()> {
     for (relative, content) in FILES {

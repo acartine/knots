@@ -81,7 +81,7 @@ fn build_compatibility_prompts() -> (BTreeMap<String, PromptDefinition>, BTreeMa
         "shipment_review",
         "evaluating",
     ] {
-        let Some(body) = crate::skills::skill_for_state(state) else {
+        let Some(body) = crate::loom_compat_bundle::prompt_body_for_state(state) else {
             continue;
         };
         let name = state.to_string();
