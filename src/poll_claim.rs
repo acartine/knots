@@ -1,9 +1,9 @@
+use crate::action_prompt;
 use crate::app::{App, AppError, KnotView, StateActorMetadata};
 use crate::cli::{ClaimArgs, PollArgs};
 use crate::dispatch::profile_lookup_id;
 use crate::domain::knot_type::KnotType;
 use crate::prompt;
-use crate::skills;
 use crate::workflow::{OwnerKind, ProfileRegistry};
 use crate::workflow_runtime;
 
@@ -25,7 +25,7 @@ const AGENT_COMPLETION_METADATA_FLAGS: &str = concat!(
 
 pub struct PollResult {
     pub knot: KnotView,
-    pub skill: &'static str,
+    pub skill: String,
     pub completion_cmd: String,
 }
 
@@ -234,19 +234,19 @@ fn create_and_bind_lease(
 }
 
 pub fn render_text(result: &PollResult) -> String {
-    prompt::render_prompt(&result.knot, result.skill, &result.completion_cmd)
+    prompt::render_prompt(&result.knot, &result.skill, &result.completion_cmd)
 }
 
 pub fn render_text_verbose(result: &PollResult, verbose: bool) -> String {
-    prompt::render_prompt_verbose(&result.knot, result.skill, &result.completion_cmd, verbose)
+    prompt::render_prompt_verbose(&result.knot, &result.skill, &result.completion_cmd, verbose)
 }
 
 pub fn render_json(result: &PollResult) -> serde_json::Value {
-    prompt::render_prompt_json(&result.knot, result.skill, &result.completion_cmd)
+    prompt::render_prompt_json(&result.knot, &result.skill, &result.completion_cmd)
 }
 
 pub fn render_json_verbose(result: &PollResult, verbose: bool) -> serde_json::Value {
-    prompt::render_prompt_json_verbose(&result.knot, result.skill, &result.completion_cmd, verbose)
+    prompt::render_prompt_json_verbose(&result.knot, &result.skill, &result.completion_cmd, verbose)
 }
 
 fn match_pollable(
@@ -340,27 +340,9 @@ fn prompt_body_for_state(
     registry: &ProfileRegistry,
     profile_id: &str,
     action_state: &str,
-) -> Result<&'static str, AppError> {
-    if let Ok(profile) = registry.require(profile_id) {
-        if let Some(prompt_body) = profile.prompt_for_action_state(action_state) {
-            let mut rendered = prompt_body.trim().to_string();
-            let acceptance = profile.acceptance_for_action_state(action_state);
-            if !acceptance.is_empty() {
-                if !rendered.is_empty() {
-                    rendered.push_str("\n\n");
-                }
-                rendered.push_str("## Acceptance Criteria\n\n");
-                for item in acceptance {
-                    rendered.push_str("- ");
-                    rendered.push_str(item);
-                    rendered.push('\n');
-                }
-            }
-            return Ok(Box::leak(rendered.into_boxed_str()));
-        }
-    }
-
-    skills::skill_for_state(action_state).ok_or_else(|| {
+) -> Result<String, AppError> {
+    let profile = registry.require(profile_id)?;
+    action_prompt::render_for_profile(profile, action_state).ok_or_else(|| {
         AppError::InvalidArgument(format!(
             "next state '{}' is not an action state with a prompt",
             action_state

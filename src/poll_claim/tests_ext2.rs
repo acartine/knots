@@ -1,10 +1,110 @@
 use super::*;
 use std::path::PathBuf;
 
+const CUSTOM_BUNDLE: &str = r#"
+[workflow]
+name = "custom_flow"
+version = 3
+default_profile = "autopilot"
+
+[states.ready_for_work]
+display_name = "Ready for Work"
+kind = "queue"
+
+[states.work]
+display_name = "Work"
+kind = "action"
+action_type = "produce"
+executor = "agent"
+prompt = "work"
+output = "branch"
+
+[states.review]
+display_name = "Review"
+kind = "action"
+action_type = "gate"
+executor = "human"
+prompt = "review"
+output = "note"
+
+[states.ready_for_review]
+display_name = "Ready for Review"
+kind = "queue"
+
+[states.done]
+display_name = "Done"
+kind = "terminal"
+
+[states.blocked]
+display_name = "Blocked"
+kind = "escape"
+
+[states.deferred]
+display_name = "Deferred"
+kind = "escape"
+
+[states.abandoned]
+display_name = "Abandoned"
+kind = "terminal"
+
+[steps.impl]
+queue = "ready_for_work"
+action = "work"
+
+[steps.rev]
+queue = "ready_for_review"
+action = "review"
+
+[phases.main]
+produce = "impl"
+gate = "rev"
+
+[profiles.autopilot]
+description = "Custom profile"
+phases = ["main"]
+
+[prompts.work]
+accept = ["Built output"]
+body = """
+Ship {{ output }} output.
+"""
+
+[prompts.work.success]
+complete = "ready_for_review"
+
+[prompts.work.failure]
+blocked = "blocked"
+
+[prompts.review]
+accept = ["Reviewed output"]
+body = """
+Review it.
+"""
+
+[prompts.review.success]
+approved = "done"
+
+[prompts.review.failure]
+changes = "ready_for_work"
+"#;
+
 fn unique_workspace() -> PathBuf {
     let root = std::env::temp_dir().join(format!("knots-poll-test-{}", uuid::Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("workspace should be creatable");
     root
+}
+
+fn install_custom_workflow(root: &std::path::Path) {
+    let source = root.join("custom-flow.toml");
+    std::fs::write(&source, CUSTOM_BUNDLE).expect("bundle should write");
+    crate::installed_workflows::install_bundle(root, &source).expect("bundle should install");
+    crate::installed_workflows::set_current_workflow_selection(
+        root,
+        "custom_flow",
+        Some(3),
+        Some("autopilot"),
+    )
+    .expect("workflow selection should succeed");
 }
 
 #[test]
@@ -165,19 +265,22 @@ fn prompt_body_for_state_distinguishes_branch_and_pr_profiles() {
         let implementation =
             prompt_body_for_state(&registry, profile_id, "implementation").expect("prompt body");
         assert!(
-            !implementation.contains("pull request"),
+            implementation.contains("review target is the pushed"),
             "{profile_id}: {implementation}"
         );
 
         let review = prompt_body_for_state(&registry, profile_id, "implementation_review")
             .expect("review prompt body");
-        assert!(!review.contains("pull request"), "{profile_id}: {review}");
+        assert!(
+            review.contains("review the implementation branch"),
+            "{profile_id}: {review}"
+        );
 
         let shipment =
             prompt_body_for_state(&registry, profile_id, "shipment").expect("shipment prompt");
         assert!(shipment.contains("merge the feature branch to main"));
         assert!(
-            !shipment.contains("pull request"),
+            shipment.contains("push main after the merge"),
             "{profile_id}: {shipment}"
         );
 
@@ -185,7 +288,7 @@ fn prompt_body_for_state_distinguishes_branch_and_pr_profiles() {
             .expect("shipment review prompt");
         assert!(shipment_review.contains("review the code now on main"));
         assert!(
-            !shipment_review.contains("pull request"),
+            shipment_review.contains("Final sign-off"),
             "{profile_id}: {shipment_review}"
         );
     }
@@ -194,7 +297,7 @@ fn prompt_body_for_state_distinguishes_branch_and_pr_profiles() {
         let implementation =
             prompt_body_for_state(&registry, profile_id, "implementation").expect("prompt body");
         assert!(
-            implementation.contains("pull request"),
+            implementation.contains("review target is a pull request"),
             "{profile_id}: {implementation}"
         );
 
@@ -210,6 +313,39 @@ fn prompt_body_for_state_distinguishes_branch_and_pr_profiles() {
             .expect("shipment review prompt");
         assert!(shipment_review.contains("review the merged pull request"));
     }
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn claim_poll_and_peek_use_installed_workflow_prompt_body() {
+    let root = unique_workspace();
+    install_custom_workflow(&root);
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
+    let created = app
+        .create_knot("Custom prompt", None, None, None)
+        .expect("create should succeed");
+    assert_eq!(created.profile_id, "custom_flow/autopilot");
+
+    let peeked = peek_knot(&app, &created.id).expect("peek should succeed");
+    assert!(peeked.skill.contains("Ship {{ output }} output."));
+    assert!(peeked.skill.contains("Built output"));
+
+    let polled = poll_queue(&app, None, None)
+        .expect("poll should succeed")
+        .expect("queue should contain knot");
+    assert!(polled.skill.contains("Ship {{ output }} output."));
+
+    let actor = StateActorMetadata {
+        actor_kind: Some("agent".to_string()),
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+    };
+    let claimed = claim_knot(&app, &created.id, actor, None).expect("claim should succeed");
+    assert!(claimed.skill.contains("Ship {{ output }} output."));
+    assert!(claimed.skill.contains("Built output"));
 
     let _ = std::fs::remove_dir_all(root);
 }

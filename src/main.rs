@@ -1,3 +1,4 @@
+mod action_prompt;
 mod app;
 mod cli;
 mod cli_agent;
@@ -58,6 +59,7 @@ mod replication;
 mod rollback;
 mod run_commands;
 mod self_manage;
+#[cfg(test)]
 mod skills;
 mod snapshots;
 mod state_hierarchy;

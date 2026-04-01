@@ -262,13 +262,13 @@ fn compatibility_workflow_renders_builtin_prompt_variants_per_profile() {
         .prompt_for_action_state("implementation")
         .expect("branch prompt should render");
     assert!(branch_prompt.contains("ready for direct branch"));
-    assert!(!branch_prompt.contains("pull request"));
+    assert!(branch_prompt.contains("feature branch pushed to remote"));
 
     let pr_prompt = pr_profile
         .prompt_for_action_state("implementation")
         .expect("pr prompt should render");
     assert!(pr_prompt.contains("open or update the PR for the feature branch"));
-    assert!(!pr_prompt.contains("do not open a PR for this step"));
+    assert!(pr_prompt.contains("pull request opened or updated from the feature branch"));
 
     let _ = std::fs::remove_dir_all(root);
 }
