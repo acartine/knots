@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a35-48c0-72c2-ba54-e50634682b26",
+  "occurred_at": "2026-04-01T18:01:39.264799Z",
+  "knot_id": "knots-0d93",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan needs revision before implementation. The central requirement is to feed prompt rendering from resolved runtime step metadata, but the plan keeps build_prompt_params() reading directly from profile.outputs and calls that already sufficient. Please revise the plan so prompt/body rendering and claim rendering paths take StepMetadata.output (or an equivalent resolved runtime value) rather than re-deriving output from the profile map. Also include shipment_review.md in scope, because it currently contains output-specific guidance and would remain inconsistent otherwise. Finally, align the target names used in prompt conditionals with the canonical vocabulary chosen for c8f4; the current plan mixes commit with the parent requirement's merged_main_commit wording.",
+    "datetime": "2026-04-01T18:01:39.264799Z",
+    "entry_id": "019d4a35-48c0-72c2-ba54-e4f2d137ddbc",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

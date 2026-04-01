@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a5c-cfe4-76d3-8d09-53b22bfbdf22",
+  "occurred_at": "2026-04-01T18:44:49.764377Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review did not approve the current implementation plan. The main design issue is that the plan does not preserve the legacy 'remote' output value that still exists in profile-level compatibility mode via OutputMode::Remote and related tests, so the alias/normalization strategy must include that path. The second issue is architectural: prompt rendering in execution paths is currently served from pre-rendered profile.action_prompts and then read through action_prompt::render_for_profile/poll_claim::prompt_body_for_state, so the plan must explicitly change the runtime rendering/data-flow to consume resolved StepMetadata.output instead of only updating build_prompt_params/render_prompt_body helpers. After revising those two areas, the rest of the proposed coverage and parser-validation work looks directionally sound.",
+    "datetime": "2026-04-01T18:44:49.764377Z",
+    "entry_id": "019d4a5c-cfe4-76d3-8d09-53ad1369f367",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

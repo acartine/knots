@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a59-b4b9-77b2-baed-b08f77e3a279",
+  "occurred_at": "2026-04-01T18:41:26.201051Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Revised plan (v3) addresses the previous rejection by explicitly listing all 4 .loom files with legacy output declarations, including the previously missed autopilot_with_pr_no_planning.loom. Complete file inventory verified via grep. 7 files changed, ~70 lines. Implementation: ArtifactTarget enum with legacy aliases and unknown rejection, legacy_outputs normalization, TOML/JSON parser validation, and sweep of all 5 legacy output declarations across 4 .loom files.",
+    "datetime": "2026-04-01T18:41:26.201051Z",
+    "entry_id": "019d4a59-b4b9-77b2-baed-b079aa68a9ec",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

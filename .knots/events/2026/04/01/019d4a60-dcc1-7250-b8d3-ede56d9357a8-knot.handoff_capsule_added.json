@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a60-dcc1-7250-b8d3-ede56d9357a8",
+  "occurred_at": "2026-04-01T18:49:15.20153Z",
+  "knot_id": "knots-040c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review gate: REJECTED (deployment_issue). Commit a502fa2c424f is tagged on the knot but remains on branch knots-040c-loom-prompt-coverage - it has NOT been merged or pushed to origin/main. The remote_main output mode requires 'Change is live on main branch'. origin/main is at 8c2747f. Returning to ready_for_shipment so the shipment step can merge the branch to main and push.",
+    "datetime": "2026-04-01T18:49:15.20153Z",
+    "entry_id": "019d4a60-dcc1-7250-b8d3-edd3b7b2c79b",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

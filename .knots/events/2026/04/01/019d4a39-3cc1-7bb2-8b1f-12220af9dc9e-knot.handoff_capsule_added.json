@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a39-3cc1-7bb2-8b1f-12220af9dc9e",
+  "occurred_at": "2026-04-01T18:05:58.337927Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning completed for knots-5464. Repo inspection confirmed Loom already has action-level output defaults and profile-level action overrides, but Knots still flattens compatibility outputs through `OutputMode` and renders prompt branches from `profile.outputs` instead of resolved `StepMetadata`. The approved plan is to introduce one validated canonical per-step target vocabulary (including branch, pull_request, merged_main_commit, and live_deployment, while preserving needed legacy values like note/approval), normalize legacy compatibility profiles into per-action targets, update bundle/TOML/JSON loading plus built-in Loom assets to carry those targets per step, then switch prompt rendering and claim prompt generation to read resolved `StepMetadata.output` directly. Existing child knots should be reused with revised scope: c8f4 for model/loader/Loom mapping, 0d93 for StepMetadata-driven prompt rendering including shipment_review, and 9727 for regression coverage after the contract lands. Open design point for implementation: encode one explicit compatibility policy for legacy `local`/`remote` values and keep shipment/shipment_review under PR mode anchored on `pull_request` while prompt text still verifies code reached main.",
+    "datetime": "2026-04-01T18:05:58.337927Z",
+    "entry_id": "019d4a39-3cc1-7bb2-8b1f-121bd2a500de",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d4a28-2bc5-7e40-84bd-7c6b716166c7",
+  "occurred_at": "2026-04-01T17:47:19.877826Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.created",
+  "data": {
+    "body": "Extend Loom bundle parsing and profile/runtime metadata so each workflow action can declare an optional expected artifact/review target, preserving backward compatibility with existing state/profile output semantics and validating supported targets such as branch, pr, merged_main_commit, and live_deployment.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add per-step expected-output declarations to Loom bundle/runtime",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

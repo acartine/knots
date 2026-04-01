@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a44-918a-79d2-b19e-1702e821d962",
+  "occurred_at": "2026-04-01T18:18:20.938665Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Revised plan for knots-5464 complete. Key decisions: (1) Canonical vocabulary defined — branch, pull_request, merged_main, local, note, approval, live_deployment — with explicit normalization rules for all legacy strings (commit→merged_main, remote_main→merged_main, remote→branch, pr→pull_request). (2) Unknown target strings are rejected at parse/load time, not warned. (3) Prompt rendering will be rewired to accept resolved StepMetadata.output rather than reading profile.outputs directly. (4) All 8 prompt/skill files that reference {{ output }} are in scope for canonical name updates. (5) Execution order remains c8f4→0d93→9727 (sequential). Children are all in ready_for_planning and need re-planning with this canonical vocabulary as the foundation.",
+    "datetime": "2026-04-01T18:18:20.938665Z",
+    "entry_id": "019d4a44-918a-79d2-b19e-16f8f976464b",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

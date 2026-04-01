@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a35-758b-7373-88ff-d75d0284e43c",
+  "occurred_at": "2026-04-01T18:01:50.731937Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review sent 9727 back to planning. Current test scope would lock in the wrong contract: warning-only validation, profile-map-based prompt params, and incomplete prompt coverage. Revise after the schema/runtime and rendering plans are tightened so the tests assert the final canonical target names, legacy compatibility behavior, unknown-target policy, and StepMetadata-driven prompt rendering across all output-conditional prompts.",
+    "datetime": "2026-04-01T18:01:50.731937Z",
+    "entry_id": "019d4a35-758b-7373-88ff-d74582b23fb9",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

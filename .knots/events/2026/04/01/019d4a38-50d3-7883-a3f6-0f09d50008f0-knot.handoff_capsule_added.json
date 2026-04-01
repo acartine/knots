@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a38-50d3-7883-a3f6-0f09d50008f0",
+  "occurred_at": "2026-04-01T18:04:57.939881Z",
+  "knot_id": "knots-bf17",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Deployment issue: implementation commit 2f2dec9f57a0 not merged to main. src/action_prompt.rs and loom/knots_sdlc/prompts/evaluating.md missing from main. Knot moved back to ready_for_shipment — merge the knots-bf17 branch to main and re-enter shipment review.",
+    "datetime": "2026-04-01T18:04:57.939881Z",
+    "entry_id": "019d4a38-50d3-7883-a3f6-0efb18bf6bc0",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a29-49c4-7172-80b4-ae7491f033a0",
+  "occurred_at": "2026-04-01T17:48:33.092731Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning complete. Existing code already resolves per-action outputs into `StepMetadata`, but prompt rendering still only consumes a flattened `output` token and built-in prompts are hard-coded around `remote_main` versus `pr`. Created child knots `knots-c8f4` (schema/runtime), `knots-0d93` (prompt consumption), and `knots-9727` (regression coverage). Main implementation risk is backward-compatible mapping from legacy outputs to a richer target model; browser/e2e validation may still depend on `knots-bf56` being planned/shipped.",
+    "datetime": "2026-04-01T17:48:33Z",
+    "entry_id": "019d4a29-49c4-7172-80b4-ae679b155269",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

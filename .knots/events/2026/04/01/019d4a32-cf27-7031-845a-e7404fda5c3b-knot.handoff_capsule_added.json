@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a32-cf27-7031-845a-e7404fda5c3b",
+  "occurred_at": "2026-04-01T17:58:57.063044Z",
+  "knot_id": "knots-0d93",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan: add output-specific conditional sections for branch, commit, and live_deployment targets in all three action prompt templates (implementation, implementation_review, shipment). Verify rendering pipeline has no global fallback (already correct). Update loom_compat_bundle assertions. ~55 new lines across 4 files. Low complexity. Depends on c8f4 for target type definitions but prompt work is independent. No code changes during planning.",
+    "datetime": "2026-04-01T17:58:57.063044Z",
+    "entry_id": "019d4a32-cf27-7031-845a-e73506b7deb1",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

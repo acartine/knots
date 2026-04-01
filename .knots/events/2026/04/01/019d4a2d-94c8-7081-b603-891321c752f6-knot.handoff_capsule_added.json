@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a2d-94c8-7081-b603-891321c752f6",
+  "occurred_at": "2026-04-01T17:53:14.440138Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Parent planning is authored, but progression is blocked by hierarchy until child knots `knots-0d93`, `knots-9727`, and `knots-c8f4` are advanced out of `ready_for_planning` under separate authorization.",
+    "datetime": "2026-04-01T17:51:07Z",
+    "entry_id": "019d4a2d-94c8-7081-b603-890f2cbed099",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

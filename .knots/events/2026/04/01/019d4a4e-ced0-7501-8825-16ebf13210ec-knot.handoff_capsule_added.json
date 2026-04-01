@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a4e-ced0-7501-8825-16ebf13210ec",
+  "occurred_at": "2026-04-01T18:29:31.984704Z",
+  "knot_id": "knots-0d93",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Revised plan: refactor build_prompt_params() and render_prompt_body() signatures to accept resolved Option<&ActionOutputDef> from StepMetadata instead of looking up profile.outputs directly. Update all call sites (poll_claim, action_prompt, test helpers). Add output-conditional sections to ALL prompts including shipment_review.md. Use canonical target names from c8f4. ~85 lines across 9 files, medium complexity. Depends on c8f4 for canonical names.",
+    "datetime": "2026-04-01T18:29:31.984704Z",
+    "entry_id": "019d4a4e-ced0-7501-8825-16d18d29a9b0",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a32-8648-7572-9baa-9e5bdcb76c67",
+  "occurred_at": "2026-04-01T17:58:38.408165Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan: add canonical artifact type list with validation helper to profile.rs, wire validation into both TOML and JSON bundle parsing (warn on unknown, don't hard-error), align OutputMode doc with canonical names, add live_deployment as supported target. ~70 lines across 5 files. Low-medium complexity. No code changes during planning.",
+    "datetime": "2026-04-01T17:58:38.408165Z",
+    "entry_id": "019d4a32-8648-7572-9baa-9e40c20d2348",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

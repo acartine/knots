@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a51-12d5-7662-93e6-543bf3f938b8",
+  "occurred_at": "2026-04-01T18:32:00.46992Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan scope is incomplete: it updates loom/knots_sdlc/profiles/autopilot_with_pr.loom but misses loom/knots_sdlc/profiles/autopilot_with_pr_no_planning.loom, which also still declares legacy output pr. Revise the file sweep so every legacy output declaration that must be canonicalized is explicitly covered.",
+    "datetime": "2026-04-01T18:31:44Z",
+    "entry_id": "019d4a51-12d5-7662-93e6-542640e7d810",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-04-01"
+  }
+}

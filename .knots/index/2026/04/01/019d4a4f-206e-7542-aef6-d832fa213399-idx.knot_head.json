@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4a4f-206e-7542-aef6-d832fa213399",
+  "occurred_at": "2026-04-01T18:29:52.878282Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5464",
+    "profile_id": "autopilot",
+    "state": "ready_for_plan_review",
+    "terminal": false,
+    "title": "Model Per-Step Output Targets in Loom Workflows",
+    "type": "work",
+    "updated_at": "2026-04-01T18:29:52.878282Z",
+    "workflow_id": "compatibility"
+  }
+}

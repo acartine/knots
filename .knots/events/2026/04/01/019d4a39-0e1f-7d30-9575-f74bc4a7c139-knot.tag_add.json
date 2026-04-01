@@ -1,0 +1,9 @@
+{
+  "event_id": "019d4a39-0e1f-7d30-9575-f74bc4a7c139",
+  "occurred_at": "2026-04-01T18:05:46.399308Z",
+  "knot_id": "knots-bf17",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "commit:8c2747f21748"
+  }
+}

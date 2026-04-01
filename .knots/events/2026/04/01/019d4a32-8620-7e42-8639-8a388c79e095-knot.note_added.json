@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a32-8620-7e42-8639-8a388c79e095",
+  "occurred_at": "2026-04-01T17:58:38.368577Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "## Implementation Plan — Per-Step Output Declarations in Bundle/Runtime\n\n### Goal\nAdd validation and canonical target types for per-step output declarations in bundle parsing and runtime metadata.\n\n### Steps\n\n1. **Define canonical artifact types** (`src/profile.rs`)\n   - Add a `const` array or helper function listing supported artifact_type values: `branch`, `pr`, `merged_main_commit`, `live_deployment`, `note`, `commit`, `local`, `remote`, `approval`.\n   - Add a `ActionOutputDef::is_known_type(&self) -> bool` method.\n   - Keep `artifact_type` as `String` for extensibility but add validation at parsing boundaries.\n\n2. **Add validation to TOML bundle parsing** (`src/installed_workflows/profile_toml.rs`)\n   - In `build_outputs_from_toml_profile()`, after constructing each `ActionOutputDef`, warn (log) if artifact_type is not in the known set.\n   - Do not hard-error to preserve backward compat with custom bundles.\n\n3. **Add validation to JSON bundle parsing** (`src/installed_workflows/profile_json.rs`)\n   - Same validation in `build_outputs_from_json_profile()`.\n\n4. **Align OutputMode with canonical names** (`src/profile_normalize.rs`)\n   - Verify `legacy_outputs()` maps `OutputMode` variants to the canonical string names (already does: `local`, `remote`, `pr`, `remote_main`).\n   - Add doc comment noting `remote_main` = `merged_main_commit` semantically (or rename if appropriate).\n\n5. **Add `live_deployment` support** (`loom/knots_sdlc/workflow.loom` or profile overrides)\n   - Ensure the loom compiler accepts `output live_deployment` in action blocks.\n   - Add a profile variant or override example showing `live_deployment` usage.\n\n6. **Tests** (inline in modified files or `src/installed_workflows/tests_validation.rs`)\n   - Test that known types pass validation.\n   - Test that unknown types produce a warning but parse successfully.\n   - Test backward compat: existing fixture bundles parse unchanged.\n\n### Files Changed\n- `src/profile.rs` (~15 lines: const + helper method)\n- `src/installed_workflows/profile_toml.rs` (~10 lines: validation call)\n- `src/installed_workflows/profile_json.rs` (~10 lines: validation call)\n- `src/profile_normalize.rs` (~5 lines: doc clarification)\n- `src/installed_workflows/tests_validation.rs` (~30 lines: new tests)\n\n### Risks\n- Validation log noise for custom bundles. Mitigate: use `tracing::warn` not `error`.\n- OutputMode rename could break serialization. Mitigate: keep current names, add doc only.\n\n### Complexity: Low-Medium (~70 new/changed lines)",
+    "datetime": "2026-04-01T17:58:38.368577Z",
+    "entry_id": "019d4a32-8620-7e42-8639-8a2c0557b2a2",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

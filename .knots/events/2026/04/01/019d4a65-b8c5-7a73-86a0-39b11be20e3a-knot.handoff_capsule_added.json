@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a65-b8c5-7a73-86a0-39b11be20e3a",
+  "occurred_at": "2026-04-01T18:54:33.669509Z",
+  "knot_id": "knots-040c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment complete. Merged branch knots-040c-loom-prompt-coverage to main via merge commit bc214acef9b9. All 833 tests pass. CI green on origin/main. Change is live on main branch.",
+    "datetime": "2026-04-01T18:54:33.669509Z",
+    "entry_id": "019d4a65-b8c5-7a73-86a0-39a7d8da5e03",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

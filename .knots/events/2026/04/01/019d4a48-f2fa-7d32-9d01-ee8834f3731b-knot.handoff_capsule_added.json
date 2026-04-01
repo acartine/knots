@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a48-f2fa-7d32-9d01-ee8834f3731b",
+  "occurred_at": "2026-04-01T18:23:08.026759Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Confirmed existing support and gap: Loom already declares outputs per action and supports per-profile overrides, but prompt rendering still relies on static profile-rendered output data rather than resolved runtime `StepMetadata.output`. Implementation should proceed in the existing child order `c8f4 -> 0d93 -> 9727`: first add a canonical validated expected-output model plus legacy alias normalization in the bundle/runtime loaders, then rewire prompt rendering/claim paths to render from runtime step metadata, then lock behavior with parser/runtime/render/CLI regressions. No new child knots were needed.",
+    "datetime": "2026-04-01T18:23:08.026759Z",
+    "entry_id": "019d4a48-f2fa-7d32-9d01-ee7c7a2dd190",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

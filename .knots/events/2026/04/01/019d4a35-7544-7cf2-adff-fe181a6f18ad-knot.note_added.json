@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a35-7544-7cf2-adff-fe181a6f18ad",
+  "occurred_at": "2026-04-01T18:01:50.660264Z",
+  "knot_id": "knots-9727",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan needs revision before implementation. The proposed tests currently encode the same unresolved design issues as the parent/child plans: they assume unknown artifact types only warn instead of reflecting the final validation policy, they test build_prompt_params() against profile.outputs rather than resolved runtime StepMetadata, and they do not cover every built-in prompt path that branches on output semantics (including shipment_review). Please revise the test plan after c8f4 and 0d93 define the canonical target vocabulary and runtime rendering path, then cover canonical targets, legacy normalization, unknown-target behavior, and prompt rendering from resolved step metadata end to end.",
+    "datetime": "2026-04-01T18:01:50.660264Z",
+    "entry_id": "019d4a35-7544-7cf2-adff-fe08818583da",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4a65-c6aa-7913-a3f9-291d73f28940",
+  "occurred_at": "2026-04-01T18:54:37.226011Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-040c",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_shipment_review",
+    "terminal": false,
+    "title": "Expand Loom-first prompt resolution coverage",
+    "type": "work",
+    "updated_at": "2026-04-01T18:54:37.226011Z",
+    "workflow_id": "compatibility"
+  }
+}

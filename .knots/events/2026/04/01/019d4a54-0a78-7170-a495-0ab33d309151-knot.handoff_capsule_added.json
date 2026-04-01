@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a54-0a78-7170-a495-0ab33d309151",
+  "occurred_at": "2026-04-01T18:35:14.936181Z",
+  "knot_id": "knots-040c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Branch knots-040c-loom-prompt-coverage adds 15 tests (11 compat harness + 4 skill lookup) proving Loom-first prompt resolution. Compat harness tests cover builtin profiles resolving all action states from Loom bodies, render_for_profile for branch/PR variants, peek/claim for builtin and custom workflows, coexistence after custom install, and no-planning profile behavior. Skill lookup tests cover resolve_skill_by_name for builtin implementation, all 7 builtin action states, and resolve_skill_for_knot for both builtin and custom workflows. All 833 tests pass, coverage 95.21%, make sanity green.",
+    "datetime": "2026-04-01T18:35:14.936181Z",
+    "entry_id": "019d4a54-0a78-7170-a495-0aaad49e5997",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

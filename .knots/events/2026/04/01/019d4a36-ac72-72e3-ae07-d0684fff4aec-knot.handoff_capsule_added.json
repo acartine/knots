@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a36-ac72-72e3-ae07-d0684fff4aec",
+  "occurred_at": "2026-04-01T18:03:10.322508Z",
+  "knot_id": "knots-bf17",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implementation review APPROVED. Centralized prompt rendering into action_prompt::render_for_profile, removed static skills fallback (skills module now cfg(test) only), fixed Box::leak memory leak in poll_claim, added evaluating.md Loom prompt, and preserved workflow selection in resolve_skill_by_name. All files under 500 lines. Tests cover custom workflow prompt lookup for claim/poll/peek/skill and verify no legacy fallback for custom workflows.",
+    "datetime": "2026-04-01T18:03:10.322508Z",
+    "entry_id": "019d4a36-ac72-72e3-ae07-d052b3056116",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

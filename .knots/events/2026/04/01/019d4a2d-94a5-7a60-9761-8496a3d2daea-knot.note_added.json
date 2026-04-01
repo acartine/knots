@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a2d-94a5-7a60-9761-8496a3d2daea",
+  "occurred_at": "2026-04-01T17:53:14.405122Z",
+  "knot_id": "knots-5464",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Blocked from completing the planning step because `kno next knots-5464 --expected-state planning --lease knots-d485 --actor-kind agent --agent-name codex --agent-model gpt-5 --agent-version 1` failed with `hierarchy_progress_blocked`: direct child knots `knots-0d93`, `knots-9727`, and `knots-c8f4` are still in `ready_for_planning`.",
+    "datetime": "2026-04-01T17:51:07Z",
+    "entry_id": "019d4a2d-94a5-7a60-9761-8485602e5ef4",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

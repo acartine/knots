@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4a3c-c416-73e2-89d3-4e2ed446896d",
+  "occurred_at": "2026-04-01T18:09:49.585591Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-720e",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "terminal": false,
+    "title": "Embed builtin compatibility workflow as a Loom bundle",
+    "type": "work",
+    "updated_at": "2026-04-01T18:09:49.585591Z",
+    "workflow_id": "compatibility"
+  }
+}

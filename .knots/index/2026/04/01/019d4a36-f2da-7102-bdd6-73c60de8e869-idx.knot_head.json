@@ -1,0 +1,24 @@
+{
+  "event_id": "019d4a36-f2da-7102-bdd6-73c60de8e869",
+  "occurred_at": "2026-04-01T18:03:28.346958Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-bf17",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipment",
+    "terminal": false,
+    "title": "Remove static prompt fallback from claim poll and skill",
+    "type": "work",
+    "updated_at": "2026-04-01T18:03:28.346958Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d4a36-c80a-7e70-bc75-c761c9698a9c"
+  }
+}

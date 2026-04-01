@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a51-234a-72f3-a1e4-f3ce21774f7d",
+  "occurred_at": "2026-04-01T18:32:04.681989Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan review rejected. The implementation outline misses loom/knots_sdlc/profiles/autopilot_with_pr_no_planning.loom, which still uses legacy output pr, so the proposed canonicalization sweep is not complete. Revise the plan to cover every legacy output declaration before returning to plan review.",
+    "datetime": "2026-04-01T18:31:44Z",
+    "entry_id": "019d4a51-2349-7e43-a1c0-c670c124b935",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-04-01"
+  }
+}

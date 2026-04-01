@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a38-4144-7e11-9bdf-d7f8ae78137d",
+  "occurred_at": "2026-04-01T18:04:53.956092Z",
+  "knot_id": "knots-bf17",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment review blocked: commit 2f2dec9f57a0 (fix: centralize workflow prompt lookup) exists only on knots-bf17 branch. src/action_prompt.rs and loom/knots_sdlc/prompts/evaluating.md are absent from main. Code must be merged to main before review can proceed.",
+    "datetime": "2026-04-01T18:04:53.956092Z",
+    "entry_id": "019d4a38-4144-7e11-9bdf-d7e9ad568ef3",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

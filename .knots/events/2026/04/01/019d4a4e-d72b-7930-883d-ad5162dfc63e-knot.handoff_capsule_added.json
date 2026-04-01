@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a4e-d72b-7930-883d-ad5162dfc63e",
+  "occurred_at": "2026-04-01T18:29:34.123594Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Revised plan: 5 test groups (~140 lines) covering canonical parsing + legacy normalization + unknown rejection, StepMetadata resolution with canonical names, prompt rendering from StepMetadata (all 4 output-conditional prompts including shipment_review), backward compat for workflows without per-step outputs, and bundle compat validation. All server-side Rust, no Playwright. Depends on c8f4 + 0d93 finalizing contracts.",
+    "datetime": "2026-04-01T18:29:34.123594Z",
+    "entry_id": "019d4a4e-d72b-7930-883d-ad41e298b4c2",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a58-eed7-7e30-b9d5-647169328071",
+  "occurred_at": "2026-04-01T18:40:35.543638Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Parent plan finalized. Three-phase implementation: (1) c8f4 adds canonical ArtifactTarget enum with legacy aliases and parser validation, (2) 0d93 refactors prompt rendering to consume runtime-resolved StepMetadata.output instead of profile.outputs directly, (3) 9727 adds regression coverage across parsing, resolution, rendering, and backward compatibility. Dependency order: c8f4 → 0d93 → 9727. All children have plans in ready_for_plan_review except c8f4 which needs one more revision (missing autopilot_with_pr_no_planning.loom in its sweep list). No browser testing needed — all rendering is server-side Rust.",
+    "datetime": "2026-04-01T18:40:35.543638Z",
+    "entry_id": "019d4a58-eed7-7e30-b9d5-64621c4dbca6",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

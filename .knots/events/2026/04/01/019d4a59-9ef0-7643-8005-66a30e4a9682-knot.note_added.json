@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a59-9ef0-7643-8005-66a30e4a9682",
+  "occurred_at": "2026-04-01T18:41:20.624183Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Revised Plan (v3) — Complete .loom file sweep\n\n### Fix from previous rejection\nThe previous plan missed `loom/knots_sdlc/profiles/autopilot_with_pr_no_planning.loom` (lines 6, 10) which declares legacy `output pr`. This revision explicitly covers ALL files with legacy output declarations.\n\n### Complete inventory of legacy output declarations\n\n| File | Line(s) | Current Value | Canonical Target |\n|---|---|---|---|\n| `loom/knots_sdlc/workflow.loom` | 19 | `output branch` | `output branch` (already canonical) |\n| `loom/knots_sdlc/workflow.loom` | 31 | `output commit` | `output merged_main` |\n| `loom/knots_sdlc/profiles/autopilot_with_pr.loom` | 6, 10 | `output pr` | `output pull_request` |\n| `loom/knots_sdlc/profiles/autopilot_with_pr_no_planning.loom` | 6, 10 | `output pr` | `output pull_request` |\n\nNo other .loom files under `loom/` declare output targets.\n\n### Implementation Steps (unchanged from v2 except file list)\n\n1. **ArtifactTarget enum** in `src/profile.rs`: Branch, PullRequest, MergedMain, Local, Note, Approval, LiveDeployment. `from_str()` with legacy aliases; `as_str()` returning canonical names. Unknown strings rejected.\n2. **Update legacy_outputs()** in `src/profile_normalize.rs`: Remote→\"branch\", Pr→\"pull_request\", RemoteMain→\"merged_main\", Local→\"local\".\n3. **Validate in TOML parser** (`src/installed_workflows/profile_toml.rs`): call `ArtifactTarget::from_str()` during build_outputs, normalize to canonical form.\n4. **Validate in JSON parser** (`src/installed_workflows/profile_json.rs`): same validation and normalization.\n5. **Update ALL .loom files** (4 files, 5 declarations):\n   - `workflow.loom:31`: `output commit` → `output merged_main`\n   - `autopilot_with_pr.loom:6,10`: `output pr` → `output pull_request`\n   - `autopilot_with_pr_no_planning.loom:6,10`: `output pr` → `output pull_request`\n   - `workflow.loom:19`: `output branch` — no change needed (already canonical)\n6. **Tests**: round-trip canonical, legacy normalization, unknown rejection, legacy_outputs canonical output, TOML/JSON parser validation, profile loading backward compat.\n\n### Files Changed (complete)\n- `src/profile.rs` (~40 lines)\n- `src/profile_normalize.rs` (~10 lines)\n- `src/installed_workflows/profile_toml.rs` (~8 lines)\n- `src/installed_workflows/profile_json.rs` (~8 lines)\n- `loom/knots_sdlc/workflow.loom` (1 line)\n- `loom/knots_sdlc/profiles/autopilot_with_pr.loom` (2 lines)\n- `loom/knots_sdlc/profiles/autopilot_with_pr_no_planning.loom` (2 lines)\n\n### Complexity: Medium (~70 new/changed lines across 7 files)",
+    "datetime": "2026-04-01T18:41:20.624183Z",
+    "entry_id": "019d4a59-9ef0-7643-8005-6692513275d4",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

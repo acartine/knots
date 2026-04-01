@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a43-393b-7df2-b65d-3f822253d322",
+  "occurred_at": "2026-04-01T18:16:52.795783Z",
+  "knot_id": "knots-040c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "1. The review commit adds coverage only in installed workflow and poll/claim test modules; it does not add any compat harness assertion proving builtin/custom prompts resolve through Loom bodies, so the compat harness scenario named in the knot description remains uncovered. 2. The knot description also requires skill state lookup coverage, but the review commit does not add or update any kno skill/run_skill test path to prove Loom-first prompt lookup; the existing fallback test still only checks that planning renders. 3. Validation: exact review commit b196cf3 passed cargo test in an isolated checkout, and current main passed make sanity, so the rejection is for missing required coverage scope rather than failing gates.",
+    "datetime": "2026-04-01T18:16:52Z",
+    "entry_id": "019d4a43-393b-7df2-b65d-3f7b002690af",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-04-01"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a35-10ab-7a23-b5ab-25e28d1a3cd5",
+  "occurred_at": "2026-04-01T18:01:24.907863Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review sent c8f4 back to planning. Main gaps: validation is only warning-based, so supported targets are not actually enforced; the plan does not resolve canonical naming across remote_main, commit, and merged_main_commit; and backward-compat behavior for legacy OutputMode values versus new canonical targets is underspecified. Revise the plan around a single runtime target vocabulary plus explicit legacy normalization and test coverage for both canonical and legacy forms.",
+    "datetime": "2026-04-01T18:01:24.907863Z",
+    "entry_id": "019d4a35-10ab-7a23-b5ab-25d0dc50b122",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

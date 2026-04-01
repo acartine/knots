@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a51-3779-7b21-9525-f10c9a7e0081",
+  "occurred_at": "2026-04-01T18:32:09.849756Z",
+  "knot_id": "knots-5464",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Rolling parent back because child knots-c8f4 failed plan review. The current plan scope is incomplete: it calls out autopilot_with_pr.loom but misses loom/knots_sdlc/profiles/autopilot_with_pr_no_planning.loom, which still contains a legacy output pr override. Revise the parent and child plans so the canonicalization sweep is exhaustive before re-entering plan review.",
+    "datetime": "2026-04-01T18:31:44Z",
+    "entry_id": "019d4a51-3779-7b21-9525-f0f00aec4763",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-04-01"
+  }
+}

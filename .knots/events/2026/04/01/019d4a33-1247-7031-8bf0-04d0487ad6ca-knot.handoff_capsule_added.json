@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a33-1247-7031-8bf0-04d0487ad6ca",
+  "occurred_at": "2026-04-01T17:59:14.247646Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan: add regression tests across 5 test files covering bundle parsing validation (~40 lines), per-step StepMetadata resolution (~30 lines), prompt conditional section rendering (~40 lines), legacy backward compat (~20 lines), and loom_compat_bundle assertions (~10 lines). ~140 total new test lines. Depends on c8f4 and 0d93 for full coverage. No Playwright needed — rendering is server-side Rust. No code changes during planning.",
+    "datetime": "2026-04-01T17:59:14.247646Z",
+    "entry_id": "019d4a33-1247-7031-8bf0-04c9d1a79eaf",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a43-3909-7e83-8421-3cf2b5d080fd",
+  "occurred_at": "2026-04-01T18:16:52.745723Z",
+  "knot_id": "knots-040c",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation review rejected: the added tests cover installed-workflow and poll/claim prompt resolution, but they do not add compat harness prompt-resolution coverage or explicit skill state lookup coverage proving Loom-first resolution.",
+    "datetime": "2026-04-01T18:16:52.745723Z",
+    "entry_id": "019d4a43-3909-7e83-8421-3cedb4134076",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

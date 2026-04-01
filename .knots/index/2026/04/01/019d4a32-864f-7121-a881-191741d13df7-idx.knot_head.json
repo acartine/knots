@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4a32-864f-7121-a881-191741d13df7",
+  "occurred_at": "2026-04-01T17:58:38.408165Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-c8f4",
+    "profile_id": "autopilot",
+    "state": "planning",
+    "terminal": false,
+    "title": "Add per-step expected-output declarations to Loom bundle/runtime",
+    "type": "work",
+    "updated_at": "2026-04-01T17:58:38.408165Z",
+    "workflow_id": "compatibility"
+  }
+}

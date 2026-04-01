@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a31-8fe0-7a53-90d5-8ae63ee39a11",
+  "occurred_at": "2026-04-01T17:57:35.328383Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Planning complete for per-step output targets. Current system already has per-action output definitions in ProfileDefinition.outputs and per-step resolution via StepMetadata.output. Five gaps identified: (G1) artifact_type is unvalidated free-form string, (G2) no live_deployment target, (G3) OutputMode enum disconnected from runtime strings, (G4) prompt templates only cover remote_main/pr conditionals, (G5) no bundle parsing validation. Three children ready for sequential execution: c8f4 (schema/runtime validation) → 0d93 (prompt rendering for all targets) → 9727 (regression coverage). No code changes made during planning. Risk: validation strictness for external bundles — recommend extensible approach.",
+    "datetime": "2026-04-01T17:57:35.328383Z",
+    "entry_id": "019d4a31-8fe0-7a53-90d5-8ad2f0c3c3a8",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

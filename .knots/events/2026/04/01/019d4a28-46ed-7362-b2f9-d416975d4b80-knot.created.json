@@ -1,0 +1,17 @@
+{
+  "event_id": "019d4a28-46ed-7362-b2f9-d416975d4b80",
+  "occurred_at": "2026-04-01T17:47:26.829309Z",
+  "knot_id": "knots-9727",
+  "type": "knot.created",
+  "data": {
+    "body": "Add or update tests for TOML/JSON bundle parsing, runtime step metadata resolution, prompt rendering, and compatibility fixtures so per-step expected-output declarations are exercised directly and legacy workflows remain backward compatible. Coordinate with the broader Loom prompt e2e test effort for any Playwright/browser validation.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add regression coverage for per-step output-target modeling",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

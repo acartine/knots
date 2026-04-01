@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a40-3893-79c2-9004-85464068bded",
+  "occurred_at": "2026-04-01T18:13:36.019681Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning complete for knots-5464. Confirmed that runtime step metadata already exists (`ProfileDefinition.outputs`, `StepMetadata.output`, `step_metadata_for_state`), but built-in compatibility profiles still flatten output semantics through `legacy_outputs()` and installed-workflow prompt rendering still keys off a profile-wide output token. Existing child split is correct and no new children are needed. Execute in order: `knots-c8f4` defines canonical per-step output targets plus legacy/backward-compatible mapping and validation; `knots-0d93` rewires prompt rendering and built-in Loom prompts to use resolved per-step output metadata at runtime; `knots-9727` locks behavior with parsing, runtime-resolution, prompt-rendering, and backward-compatibility regression tests.",
+    "datetime": "2026-04-01T18:13:36.019681Z",
+    "entry_id": "019d4a40-3893-79c2-9004-853c605aed3a",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

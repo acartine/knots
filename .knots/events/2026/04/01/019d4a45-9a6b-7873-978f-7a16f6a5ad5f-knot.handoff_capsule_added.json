@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a45-9a6b-7873-978f-7a16f6a5ad5f",
+  "occurred_at": "2026-04-01T18:19:28.747069Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Revised plan for c8f4: defines canonical ArtifactTarget enum (branch, pull_request, merged_main, local, note, approval, live_deployment) with from_str accepting legacy strings and rejecting unknown ones. Updates legacy_outputs() to emit canonical names, adds validation to TOML/JSON bundle parsers, and updates workflow.loom/profile.loom to use canonical names. Tests cover round-trip parsing, legacy normalization, unknown rejection, and backward-compatible profile loading. Execution order: enum definition → legacy_outputs → bundle parsers → loom files → tests.",
+    "datetime": "2026-04-01T18:19:28.747069Z",
+    "entry_id": "019d4a45-9a6b-7873-978f-7a0ec8913af8",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a3e-7258-7493-818e-9c831037742a",
+  "occurred_at": "2026-04-01T18:11:39.736769Z",
+  "knot_id": "knots-bf17",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipped: merged knots-bf17 branch (commit 2f2dec9 fix: centralize workflow prompt lookup) to main via merge commit 8c2747f21748. Pushed to remote. CI passed (818 tests, all green).",
+    "datetime": "2026-04-01T18:11:39.736769Z",
+    "entry_id": "019d4a3e-7258-7493-818e-9c74e38264d8",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

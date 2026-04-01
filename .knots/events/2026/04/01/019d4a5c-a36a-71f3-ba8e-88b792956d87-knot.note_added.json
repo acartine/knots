@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a5c-a36a-71f3-ba8e-88b792956d87",
+  "occurred_at": "2026-04-01T18:44:38.378223Z",
+  "knot_id": "knots-5464",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review requested revisions. Two gaps need to be addressed before implementation. First, the proposed canonical ArtifactTarget/alias mapping does not account for the existing legacy output value 'remote', which is still supported by OutputMode::Remote and tested in profile_tests.rs; the plan must preserve that compatibility explicitly. Second, the runtime prompt path is not fully covered: compatibility prompts are currently rendered into profile.action_prompts up front and claim/run paths read those stored strings via action_prompt::render_for_profile and poll_claim::prompt_body_for_state, so changing build_prompt_params/render_prompt_body alone is not enough to satisfy the requirement that prompt rendering consume resolved per-step output metadata at runtime. Please revise the plan to name the concrete runtime call sites/data flow that will switch from profile.outputs/pre-rendered profile prompts to StepMetadata.output, and include regression coverage for that path.",
+    "datetime": "2026-04-01T18:44:38.378223Z",
+    "entry_id": "019d4a5c-a36a-71f3-ba8e-88a8ce79041d",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

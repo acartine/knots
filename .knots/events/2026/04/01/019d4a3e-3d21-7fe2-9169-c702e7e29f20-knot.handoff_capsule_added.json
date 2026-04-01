@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a3e-3d21-7fe2-9169-c702e7e29f20",
+  "occurred_at": "2026-04-01T18:11:26.113617Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Planning complete for knots-5464. Code inspection confirmed the data model (ActionOutputDef, StepMetadata.output, ProfileDefinition.outputs) already supports per-action outputs, but the built-in profiles flatten through legacy_outputs() which applies a single artifact_type to all states, and prompt rendering is pre-baked at profile load time rather than consuming resolved per-step metadata. Three children are scoped: c8f4 defines canonical output-target vocabulary (branch, pull_request, merged_main_commit, live_deployment, note, approval) and updates legacy_outputs() to produce per-action targets; 0d93 updates prompt templates and rendering to use canonical vocabulary from resolved step metadata; 9727 adds regression tests covering vocabulary validation, per-action resolution, prompt rendering, and backward compatibility. Execution order: c8f4 → 0d93 → 9727.",
+    "datetime": "2026-04-01T18:11:26.113617Z",
+    "entry_id": "019d4a3e-3d21-7fe2-9169-c6fe592b1a59",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

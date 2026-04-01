@@ -1,0 +1,17 @@
+{
+  "event_id": "019d4a28-3a07-7b40-9d37-2061bafc9f1c",
+  "occurred_at": "2026-04-01T17:47:23.527299Z",
+  "knot_id": "knots-0d93",
+  "type": "knot.created",
+  "data": {
+    "body": "Replace prompt-template reliance on a flattened profile-wide output mode with resolved step metadata from the active action, including prompt parameters and conditional rendering for branch, PR, merged main commit, and live deployment targets in built-in Loom prompts and claim rendering paths.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Update prompt rendering to consume resolved per-step output metadata",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

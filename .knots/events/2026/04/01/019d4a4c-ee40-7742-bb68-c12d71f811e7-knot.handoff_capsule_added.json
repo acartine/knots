@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a4c-ee40-7742-bb68-c12d71f811e7",
+  "occurred_at": "2026-04-01T18:27:28.960755Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan complete for per-step output targets. Three existing children confirmed in order c8f4 → 0d93 → 9727. Key decisions: canonical ArtifactTarget enum with 7 variants, strict unknown rejection, prompt rendering rewired to consume StepMetadata.output instead of profile.outputs directly. c8f4 is ready_for_plan_review (plan looks sound), 0d93 needs plan revision per binding design decisions, 9727 awaits c8f4/0d93 finalization. ~300-400 lines total across all children. No new child knots needed.",
+    "datetime": "2026-04-01T18:27:28.960755Z",
+    "entry_id": "019d4a4c-ee40-7742-bb68-c119b7a8d1f4",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

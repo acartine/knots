@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a35-48f0-7aa3-a740-b84e0e0f7e91",
+  "occurred_at": "2026-04-01T18:01:39.312083Z",
+  "knot_id": "knots-0d93",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review sent 0d93 back to planning. Main gaps: it does not actually move prompt rendering onto resolved runtime step metadata, it leaves shipment_review output branches untouched, and it uses target names that are not yet reconciled with the canonical runtime vocabulary. Revise the plan around a runtime StepMetadata-driven rendering path and cover every built-in prompt that branches on output semantics.",
+    "datetime": "2026-04-01T18:01:39.312083Z",
+    "entry_id": "019d4a35-48f0-7aa3-a740-b83a67389acd",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

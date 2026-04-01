@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a35-0ffc-7442-bd90-13695cce399a",
+  "occurred_at": "2026-04-01T18:01:24.73232Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan needs revision before implementation. The current proposal only warns on unknown artifact_type values, but the acceptance requires validated per-step output declarations for a defined target set. It also leaves the canonical target vocabulary unresolved: runtime currently uses remote_main and commit, while the requirement calls out merged_main_commit and live_deployment. Please revise the plan to define one canonical runtime/output vocabulary, specify how legacy OutputMode/remote_main values normalize into it, decide whether unknown target strings are rejected or mapped through an explicit extension mechanism, and add tests that cover both valid canonical targets and backward-compatible legacy inputs.",
+    "datetime": "2026-04-01T18:01:24.73232Z",
+    "entry_id": "019d4a35-0ffc-7442-bd90-1354426f39b5",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

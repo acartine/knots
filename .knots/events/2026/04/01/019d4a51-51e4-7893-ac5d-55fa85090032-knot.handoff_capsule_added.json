@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a51-51e4-7893-ac5d-55fa85090032",
+  "occurred_at": "2026-04-01T18:32:16.612455Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan review rejected. Child knots-c8f4 was rolled back because the file inventory for output-target canonicalization is incomplete: loom/knots_sdlc/profiles/autopilot_with_pr_no_planning.loom still declares legacy output pr but is not included in the planned edits. Rework the parent/child plans to cover the full legacy-output sweep, then return to plan review.",
+    "datetime": "2026-04-01T18:31:44Z",
+    "entry_id": "019d4a51-51e4-7893-ac5d-55e59299b5ea",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-04-01"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a35-a1db-78d1-bbe4-40cb12b52229",
+  "occurred_at": "2026-04-01T18:02:02.075287Z",
+  "knot_id": "knots-5464",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review found the decomposition directionally correct but not implementation-ready. Child c8f4 leaves canonical output target naming unresolved and proposes warning-only validation, which does not satisfy the required validated target set. Child 0d93 does not actually switch prompt rendering to resolved runtime StepMetadata and omits shipment_review from output-conditional prompt updates. Child 9727 therefore bakes the unresolved validation/rendering contract into tests. Please revise the plan around a single canonical runtime target vocabulary, explicit legacy normalization from existing remote_main/OutputMode forms, a StepMetadata-driven prompt rendering path for all output-conditional prompts, and tests that match that final contract.",
+    "datetime": "2026-04-01T18:02:02.075287Z",
+    "entry_id": "019d4a35-a1db-78d1-bbe4-40b3e54245c0",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

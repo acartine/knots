@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4a54-bb30-7c83-96fc-08266475bfb3",
+  "occurred_at": "2026-04-01T18:36:00.176667Z",
+  "knot_id": "knots-5464",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Confirmed during planning that Loom already has per-action output declarations in `loom/knots_sdlc/workflow.loom` and per-profile per-action PR overrides in both PR profiles, including the previously missed `loom/knots_sdlc/profiles/autopilot_with_pr_no_planning.loom`. The planned implementation is to introduce canonical per-step expected-output metadata in the Loom/bundle/runtime model, replace builtin global output flattening in `src/profiles.toml` / `src/profile_normalize.rs`, and move claim/skill prompt rendering onto runtime-resolved step metadata instead of pre-rendered profile-wide output mode. Test coverage should span parser/validation, builtin normalization, step-metadata resolution, and Loom compatibility prompt rendering; no separate browser-only prompt path surfaced in this scan.",
+    "datetime": "2026-04-01T18:36:00.176667Z",
+    "entry_id": "019d4a54-bb30-7c83-96fc-081227c3babf",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}
