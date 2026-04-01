@@ -32,7 +32,11 @@
   stop immediately.
 
 ## Actions
-1. Verify the change is live on main branch
+1. Verify the shipped result at the correct review target for the
+   profile output mode:
+   `{{ output }}` = `remote_main` means review the code now on main.
+   `{{ output }}` = `pr` means review the merged pull request as the
+   shipment record and confirm the corresponding code is now on main.
 2. Confirm every commit from implementation/shipment is tagged on the
    knot:
    - Use the `commit:` prefix for each tag.

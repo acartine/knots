@@ -50,9 +50,14 @@
    criteria
 2. Verify the implementation respects all knot invariants
 3. Verify tests cover the required behavior
-4. Verify all sanity gates pass
-5. Validate no security issues or regressions introduced
-6. Approve or request changes based only on specification and code drift
+4. Use the correct review target for the profile output mode:
+   `{{ output }}` = `remote_main` means review the implementation branch
+   directly and do not rely on PR metadata or a PR-shaped artifact.
+   `{{ output }}` = `pr` means review the pull request itself, including
+   the PR diff, status, and metadata.
+5. Verify all sanity gates pass
+6. Validate no security issues or regressions introduced
+7. Approve or request changes based only on specification and code drift
 
 ## Output
 - Approved:

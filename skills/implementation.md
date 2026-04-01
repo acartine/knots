@@ -37,8 +37,11 @@
    `kno update <id> --add-tag "commit:${short_hash}"`
    Run this for every commit created during implementation.
    Use short hashes only; do not use the full 40-character hash.
-8. Profile variant: Open or update a PR for the feature branch if the
-   knot profile expects it
+8. Make the implementation artifact explicit for the profile output mode:
+   `{{ output }}` = `remote_main` means the review target is the pushed
+   feature branch itself, so do not open a PR for this step.
+   `{{ output }}` = `pr` means the review target is a pull request, so
+   open or update the PR for the feature branch.
 
 ## Output
 - Working implementation on feature branch
