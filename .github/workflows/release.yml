@@ -53,7 +53,8 @@ jobs:
           fi
 
           tag="v${current_version}"
-          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+          if [[ "${should_release}" == "true" ]] && \
+             git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
             echo "::error::Tag ${tag} already exists on remote. A Version Packages PR was merged but the tag was pre-existing — the release was never published. Resolve the tag collision and re-run."
             exit 1
           fi
