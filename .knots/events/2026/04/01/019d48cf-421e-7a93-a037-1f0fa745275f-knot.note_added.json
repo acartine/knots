@@ -1,0 +1,15 @@
+{
+  "event_id": "019d48cf-421e-7a93-a037-1f0fa745275f",
+  "occurred_at": "2026-04-01T11:30:35.678018Z",
+  "knot_id": "knots-8f7d",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Privacy constraint: lease lifecycle enforcement must not make lease ids visible in CLI or JSON output. The claiming agent may hold the lease id out of band, but show/query surfaces must expose only normalized agent metadata and must not allow direct display of lease knots or lookup by lease metadata.",
+    "datetime": "2026-04-01T11:30:35.678018Z",
+    "entry_id": "019d48cf-421e-7a93-a037-1efa2dc196c1",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

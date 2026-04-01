@@ -1,0 +1,15 @@
+{
+  "event_id": "019d48cf-4482-7290-8fa3-314974b0fbfc",
+  "occurred_at": "2026-04-01T11:30:36.290595Z",
+  "knot_id": "knots-ae85",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Scope clarification: restricting lease attachment to claim flow also implies lease ids remain internal-only. Non-claim surfaces must not expose lease ids, lease knots should not be directly showable, and callers should not be able to query knots by lease metadata; rely on lease expiry/orphan cleanup rather than user-visible lease inspection.",
+    "datetime": "2026-04-01T11:30:36.290595Z",
+    "entry_id": "019d48cf-4482-7290-8fa3-313e70594b00",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

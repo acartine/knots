@@ -1,0 +1,21 @@
+{
+  "event_id": "019d48cf-4226-7c82-9900-a73ec2f442d5",
+  "occurred_at": "2026-04-01T11:30:35.678018Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-8f7d",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Tighten lease lifecycle enforcement on claim and next",
+    "type": "work",
+    "updated_at": "2026-04-01T11:30:35.678018Z",
+    "workflow_id": "compatibility"
+  }
+}

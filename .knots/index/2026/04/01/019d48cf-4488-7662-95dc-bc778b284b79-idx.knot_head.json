@@ -1,0 +1,21 @@
+{
+  "event_id": "019d48cf-4488-7662-95dc-bc778b284b79",
+  "occurred_at": "2026-04-01T11:30:36.290595Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ae85",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Restrict lease attachment to claim flow only",
+    "type": "work",
+    "updated_at": "2026-04-01T11:30:36.290595Z",
+    "workflow_id": "compatibility"
+  }
+}

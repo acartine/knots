@@ -1,0 +1,9 @@
+{
+  "event_id": "019d48cf-3fcf-7be2-9606-2f1cdd7b05a4",
+  "occurred_at": "2026-04-01T11:30:35.087102Z",
+  "knot_id": "knots-43fe",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Update user-facing display behavior for bound lease context without exposing lease identifiers. For a work/gate knot with a bound lease, plain-text and JSON show output should expose normalized lease agent metadata only; do not expose the lease id. Lease knots themselves should not be shown directly in CLI or JSON surfaces. Lease ids are internal capability tokens that should only be known to the agent that claimed the knot. This work is about human-readable and machine-readable display parity for safe lease-backed metadata visibility without exposing lease handles."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "event_id": "019d48cf-3fcf-7be2-9606-2f0e407eadae",
+  "occurred_at": "2026-04-01T11:30:35.087102Z",
+  "knot_id": "knots-43fe",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Show lease metadata in text output",
+    "to": "Show bound lease agent metadata in text output"
+  }
+}

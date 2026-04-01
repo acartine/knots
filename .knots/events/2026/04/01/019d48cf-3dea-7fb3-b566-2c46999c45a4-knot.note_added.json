@@ -1,0 +1,15 @@
+{
+  "event_id": "019d48cf-3dea-7fb3-b566-2c46999c45a4",
+  "occurred_at": "2026-04-01T11:30:34.602672Z",
+  "knot_id": "knots-87bd",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Visibility constraint: even if metadata records carry a canonical internal lease_id, user-facing surfaces must never expose lease ids. Do not show lease ids in CLI output or JSON, do not allow querying/search by lease metadata, and do not show lease knots directly. Only normalized agent metadata should be exposed; orphaned leases should be handled by existing lease expiry logic.",
+    "datetime": "2026-04-01T11:30:34.602672Z",
+    "entry_id": "019d48cf-3dea-7fb3-b566-2c310f7eadea",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

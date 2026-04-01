@@ -1,0 +1,21 @@
+{
+  "event_id": "019d48cf-3fd8-73b2-beee-41c818a101f2",
+  "occurred_at": "2026-04-01T11:30:35.087102Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-43fe",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Show bound lease agent metadata in text output",
+    "type": "work",
+    "updated_at": "2026-04-01T11:30:35.087102Z",
+    "workflow_id": "compatibility"
+  }
+}
