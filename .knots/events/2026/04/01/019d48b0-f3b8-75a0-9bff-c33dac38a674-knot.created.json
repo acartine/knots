@@ -1,0 +1,17 @@
+{
+  "event_id": "019d48b0-f3b8-75a0-9bff-c33dac38a674",
+  "occurred_at": "2026-04-01T10:57:29.528383Z",
+  "knot_id": "knots-43fe",
+  "type": "knot.created",
+  "data": {
+    "body": "Make plain-text 'kno show' expose lease context without requiring --json. For a work/gate knot with a bound lease, show the lease id and the bound lease agent metadata in the standard text output. For a lease knot, show its lease id and lease agent metadata in the standard text output as well. Preserve existing JSON behavior; this work is specifically about human-readable show output parity and robustness around lease-backed metadata visibility.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Show lease metadata in text output",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "event_id": "019d48b0-f3b8-75a0-9bff-c34da0998502",
+  "occurred_at": "2026-04-01T10:57:29.528383Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-43fe",
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "terminal": false,
+    "title": "Show lease metadata in text output",
+    "type": "work",
+    "updated_at": "2026-04-01T10:57:29.528383Z",
+    "workflow_id": "compatibility"
+  }
+}
