@@ -244,6 +244,62 @@ fn loom_failures_and_invalid_utf8_reported() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[test]
+fn compatibility_workflow_renders_builtin_prompt_variants_per_profile() {
+    let root = unique_workspace("knots-installed-workflows-compat-prompts");
+    let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+    let workflow = registry
+        .require_workflow(COMPATIBILITY_WORKFLOW_ID)
+        .expect("compatibility workflow should exist");
+    let branch_profile = workflow
+        .require_profile("autopilot")
+        .expect("autopilot should exist");
+    let pr_profile = workflow
+        .require_profile("autopilot_with_pr")
+        .expect("autopilot_with_pr should exist");
+
+    let branch_prompt = branch_profile
+        .prompt_for_action_state("implementation")
+        .expect("branch prompt should render");
+    assert!(branch_prompt.contains("do not open a PR for this step"));
+    assert!(!branch_prompt.contains("open or update the PR for the feature branch"));
+
+    let pr_prompt = pr_profile
+        .prompt_for_action_state("implementation")
+        .expect("pr prompt should render");
+    assert!(pr_prompt.contains("open or update the PR for the feature branch"));
+    assert!(!pr_prompt.contains("do not open a PR for this step"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn profile_registry_load_for_repo_merges_builtin_prompt_variants() {
+    let root = unique_workspace("knots-installed-workflows-compat-registry");
+    let registry = crate::profile::ProfileRegistry::load_for_repo(&root)
+        .expect("profile registry should load");
+    let branch_profile = registry
+        .require("autopilot")
+        .expect("autopilot should exist");
+    let pr_profile = registry
+        .require("autopilot_with_pr")
+        .expect("autopilot_with_pr should exist");
+
+    let branch_prompt = branch_profile
+        .prompt_for_action_state("shipment")
+        .expect("branch shipment prompt should exist");
+    assert!(branch_prompt.contains("merge the feature branch to main"));
+    assert!(!branch_prompt.contains("merge the approved pull request"));
+
+    let pr_prompt = pr_profile
+        .prompt_for_action_state("shipment")
+        .expect("pr shipment prompt should exist");
+    assert!(pr_prompt.contains("merge the approved pull request"));
+    assert!(!pr_prompt.contains("merge the feature branch to main"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
 fn make_executable(path: &std::path::Path) {
     #[cfg(unix)]
     {

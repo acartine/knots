@@ -109,23 +109,7 @@ pub fn build_prompt_params(
     profile: &crate::profile::ProfileDefinition,
     prompt: &PromptDefinition,
 ) -> BTreeMap<String, String> {
-    let mut params = BTreeMap::new();
-    params.insert("workflow_id".to_string(), workflow.id.clone());
-    params.insert("profile_id".to_string(), profile.id.clone());
-    if let Some(output_def) = profile.outputs.get(&prompt.action_state) {
-        params.insert("output".to_string(), output_def.artifact_type.clone());
-        if let Some(hint) = &output_def.access_hint {
-            params.insert("output_hint".to_string(), hint.clone());
-        }
-    }
-    for param in &prompt.params {
-        if let Some(default) = param.default.as_deref() {
-            params
-                .entry(param.name.clone())
-                .or_insert_with(|| default.to_string());
-        }
-    }
-    params
+    super::build_prompt_params(&workflow.id, profile, prompt)
 }
 
 pub fn render_prompt_template(
@@ -133,29 +117,5 @@ pub fn render_prompt_template(
     params: &BTreeMap<String, String>,
     unresolved: &mut Vec<String>,
 ) -> String {
-    let mut rendered = String::new();
-    let mut rest = template;
-    while let Some(start) = rest.find("{{") {
-        rendered.push_str(&rest[..start]);
-        let after_start = &rest[start + 2..];
-        let Some(end) = after_start.find("}}") else {
-            rendered.push_str(&rest[start..]);
-            return rendered;
-        };
-        let token = &after_start[..end];
-        let key = token.trim();
-        if let Some(value) = params.get(key) {
-            rendered.push_str(value);
-        } else {
-            unresolved.push(key.to_string());
-            rendered.push_str("{{");
-            rendered.push_str(token);
-            rendered.push_str("}}");
-        }
-        rest = &after_start[end + 2..];
-    }
-    rendered.push_str(rest);
-    unresolved.sort();
-    unresolved.dedup();
-    rendered
+    super::render_prompt_template(template, params, unresolved)
 }
