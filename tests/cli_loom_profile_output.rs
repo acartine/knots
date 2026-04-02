@@ -34,6 +34,76 @@ fn assert_no_unresolved_templates(prompt: &str, state: &str, profile: &str) {
     );
 }
 
+const IMPLEMENTATION_STATIC_FALLBACK_MARKERS: &[&str] = &[
+    "Run any sanity gates defined in the project or the plan",
+    "Add a handoff_capsule to the knot with:",
+];
+
+fn action_state_for(queue_state: &str) -> &str {
+    queue_state
+        .strip_prefix("ready_for_")
+        .unwrap_or_else(|| panic!("expected queue state, got {queue_state}"))
+}
+
+fn assert_branch_output_prompt(prompt: &str, queue_state: &str, profile: &str) {
+    let action_state = action_state_for(queue_state);
+    let context = format!("{profile}/{action_state}");
+    assert_loom_prompt(prompt, action_state, profile);
+    assert_no_unresolved_templates(prompt, action_state, profile);
+    assert_prompt_contains(prompt, "- artifact: remote_main", &context);
+
+    let expected = match queue_state {
+        "ready_for_implementation" => &[
+            "The expected output artifact is `remote_main`:",
+            "a feature branch pushed to remote for direct branch review",
+        ][..],
+        "ready_for_implementation_review" => &["review the implementation branch"][..],
+        "ready_for_shipment" => &[
+            "merge the feature branch to main",
+            "push main after the merge",
+        ][..],
+        "ready_for_shipment_review" => &["review the code now on main"][..],
+        _ => panic!("unexpected output-sensitive state: {queue_state}"),
+    };
+
+    for marker in expected {
+        assert_prompt_contains(prompt, marker, &context);
+    }
+    if queue_state == "ready_for_implementation" {
+        for marker in IMPLEMENTATION_STATIC_FALLBACK_MARKERS {
+            assert_prompt_not_contains(prompt, marker, &context);
+        }
+    }
+}
+
+fn assert_pr_output_prompt(prompt: &str, queue_state: &str, profile: &str) {
+    let action_state = action_state_for(queue_state);
+    let context = format!("{profile}/{action_state}");
+    assert_loom_prompt(prompt, action_state, profile);
+    assert_no_unresolved_templates(prompt, action_state, profile);
+    assert_prompt_contains(prompt, "- artifact: pr", &context);
+
+    let expected = match queue_state {
+        "ready_for_implementation" => &[
+            "The expected output artifact is `pr`:",
+            "pull request opened or updated from the feature branch",
+        ][..],
+        "ready_for_implementation_review" => &["review the pull request itself"][..],
+        "ready_for_shipment" => &["merge the approved pull request"][..],
+        "ready_for_shipment_review" => &["review the merged pull request"][..],
+        _ => panic!("unexpected output-sensitive state: {queue_state}"),
+    };
+
+    for marker in expected {
+        assert_prompt_contains(prompt, marker, &context);
+    }
+    if queue_state == "ready_for_implementation" {
+        for marker in IMPLEMENTATION_STATIC_FALLBACK_MARKERS {
+            assert_prompt_not_contains(prompt, marker, &context);
+        }
+    }
+}
+
 // ── Profile output variant validation ───────────────────────
 
 /// States where the output param differs between autopilot
@@ -72,19 +142,7 @@ fn autopilot_claim_resolves_remote_main_output() {
         let json: Value = serde_json::from_slice(&claim.stdout).expect("claim json");
         let prompt = json["prompt"].as_str().expect("prompt should exist");
 
-        assert!(
-            prompt.contains("remote_main"),
-            "REGRESSION: autopilot/{queue_state}: template should \
-             resolve to 'remote_main'.\nPrompt excerpt:\n{excerpt}",
-            excerpt = &prompt[..prompt.len().min(500)]
-        );
-        assert!(
-            !prompt.contains("`{{ output }}` = `"),
-            "REGRESSION: autopilot/{queue_state}: output-specific \
-             conditional markers should be resolved, not raw.\n\
-             Prompt excerpt:\n{excerpt}",
-            excerpt = &prompt[..prompt.len().min(500)]
-        );
+        assert_branch_output_prompt(prompt, queue_state, "autopilot");
     }
     let _ = std::fs::remove_dir_all(root);
 }
@@ -116,20 +174,7 @@ fn autopilot_with_pr_claim_resolves_pr_output() {
         let json: Value = serde_json::from_slice(&claim.stdout).expect("claim json");
         let prompt = json["prompt"].as_str().expect("prompt should exist");
 
-        assert!(
-            prompt.contains("pull request"),
-            "REGRESSION: autopilot_with_pr/{queue_state}: PR output \
-             should contain 'pull request' content.\n\
-             Prompt excerpt:\n{excerpt}",
-            excerpt = &prompt[..prompt.len().min(500)]
-        );
-        assert!(
-            !prompt.contains("`{{ output }}` = `"),
-            "REGRESSION: autopilot_with_pr/{queue_state}: output \
-             conditional markers should be resolved.\n\
-             Prompt excerpt:\n{excerpt}",
-            excerpt = &prompt[..prompt.len().min(500)]
-        );
+        assert_pr_output_prompt(prompt, queue_state, "autopilot_with_pr");
     }
     let _ = std::fs::remove_dir_all(root);
 }
@@ -325,5 +370,64 @@ fn custom_workflow_prompts_resolve_independently() {
         !prompt.contains("# Implementation"),
         "custom workflow prompt should not contain builtin headings"
     );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn builtin_and_custom_workflows_render_distinct_claim_prompts_in_same_repo() {
+    let root = unique_workspace("knots-e2e-loom-multi-same-repo");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    install_custom_workflow(&root, &db);
+
+    let builtin = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Builtin implementation claim",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&builtin);
+    let builtin_id = parse_created_id(&builtin);
+
+    let custom = run_knots(
+        &root,
+        &db,
+        &["new", "Custom workflow knot", "--workflow", "loom_alt"],
+    );
+    assert_success(&custom);
+    let custom_id = parse_created_id(&custom);
+
+    let builtin_claim = run_knots(&root, &db, &["claim", &builtin_id, "--json"]);
+    assert_success(&builtin_claim);
+    let builtin_json: Value =
+        serde_json::from_slice(&builtin_claim.stdout).expect("builtin claim json");
+    let builtin_prompt = builtin_json["prompt"]
+        .as_str()
+        .expect("builtin prompt should exist");
+    assert_branch_output_prompt(builtin_prompt, "ready_for_implementation", "autopilot");
+    assert_prompt_not_contains(
+        builtin_prompt,
+        "# Alt Loom Work",
+        "autopilot/implementation",
+    );
+
+    let custom_claim = run_knots(&root, &db, &["claim", &custom_id, "--json"]);
+    assert_success(&custom_claim);
+    let custom_json: Value =
+        serde_json::from_slice(&custom_claim.stdout).expect("custom claim json");
+    let custom_prompt = custom_json["prompt"]
+        .as_str()
+        .expect("custom prompt should exist");
+    assert_prompt_contains(custom_prompt, "# Alt Loom Work", "loom_alt/work");
+    assert_prompt_contains(custom_prompt, "Alt work delivered", "loom_alt/work");
+    assert_prompt_not_contains(custom_prompt, "# Implementation", "loom_alt/work");
+
     let _ = std::fs::remove_dir_all(root);
 }

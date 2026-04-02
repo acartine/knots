@@ -15,6 +15,17 @@ const LOOM_HEADINGS: &[(&str, &str)] = &[
     ("evaluating", "# Evaluating"),
 ];
 
+const IMPLEMENTATION_LOOM_MARKERS: &[&str] = &[
+    "Implement the approved plan on a feature branch.",
+    "The expected output artifact is `remote_main`:",
+    "a feature branch pushed to remote for direct branch review",
+];
+
+const IMPLEMENTATION_STATIC_FALLBACK_MARKERS: &[&str] = &[
+    "Run any sanity gates defined in the project or the plan",
+    "Add a handoff_capsule to the knot with:",
+];
+
 fn loom_heading_for(state: &str) -> &'static str {
     LOOM_HEADINGS
         .iter()
@@ -42,6 +53,18 @@ fn assert_no_unresolved_templates(prompt: &str, state: &str, profile: &str) {
          Prompt excerpt:\n{excerpt}",
         excerpt = &prompt[..prompt.len().min(300)]
     );
+}
+
+fn assert_builtin_implementation_prompt(prompt: &str, profile: &str) {
+    let context = format!("{profile}/implementation");
+    assert_loom_prompt(prompt, "implementation", profile);
+    assert_no_unresolved_templates(prompt, "implementation", profile);
+    for marker in IMPLEMENTATION_LOOM_MARKERS {
+        assert_prompt_contains(prompt, marker, &context);
+    }
+    for marker in IMPLEMENTATION_STATIC_FALLBACK_MARKERS {
+        assert_prompt_not_contains(prompt, marker, &context);
+    }
 }
 
 const QUEUE_ACTION_PAIRS: &[(&str, &str)] = &[
@@ -208,8 +231,37 @@ fn claim_text_output_contains_loom_heading() {
     assert_success(&claim);
     let stdout = String::from_utf8_lossy(&claim.stdout);
 
-    assert_loom_prompt(&stdout, "implementation", "autopilot");
-    assert_no_unresolved_templates(&stdout, "implementation", "autopilot");
+    assert_builtin_implementation_prompt(&stdout, "autopilot");
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn default_shipped_workflow_claim_uses_loom_defined_implementation_prompt() {
+    let root = unique_workspace("knots-e2e-loom-default-impl");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &[
+            "new",
+            "Default shipped Loom implementation",
+            "--profile",
+            "autopilot",
+            "--state",
+            "ready_for_implementation",
+        ],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    let claim = run_knots(&root, &db, &["claim", &knot_id, "--json"]);
+    assert_success(&claim);
+    let json: Value = serde_json::from_slice(&claim.stdout).expect("claim json");
+    let prompt = json["prompt"].as_str().expect("prompt should exist");
+
+    assert_builtin_implementation_prompt(prompt, "autopilot");
     let _ = std::fs::remove_dir_all(root);
 }
 
