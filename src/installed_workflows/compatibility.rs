@@ -35,7 +35,8 @@ pub(super) fn compatibility_workflow() -> Result<WorkflowDefinition, ProfileErro
         profile.action_prompts.clear();
         profile.prompt_acceptance.clear();
         for prompt in prompts.values() {
-            let rendered = render_prompt_body(&workflow_id, profile, prompt);
+            let output = profile.step_metadata_for(&prompt.action_state).output;
+            let rendered = render_prompt_body(&workflow_id, &profile.id, output.as_ref(), prompt);
             profile
                 .action_prompts
                 .insert(prompt.action_state.clone(), rendered);

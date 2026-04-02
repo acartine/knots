@@ -292,3 +292,36 @@ fn prompt_defaults_cover_param_and_output() {
     );
     assert_eq!(params.get("output").map(String::as_str), Some("branch"));
 }
+
+#[test]
+fn build_prompt_params_with_none_output_omits_output_key() {
+    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
+    let prompt = workflow
+        .prompt_for_action_state("work")
+        .expect("prompt should exist");
+    let params = super::build_prompt_params(&workflow.id, "autopilot", None, prompt);
+    assert!(!params.contains_key("output"));
+    assert!(!params.contains_key("output_hint"));
+    assert_eq!(
+        params.get("profile_id").map(String::as_str),
+        Some("autopilot")
+    );
+}
+
+#[test]
+fn build_prompt_params_with_explicit_output_includes_hint() {
+    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
+    let prompt = workflow
+        .prompt_for_action_state("work")
+        .expect("prompt should exist");
+    let output_def = crate::profile::ActionOutputDef {
+        artifact_type: "pr".to_string(),
+        access_hint: Some("gh pr view".to_string()),
+    };
+    let params = super::build_prompt_params(&workflow.id, "autopilot", Some(&output_def), prompt);
+    assert_eq!(params.get("output").map(String::as_str), Some("pr"));
+    assert_eq!(
+        params.get("output_hint").map(String::as_str),
+        Some("gh pr view")
+    );
+}
