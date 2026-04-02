@@ -4,7 +4,7 @@ use super::bundle_json::parse_bundle_json;
 use super::bundle_toml::{parse_bundle_toml, render_json_bundle_from_toml};
 use super::tests_helpers::{build_prompt_params, render_prompt_template, SAMPLE_BUNDLE};
 use super::*;
-use crate::profile::OwnerKind;
+use crate::profile::{ActionOutputDef, OwnerKind};
 
 #[test]
 fn parses_bundle_and_renders_prompt() {
@@ -291,4 +291,41 @@ fn prompt_defaults_cover_param_and_output() {
         Some("operators")
     );
     assert_eq!(params.get("output").map(String::as_str), Some("branch"));
+}
+
+#[test]
+fn build_prompt_params_with_none_output_omits_output_key() {
+    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
+    let prompt = workflow
+        .prompt_for_action_state("work")
+        .expect("prompt should exist");
+    let params = super::build_prompt_params("custom_flow", "autopilot", None, prompt);
+    assert!(!params.contains_key("output"));
+    assert!(!params.contains_key("output_hint"));
+    assert_eq!(
+        params.get("workflow_id").map(String::as_str),
+        Some("custom_flow")
+    );
+    assert_eq!(
+        params.get("profile_id").map(String::as_str),
+        Some("autopilot")
+    );
+}
+
+#[test]
+fn build_prompt_params_with_explicit_output_includes_hint() {
+    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
+    let prompt = workflow
+        .prompt_for_action_state("work")
+        .expect("prompt should exist");
+    let output = ActionOutputDef {
+        artifact_type: "pr".to_string(),
+        access_hint: Some("gh pr view".to_string()),
+    };
+    let params = super::build_prompt_params("custom_flow", "autopilot", Some(&output), prompt);
+    assert_eq!(params.get("output").map(String::as_str), Some("pr"));
+    assert_eq!(
+        params.get("output_hint").map(String::as_str),
+        Some("gh pr view")
+    );
 }
