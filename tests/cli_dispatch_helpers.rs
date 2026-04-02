@@ -170,3 +170,25 @@ pub fn assert_contains_in_order(haystack: &str, needles: &[&str]) {
         offset += found + needle.len();
     }
 }
+
+pub fn prompt_excerpt(prompt: &str) -> &str {
+    &prompt[..prompt.len().min(500)]
+}
+
+pub fn assert_prompt_contains(prompt: &str, needle: &str, context: &str) {
+    assert!(
+        prompt.contains(needle),
+        "{context}: expected rendered prompt to contain {needle:?}.\n\
+         Prompt excerpt:\n{}",
+        prompt_excerpt(prompt)
+    );
+}
+
+pub fn assert_prompt_not_contains(prompt: &str, needle: &str, context: &str) {
+    assert!(
+        !prompt.contains(needle),
+        "{context}: unexpected rendered prompt content matched {needle:?}.\n\
+         Prompt excerpt:\n{}",
+        prompt_excerpt(prompt)
+    );
+}
