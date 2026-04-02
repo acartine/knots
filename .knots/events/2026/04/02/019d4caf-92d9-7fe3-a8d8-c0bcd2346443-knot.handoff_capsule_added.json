@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4caf-92d9-7fe3-a8d8-c0bcd2346443",
+  "occurred_at": "2026-04-02T05:34:28.057411Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation complete on branch worktree-knots-bf56-loom-e2e-tests.\n\nTwo new end-to-end test files added:\n- tests/cli_loom_prompt_resolution.rs (278 lines, 8 tests): CLI regression matrix covering all builtin profiles (autopilot, autopilot_with_pr, semiauto, no-planning variants) across all action states. Validates Loom headings present, no unresolved templates, text/JSON output paths, skill command, and acceptance criteria flow-through. Tests fail with REGRESSION diagnostics if prompts fall back to non-Loom sources.\n- tests/cli_loom_profile_output.rs (329 lines, 4 tests): Profile output variant validation. Verifies autopilot resolves remote_main output sections, autopilot_with_pr resolves PR output sections, custom workflow prompts resolve independently, and builtin prompts survive custom workflow installation.\n\nAll 12 new tests pass. make sanity green (95.40% coverage >= 95% threshold). No existing tests broken.",
+    "datetime": "2026-04-02T05:34:28.057411Z",
+    "entry_id": "019d4caf-92d9-7fe3-a8d8-c0ae78e6a523",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
