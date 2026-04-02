@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d5e-569f-7820-9952-9c6626e694dd",
+  "occurred_at": "2026-04-02T08:45:21.43925Z",
+  "knot_id": "knots-95c0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude shipment 2026-04-02] Merged to main via fast-forward (290582d..b83a911). Push succeeded with pre-push sanity (838 tests, 95.39% coverage). Branch worktree-knots-c8f4 contains both c8f4 and 95c0 commits.",
+    "datetime": "2026-04-02T08:45:21.43925Z",
+    "entry_id": "019d4d5e-569f-7820-9952-9c59bf2eb69c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

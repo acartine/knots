@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d49-eb96-72d0-98ed-6eef3864c1ba",
+  "occurred_at": "2026-04-02T08:23:03.318212Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude planning 2026-04-02] Revised plan v4: keep current Loom vocabulary (remote_main, pr, remote, local) as canonical names. Add ArtifactTarget enum with FromStr validation and new target types (branch, note, approval, live_deployment). Validate in TOML/JSON parsers. No .loom file changes, no prompt template changes, no bundle regeneration. ~90 lines across 5 files. Key insight: renaming would break 4 prompt templates that have {{ output }} conditionals matching remote_main and pr.",
+    "datetime": "2026-04-02T08:23:03.318212Z",
+    "entry_id": "019d4d49-eb96-72d0-98ed-6edba016cf25",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

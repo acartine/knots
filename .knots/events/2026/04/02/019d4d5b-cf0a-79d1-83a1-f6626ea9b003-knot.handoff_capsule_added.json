@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d5b-cf0a-79d1-83a1-f6626ea9b003",
+  "occurred_at": "2026-04-02T08:42:35.658791Z",
+  "knot_id": "knots-95c0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude implementation_review 2026-04-02] Approved. 4 prompt templates correctly add branch and live_deployment conditionals. Bundle regenerated. Test asserts new values present in all output-bearing prompts. 838 tests pass.",
+    "datetime": "2026-04-02T08:42:35.658791Z",
+    "entry_id": "019d4d5b-cf0a-79d1-83a1-f65ea3e60df9",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

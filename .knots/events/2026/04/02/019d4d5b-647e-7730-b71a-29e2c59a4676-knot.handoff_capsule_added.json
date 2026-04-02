@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d5b-647e-7730-b71a-29e2c59a4676",
+  "occurred_at": "2026-04-02T08:42:08.382482Z",
+  "knot_id": "knots-95c0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude implementation 2026-04-02] Added branch and live_deployment conditional sections to all 4 output-bearing prompt templates. Regenerated bundle.json. Added test builtin_prompts_declare_extended_output_target_values. All 838 tests pass, 95.39% coverage. Commit b83a91159b62 on branch worktree-knots-c8f4.",
+    "datetime": "2026-04-02T08:42:08.382482Z",
+    "entry_id": "019d4d5b-647e-7730-b71a-29d46cbe95b8",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

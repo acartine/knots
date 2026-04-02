@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d73-70d2-7751-bd9c-f4296acd799d",
+  "occurred_at": "2026-04-02T09:08:24.40269Z",
+  "knot_id": "knots-9727",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review sent back for revision. The current repo contract still uses artifact targets remote, remote_main, and pr in src/artifact_target.rs and src/profiles.toml, and src/step_metadata_tests.rs asserts remote_main today. build_prompt_params in src/installed_workflows/mod.rs still renders from profile.outputs rather than StepMetadata.output. TOML and JSON bundle loaders warn on unknown artifact targets instead of rejecting them in src/installed_workflows/profile_toml.rs and src/installed_workflows/profile_json.rs. Existing tests already cover much of the proposed matrix in src/artifact_target_tests.rs, src/step_metadata_tests.rs, src/installed_workflows/tests_parsing.rs, src/loom_compat_prompt_resolution_tests.rs, and tests/cli_loom_profile_output.rs. Revise the plan to target the current contract and remaining gaps, or explicitly sequence the required implementation changes and dependencies before adding regression tests.",
+    "datetime": "2026-04-02T09:08:24.40269Z",
+    "entry_id": "019d4d73-70d2-7751-bd9c-f41a38a7cb4e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

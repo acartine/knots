@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4d52-ccb7-79e3-a26d-817cfd8ed69c",
+  "occurred_at": "2026-04-02T08:32:45.222184Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-95c0",
+    "profile_id": "autopilot_no_planning",
+    "state": "implementation",
+    "terminal": false,
+    "title": "Add canonical output target conditionals to prompt templates",
+    "type": "work",
+    "updated_at": "2026-04-02T08:32:45.222184Z",
+    "workflow_id": "compatibility"
+  }
+}

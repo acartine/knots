@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d4a-6319-7072-9382-4b919b2d8de0",
+  "occurred_at": "2026-04-02T08:23:33.91359Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude plan_review 2026-04-02] Plan v4 approved. Inventory verified: 14 output declarations across 3 .loom files, no changes needed. Design keeps current Loom vocabulary as canonical (remote_main, pr, remote, local), adds ArtifactTarget enum for validation with new target types (branch, note, approval, live_deployment). No prompt template breakage. ~90 lines across 5 files. Test strategy covers round-trip, rejection, legacy compat, and parser loading.",
+    "datetime": "2026-04-02T08:23:33.91359Z",
+    "entry_id": "019d4d4a-6319-7072-9382-4b88cc3c0101",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

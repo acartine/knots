@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d47-c980-7ad1-9c0e-e0b28f3ce234",
+  "occurred_at": "2026-04-02T08:20:43.520234Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude plan_review 2026-04-02] Plan rejected for stale .loom file inventory. Design (ArtifactTarget enum, legacy aliases, parser validation) is approved. Two concrete issues: (1) workflow.loom has 'output remote_main' at 6 lines, not 'output branch'/'output commit' as claimed; (2) profile files each have 4 output overrides, not 2. Correct inventory: 14 line changes across 3 files. No loom-side changes required — grammar accepts any ident. Revise inventory and line counts, then resubmit.",
+    "datetime": "2026-04-02T08:20:43.520234Z",
+    "entry_id": "019d4d47-c980-7ad1-9c0e-e0a9040c35d5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

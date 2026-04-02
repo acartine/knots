@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d47-b019-7a52-8f74-1338a694dd00",
+  "occurred_at": "2026-04-02T08:20:37.017802Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude plan_review] Rejected: plan inventory is stale.\n\nIssue 1: workflow.loom inventory wrong. Plan claims line 19 has 'output branch' and line 31 has 'output commit'. Actual file has 'output remote_main' at 6 locations (lines 7, 12, 20, 25, 33, 38). No 'output branch' or 'output commit' exists.\n\nIssue 2: Profile override counts wrong. Plan says '2 lines' per profile file. autopilot_with_pr.loom has 4 'output pr' lines (6, 10, 14, 18). autopilot_with_pr_no_planning.loom also has 4. Total is 14 line changes across 3 files, not 5 across 4.\n\nDesign is sound: ArtifactTarget enum, legacy aliases, parser validation, canonicalization approach are all correct. Loom grammar accepts any ident so no loom-side changes needed. Just fix the file inventory and re-submit.",
+    "datetime": "2026-04-02T08:20:37.017802Z",
+    "entry_id": "019d4d47-b019-7a52-8f74-132cd56e0984",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

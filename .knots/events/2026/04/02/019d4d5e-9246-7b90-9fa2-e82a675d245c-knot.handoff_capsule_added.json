@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d5e-9246-7b90-9fa2-e82a675d245c",
+  "occurred_at": "2026-04-02T08:45:36.710167Z",
+  "knot_id": "knots-95c0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude shipment_review 2026-04-02] Shipped. Commits d31e3f0 (c8f4) and b83a911 (95c0) on main. CI passed via pre-push sanity. 838 tests, 95.39% coverage.",
+    "datetime": "2026-04-02T08:45:36.710167Z",
+    "entry_id": "019d4d5e-9246-7b90-9fa2-e8131aca1e67",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

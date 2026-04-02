@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d73-8ae3-7be1-b0a7-8b3ec0492cb2",
+  "occurred_at": "2026-04-02T09:08:31.075208Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan review rejected. The proposed test matrix is anchored to a newer contract than the code currently implements: artifact targets are still remote, remote_main, and pr; prompt rendering still reads profile.outputs; and TOML and JSON bundle loading only warns on unknown output targets. Several proposed areas already have direct coverage, including artifact target parsing, step metadata resolution, prompt param and output rendering, Loom compatibility prompts, and CLI output-sensitive prompt resolution. Replan around the live contract and the actual uncovered cases, or make the prerequisite behavior changes explicit before this regression-coverage knot moves forward.",
+    "datetime": "2026-04-02T09:07:57Z",
+    "entry_id": "019d4d73-8ae3-7be1-b0a7-8b24bbbcbb05",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "1"
+  }
+}

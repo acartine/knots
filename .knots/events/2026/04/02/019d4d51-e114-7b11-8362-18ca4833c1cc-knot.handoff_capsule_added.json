@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d51-e114-7b11-8362-18ca4833c1cc",
+  "occurred_at": "2026-04-02T08:31:44.916164Z",
+  "knot_id": "knots-c8f4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude implementation 2026-04-02] Implementation complete on branch worktree-knots-c8f4 at d31e3f00b082. Added ArtifactTarget enum (8 variants) in src/artifact_target.rs with FromStr validation. Updated legacy_outputs() to use ArtifactTarget mapping. Added validation warnings in TOML and JSON bundle parsers. 4 unit tests in artifact_target_tests.rs. All 837 tests pass, 95.40% coverage. 149 lines added across 6 files. No .loom file changes, no prompt template changes.",
+    "datetime": "2026-04-02T08:31:44.916164Z",
+    "entry_id": "019d4d51-e114-7b11-8362-18b6cad161ab",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d52-cca6-7a01-a084-9ec3f5273e6c",
+  "occurred_at": "2026-04-02T08:32:45.222184Z",
+  "knot_id": "knots-95c0",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "[Claude 2026-04-02] Undeferred: c8f4 implementation landed ArtifactTarget enum at d31e3f00b082. The canonical vocabulary is now available (branch, note, approval, live_deployment alongside existing remote_main, pr, remote, local). Ready to add prompt template conditionals for new target types.",
+    "datetime": "2026-04-02T08:32:45.222184Z",
+    "entry_id": "019d4d52-cca6-7a01-a084-9eb7e6fcc315",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
