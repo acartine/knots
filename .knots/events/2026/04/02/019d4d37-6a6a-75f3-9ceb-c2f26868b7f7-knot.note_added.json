@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d37-6a6a-75f3-9ceb-c2f26868b7f7",
+  "occurred_at": "2026-04-02T08:02:50.602102Z",
+  "knot_id": "knots-95c0",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Still blocked on knots-c8f4 (state: ready_for_plan_review). The canonical ArtifactTarget vocabulary (branch, pull_request, merged_main, live_deployment) has not been implemented or merged. Current codebase still uses legacy OutputMode enum (Local, Remote, Pr, RemoteMain) and prompt templates only define values [remote_main, pr]. Cannot add conditional sections for canonical targets until c8f4 lands.",
+    "datetime": "2026-04-02T08:02:50.602102Z",
+    "entry_id": "019d4d37-6a6a-75f3-9ceb-c2e431df924d",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

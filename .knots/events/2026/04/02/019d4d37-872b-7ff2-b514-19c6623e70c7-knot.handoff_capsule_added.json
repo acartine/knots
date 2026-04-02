@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d37-872b-7ff2-b514-19c6623e70c7",
+  "occurred_at": "2026-04-02T08:02:57.962993Z",
+  "knot_id": "knots-95c0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Dependency knots-c8f4 remains at ready_for_plan_review. The canonical ArtifactTarget vocabulary (branch, pull_request, merged_main, live_deployment) needed for this beat's prompt template conditionals does not exist in the codebase. Current OutputMode enum in src/profile.rs still has Local/Remote/Pr/RemoteMain, and prompt templates only declare values [remote_main, pr]. Resume this beat after c8f4 is implemented and merged, then: (1) add branch/merged_main/live_deployment to prompt param enum values in all 4 templates, (2) add conditional {{ output }} sections for each new target, (3) add test assertions in loom_compat_prompt_resolution_tests.rs for new target rendering across profiles.",
+    "datetime": "2026-04-02T08:02:57.962993Z",
+    "entry_id": "019d4d37-872a-7810-b3be-11f623b1d6b4",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
