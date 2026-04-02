@@ -23,7 +23,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::profile::{normalize_profile_id, ProfileDefinition, ProfileError};
+use crate::profile::{normalize_profile_id, ActionOutputDef, ProfileDefinition, ProfileError};
 
 use bundle_json::parse_bundle_json;
 use bundle_toml::parse_bundle_toml;
@@ -114,13 +114,14 @@ pub struct PromptDefinition {
 
 pub(crate) fn build_prompt_params(
     workflow_id: &str,
-    profile: &crate::profile::ProfileDefinition,
+    profile_id: &str,
+    output_def: Option<&ActionOutputDef>,
     prompt: &PromptDefinition,
 ) -> BTreeMap<String, String> {
     let mut params = BTreeMap::new();
     params.insert("workflow_id".to_string(), workflow_id.to_string());
-    params.insert("profile_id".to_string(), profile.id.clone());
-    if let Some(output_def) = profile.outputs.get(&prompt.action_state) {
+    params.insert("profile_id".to_string(), profile_id.to_string());
+    if let Some(output_def) = output_def {
         params.insert("output".to_string(), output_def.artifact_type.clone());
         if let Some(hint) = &output_def.access_hint {
             params.insert("output_hint".to_string(), hint.clone());
@@ -223,10 +224,11 @@ fn resolve_output_specific_sections(template: &str, output_mode: Option<&str>) -
 
 pub(crate) fn render_prompt_body(
     workflow_id: &str,
-    profile: &crate::profile::ProfileDefinition,
+    profile_id: &str,
+    output_def: Option<&ActionOutputDef>,
     prompt: &PromptDefinition,
 ) -> String {
-    let params = build_prompt_params(workflow_id, profile, prompt);
+    let params = build_prompt_params(workflow_id, profile_id, output_def, prompt);
     let resolved_template =
         resolve_output_specific_sections(&prompt.body, params.get("output").map(String::as_str));
     let mut unresolved = Vec::new();
@@ -236,7 +238,13 @@ pub(crate) fn render_prompt_body(
 #[cfg(test)]
 impl PromptDefinition {
     pub fn render(&self, workflow: &WorkflowDefinition, profile: &ProfileDefinition) -> String {
-        let params = build_prompt_params(&workflow.id, profile, self);
+        let step_metadata = profile.step_metadata_for(&self.action_state);
+        let params = build_prompt_params(
+            &workflow.id,
+            &profile.id,
+            step_metadata.output.as_ref(),
+            self,
+        );
         let template =
             resolve_output_specific_sections(&self.body, params.get("output").map(String::as_str));
         let mut unresolved = Vec::new();

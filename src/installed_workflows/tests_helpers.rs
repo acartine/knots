@@ -109,7 +109,13 @@ pub fn build_prompt_params(
     profile: &crate::profile::ProfileDefinition,
     prompt: &PromptDefinition,
 ) -> BTreeMap<String, String> {
-    super::build_prompt_params(&workflow.id, profile, prompt)
+    let step_metadata = profile.step_metadata_for(&prompt.action_state);
+    super::build_prompt_params(
+        &workflow.id,
+        &profile.id,
+        step_metadata.output.as_ref(),
+        prompt,
+    )
 }
 
 pub fn render_prompt_template(

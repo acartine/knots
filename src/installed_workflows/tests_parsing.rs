@@ -4,7 +4,7 @@ use super::bundle_json::parse_bundle_json;
 use super::bundle_toml::{parse_bundle_toml, render_json_bundle_from_toml};
 use super::tests_helpers::{build_prompt_params, render_prompt_template, SAMPLE_BUNDLE};
 use super::*;
-use crate::profile::OwnerKind;
+use crate::profile::{ActionOutputDef, OwnerKind};
 
 #[test]
 fn parses_bundle_and_renders_prompt() {
@@ -291,4 +291,28 @@ fn prompt_defaults_cover_param_and_output() {
         Some("operators")
     );
     assert_eq!(params.get("output").map(String::as_str), Some("branch"));
+}
+
+#[test]
+fn render_prompt_body_uses_explicit_output_metadata() {
+    let workflow =
+        compatibility::compatibility_workflow().expect("compatibility workflow should build");
+    let profile = workflow
+        .require_profile("autopilot")
+        .expect("autopilot should exist");
+    let prompt = workflow
+        .prompt_for_action_state("implementation")
+        .expect("implementation prompt should exist");
+    let output_def = ActionOutputDef {
+        artifact_type: "pr".to_string(),
+        access_hint: Some("gh pr view".to_string()),
+    };
+
+    let rendered = render_prompt_body(&workflow.id, &profile.id, Some(&output_def), prompt);
+
+    assert!(
+        rendered.contains("pull request"),
+        "explicit output metadata should drive prompt rendering"
+    );
+    assert!(!rendered.contains("{{ output }}"));
 }

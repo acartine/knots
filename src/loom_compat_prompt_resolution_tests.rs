@@ -233,6 +233,25 @@ fn builtin_pr_profile_render_for_profile_includes_pr_content() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[test]
+fn builtin_pr_profile_shipment_review_includes_pr_content() {
+    let root = unique_workspace("knots-compat-render-pr-shipment-review");
+    let registry = ProfileRegistry::load_for_repo(&root).expect("registry");
+    let profile = registry.require("autopilot_with_pr").expect("pr profile");
+
+    let rendered = action_prompt::render_for_profile(profile, "shipment_review")
+        .expect("shipment_review should render");
+    assert!(
+        rendered.contains("# Shipment Review"),
+        "PR profile should still have Loom heading"
+    );
+    assert!(
+        rendered.contains("merged pull request"),
+        "PR profile should resolve shipment review PR content"
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
 // ── Compat harness peek/claim resolve Loom body for builtin ───
 
 #[test]
