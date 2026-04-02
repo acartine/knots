@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d80-6a93-7292-afef-dacfbce4d981",
+  "occurred_at": "2026-04-02T09:22:34.771835Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Revised planning note added. The implementation should stay test-only and cover five concrete areas: observable warn-not-reject behavior for unknown TOML/JSON artifact targets via CLI workflow-install stderr assertions, parser fallback precedence between profile-level and state-level outputs, prompt param coverage for output_hint and missing outputs, direct unit tests for resolve_output_specific_sections on branch/live_deployment/None, and runtime StepMetadata variation including output=None. No child knots created. No Playwright/browser work is needed in this knot; reuse the existing CLI Loom prompt-resolution matrix if broader e2e follow-up is requested.",
+    "datetime": "2026-04-02T09:22:34.771835Z",
+    "entry_id": "019d4d80-6a93-7292-afef-dab36619b9e9",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}
