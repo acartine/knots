@@ -362,3 +362,104 @@ fn workflow_install_does_not_switch_without_set_default() {
     assert_eq!(shown_json["profile_id"], "custom_flow/autopilot");
     assert_eq!(shown_json["state"], "ready_for_work");
 }
+
+fn unknown_output_bundle() -> String {
+    CUSTOM_BUNDLE
+        .replace("name = \"custom_flow\"", "name = \"warn_flow\"")
+        .replace(
+            "prompt = \"work\"",
+            "prompt = \"work\"\noutput = \"quantum_channel\"",
+        )
+}
+
+#[test]
+fn workflow_install_warns_on_unknown_toml_artifact_type() {
+    let root = unique_workspace("knots-cli-unknown-toml-output");
+    let home = unique_workspace("knots-cli-unknown-toml-output-home");
+    std::fs::create_dir_all(root.join(".knots")).expect("dir");
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let bundle_toml = unknown_output_bundle();
+    let bundle_path = root.join("warn-flow.toml");
+    std::fs::write(&bundle_path, &bundle_toml).expect("write");
+
+    let install = run_knots(
+        &root,
+        &db,
+        &home,
+        &["workflow", "install", bundle_path.to_str().expect("utf8")],
+    );
+    assert_success(&install);
+
+    let stderr = String::from_utf8_lossy(&install.stderr);
+    assert!(
+        stderr.contains("warning:") && stderr.contains("unknown artifact target"),
+        "install stderr should warn about unknown artifact target, got: {stderr}"
+    );
+
+    assert!(
+        root.join(".knots/workflows/warn_flow/1/bundle.json")
+            .exists(),
+        "bundle should still be installed despite warning"
+    );
+
+    let show = run_knots(
+        &root,
+        &db,
+        &home,
+        &["workflow", "show", "warn_flow", "--json"],
+    );
+    assert_success(&show);
+    let show_json: Value = serde_json::from_slice(&show.stdout).expect("show json should parse");
+    assert_eq!(show_json["id"], "warn_flow");
+}
+
+#[test]
+fn workflow_load_warns_on_unknown_json_artifact_type() {
+    let root = unique_workspace("knots-cli-unknown-json-output");
+    let home = unique_workspace("knots-cli-unknown-json-output-home");
+    std::fs::create_dir_all(root.join(".knots")).expect("dir");
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let bundle_toml = unknown_output_bundle();
+    let bundle_path = root.join("warn-flow.toml");
+    std::fs::write(&bundle_path, &bundle_toml).expect("write");
+
+    let install = run_knots(
+        &root,
+        &db,
+        &home,
+        &["workflow", "install", bundle_path.to_str().expect("utf8")],
+    );
+    assert_success(&install);
+
+    // Mutate the installed JSON to have a different unknown output
+    let json_path = root.join(".knots/workflows/warn_flow/1/bundle.json");
+    let raw = std::fs::read_to_string(&json_path).expect("read json");
+    let mut bundle: Value = serde_json::from_str(&raw).expect("parse");
+    for state in bundle["states"].as_array_mut().expect("states array") {
+        if state["id"] == "work" {
+            state["output"] = Value::String("teleporter".into());
+        }
+    }
+    let mutated = serde_json::to_string_pretty(&bundle).expect("ser");
+    std::fs::write(&json_path, &mutated).expect("write mutated json");
+
+    let show = run_knots(
+        &root,
+        &db,
+        &home,
+        &["workflow", "show", "warn_flow", "--json"],
+    );
+    assert_success(&show);
+
+    let stderr = String::from_utf8_lossy(&show.stderr);
+    assert!(
+        stderr.contains("warning:") && stderr.contains("unknown artifact target"),
+        "show stderr should warn about unknown artifact target from JSON, \
+         got: {stderr}"
+    );
+
+    let show_json: Value = serde_json::from_slice(&show.stdout).expect("show json should parse");
+    assert_eq!(show_json["id"], "warn_flow");
+}

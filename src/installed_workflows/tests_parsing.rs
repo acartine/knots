@@ -292,3 +292,151 @@ fn prompt_defaults_cover_param_and_output() {
     );
     assert_eq!(params.get("output").map(String::as_str), Some("branch"));
 }
+
+#[test]
+fn profile_output_overrides_state_level_output() {
+    // SAMPLE_BUNDLE has output = "branch" on [states.work].
+    // Add a profile-level override to "pr" with an access_hint.
+    let with_profile_output = SAMPLE_BUNDLE.replace(
+        "[profiles.autopilot]\n\
+         description = \"Custom profile\"\n\
+         phases = [\"main\"]\n",
+        "[profiles.autopilot]\n\
+         description = \"Custom profile\"\n\
+         phases = [\"main\"]\n\
+         \n\
+         [profiles.autopilot.outputs.work]\n\
+         artifact_type = \"pr\"\n\
+         access_hint = \"gh pr view\"\n",
+    );
+    let workflow =
+        parse_bundle_toml(&with_profile_output).expect("bundle with profile output should parse");
+    let profile = workflow
+        .require_profile("autopilot")
+        .expect("profile should exist");
+    let work_output = profile
+        .outputs
+        .get("work")
+        .expect("work output should exist");
+    assert_eq!(work_output.artifact_type, "pr");
+    assert_eq!(work_output.access_hint.as_deref(), Some("gh pr view"));
+}
+
+#[test]
+fn state_level_output_used_when_profile_output_absent() {
+    // Default SAMPLE_BUNDLE: profile has no outputs section, states have output.
+    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
+    let profile = workflow
+        .require_profile("autopilot")
+        .expect("profile should exist");
+    // work state has output = "branch", output_hint = "git log"
+    let work_output = profile
+        .outputs
+        .get("work")
+        .expect("work output should exist");
+    assert_eq!(work_output.artifact_type, "branch");
+    assert_eq!(work_output.access_hint.as_deref(), Some("git log"));
+    // review state has output = "note", no output_hint
+    let review_output = profile
+        .outputs
+        .get("review")
+        .expect("review output should exist");
+    assert_eq!(review_output.artifact_type, "note");
+    assert!(review_output.access_hint.is_none());
+}
+
+#[test]
+fn json_parity_for_output_fallback_chain() {
+    // Profile-level output should also take precedence after TOML->JSON round-trip.
+    let with_profile_output = SAMPLE_BUNDLE.replace(
+        "[profiles.autopilot]\n\
+         description = \"Custom profile\"\n\
+         phases = [\"main\"]\n",
+        "[profiles.autopilot]\n\
+         description = \"Custom profile\"\n\
+         phases = [\"main\"]\n\
+         \n\
+         [profiles.autopilot.outputs.work]\n\
+         artifact_type = \"live_deployment\"\n\
+         access_hint = \"curl https://app.example.com\"\n",
+    );
+    let json = render_json_bundle_from_toml(&with_profile_output).expect("json render should work");
+    let workflow = parse_bundle_json(&json).expect("json bundle should parse");
+    let profile = workflow
+        .require_profile("autopilot")
+        .expect("profile should exist");
+    let work_output = profile
+        .outputs
+        .get("work")
+        .expect("work output should exist");
+    assert_eq!(work_output.artifact_type, "live_deployment");
+    assert_eq!(
+        work_output.access_hint.as_deref(),
+        Some("curl https://app.example.com")
+    );
+    // Review should still come from state-level
+    let review_output = profile
+        .outputs
+        .get("review")
+        .expect("review output should exist");
+    assert_eq!(review_output.artifact_type, "note");
+}
+
+#[test]
+fn prompt_params_include_output_hint_when_access_hint_present() {
+    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
+    let profile = workflow
+        .require_profile("autopilot")
+        .expect("profile should exist");
+    let prompt = workflow
+        .prompt_for_action_state("work")
+        .expect("prompt should exist");
+    let params = build_prompt_params(&workflow, profile, prompt);
+    assert_eq!(params.get("output").map(String::as_str), Some("branch"));
+    assert_eq!(
+        params.get("output_hint").map(String::as_str),
+        Some("git log")
+    );
+}
+
+#[test]
+fn prompt_params_omit_output_hint_when_access_hint_absent() {
+    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
+    let profile = workflow
+        .require_profile("autopilot")
+        .expect("profile should exist");
+    let prompt = workflow
+        .prompt_for_action_state("review")
+        .expect("prompt should exist");
+    let params = build_prompt_params(&workflow, profile, prompt);
+    assert_eq!(params.get("output").map(String::as_str), Some("note"));
+    assert!(
+        !params.contains_key("output_hint"),
+        "output_hint should be absent when access_hint is None"
+    );
+}
+
+#[test]
+fn prompt_params_omit_output_when_no_output_entry() {
+    // Remove all output declarations from states.
+    // The fallback still creates an ActionOutputDef with an empty artifact_type
+    // because `build_outputs_from_toml_profile` inserts a default entry when
+    // the state exists but has no output field.
+    let no_outputs = SAMPLE_BUNDLE
+        .replace("output = \"branch\"\noutput_hint = \"git log\"\n", "")
+        .replace("output = \"note\"\n", "");
+    let workflow = parse_bundle_toml(&no_outputs).expect("bundle should parse");
+    let profile = workflow
+        .require_profile("autopilot")
+        .expect("profile should exist");
+    let prompt = workflow
+        .prompt_for_action_state("work")
+        .expect("prompt should exist");
+    let params = build_prompt_params(&workflow, profile, prompt);
+    // output key is present but empty because the fallback defaults to ""
+    assert_eq!(params.get("output").map(String::as_str), Some(""));
+    assert!(
+        !params.contains_key("output_hint"),
+        "output_hint should be absent when no output entry exists"
+    );
+}

@@ -393,3 +393,106 @@ fn step_metadata_consistent_across_action_and_queue_pairs() {
     assert_eq!(queue_meta.owner, action_meta.owner);
     assert_eq!(queue_meta.output, action_meta.output);
 }
+
+const MULTI_OUTPUT_BUNDLE: &str = concat!(
+    "[workflow]\nname = \"multi_output\"\nversion = 1\ndefault_profile = \"varied\"\n",
+    "[states]\nready_for_code = { kind = \"queue\" }\nready_for_review = { kind = \"queue\" }\n",
+    "ready_for_deploy = { kind = \"queue\" }\nready_for_signoff = { kind = \"queue\" }\n",
+    "done = { kind = \"terminal\" }\nblocked = { kind = \"escape\" }\nabandoned = { kind = \"terminal\" }\n",
+    "[states.code]\nkind = \"action\"\nexecutor = \"agent\"\nprompt = \"code\"\noutput = \"branch\"\noutput_hint = \"git log --oneline\"\n",
+    "[states.review]\nkind = \"action\"\nexecutor = \"human\"\nprompt = \"review\"\noutput = \"pr\"\noutput_hint = \"gh pr view\"\n",
+    "[states.deploy]\nkind = \"action\"\nexecutor = \"agent\"\nprompt = \"deploy\"\noutput = \"live_deployment\"\n",
+    "[states.signoff]\nkind = \"action\"\nexecutor = \"human\"\nprompt = \"signoff\"\n",
+    "[steps]\ncode_step = { queue = \"ready_for_code\", action = \"code\" }\n",
+    "review_step = { queue = \"ready_for_review\", action = \"review\" }\n",
+    "deploy_step = { queue = \"ready_for_deploy\", action = \"deploy\" }\n",
+    "signoff_step = { queue = \"ready_for_signoff\", action = \"signoff\" }\n",
+    "[phases]\ndevelop = { produce = \"code_step\", gate = \"review_step\" }\n",
+    "release = { produce = \"deploy_step\", gate = \"signoff_step\" }\n",
+    "[profiles.varied]\nphases = [\"develop\", \"release\"]\n",
+    "[prompts.code]\naccept = [\"Code ready\"]\nbody = \"Write code.\"\n",
+    "[prompts.code.success]\ncomplete = \"ready_for_review\"\n[prompts.code.failure]\nblocked = \"blocked\"\n",
+    "[prompts.review]\naccept = [\"Reviewed\"]\nbody = \"Review.\"\n",
+    "[prompts.review.success]\napproved = \"ready_for_deploy\"\n[prompts.review.failure]\nchanges = \"ready_for_code\"\n",
+    "[prompts.deploy]\naccept = [\"Deployed\"]\nbody = \"Deploy.\"\n",
+    "[prompts.deploy.success]\ncomplete = \"ready_for_signoff\"\n[prompts.deploy.failure]\nblocked = \"blocked\"\n",
+    "[prompts.signoff]\naccept = [\"Signed off\"]\nbody = \"Sign off.\"\n",
+    "[prompts.signoff.success]\napproved = \"done\"\n[prompts.signoff.failure]\nchanges = \"ready_for_deploy\"\n",
+);
+
+fn setup_multi_output_workspace(tag: &str) -> std::path::PathBuf {
+    let ws = unique_workspace(tag);
+    let root = ws.join(".knots/workflows/multi_output/1");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(root.join("bundle.toml"), MULTI_OUTPUT_BUNDLE).unwrap();
+    std::fs::write(
+        ws.join(".knots/workflows/current"),
+        "current_workflow = \"multi_output\"\ncurrent_version = 1\n",
+    )
+    .unwrap();
+    ws
+}
+
+fn assert_output(meta: &crate::profile::StepMetadata, ty: &str, hint: Option<&str>) {
+    let out = meta.output.as_ref().expect("output should exist");
+    assert_eq!(out.artifact_type, ty);
+    assert_eq!(out.access_hint.as_deref(), hint);
+}
+
+#[test]
+fn multi_output_bundle_resolves_distinct_action_outputs() {
+    let ws = setup_multi_output_workspace("stepmeta-multi-out");
+    let reg = ProfileRegistry::load_for_repo(&ws).unwrap();
+    let (g, pid) = (GateData::default(), "multi_output/varied");
+    let m = |s| {
+        step_metadata_for_state(&reg, pid, KnotType::Work, &g, s)
+            .unwrap()
+            .unwrap()
+    };
+    let code = m("code");
+    assert_eq!(code.action_state, "code");
+    assert_output(&code, "branch", Some("git log --oneline"));
+    let rev = m("review");
+    assert_eq!(rev.action_state, "review");
+    assert_output(&rev, "pr", Some("gh pr view"));
+    let dep = m("deploy");
+    assert_eq!(dep.action_state, "deploy");
+    assert_output(&dep, "live_deployment", None);
+    let sign = m("signoff");
+    assert_eq!(sign.action_state, "signoff");
+    assert_eq!(
+        sign.output.as_ref().map(|o| o.artifact_type.as_str()),
+        Some("")
+    );
+    let _ = std::fs::remove_dir_all(ws);
+}
+
+#[test]
+fn multi_output_queue_states_resolve_through_action_metadata() {
+    let ws = setup_multi_output_workspace("stepmeta-multi-q");
+    let reg = ProfileRegistry::load_for_repo(&ws).unwrap();
+    let (g, pid) = (GateData::default(), "multi_output/varied");
+    let m = |s| step_metadata_for_state(&reg, pid, KnotType::Work, &g, s).unwrap();
+    let q = m("ready_for_code").unwrap();
+    assert_eq!(q.action_state, "code");
+    assert_output(&q, "branch", Some("git log --oneline"));
+    let d = m("ready_for_deploy").unwrap();
+    assert_eq!(d.action_state, "deploy");
+    assert_output(&d, "live_deployment", None);
+    let done = m("done");
+    assert!(done.is_none());
+    let _ = std::fs::remove_dir_all(ws);
+}
+
+#[test]
+fn legacy_profile_without_outputs_resolves_without_panic() {
+    let reg = ProfileRegistry::load().expect("registry should load");
+    let gate = GateData::default();
+    for pid in ["autopilot", "semiauto", "autopilot_with_pr"] {
+        let profile = reg.require(pid).expect("profile exists");
+        for state in &profile.states {
+            let r = step_metadata_for_state(&reg, pid, KnotType::Work, &gate, state);
+            assert!(r.is_ok(), "{pid} state {state} panicked");
+        }
+    }
+}
