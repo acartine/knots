@@ -328,3 +328,7 @@ mod tests_ext;
 #[cfg(test)]
 #[path = "step_metadata_tests.rs"]
 mod step_metadata_tests;
+
+#[cfg(test)]
+#[path = "step_metadata_output_tests.rs"]
+mod step_metadata_output_tests;

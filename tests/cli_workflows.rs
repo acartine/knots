@@ -319,6 +319,64 @@ fn workflow_commands_render_text_and_json_views() {
 }
 
 #[test]
+fn workflow_install_warns_on_unknown_artifact_target() {
+    let root = unique_workspace("knots-cli-unknown-artifact");
+    let home = unique_workspace("knots-cli-unknown-artifact-home");
+    std::fs::create_dir_all(root.join(".knots")).expect(".knots dir");
+    let db = root.join(".knots/cache/state.sqlite");
+    // Add an unknown artifact_type to the "work" state section.
+    // The profile-level output= is not part of BundleProfileSection,
+    // so we inject it on the state definition where the parser checks.
+    let bundle = CUSTOM_BUNDLE.replace(
+        "prompt = \"work\"",
+        "prompt = \"work\"\noutput = \"typo_target\"",
+    );
+    let bundle_path = root.join("unknown-artifact.toml");
+    std::fs::write(&bundle_path, &bundle).expect("write bundle");
+
+    let install = run_knots(
+        &root,
+        &db,
+        &home,
+        &["workflow", "install", bundle_path.to_str().unwrap()],
+    );
+    assert_success(&install);
+
+    let stderr = String::from_utf8_lossy(&install.stderr);
+    assert!(
+        stderr.contains("unknown artifact target"),
+        "TOML install should warn on unknown artifact: {stderr}",
+    );
+
+    // Verify the raw output entry is preserved after install.
+    let use_wf = run_knots(&root, &db, &home, &["workflow", "use", "custom_flow"]);
+    assert_success(&use_wf);
+    let created = run_knots(&root, &db, &home, &["new", "Artifact warn test"]);
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+    let claim = run_knots(&root, &db, &home, &["claim", &knot_id, "--json"]);
+    assert_success(&claim);
+    let claim_json: Value = serde_json::from_slice(&claim.stdout).expect("claim json");
+    let prompt = claim_json["prompt"].as_str().unwrap_or("");
+    // The typo_target value should have been preserved (not silently dropped)
+    // and the prompt should still render (not error out).
+    assert!(
+        !prompt.is_empty(),
+        "prompt should render even with unknown artifact target",
+    );
+
+    // The JSON reload path also emits the warning.
+    let claim_stderr = String::from_utf8_lossy(&claim.stderr);
+    assert!(
+        claim_stderr.contains("unknown artifact target"),
+        "JSON reload should also warn: {claim_stderr}",
+    );
+
+    let _ = std::fs::remove_dir_all(&root);
+    let _ = std::fs::remove_dir_all(&home);
+}
+
+#[test]
 fn workflow_install_does_not_switch_without_set_default() {
     let root = unique_workspace("knots-cli-workflows-install-defaults");
     let home = unique_workspace("knots-cli-workflows-install-defaults-home");
