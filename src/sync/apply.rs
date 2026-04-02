@@ -14,9 +14,9 @@ use super::{GitAdapter, SyncError, SyncSummary};
 #[path = "apply_helpers.rs"]
 mod apply_helpers;
 use apply_helpers::{
-    invalid_event, is_stale_precondition, optional_i64, optional_string, parse_gate_data,
-    parse_invariants, parse_lease_data, parse_metadata_entry, read_json_file, required_profile_id,
-    required_string, required_workflow_id, MetadataProjection,
+    current_unix_ms_string, invalid_event, is_stale_precondition, optional_i64, optional_string,
+    parse_gate_data, parse_invariants, parse_lease_data, parse_metadata_entry, read_json_file,
+    required_profile_id, required_string, required_workflow_id, MetadataProjection,
 };
 
 pub struct IncrementalApplier<'a> {
@@ -38,17 +38,21 @@ impl<'a> IncrementalApplier<'a> {
         let bootstrap = db::get_meta(self.conn, "last_index_head_commit")?.is_none()
             && db::get_meta(self.conn, "last_full_head_commit")?.is_none();
         if bootstrap {
-            let _ = apply_latest_snapshots(self.conn, &self.worktree).map_err(|err| {
-                SyncError::SnapshotLoad {
-                    message: err.to_string(),
-                }
+            let _ = crate::trace::measure("apply_snapshots", || {
+                apply_latest_snapshots(self.conn, &self.worktree).map_err(|err| {
+                    SyncError::SnapshotLoad {
+                        message: err.to_string(),
+                    }
+                })
             })?;
         }
 
-        let index_files =
-            self.changed_files("last_index_head_commit", ".knots/index", target_head)?;
-        let full_files =
-            self.changed_files("last_full_head_commit", ".knots/events", target_head)?;
+        let index_files = crate::trace::measure("changed_index_files", || {
+            self.changed_files("last_index_head_commit", ".knots/index", target_head)
+        })?;
+        let full_files = crate::trace::measure("changed_event_files", || {
+            self.changed_files("last_full_head_commit", ".knots/events", target_head)
+        })?;
 
         let mut summary = SyncSummary {
             target_head: target_head.to_string(),
@@ -76,6 +80,11 @@ impl<'a> IncrementalApplier<'a> {
         db::set_meta(self.conn, "last_index_head_commit", target_head)?;
         db::set_meta(self.conn, "last_full_head_commit", target_head)?;
         db::set_meta(self.conn, "sync_pending", "false")?;
+        db::set_meta(
+            self.conn,
+            "last_sync_success_at_ms",
+            &current_unix_ms_string(),
+        )?;
         Ok(summary)
     }
 
@@ -475,17 +484,14 @@ fn build_index_upsert(params: &IndexUpsertParams<'_>) -> Result<MetadataProjecti
 }
 
 #[cfg(test)]
-#[path = "apply_tests_ext.rs"]
-mod tests_ext;
-
+#[path = "apply_tests_acceptance_ext.rs"]
+mod tests_acceptance_ext;
 #[cfg(test)]
 #[path = "apply_tests_event_paths.rs"]
 mod tests_event_paths;
-
+#[cfg(test)]
+#[path = "apply_tests_ext.rs"]
+mod tests_ext;
 #[cfg(test)]
 #[path = "apply_tests_invariant.rs"]
 mod tests_invariant;
-
-#[cfg(test)]
-#[path = "apply_tests_acceptance_ext.rs"]
-mod tests_acceptance_ext;

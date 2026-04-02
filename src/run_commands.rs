@@ -18,8 +18,10 @@ pub fn run_ls(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::App
     if args.json {
         print_json(&knots);
     } else {
-        let layout_edges = app.list_layout_edges()?;
-        let rows = list_layout::layout_knots(knots, &layout_edges);
+        let layout_edges = crate::trace::measure("list_layout_edges", || app.list_layout_edges())?;
+        let rows = crate::trace::measure("layout_knots", || {
+            list_layout::layout_knots(knots, &layout_edges)
+        });
         ui::print_knot_list(&rows, &filter);
     }
     Ok(())

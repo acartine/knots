@@ -148,6 +148,70 @@ fn rehydrate_restores_acceptance_from_events() {
 }
 
 #[test]
+fn show_knot_does_not_implicitly_rehydrate_from_warm_or_events() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let db_path_str = db_path.to_str().expect("utf8 path").to_string();
+    std::fs::create_dir_all(
+        db_path
+            .parent()
+            .expect("db parent should exist for cache miss test"),
+    )
+    .expect("db parent should be creatable");
+    let conn = db::open_connection(&db_path_str).expect("db should open");
+    db::upsert_knot_warm(&conn, "K-cache-miss", "Warm only").expect("warm upsert");
+    drop(conn);
+
+    let idx_path = root
+        .join(".knots")
+        .join("index")
+        .join("2026")
+        .join("03")
+        .join("22")
+        .join("1002-idx.knot_head.json");
+    std::fs::create_dir_all(
+        idx_path
+            .parent()
+            .expect("index event parent directory should exist"),
+    )
+    .expect("index event directory should be creatable");
+    std::fs::write(
+        &idx_path,
+        concat!(
+            "{\n",
+            "  \"event_id\": \"1002\",\n",
+            "  \"occurred_at\": \"2026-03-22T10:00:01Z\",\n",
+            "  \"type\": \"idx.knot_head\",\n",
+            "  \"data\": {\n",
+            "    \"knot_id\": \"K-cache-miss\",\n",
+            "    \"title\": \"Warm only\",\n",
+            "    \"state\": \"ready_for_implementation\",\n",
+            "    \"profile_id\": \"autopilot\",\n",
+            "    \"updated_at\": \"2026-03-22T10:00:01Z\",\n",
+            "    \"terminal\": false\n",
+            "  }\n",
+            "}\n"
+        ),
+    )
+    .expect("index event should be writable");
+
+    let app = App::open(&db_path_str, root.clone()).expect("app should open");
+    let shown = app.show_knot("K-cache-miss").expect("show should succeed");
+    assert!(
+        shown.is_none(),
+        "show should stop at the local cache instead of rehydrating"
+    );
+
+    let rehydrated = app
+        .rehydrate("K-cache-miss")
+        .expect("rehydrate should succeed")
+        .expect("rehydrate should still recover the knot");
+    assert_eq!(rehydrated.id, "K-cache-miss");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn json_shape_acceptance_null_when_unset() {
     let root = unique_workspace();
     let db_path = root.join(".knots/cache/state.sqlite");

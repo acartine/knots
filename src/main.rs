@@ -70,6 +70,7 @@ mod snapshots;
 mod state_hierarchy;
 mod sync;
 mod tiering;
+mod trace;
 mod ui;
 mod upgrade_notice;
 mod workflow;
@@ -104,7 +105,9 @@ fn format_error(err: &app::AppError) -> String {
 }
 
 pub(crate) fn print_json(val: &impl serde::Serialize) {
-    let s = serde_json::to_string_pretty(val).expect("json serialize");
+    let s = trace::measure("serialize", || {
+        serde_json::to_string_pretty(val).expect("json serialize")
+    });
     println!("{s}");
 }
 
@@ -135,6 +138,8 @@ fn run() -> Result<(), app::AppError> {
 
     let cli = cli::Cli::from_arg_matches_mut(&mut cli::styled_command().get_matches())
         .expect("arg matches should be valid");
+    let args = std::env::args().skip(1).collect::<Vec<_>>();
+    let _trace = trace::TraceSession::start(command_name(&cli.command), &args, cli.trace);
     let cwd = std::env::current_dir()?;
     let explicit_repo_root = cli.repo_root.as_deref();
 
@@ -221,6 +226,50 @@ fn run() -> Result<(), app::AppError> {
 
     let app = app::App::open_with_context(&context, &db_path)?;
     dispatch_read_command(cli.command, &app)
+}
+
+fn command_name(command: &cli::Commands) -> &'static str {
+    use cli::Commands;
+
+    match command {
+        Commands::New(_) => "new",
+        Commands::State(_) => "state",
+        Commands::Update(_) => "update",
+        Commands::Upgrade(_) => "upgrade",
+        Commands::Uninstall(_) => "uninstall",
+        Commands::Ls(_) => "ls",
+        Commands::Show(_) => "show",
+        Commands::Profile(_) => "profile",
+        Commands::Workflow(_) => "workflow",
+        Commands::Project(_) => "project",
+        Commands::Loom(_) => "loom",
+        Commands::Pull(_) => "pull",
+        Commands::Push(_) => "push",
+        Commands::Sync(_) => "sync",
+        Commands::Init => "init",
+        Commands::Uninit => "uninit",
+        Commands::InitRemote => "init-remote",
+        Commands::Fsck(_) => "fsck",
+        Commands::Doctor(_) => "doctor",
+        Commands::Perf(_) => "perf",
+        Commands::Compact(_) => "compact",
+        Commands::Cold(_) => "cold",
+        Commands::Rehydrate(_) => "rehydrate",
+        Commands::Edge(_) => "edge",
+        Commands::Gate(_) => "gate",
+        Commands::Next(_) => "next",
+        Commands::Rollback(_) => "rollback",
+        Commands::Skill(_) => "skill",
+        Commands::Skills(_) => "skills",
+        Commands::Q(_) => "q",
+        Commands::Completions(_) => "completions",
+        Commands::Poll(_) => "poll",
+        Commands::Claim(_) => "claim",
+        Commands::Ready(_) => "ready",
+        Commands::Step(_) => "step",
+        Commands::Lease(_) => "lease",
+        Commands::Hooks(_) => "hooks",
+    }
 }
 
 fn dispatch_read_command(command: cli::Commands, app: &app::App) -> Result<(), app::AppError> {

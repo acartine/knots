@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::time::Instant;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use rusqlite::Connection;
 
@@ -94,8 +94,10 @@ impl App {
             return Err(AppError::NotInitialized);
         }
         helpers::ensure_parent_dir(db_path)?;
-        let conn = db::open_connection(db_path)?;
-        let profile_registry = ProfileRegistry::load_for_repo(&context.repo_root)?;
+        let conn = crate::trace::measure("db_open", || db::open_connection(db_path))?;
+        let profile_registry = crate::trace::measure("profile_registry", || {
+            ProfileRegistry::load_for_repo(&context.repo_root)
+        })?;
         let writer = EventWriter::new(context.store_paths.root.clone());
         Ok(Self {
             conn,
@@ -135,6 +137,12 @@ impl App {
         let raw =
             db::get_meta(&self.conn, "sync_auto_budget_ms")?.unwrap_or_else(|| "750".to_string());
         Ok(raw.trim().parse::<u64>().unwrap_or(750))
+    }
+
+    fn read_auto_sync_min_interval_ms(&self) -> Result<u64, AppError> {
+        let raw = db::get_meta(&self.conn, "sync_auto_min_interval_ms")?
+            .unwrap_or_else(|| "30000".to_string());
+        Ok(raw.trim().parse::<u64>().unwrap_or(30_000))
     }
 
     fn read_pull_drift_warn_threshold(&self) -> Result<u64, AppError> {
@@ -211,12 +219,24 @@ impl App {
 
     fn maybe_auto_sync_for_read(&self) -> Result<(), AppError> {
         if !self.is_git_distribution() {
+            crate::trace::record(
+                "auto_sync",
+                std::time::Duration::ZERO,
+                Some("skipped:non_git".to_string()),
+            );
             return Ok(());
         }
         match self.read_sync_policy()? {
-            SyncPolicy::Never => Ok(()),
+            SyncPolicy::Never => {
+                crate::trace::record(
+                    "auto_sync",
+                    std::time::Duration::ZERO,
+                    Some("skipped:policy=never".to_string()),
+                );
+                Ok(())
+            }
             SyncPolicy::Always => {
-                let _ = self.pull()?;
+                let _ = crate::trace::measure("auto_sync", || self.pull())?;
                 Ok(())
             }
             SyncPolicy::Auto => self.try_auto_sync_for_read(),
@@ -224,16 +244,32 @@ impl App {
     }
 
     fn try_auto_sync_for_read(&self) -> Result<(), AppError> {
+        let min_interval_ms = self.read_auto_sync_min_interval_ms()?;
+        if self.synced_recently(min_interval_ms)? {
+            crate::trace::record(
+                "auto_sync",
+                std::time::Duration::ZERO,
+                Some(format!("skipped:recent_sync<{}ms", min_interval_ms)),
+            );
+            return Ok(());
+        }
+        let mut repo_lock = crate::trace::phase("repo_lock");
         let rl = FileLock::try_acquire(&self.repo_lock_path())?;
         let Some(_rg) = rl else {
+            repo_lock.detail("skipped:busy");
             return self.mark_sync_pending();
         };
+        repo_lock.detail("acquired");
+        let mut cache_lock = crate::trace::phase("cache_lock");
         let cl = FileLock::try_acquire(&self.cache_lock_path())?;
         let Some(_cg) = cl else {
+            cache_lock.detail("skipped:busy");
             return self.mark_sync_pending();
         };
+        cache_lock.detail("acquired");
         let start = Instant::now();
-        if let Err(err) = self.pull_unlocked() {
+        let sync_result = crate::trace::measure("auto_sync", || self.pull_unlocked());
+        if let Err(err) = sync_result {
             return match err {
                 AppError::Sync(SyncError::GitCommandFailed { .. })
                 | AppError::Sync(SyncError::GitUnavailable)
@@ -249,6 +285,20 @@ impl App {
             self.mark_sync_pending()?;
         }
         Ok(())
+    }
+
+    fn synced_recently(&self, min_interval_ms: u64) -> Result<bool, AppError> {
+        let Some(raw) = db::get_meta(&self.conn, "last_sync_success_at_ms")? else {
+            return Ok(false);
+        };
+        let Ok(last_sync) = raw.parse::<u128>() else {
+            return Ok(false);
+        };
+        let now_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis();
+        Ok(now_ms.saturating_sub(last_sync) < u128::from(min_interval_ms))
     }
 
     fn pull_unlocked(&self) -> Result<SyncSummary, AppError> {

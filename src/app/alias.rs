@@ -12,28 +12,32 @@ use super::App;
 impl App {
     pub(super) fn known_knot_ids(&self) -> Result<HashSet<String>, AppError> {
         let mut ids = HashSet::new();
-        for r in db::list_knot_hot(&self.conn)? {
+        for r in crate::trace::measure("alias_scan_hot", || db::list_knot_hot(&self.conn))? {
             ids.insert(r.id);
         }
-        for r in db::list_knot_warm(&self.conn)? {
+        for r in crate::trace::measure("alias_scan_warm", || db::list_knot_warm(&self.conn))? {
             ids.insert(r.id);
         }
-        for r in db::list_cold_catalog(&self.conn)? {
+        for r in crate::trace::measure("alias_scan_cold", || db::list_cold_catalog(&self.conn))? {
             ids.insert(r.id);
         }
         Ok(ids)
     }
 
     pub(super) fn alias_maps(&self) -> Result<AliasMaps, AppError> {
-        let mut ids = self.known_knot_ids()?;
-        let parent_edges = db::list_edges_by_kind(&self.conn, "parent_of")?;
-        let mut edges = Vec::new();
-        for edge in parent_edges {
-            ids.insert(edge.src.clone());
-            ids.insert(edge.dst.clone());
-            edges.push((edge.src, edge.dst));
-        }
-        Ok(build_alias_maps(ids.into_iter().collect(), &edges))
+        crate::trace::measure("alias_resolve", || {
+            let mut ids = self.known_knot_ids()?;
+            let parent_edges = crate::trace::measure("alias_scan_edges", || {
+                db::list_edges_by_kind(&self.conn, "parent_of")
+            })?;
+            let mut edges = Vec::new();
+            for edge in parent_edges {
+                ids.insert(edge.src.clone());
+                ids.insert(edge.dst.clone());
+                edges.push((edge.src, edge.dst));
+            }
+            Ok(build_alias_maps(ids.into_iter().collect(), &edges))
+        })
     }
 
     pub(super) fn resolve_knot_token(&self, token: &str) -> Result<String, AppError> {

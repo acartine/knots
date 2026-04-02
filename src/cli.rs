@@ -54,6 +54,14 @@ pub struct Cli {
     )]
     pub project: Option<String>,
 
+    #[arg(
+        long,
+        env = "KNO_TRACE",
+        global = true,
+        help = "Emit per-command trace timings to stderr."
+    )]
+    pub trace: bool,
+
     #[command(subcommand)]
     pub command: Commands,
 }

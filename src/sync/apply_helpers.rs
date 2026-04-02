@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::Connection;
 use serde::de::DeserializeOwned;
@@ -13,6 +14,14 @@ use crate::domain::step_history::StepRecord;
 use crate::installed_workflows;
 
 use super::SyncError;
+
+pub(super) fn current_unix_ms_string() -> String {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        .to_string()
+}
 
 pub(super) struct MetadataProjection {
     pub title: String,

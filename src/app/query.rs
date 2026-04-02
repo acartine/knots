@@ -18,10 +18,11 @@ use super::App;
 impl App {
     pub fn list_knots(&self) -> Result<Vec<KnotView>, AppError> {
         self.maybe_auto_sync_for_read()?;
-        let mut knots: Vec<KnotView> = db::list_knot_hot(&self.conn)?
-            .into_iter()
-            .map(KnotView::from)
-            .collect();
+        let mut knots: Vec<KnotView> =
+            crate::trace::measure("list_knot_hot", || db::list_knot_hot(&self.conn))?
+                .into_iter()
+                .map(KnotView::from)
+                .collect();
         for knot in &mut knots {
             workflow_runtime::enrich_step_metadata(knot, &self.profile_registry);
         }
@@ -31,9 +32,13 @@ impl App {
     pub fn show_knot(&self, id: &str) -> Result<Option<KnotView>, AppError> {
         let id = self.resolve_knot_token(id)?;
         self.maybe_auto_sync_for_read()?;
-        if let Some(knot) = db::get_knot_hot(&self.conn, &id)? {
+        if let Some(knot) =
+            crate::trace::measure("get_knot_hot", || db::get_knot_hot(&self.conn, &id))?
+        {
             let mut view = self.apply_alias_to_knot(KnotView::from(knot))?;
-            let edges = db::list_edges(&self.conn, &id, db::EdgeDirection::Both)?;
+            let edges = crate::trace::measure("list_edges", || {
+                db::list_edges(&self.conn, &id, db::EdgeDirection::Both)
+            })?;
             view.edges = edges.into_iter().map(EdgeView::from).collect();
             view.child_summaries = view
                 .edges
@@ -53,7 +58,7 @@ impl App {
             workflow_runtime::enrich_step_metadata(&mut view, &self.profile_registry);
             return Ok(Some(view));
         }
-        self.rehydrate(&id)
+        Ok(None)
     }
 
     pub fn step_annotate(&self, id: &str, actor: &StepActorInfo) -> Result<KnotView, AppError> {
@@ -158,15 +163,17 @@ impl App {
 
     pub fn cold_search(&self, term: &str) -> Result<Vec<ColdKnotView>, AppError> {
         self.maybe_auto_sync_for_read()?;
-        Ok(db::search_cold_catalog(&self.conn, term)?
-            .into_iter()
-            .map(|r| ColdKnotView {
-                id: r.id,
-                title: r.title,
-                state: r.state,
-                updated_at: r.updated_at,
-            })
-            .collect())
+        Ok(crate::trace::measure("search_cold_catalog", || {
+            db::search_cold_catalog(&self.conn, term)
+        })?
+        .into_iter()
+        .map(|r| ColdKnotView {
+            id: r.id,
+            title: r.title,
+            state: r.state,
+            updated_at: r.updated_at,
+        })
+        .collect())
     }
 
     pub fn rehydrate(&self, id: &str) -> Result<Option<KnotView>, AppError> {

@@ -258,3 +258,10 @@ fn update_help_includes_invariant_flags() {
         "update help should mention --clear-invariants: {help}"
     );
 }
+
+#[test]
+fn trace_flag_parses_as_global_option() {
+    let cli = parse(&["kno", "--trace", "ls"]);
+    assert!(cli.trace);
+    assert!(matches!(cli.command, Commands::Ls(_)));
+}

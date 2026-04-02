@@ -199,7 +199,9 @@ impl GitAdapter {
     }
 
     fn run_checked(&self, cwd: &Path, args: Vec<String>) -> Result<String, SyncError> {
-        let output = self.run_allow_failure(cwd, args.clone())?;
+        let phase_name = trace_name(&args);
+        let output =
+            crate::trace::measure(&phase_name, || self.run_allow_failure(cwd, args.clone()))?;
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
             return Err(SyncError::GitCommandFailed {
@@ -221,6 +223,24 @@ impl GitAdapter {
                 SyncError::Io(err)
             }
         })
+    }
+}
+
+fn trace_name(args: &[String]) -> String {
+    match args.first().map(String::as_str) {
+        Some("fetch") => "git_fetch".to_string(),
+        Some("reset") => "git_reset".to_string(),
+        Some("rev-parse") => "git_rev_parse".to_string(),
+        Some("diff") => "git_diff".to_string(),
+        Some("status") => "git_status".to_string(),
+        Some("show-ref") => "git_show_ref".to_string(),
+        Some("checkout") => "git_checkout".to_string(),
+        Some("worktree") => "git_worktree".to_string(),
+        Some("add") => "git_add".to_string(),
+        Some("commit") => "git_commit".to_string(),
+        Some("push") => "git_push".to_string(),
+        Some(other) => format!("git_{other}"),
+        None => "git".to_string(),
     }
 }
 

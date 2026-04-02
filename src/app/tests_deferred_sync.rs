@@ -95,3 +95,31 @@ fn trigger_queued_sync_not_triggered_with_remaining_leases() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn list_knots_skips_auto_sync_when_recent_sync_succeeded() {
+    let root = unique_workspace();
+    let (app, db_str) = open_app_and_db(&root);
+
+    app.create_knot("Recent sync", None, Some("work_item"), Some("default"))
+        .expect("create knot");
+
+    let conn = db::open_connection(&db_str).expect("open");
+    db::set_meta(&conn, "last_sync_success_at_ms", &now_ms().to_string()).expect("set last sync");
+    db::set_meta(&conn, "sync_auto_min_interval_ms", "60000").expect("set interval");
+
+    let listed = app.list_knots().expect("list should succeed");
+    assert_eq!(listed.len(), 1, "recent sync should allow cache-only reads");
+
+    let pending = db::get_meta(&conn, "sync_pending").expect("get meta");
+    assert_eq!(pending, None, "cooldown skip should not mark sync pending");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+fn now_ms() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+}
