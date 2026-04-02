@@ -1,0 +1,24 @@
+{
+  "event_id": "019d4cc5-ae60-79b2-b3c0-21b958b74d5a",
+  "occurred_at": "2026-04-02T05:58:36.896864Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-bf56",
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "terminal": false,
+    "title": "Add end-to-end tests for Loom prompt resolution",
+    "type": "work",
+    "updated_at": "2026-04-02T05:58:36.896864Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d4cc5-5027-70c2-96f4-459c554138a5"
+  }
+}

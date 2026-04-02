@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4ca3-e14d-7e13-9b35-4a22f5164363",
+  "occurred_at": "2026-04-02T05:21:41.709972Z",
+  "knot_id": "knots-0d93",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan v3 addresses all previous review rejections: targets the correct\nproduction rendering path (compatibility.rs → render_prompt_body in\nmod.rs), leaves poll_claim.rs/action_prompt.rs untouched, does not\nmodify prompt templates, and defers canonical target work to child\nknots-95c0 (blocked on c8f4). Changes: refactor build_prompt_params()\nand render_prompt_body() signatures to accept Option<&ActionOutputDef>\ndirectly; update compatibility.rs caller to resolve via\nstep_metadata_for(); update test helpers; add 2 new unit tests.\n~25 lines across 3 source files + ~20 lines tests. Low risk.",
+    "datetime": "2026-04-02T05:21:41.709972Z",
+    "entry_id": "019d4ca3-e14d-7e13-9b35-4a1b1995f6c0",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

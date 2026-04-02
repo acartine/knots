@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cc9-2ac3-7761-8516-40a558f81416",
+  "occurred_at": "2026-04-02T06:02:25.347051Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Verified existing Loom prompt-resolution implementation in src/loom_compat_prompt_resolution_tests.rs. cargo test loom_compat_prompt_resolution_tests passed (11 tests). make sanity passed with 833 tests and 95.39% coverage. Playwright MCP DOM validation confirmed rendered Implementation prompts preserve Loom heading and output semantics for autopilot (remote_main/direct branch review) and autopilot_with_pr (pr/pull request). No code changes were required in this session because the implementation was already present on the branch.",
+    "datetime": "2026-04-02T06:02:25.347051Z",
+    "entry_id": "019d4cc9-2ac3-7761-8516-409ac060710d",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

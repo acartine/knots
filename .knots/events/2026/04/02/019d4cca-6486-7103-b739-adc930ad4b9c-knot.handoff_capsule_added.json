@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cca-6486-7103-b739-adc930ad4b9c",
+  "occurred_at": "2026-04-02T06:03:45.670689Z",
+  "knot_id": "knots-0d93",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implemented StepMetadata-driven prompt output resolution for built-in compatibility prompts on branch knots-0d93-codex-step-metadata. Refactored installed_workflows prompt helpers to accept explicit resolved ActionOutputDef inputs, updated compatibility.rs to pass profile.step_metadata_for(action_state).output into render_prompt_body(), and updated test helpers to use the same resolution path. Added regressions for explicit output metadata injection and autopilot_with_pr shipment_review rendering. Validation: cargo test render_prompt_body_uses_explicit_output_metadata; cargo test builtin_pr_profile_shipment_review_includes_pr_content; make sanity; git push pre-push sanity. Commit: 030c9e653a81.",
+    "datetime": "2026-04-02T06:03:45.670689Z",
+    "entry_id": "019d4cca-6486-7103-b739-adbbf576c927",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

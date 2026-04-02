@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cb2-49ef-7b32-83bb-503c19c6bac3",
+  "occurred_at": "2026-04-02T05:37:25.999057Z",
+  "knot_id": "knots-95c0",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Deferred pending knots-c8f4. The canonical output target vocabulary needed for branch/merged_main/live_deployment prompt conditionals is not landed in the current tree, which still uses legacy target strings like remote_main/pr.",
+    "datetime": "2026-04-02T05:37:25.999057Z",
+    "entry_id": "019d4cb2-49ef-7b32-83bb-502174d6426c",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

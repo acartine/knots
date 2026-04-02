@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cd0-a3c8-76e3-8dde-4d4e8fa975e4",
+  "occurred_at": "2026-04-02T06:10:35.080528Z",
+  "knot_id": "knots-374f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Approved: tests/cli_loom_profile_output.rs validates remote_main and pr output modes across 4 output-sensitive states, custom workflow isolation with full bundle, same-repo coexistence, and static fallback regression detection. 433 lines, under limit. All 833 tests pass, 95.40% coverage.",
+    "datetime": "2026-04-02T06:10:35.080528Z",
+    "entry_id": "019d4cd0-a3c8-76e3-8dde-4d3beedade3c",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

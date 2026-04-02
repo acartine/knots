@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4c9b-d595-76b2-9caf-1cbc7eab60dc",
+  "occurred_at": "2026-04-02T05:12:54.421038Z",
+  "knot_id": "knots-0d93",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review rejected: the plan targets the wrong production rendering path. `render_prompt_body()` is called from `src/installed_workflows/compatibility.rs`, while `src/poll_claim.rs` and `src/action_prompt.rs` consume already-rendered profile prompts. `shipment_review.md` already has output-conditional sections, and the existing prompt-variant coverage lives in prompt-resolution and poll-claim tests rather than `src/loom_compat_bundle.rs`. Also, the proposed `merged_main`/`live_deployment` target work depends on canonical output targets from c8f4, which are not present in the current tree.",
+    "datetime": "2026-04-02T05:12:54.421038Z",
+    "entry_id": "019d4c9b-d595-76b2-9caf-1cab158e12c2",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

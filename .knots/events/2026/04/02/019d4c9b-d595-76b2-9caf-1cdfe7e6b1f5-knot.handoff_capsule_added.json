@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4c9b-d595-76b2-9caf-1cdfe7e6b1f5",
+  "occurred_at": "2026-04-02T05:12:54.421038Z",
+  "knot_id": "knots-0d93",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan needs revision before implementation. Update the plan to change the actual builtin rendering path in `src/installed_workflows/compatibility.rs` plus the shared helpers/tests, correct the prompt/template inventory, and either sequence or split the canonical target-name dependency before adding `merged_main` or `live_deployment` assertions/templates.",
+    "datetime": "2026-04-02T05:12:54.421038Z",
+    "entry_id": "019d4c9b-d595-76b2-9caf-1ccfeed3688b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

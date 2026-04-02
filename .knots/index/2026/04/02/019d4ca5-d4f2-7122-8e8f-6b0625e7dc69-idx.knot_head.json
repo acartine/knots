@@ -1,0 +1,24 @@
+{
+  "event_id": "019d4ca5-d4f2-7122-8e8f-6b0625e7dc69",
+  "occurred_at": "2026-04-02T05:23:49.618223Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-0d93",
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "terminal": false,
+    "title": "Update prompt rendering to consume resolved per-step output metadata",
+    "type": "work",
+    "updated_at": "2026-04-02T05:23:49.618223Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d4ca5-a05d-7423-bbf4-cd5f2d69c559"
+  }
+}

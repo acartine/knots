@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4c9d-9f01-7202-af96-0d82007a13f7",
+  "occurred_at": "2026-04-02T05:14:51.52136Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan attached. Existing tests already cover Loom prompt sourcing at unit/integration layers, so implementation should focus on final claim-surface regression coverage: builtin default workflow, claim rendering, profile-specific branch-vs-PR wording, and builtin/custom multi-workflow coexistence. Children created: `knots-6d98` for the Rust CLI regression matrix and `knots-374f` for rendered-output validation. Both are blocked by `knots-5464`, which is the unresolved per-step output-target dependency. Recommended implementation shape is a focused Rust integration suite plus a minimal rendered fixture verified with Playwright MCP `browser_snapshot`/`browser_evaluate`, followed by `make sanity`.",
+    "datetime": "2026-04-02T05:14:51.52136Z",
+    "entry_id": "019d4c9d-9f01-7202-af96-0d736ec54d32",
+    "model": "gpt-5",
+    "username": "unknown",
+    "version": "codex"
+  }
+}

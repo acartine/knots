@@ -1,0 +1,17 @@
+{
+  "event_id": "019d4c9c-9c52-7372-af27-1a937a17102e",
+  "occurred_at": "2026-04-02T05:13:45.298642Z",
+  "knot_id": "knots-374f",
+  "type": "knot.created",
+  "data": {
+    "body": "Add a rendered-output validation harness for claim prompts so profile-specific output semantics and workflow selection are checked at the final rendered surface. Use claim JSON/text payloads as fixtures and validate rendered prompt content for default branch mode, PR mode, and installed custom workflows, with Playwright MCP snapshot/evaluate verification during execution.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Add rendered claim prompt validation for profile output variants",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

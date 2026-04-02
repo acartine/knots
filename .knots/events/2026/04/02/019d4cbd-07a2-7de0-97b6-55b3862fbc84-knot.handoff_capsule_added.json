@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cbd-07a2-7de0-97b6-55b3862fbc84",
+  "occurred_at": "2026-04-02T05:49:09.92279Z",
+  "knot_id": "knots-6d98",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Expanded the CLI Loom prompt regression matrix for builtin claim rendering. Added shared rendered-prompt diagnostics, explicit anti-static-fallback assertions for the shipped implementation workflow, and validated claim text plus JSON paths in tests/cli_loom_prompt_resolution.rs. make sanity passed with 95.39 percent coverage.",
+    "datetime": "2026-04-02T05:49:09.92279Z",
+    "entry_id": "019d4cbd-07a2-7de0-97b6-55ae0fcd686a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

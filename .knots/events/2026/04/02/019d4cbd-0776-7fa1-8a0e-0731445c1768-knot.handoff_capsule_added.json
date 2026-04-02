@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cbd-0776-7fa1-8a0e-0731445c1768",
+  "occurred_at": "2026-04-02T05:49:09.878551Z",
+  "knot_id": "knots-374f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Added rendered claim prompt validation at the CLI surface for profile output variants. Strengthened branch/pr assertions in tests/cli_loom_profile_output.rs, added same-repo builtin plus custom workflow coexistence coverage, and verified the rendered DOM with Playwright snapshot plus evaluate. make sanity passed with 95.39 percent coverage.",
+    "datetime": "2026-04-02T05:49:09.878551Z",
+    "entry_id": "019d4cbd-0776-7fa1-8a0e-072ce23d664c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

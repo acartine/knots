@@ -1,0 +1,17 @@
+{
+  "event_id": "019d4c9c-9c37-7052-a3db-e252573b69e3",
+  "occurred_at": "2026-04-02T05:13:45.271221Z",
+  "knot_id": "knots-6d98",
+  "type": "knot.created",
+  "data": {
+    "body": "Expand end-to-end Rust integration coverage around claim, peek, and workflow install/use flows so builtin and custom workflows resolve claim prompts from Loom-defined bodies only. Cover default shipped workflow behavior, claim output rendering, multi-workflow coexistence, and assertions that fail with clear diagnostics when static fallback text or wrong workflow text appears.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Add CLI Loom prompt resolution regression matrix",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

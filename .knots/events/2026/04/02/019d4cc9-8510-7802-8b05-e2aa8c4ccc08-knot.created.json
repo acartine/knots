@@ -1,0 +1,17 @@
+{
+  "event_id": "019d4cc9-8510-7802-8b05-e2aa8c4ccc08",
+  "occurred_at": "2026-04-02T06:02:48.46406Z",
+  "knot_id": "knots-8986",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "lease_ready",
+    "title": "Lease: foolery:terminal_manager_take:term-1775106672911-hqmq27",
+    "type": "lease",
+    "workflow_id": "compatibility"
+  }
+}

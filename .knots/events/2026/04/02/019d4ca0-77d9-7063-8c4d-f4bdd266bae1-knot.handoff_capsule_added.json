@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4ca0-77d9-7063-8c4d-f4bdd266bae1",
+  "occurred_at": "2026-04-02T05:17:58.105494Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan review: APPROVED. Plan is complete and addresses all 8 acceptance criteria with feasible implementation steps. Existing test infrastructure (cli_dispatch_agent, cli_workflows, loom_compat_prompt_resolution_tests) provides strong foundation for reuse. Key notes for implementer: (1) CLI regression matrix child (6d98) can likely proceed with current prompt semantics even while 5464 is in planning; only profile output variant child (374f) truly depends on 5464 settling. (2) Keep Playwright rendered-fixture minimal — don't over-invest in browser infra when Rust integration tests carry the primary regression value. (3) Anti-fallback markers should reference static skill text from skills/*.md to detect regressions precisely.",
+    "datetime": "2026-04-02T05:17:58.105494Z",
+    "entry_id": "019d4ca0-77d9-7063-8c4d-f4aa6d9899a4",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

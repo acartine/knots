@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cbd-07d2-7fe1-afea-d5ada142b26b",
+  "occurred_at": "2026-04-02T05:49:09.970812Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implemented end-to-end Loom prompt resolution coverage across default shipped workflow claims, rendered claim output, profile-specific output variants, and multi-workflow coexistence. Added shared prompt assertion helpers, CLI regression diagnostics, and Playwright DOM verification for builtin branch mode, PR mode, and a custom installed workflow. make sanity passed with 95.39 percent coverage.",
+    "datetime": "2026-04-02T05:49:09.970812Z",
+    "entry_id": "019d4cbd-07d2-7fe1-afea-d599275f2632",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

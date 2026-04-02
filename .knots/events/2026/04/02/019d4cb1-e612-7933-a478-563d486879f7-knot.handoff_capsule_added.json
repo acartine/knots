@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cb1-e612-7933-a478-563d486879f7",
+  "occurred_at": "2026-04-02T05:37:00.434493Z",
+  "knot_id": "knots-95c0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation blocked on knots-c8f4. Current main still lacks the canonical ArtifactTarget/output target vocabulary; knots-c8f4 is at ready_for_plan_review, and the working tree still uses legacy target strings such as remote_main and pr. Resume 95c0 after c8f4 lands, then update the Loom prompt param enums and conditional sections for branch, merged_main, and live_deployment with matching coverage tests.",
+    "datetime": "2026-04-02T05:37:00.434493Z",
+    "entry_id": "019d4cb1-e612-7933-a478-5622a71a620a",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}
