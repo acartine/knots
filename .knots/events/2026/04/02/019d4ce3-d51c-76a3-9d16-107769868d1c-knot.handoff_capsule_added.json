@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4ce3-d51c-76a3-9d16-107769868d1c",
+  "occurred_at": "2026-04-02T06:31:32.892825Z",
+  "knot_id": "knots-6d98",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review passed. cli_loom_prompt_resolution.rs contains 9 tests (330 lines) covering: regression matrix across all builtin profiles and action states, text/JSON claim output validation, default shipped workflow Loom prompt verification, skill command Loom body resolution, and acceptance criteria flow-through. Clear REGRESSION diagnostics on fallback or unresolved templates. All tests pass, make sanity green at 95.39% coverage.",
+    "datetime": "2026-04-02T06:31:32.892825Z",
+    "entry_id": "019d4ce3-d51c-76a3-9d16-1062d1fa579d",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

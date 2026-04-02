@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4ced-c23f-7ee2-9bd4-ad93f4cb2a36",
+  "occurred_at": "2026-04-02T06:42:23.423107Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipped: merged worktree-knots-bf56-loom-e2e-tests into main (290582d46572). Tests: cli_loom_prompt_resolution.rs (9 tests, 330 lines) + cli_loom_profile_output.rs (5 tests, 433 lines). All 833 tests pass, make sanity green. CI green on main. Children 374f and 6d98 advanced to ready_for_shipment_review.",
+    "datetime": "2026-04-02T06:42:23.423107Z",
+    "entry_id": "019d4ced-c23f-7ee2-9bd4-ad8ab12029d6",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

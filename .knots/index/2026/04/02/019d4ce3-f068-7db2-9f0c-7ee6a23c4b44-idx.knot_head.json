@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4ce3-f068-7db2-9f0c-7ee6a23c4b44",
+  "occurred_at": "2026-04-02T06:31:39.880448Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-6d98",
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_shipment",
+    "terminal": false,
+    "title": "Add CLI Loom prompt resolution regression matrix",
+    "type": "work",
+    "updated_at": "2026-04-02T06:31:39.880448Z",
+    "workflow_id": "compatibility"
+  }
+}

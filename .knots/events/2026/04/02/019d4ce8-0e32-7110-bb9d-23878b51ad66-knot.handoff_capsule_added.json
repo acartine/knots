@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4ce8-0e32-7110-bb9d-23878b51ad66",
+  "occurred_at": "2026-04-02T06:36:09.650418Z",
+  "knot_id": "knots-374f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped: merged worktree-knots-bf56-loom-e2e-tests into main (290582d46572). cli_loom_profile_output.rs (433 lines, 5 tests) validates remote_main and pr output modes across 4 output-sensitive states. make sanity green, 833 tests pass.",
+    "datetime": "2026-04-02T06:36:09.650418Z",
+    "entry_id": "019d4ce8-0e32-7110-bb9d-237af55d95d6",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

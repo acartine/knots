@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4ce3-4953-7d70-9d10-d75f6f1d925a",
+  "occurred_at": "2026-04-02T06:30:57.107108Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Implementation review passed. All 14 e2e tests pass across cli_loom_prompt_resolution.rs (9 tests, 330 lines) and cli_loom_profile_output.rs (5 tests, 433 lines). All 8 acceptance criteria verified: default workflow Loom prompts, claim output, profile-specific output, multi-workflow coexistence, regression diagnostics for non-Loom fallback and unresolved templates, and 95.39% coverage. make sanity green. Minor non-blocking observation: assert_loom_prompt/assert_no_unresolved_templates duplicated between test files.",
+    "datetime": "2026-04-02T06:30:57.107108Z",
+    "entry_id": "019d4ce3-4953-7d70-9d10-d741e4d73b42",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}
