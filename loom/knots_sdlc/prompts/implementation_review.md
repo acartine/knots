@@ -17,7 +17,7 @@ failure:
 params:
   output:
     type: enum
-    values: [remote_main, pr]
+    values: [remote_main, pr, branch, live_deployment]
 ---
 
 # Implementation Review
@@ -34,4 +34,8 @@ Review the implementation against the knot description and acceptance criteria.
    directly using the branch diff, status, and test results.
    `{{ output }}` = `pr` means review the pull request itself, including
    the PR diff, status, and metadata.
+   `{{ output }}` = `branch` means review the pushed branch as the final
+   deliverable, using the branch diff and test results.
+   `{{ output }}` = `live_deployment` means review the implementation
+   for deployment readiness, including infrastructure and rollback plan.
 5. Approve or request changes

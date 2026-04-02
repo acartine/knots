@@ -19,7 +19,7 @@ failure:
 params:
   output:
     type: enum
-    values: [remote_main, pr]
+    values: [remote_main, pr, branch, live_deployment]
 ---
 
 # Shipment Review
@@ -34,6 +34,10 @@ the profile output mode.
    `{{ output }}` = `remote_main` means review the code now on main.
    `{{ output }}` = `pr` means review the merged pull request as the
    shipment record and confirm the corresponding code is now on main.
+   `{{ output }}` = `branch` means verify the branch is on remote and
+   CI passed.
+   `{{ output }}` = `live_deployment` means verify the deployment is
+   live, healthy, and matches the approved implementation.
 2. Confirm every commit is tagged on the knot
 3. Verify all knot invariants hold in the shipped code
 4. Confirm CI/CD pipeline completed successfully

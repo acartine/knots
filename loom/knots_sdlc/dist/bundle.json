@@ -629,7 +629,9 @@
           "param_type": "enum",
           "values": [
             "remote_main",
-            "pr"
+            "pr",
+            "branch",
+            "live_deployment"
           ],
           "required": true,
           "default": null,
@@ -658,7 +660,7 @@
           "is_success": false
         }
       ],
-      "body": "# Implementation\n\nImplement the approved plan on a feature branch.\n\n## Actions\n\n1. Create a feature branch from main in a worktree\n2. Implement changes following the plan while respecting all invariants\n3. Write tests for all new behavior\n4. Commit and push the feature branch\n5. Make the implementation artifact explicit for the profile output mode:\n   `{{ output }}` = `remote_main` means the review target is the pushed\n   feature branch itself, so leave the result ready for direct branch\n   review.\n   `{{ output }}` = `pr` means the review target is a pull request, so\n   open or update the PR for the feature branch.\n\n## Output\n\nThe expected output artifact is `{{ output }}`:\n- **remote_main**: a feature branch pushed to remote for direct branch review\n- **pr**: a pull request opened or updated from the feature branch",
+      "body": "# Implementation\n\nImplement the approved plan on a feature branch.\n\n## Actions\n\n1. Create a feature branch from main in a worktree\n2. Implement changes following the plan while respecting all invariants\n3. Write tests for all new behavior\n4. Commit and push the feature branch\n5. Make the implementation artifact explicit for the profile output mode:\n   `{{ output }}` = `remote_main` means the review target is the pushed\n   feature branch itself, so leave the result ready for direct branch\n   review.\n   `{{ output }}` = `pr` means the review target is a pull request, so\n   open or update the PR for the feature branch.\n   `{{ output }}` = `branch` means push the feature branch to remote;\n   the branch itself is the deliverable (no merge to main expected).\n   `{{ output }}` = `live_deployment` means the review target is a\n   deployment artifact, so prepare the implementation for deployment.\n\n## Output\n\nThe expected output artifact is `{{ output }}`:\n- **remote_main**: a feature branch pushed to remote for direct branch review\n- **pr**: a pull request opened or updated from the feature branch\n- **branch**: a feature branch pushed to remote as the final deliverable\n- **live_deployment**: implementation ready for deployment to production",
       "body_params": [
         "output"
       ]
@@ -678,7 +680,9 @@
           "param_type": "enum",
           "values": [
             "remote_main",
-            "pr"
+            "pr",
+            "branch",
+            "live_deployment"
           ],
           "required": true,
           "default": null,
@@ -707,7 +711,7 @@
           "is_success": false
         }
       ],
-      "body": "# Implementation Review\n\nReview the implementation against the knot description and acceptance criteria.\n\n## Actions\n\n1. Review code changes against the knot description and acceptance criteria\n2. Verify the implementation respects all knot invariants\n3. Verify tests cover the required behavior\n4. Use the correct review target for the profile output mode:\n   `{{ output }}` = `remote_main` means review the implementation branch\n   directly using the branch diff, status, and test results.\n   `{{ output }}` = `pr` means review the pull request itself, including\n   the PR diff, status, and metadata.\n5. Approve or request changes",
+      "body": "# Implementation Review\n\nReview the implementation against the knot description and acceptance criteria.\n\n## Actions\n\n1. Review code changes against the knot description and acceptance criteria\n2. Verify the implementation respects all knot invariants\n3. Verify tests cover the required behavior\n4. Use the correct review target for the profile output mode:\n   `{{ output }}` = `remote_main` means review the implementation branch\n   directly using the branch diff, status, and test results.\n   `{{ output }}` = `pr` means review the pull request itself, including\n   the PR diff, status, and metadata.\n   `{{ output }}` = `branch` means review the pushed branch as the final\n   deliverable, using the branch diff and test results.\n   `{{ output }}` = `live_deployment` means review the implementation\n   for deployment readiness, including infrastructure and rollback plan.\n5. Approve or request changes",
       "body_params": [
         "output"
       ]
@@ -726,7 +730,9 @@
           "param_type": "enum",
           "values": [
             "remote_main",
-            "pr"
+            "pr",
+            "branch",
+            "live_deployment"
           ],
           "required": true,
           "default": null,
@@ -755,7 +761,7 @@
           "is_success": false
         }
       ],
-      "body": "# Shipment\n\nMerge the approved implementation using the shipment flow required by\nthe profile output mode.\n\n## Actions\n\n1. Perform the shipment action that matches the profile output mode:\n   `{{ output }}` = `remote_main` means merge the feature branch to main.\n   `{{ output }}` = `pr` means merge the approved pull request instead of\n   performing a branch-only review flow.\n2. Push or verify the shipped main-branch result required by the output\n   mode:\n   `{{ output }}` = `remote_main` means push main after the merge.\n   `{{ output }}` = `pr` means verify the merged PR produced the intended\n   main-branch result and that the remote reflects it.\n3. Verify CI passes on remote\n\n## Output\n\nThe expected output artifact is `{{ output }}`:\n- **remote_main**: code merged from the feature branch to main and\n  pushed to remote\n- **pr**: an approved pull request merged and reflected on main",
+      "body": "# Shipment\n\nMerge the approved implementation using the shipment flow required by\nthe profile output mode.\n\n## Actions\n\n1. Perform the shipment action that matches the profile output mode:\n   `{{ output }}` = `remote_main` means merge the feature branch to main.\n   `{{ output }}` = `pr` means merge the approved pull request instead of\n   performing a branch-only review flow.\n   `{{ output }}` = `branch` means the branch is the final artifact;\n   verify it is pushed and CI passes.\n   `{{ output }}` = `live_deployment` means merge to main and deploy to\n   the target environment.\n2. Push or verify the shipped result required by the output mode:\n   `{{ output }}` = `remote_main` means push main after the merge.\n   `{{ output }}` = `pr` means verify the merged PR produced the intended\n   main-branch result and that the remote reflects it.\n   `{{ output }}` = `branch` means verify the branch is on remote.\n   `{{ output }}` = `live_deployment` means verify the deployment\n   completed and the service is healthy.\n3. Verify CI passes on remote\n\n## Output\n\nThe expected output artifact is `{{ output }}`:\n- **remote_main**: code merged from the feature branch to main and\n  pushed to remote\n- **pr**: an approved pull request merged and reflected on main\n- **branch**: feature branch pushed to remote as the final deliverable\n- **live_deployment**: code merged, deployed, and verified healthy",
       "body_params": [
         "output"
       ]
@@ -775,7 +781,9 @@
           "param_type": "enum",
           "values": [
             "remote_main",
-            "pr"
+            "pr",
+            "branch",
+            "live_deployment"
           ],
           "required": true,
           "default": null,
@@ -814,7 +822,7 @@
           "is_success": false
         }
       ],
-      "body": "# Shipment Review\n\nVerify the shipped result is correct at the review target required by\nthe profile output mode.\n\n## Actions\n\n1. Verify the shipped result at the correct review target for the\n   profile output mode:\n   `{{ output }}` = `remote_main` means review the code now on main.\n   `{{ output }}` = `pr` means review the merged pull request as the\n   shipment record and confirm the corresponding code is now on main.\n2. Confirm every commit is tagged on the knot\n3. Verify all knot invariants hold in the shipped code\n4. Confirm CI/CD pipeline completed successfully\n5. Final sign-off",
+      "body": "# Shipment Review\n\nVerify the shipped result is correct at the review target required by\nthe profile output mode.\n\n## Actions\n\n1. Verify the shipped result at the correct review target for the\n   profile output mode:\n   `{{ output }}` = `remote_main` means review the code now on main.\n   `{{ output }}` = `pr` means review the merged pull request as the\n   shipment record and confirm the corresponding code is now on main.\n   `{{ output }}` = `branch` means verify the branch is on remote and\n   CI passed.\n   `{{ output }}` = `live_deployment` means verify the deployment is\n   live, healthy, and matches the approved implementation.\n2. Confirm every commit is tagged on the knot\n3. Verify all knot invariants hold in the shipped code\n4. Confirm CI/CD pipeline completed successfully\n5. Final sign-off",
       "body_params": [
         "output"
       ]

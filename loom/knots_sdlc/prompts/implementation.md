@@ -16,7 +16,7 @@ failure:
 params:
   output:
     type: enum
-    values: [remote_main, pr]
+    values: [remote_main, pr, branch, live_deployment]
 ---
 
 # Implementation
@@ -35,9 +35,15 @@ Implement the approved plan on a feature branch.
    review.
    `{{ output }}` = `pr` means the review target is a pull request, so
    open or update the PR for the feature branch.
+   `{{ output }}` = `branch` means push the feature branch to remote;
+   the branch itself is the deliverable (no merge to main expected).
+   `{{ output }}` = `live_deployment` means the review target is a
+   deployment artifact, so prepare the implementation for deployment.
 
 ## Output
 
 The expected output artifact is `{{ output }}`:
 - **remote_main**: a feature branch pushed to remote for direct branch review
 - **pr**: a pull request opened or updated from the feature branch
+- **branch**: a feature branch pushed to remote as the final deliverable
+- **live_deployment**: implementation ready for deployment to production

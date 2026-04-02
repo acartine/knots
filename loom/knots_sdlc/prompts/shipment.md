@@ -16,7 +16,7 @@ failure:
 params:
   output:
     type: enum
-    values: [remote_main, pr]
+    values: [remote_main, pr, branch, live_deployment]
 ---
 
 # Shipment
@@ -30,11 +30,17 @@ the profile output mode.
    `{{ output }}` = `remote_main` means merge the feature branch to main.
    `{{ output }}` = `pr` means merge the approved pull request instead of
    performing a branch-only review flow.
-2. Push or verify the shipped main-branch result required by the output
-   mode:
+   `{{ output }}` = `branch` means the branch is the final artifact;
+   verify it is pushed and CI passes.
+   `{{ output }}` = `live_deployment` means merge to main and deploy to
+   the target environment.
+2. Push or verify the shipped result required by the output mode:
    `{{ output }}` = `remote_main` means push main after the merge.
    `{{ output }}` = `pr` means verify the merged PR produced the intended
    main-branch result and that the remote reflects it.
+   `{{ output }}` = `branch` means verify the branch is on remote.
+   `{{ output }}` = `live_deployment` means verify the deployment
+   completed and the service is healthy.
 3. Verify CI passes on remote
 
 ## Output
@@ -43,3 +49,5 @@ The expected output artifact is `{{ output }}`:
 - **remote_main**: code merged from the feature branch to main and
   pushed to remote
 - **pr**: an approved pull request merged and reflected on main
+- **branch**: feature branch pushed to remote as the final deliverable
+- **live_deployment**: code merged, deployed, and verified healthy

@@ -379,3 +379,25 @@ fn no_planning_profiles_resolve_implementation_from_loom_body() {
     }
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn builtin_prompts_declare_extended_output_target_values() {
+    let states_with_output = [
+        "implementation",
+        "implementation_review",
+        "shipment",
+        "shipment_review",
+    ];
+    for state in states_with_output {
+        let body = loom_compat_bundle::prompt_body_for_state(state)
+            .unwrap_or_else(|| panic!("loom bundle missing {state}"));
+        assert!(
+            body.contains("branch"),
+            "{state}: prompt should mention branch target"
+        );
+        assert!(
+            body.contains("live_deployment"),
+            "{state}: prompt should mention live_deployment target"
+        );
+    }
+}
