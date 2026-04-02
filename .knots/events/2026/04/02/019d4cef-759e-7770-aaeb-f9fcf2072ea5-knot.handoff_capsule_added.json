@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cef-759e-7770-aaeb-f9fcf2072ea5",
+  "occurred_at": "2026-04-02T06:44:14.878461Z",
+  "knot_id": "knots-bf56",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Shipment complete. Code at 290582d46572 live on main. CI green (Release, Repo Hygiene, Changesets Version PR, CI all success). Children 374f and 6d98 both reviewed and advanced to SHIPPED. cli_loom_prompt_resolution.rs (330 lines, 9 tests) + cli_loom_profile_output.rs (433 lines, 5 tests) shipped.",
+    "datetime": "2026-04-02T06:44:14.878461Z",
+    "entry_id": "019d4cef-759e-7770-aaeb-f9ecfcfbddbe",
+    "model": "sonnet/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

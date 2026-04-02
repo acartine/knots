@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cef-18fc-7543-b0be-088bdd12ad3b",
+  "occurred_at": "2026-04-02T06:43:51.164203Z",
+  "knot_id": "knots-374f",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review approved. Commit 290582d46572 is live on main. cli_loom_profile_output.rs (433 lines, 5 tests) validates remote_main and pr output modes across 4 output-sensitive states. Commit tags commit:00d89f9caf50 and commit:290582d46572 present. All CI pipelines (Release, Repo Hygiene, Changesets Version PR, CI) passed on headSha 290582d46572. No invariants. No regressions detected.",
+    "datetime": "2026-04-02T06:43:51.164203Z",
+    "entry_id": "019d4cef-18fc-7543-b0be-08749c7c5f2c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4cef-1d46-7561-852a-2c39e7a03602",
+  "occurred_at": "2026-04-02T06:43:52.262507Z",
+  "knot_id": "knots-6d98",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review approved. Commit 290582d46572 is live on main. cli_loom_prompt_resolution.rs (330 lines, 9 tests) covers Loom prompt regression matrix, text/JSON claim output, multi-workflow coexistence. Commit tags commit:00d89f9caf50 and commit:290582d46572 present. All CI pipelines (Release, Repo Hygiene, Changesets Version PR, CI) passed on headSha 290582d46572. No invariants. No regressions detected.",
+    "datetime": "2026-04-02T06:43:52.262507Z",
+    "entry_id": "019d4cef-1d46-7561-852a-2c282f55734a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

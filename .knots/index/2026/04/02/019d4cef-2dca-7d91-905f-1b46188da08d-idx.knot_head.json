@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4cef-2dca-7d91-905f-1b46188da08d",
+  "occurred_at": "2026-04-02T06:43:56.490256Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-374f",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add rendered claim prompt validation for profile output variants",
+    "type": "work",
+    "updated_at": "2026-04-02T06:43:56.490256Z",
+    "workflow_id": "compatibility"
+  }
+}
