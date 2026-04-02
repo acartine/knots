@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d7b-edd5-7d80-89ae-243191bffa6f",
+  "occurred_at": "2026-04-02T09:17:40.693811Z",
+  "knot_id": "knots-9727",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan needs one revision before implementation: the proposed TOML/JSON unknown-artifact tests only assert load-success and output preservation, so they would not catch a regression from warning-on-unknown to silent acceptance. Amend gap 1 to verify warning emission (or refactor to make it observable) while keeping the non-reject/backward-compat assertions. The rest of the plan is feasible and aligned with the current code paths; no invariant, security, or performance issues found.",
+    "datetime": "2026-04-02T09:17:40.693811Z",
+    "entry_id": "019d4d7b-edd5-7d80-89ae-2421aaa9d0f9",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

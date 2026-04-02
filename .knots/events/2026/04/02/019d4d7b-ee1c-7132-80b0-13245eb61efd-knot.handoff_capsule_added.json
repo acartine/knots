@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d7b-ee1c-7132-80b0-13245eb61efd",
+  "occurred_at": "2026-04-02T09:17:40.764905Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review requested revision. Coverage targets for state-level fallback, access_hint prompt params, output=None handling, resolve_output_specific_sections, and per-action StepMetadata variation are correct and feasible. Before approval, tighten gap 1 so it proves the documented warn-not-reject contract for unknown artifact targets rather than only silent preservation.",
+    "datetime": "2026-04-02T09:17:40.764905Z",
+    "entry_id": "019d4d7b-ee1c-7132-80b0-13112885c604",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}
