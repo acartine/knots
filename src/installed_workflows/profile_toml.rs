@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
+use std::str::FromStr;
 
+use crate::artifact_target::ArtifactTarget;
 use crate::profile::{
     normalize_profile_id, ActionOutputDef, GateMode, OwnerKind, ProfileDefinition, ProfileError,
     ProfileOwners, StepOwner, WorkflowTransition,
@@ -363,6 +365,11 @@ pub(crate) fn build_outputs_from_toml_profile(
         } else {
             continue;
         };
+        if !def.artifact_type.is_empty() {
+            if let Err(e) = ArtifactTarget::from_str(&def.artifact_type) {
+                eprintln!("warning: {action}: {e}");
+            }
+        }
         outputs.insert(action.clone(), def);
     }
     outputs

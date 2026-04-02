@@ -1,5 +1,7 @@
 use std::collections::{BTreeMap, HashSet};
+use std::str::FromStr;
 
+use crate::artifact_target::ArtifactTarget;
 use crate::installed_workflows;
 use crate::profile::{
     normalize_profile_id, ActionOutputDef, GateMode, OutputMode, ProfileDefinition, ProfileError,
@@ -202,12 +204,14 @@ fn legacy_outputs(
     mode: &OutputMode,
     action_states: &[String],
 ) -> BTreeMap<String, ActionOutputDef> {
-    let at = match mode {
-        OutputMode::Local => "local",
-        OutputMode::Remote => "remote",
-        OutputMode::Pr => "pr",
-        OutputMode::RemoteMain => "remote_main",
+    let target = match mode {
+        OutputMode::Local => ArtifactTarget::Local,
+        OutputMode::Remote => ArtifactTarget::Remote,
+        OutputMode::Pr => ArtifactTarget::Pr,
+        OutputMode::RemoteMain => ArtifactTarget::RemoteMain,
     };
+    let at = target.as_str();
+    debug_assert!(ArtifactTarget::from_str(at).is_ok());
     action_states
         .iter()
         .map(|s| {

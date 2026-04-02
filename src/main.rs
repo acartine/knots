@@ -1,5 +1,8 @@
 mod action_prompt;
 mod app;
+mod artifact_target;
+#[cfg(test)]
+mod artifact_target_tests;
 mod cli;
 mod cli_agent;
 mod cli_help;
