@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d83-3f71-7251-8554-65dee3d8a182",
+  "occurred_at": "2026-04-02T09:25:40.337923Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Plan review approved. All referenced files/functions verified to exist. Code contracts (warn-not-reject via eprintln in profile_toml.rs:370 and profile_json.rs:270, fallback chain, build_prompt_params output_hint logic, resolve_output_specific_sections) confirmed accurate. One advisory: profile_tests.rs is at 482/500 lines — route backward-compat tests to step_metadata_tests.rs (395 lines) instead. No invariant violations found. Plan is complete, correct, and feasible.",
+    "datetime": "2026-04-02T09:25:40.337923Z",
+    "entry_id": "019d4d83-3f71-7251-8554-65c4c175ce5b",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}
