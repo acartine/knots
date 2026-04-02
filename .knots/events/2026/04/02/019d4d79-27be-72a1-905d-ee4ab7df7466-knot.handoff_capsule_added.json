@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4d79-27be-72a1-905d-ee4ab7df7466",
+  "occurred_at": "2026-04-02T09:14:38.91053Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Revised plan (v3) anchored to the live contract post c8f4+0d93 shipping. Identifies 6 precise gaps with 0% or partial coverage: (1) unknown ArtifactTarget warning behavior in TOML/JSON loaders, (2) state-level output fallback chain, (3) access_hint propagation to prompt template params, (4) resolve_output_specific_sections unit tests for non-remote_main/pr targets and None, (5) output=None in build_prompt_params, (6) per-action output variation through full StepMetadata resolution. ~120 new test lines across 3 files (tests_parsing.rs, step_metadata_tests.rs, mod.rs tests). No implementation changes needed — pure regression coverage. No Playwright needed.",
+    "datetime": "2026-04-02T09:14:38.91053Z",
+    "entry_id": "019d4d79-27be-72a1-905d-ee3eea6df8eb",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}
