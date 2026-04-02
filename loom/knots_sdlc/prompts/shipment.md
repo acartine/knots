@@ -21,8 +21,22 @@ params:
 
 # Shipment
 
-Merge the approved implementation using the shipment flow required by
-the profile output mode.
+Promote the approved implementation to its final destination. The
+implementation has already been reviewed and approved — your job is to
+merge, push, and verify, not to re-review or second-guess the work.
+
+## Locating the Implementation
+
+Find the feature branch by reading the knot metadata:
+1. Check `commit:` tags on the knot — these are the implementation
+   commit hashes.
+2. Read the most recent handoff capsules — they typically name the
+   branch (e.g., `worktree-<knot-id>-*`).
+3. Run `git branch -a --contains <tagged-commit>` to confirm which
+   branch holds the work.
+
+If the tagged commits are already on main, shipment is already done —
+verify CI is green and advance. Do not roll back.
 
 ## Actions
 
@@ -51,3 +65,9 @@ The expected output artifact is `{{ output }}`:
 - **pr**: an approved pull request merged and reflected on main
 - **branch**: feature branch pushed to remote as the final deliverable
 - **live_deployment**: code merged, deployed, and verified healthy
+
+## When to Roll Back
+
+Only roll back to `ready_for_implementation` when the merge itself
+fails (conflicts, CI red after merge). Finding unmerged commits is
+the normal starting condition — that is what shipment is for.
