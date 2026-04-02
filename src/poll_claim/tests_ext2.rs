@@ -265,14 +265,14 @@ fn prompt_body_for_state_distinguishes_branch_and_pr_profiles() {
         let implementation =
             prompt_body_for_state(&registry, profile_id, "implementation").expect("prompt body");
         assert!(
-            implementation.contains("review target is the pushed"),
+            implementation.contains("branch itself is the review artifact"),
             "{profile_id}: {implementation}"
         );
 
         let review = prompt_body_for_state(&registry, profile_id, "implementation_review")
             .expect("review prompt body");
         assert!(
-            review.contains("review the implementation branch"),
+            review.contains("review the branch diff against"),
             "{profile_id}: {review}"
         );
 
@@ -297,7 +297,7 @@ fn prompt_body_for_state_distinguishes_branch_and_pr_profiles() {
         let implementation =
             prompt_body_for_state(&registry, profile_id, "implementation").expect("prompt body");
         assert!(
-            implementation.contains("review target is a pull request"),
+            implementation.contains("open a pull request from the feature"),
             "{profile_id}: {implementation}"
         );
 

@@ -55,9 +55,9 @@ fn assert_branch_output_prompt(prompt: &str, queue_state: &str, profile: &str) {
     let expected = match queue_state {
         "ready_for_implementation" => &[
             "The expected output artifact is `remote_main`:",
-            "a feature branch pushed to remote for direct branch review",
+            "a feature branch pushed to remote for branch review",
         ][..],
-        "ready_for_implementation_review" => &["review the implementation branch"][..],
+        "ready_for_implementation_review" => &["review the branch diff against"][..],
         "ready_for_shipment" => &[
             "merge the feature branch to main",
             "push main after the merge",
@@ -86,9 +86,9 @@ fn assert_pr_output_prompt(prompt: &str, queue_state: &str, profile: &str) {
     let expected = match queue_state {
         "ready_for_implementation" => &[
             "The expected output artifact is `pr`:",
-            "pull request opened or updated from the feature branch",
+            "a pull request opened from the feature branch",
         ][..],
-        "ready_for_implementation_review" => &["review the pull request itself"][..],
+        "ready_for_implementation_review" => &["review the pull request diff"][..],
         "ready_for_shipment" => &["merge the approved pull request"][..],
         "ready_for_shipment_review" => &["review the merged pull request"][..],
         _ => panic!("unexpected output-sensitive state: {queue_state}"),

@@ -195,12 +195,12 @@ mod tests {
     #[test]
     fn delivery_target_skills_describe_output_specific_review_artifacts() {
         let implementation = skill_for_state("implementation").unwrap();
-        assert!(implementation.contains("direct branch"));
-        assert!(implementation.contains("review target is a pull request"));
+        assert!(implementation.contains("branch itself is the review artifact"));
+        assert!(implementation.contains("open a pull request from the feature"));
 
         let implementation_review = skill_for_state("implementation_review").unwrap();
-        assert!(implementation_review.contains("branch diff, status, and test results"));
-        assert!(implementation_review.contains("review the pull request itself"));
+        assert!(implementation_review.contains("review the branch diff against"));
+        assert!(implementation_review.contains("review the pull request diff"));
 
         let shipment = skill_for_state("shipment").unwrap();
         assert!(shipment.contains("merge the feature branch to main"));

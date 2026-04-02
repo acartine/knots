@@ -18,7 +18,7 @@ const LOOM_HEADINGS: &[(&str, &str)] = &[
 const IMPLEMENTATION_LOOM_MARKERS: &[&str] = &[
     "Implement the approved plan on a feature branch.",
     "The expected output artifact is `remote_main`:",
-    "a feature branch pushed to remote for direct branch review",
+    "a feature branch pushed to remote for branch review",
 ];
 
 const IMPLEMENTATION_STATIC_FALLBACK_MARKERS: &[&str] = &[

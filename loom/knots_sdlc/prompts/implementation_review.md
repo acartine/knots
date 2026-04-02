@@ -22,20 +22,38 @@ params:
 
 # Implementation Review
 
-Review the implementation against the knot description and acceptance criteria.
+Review the implementation against the knot description and acceptance
+criteria. The implementation has already been built — your job is to
+verify it meets the specification, not to re-implement or extend it.
+
+## Locating the Implementation
+
+Find the review artifact by reading the knot metadata:
+1. Check knot tags for the artifact identifier:
+   `{{ output }}` = `remote_main` means look for a `branch:` tag
+   naming the feature branch.
+   `{{ output }}` = `pr` means look for a `pr:` tag with the PR
+   number.
+   `{{ output }}` = `branch` means look for a `branch:` tag naming
+   the feature branch.
+   `{{ output }}` = `live_deployment` means look for a `branch:` tag
+   naming the feature branch.
+2. Check `commit:` tags — these are the implementation commit hashes.
+3. Read the most recent handoff capsules for the artifact location.
 
 ## Actions
 
-1. Review code changes against the knot description and acceptance criteria
-2. Verify the implementation respects all knot invariants
-3. Verify tests cover the required behavior
-4. Use the correct review target for the profile output mode:
-   `{{ output }}` = `remote_main` means review the implementation branch
-   directly using the branch diff, status, and test results.
-   `{{ output }}` = `pr` means review the pull request itself, including
-   the PR diff, status, and metadata.
-   `{{ output }}` = `branch` means review the pushed branch as the final
-   deliverable, using the branch diff and test results.
-   `{{ output }}` = `live_deployment` means review the implementation
-   for deployment readiness, including infrastructure and rollback plan.
+1. Locate the review artifact using the steps above
+2. Review code changes against the knot description and acceptance
+   criteria:
+   `{{ output }}` = `remote_main` means review the branch diff against
+   main, check test results, and verify sanity gates pass.
+   `{{ output }}` = `pr` means review the pull request diff, status,
+   CI checks, and PR metadata.
+   `{{ output }}` = `branch` means review the branch diff and test
+   results as the final deliverable.
+   `{{ output }}` = `live_deployment` means review for deployment
+   readiness, including infrastructure and rollback considerations.
+3. Verify the implementation respects all knot invariants
+4. Verify tests cover the required behavior
 5. Approve or request changes

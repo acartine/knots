@@ -29,20 +29,26 @@
 2. Implement changes following the plan while respecting all invariants
 3. Write tests for all new behavior
 4. Run any sanity gates defined in the project or the plan
-5. Add a handoff_capsule to the knot with:
-   `kno update <id> --add-handoff-capsule "<handoff_capsule>"`
-6. Commit and push the feature branch
+5. Commit and push the feature branch
+6. Create the review artifact required by the profile output mode:
+   `{{ output }}` = `remote_main` means push the feature branch to
+   remote. The branch itself is the review artifact.
+   `{{ output }}` = `pr` means open a pull request from the feature
+   branch. The PR is the review artifact.
 7. Tag the knot with each commit hash using the `commit:` prefix:
    `short_hash=$(git rev-parse --short=12 <commit>)`
    `kno update <id> --add-tag "commit:${short_hash}"`
    Run this for every commit created during implementation.
    Use short hashes only; do not use the full 40-character hash.
-8. Make the implementation artifact explicit for the profile output mode:
-   `{{ output }}` = `remote_main` means the review target is the pushed
-   feature branch itself, so leave the result ready for direct branch
-   review.
-   `{{ output }}` = `pr` means the review target is a pull request, so
-   open or update the PR for the feature branch.
+8. Tag the knot with the artifact identifier so reviewers can find it:
+   `{{ output }}` = `remote_main` means tag the branch name:
+   `kno update <id> --add-tag "branch:<branch-name>"`
+   `{{ output }}` = `pr` means tag the PR number:
+   `kno update <id> --add-tag "pr:<number>"`
+9. Add a handoff capsule that includes the artifact identifier:
+   `kno update <id> --add-handoff-capsule "<summary>. Branch: <name>"`
+   or for PR workflows:
+   `kno update <id> --add-handoff-capsule "<summary>. PR #<number>"`
 
 ## Output
 - Working implementation on feature branch

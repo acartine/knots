@@ -2,9 +2,21 @@
 
 ## Input
 - Knot in `ready_for_implementation_review` state
-- Feature branch with implementation
+- Implementation artifact (branch or PR) tagged on the knot
 - Knot description and acceptance criteria (use acceptance criteria when
   supplied; otherwise use the description)
+
+## Locating the Implementation
+Find the review artifact by reading the knot metadata:
+1. Check knot tags for the artifact identifier:
+   `{{ output }}` = `remote_main` means look for a `branch:` tag
+   naming the feature branch.
+   `{{ output }}` = `pr` means look for a `pr:` tag with the PR
+   number.
+2. Check `commit:` tags — these are the implementation commit hashes.
+3. Read the most recent handoff capsules for the artifact location.
+4. If no artifact tag exists, use `git branch -a --contains <commit>`
+   on a tagged commit to find the branch.
 
 ## Write Constraints
 - Review work is read-only for repository code and git state.
@@ -46,15 +58,15 @@
   stop immediately.
 
 ## Actions
-1. Review code changes against the knot description and acceptance
-   criteria
-2. Verify the implementation respects all knot invariants
-3. Verify tests cover the required behavior
-4. Use the correct review target for the profile output mode:
-   `{{ output }}` = `remote_main` means review the implementation branch
-   directly using the branch diff, status, and test results.
-   `{{ output }}` = `pr` means review the pull request itself, including
-   the PR diff, status, and metadata.
+1. Locate the review artifact using the steps above
+2. Review code changes against the knot description and acceptance
+   criteria:
+   `{{ output }}` = `remote_main` means review the branch diff against
+   main, check test results, and verify sanity gates pass.
+   `{{ output }}` = `pr` means review the pull request diff, status,
+   CI checks, and PR metadata.
+3. Verify the implementation respects all knot invariants
+4. Verify tests cover the required behavior
 5. Verify all sanity gates pass
 6. Validate no security issues or regressions introduced
 7. Approve or request changes based only on specification and code drift
