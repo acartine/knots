@@ -5,7 +5,10 @@ use crate::poll_claim;
 use crate::ui;
 use crate::write_queue::{LeaseCreateOperation, LeaseTerminateOperation, WriteOperation};
 
-use super::helpers::{format_json, parse_gate_data_args, parse_gate_decision, parse_knot_type_arg};
+use super::helpers::{
+    format_json, parse_gate_data_args, parse_gate_decision, parse_knot_type_arg,
+    reject_non_claim_lease_binding,
+};
 
 mod execute_write_ops;
 
@@ -41,6 +44,7 @@ pub(crate) fn execute_operation(app: &App, operation: &WriteOperation) -> Result
 }
 
 fn execute_new(app: &App, args: &crate::write_queue::NewOperation) -> Result<String, AppError> {
+    reject_non_claim_lease_binding(args.lease_id.as_deref())?;
     let profile_override = if args.fast {
         Some(app.default_quick_profile_id()?)
     } else {
@@ -71,9 +75,6 @@ fn execute_new(app: &App, args: &crate::write_queue::NewOperation) -> Result<Str
             ..CreateKnotOptions::default()
         },
     )?;
-    if let Some(lid) = &args.lease_id {
-        crate::lease::bind_lease(app, &knot.id, lid)?;
-    }
     let palette = ui::Palette::auto();
     Ok(format!(
         "created {} {} {}\n",

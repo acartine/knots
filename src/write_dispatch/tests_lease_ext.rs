@@ -286,7 +286,7 @@ pub(super) fn create_test_lease(app: &App) -> String {
 }
 
 #[test]
-fn new_with_lease_flag_binds_lease() {
+fn new_with_lease_flag_rejects() {
     let root = unique_workspace();
     setup_repo(&root);
     let app = open_app(&root);
@@ -306,25 +306,28 @@ fn new_with_lease_flag_binds_lease() {
         gate_failure_modes: vec![],
         lease_id: Some(lease_id.clone()),
     });
-    let output = execute_operation(&app, &op).expect("new should succeed");
-    assert!(output.contains("created"), "should confirm creation");
+    let err = execute_operation(&app, &op).expect_err("new should reject lease binding");
+    let err_msg = err.to_string();
+    assert!(
+        err_msg.contains("lease binding is only allowed during claim operations"),
+        "error should mention claim-only lease binding: {err_msg}"
+    );
 
     let knots = app.list_knots().expect("list");
-    let work = knots
-        .iter()
-        .find(|k| k.title == "Lease-bound new")
-        .expect("knot should exist");
     assert_eq!(
-        work.lease_id.as_deref(),
-        Some(lease_id.as_str()),
-        "lease_id should be set"
+        knots
+            .iter()
+            .filter(|k| k.title == "Lease-bound new")
+            .count(),
+        0,
+        "knot should not be created when --lease is rejected"
     );
 
     let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
-fn update_with_lease_flag_binds_lease() {
+fn update_with_lease_flag_rejects_unbound() {
     let root = unique_workspace();
     setup_repo(&root);
     let app = open_app(&root);
@@ -371,15 +374,16 @@ fn update_with_lease_flag_binds_lease() {
         approve_terminal_cascade: false,
         lease_id: Some(lease_id.clone()),
     });
-    execute_operation(&app, &op).expect("update should succeed");
+    let err = execute_operation(&app, &op).expect_err("update should reject lease binding");
+    let err_msg = err.to_string();
+    assert!(
+        err_msg.contains("no active lease"),
+        "error should mention missing active lease: {err_msg}"
+    );
 
     let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
-    assert_eq!(updated.title, "Updated with lease");
-    assert_eq!(
-        updated.lease_id.as_deref(),
-        Some(lease_id.as_str()),
-        "lease_id should be bound via update"
-    );
+    assert_eq!(updated.title, "Update lease test");
+    assert!(updated.lease_id.is_none(), "update should not bind a lease");
 
     let _ = std::fs::remove_dir_all(root);
 }

@@ -8,6 +8,8 @@ use crate::domain::knot_type::KnotType;
 use crate::domain::state::KnotState;
 use crate::ui;
 
+const CLAIM_ONLY_LEASE_BINDING: &str = "lease binding is only allowed during claim operations";
+
 pub(crate) fn resolve_lease_agent_info(
     app: &App,
     knot_id: &str,
@@ -16,6 +18,35 @@ pub(crate) fn resolve_lease_agent_info(
     let lease_id = knot.lease_id.as_ref()?;
     let lease_knot = app.show_knot(lease_id).ok()??;
     lease_knot.lease.as_ref()?.agent_info.clone()
+}
+
+pub(crate) fn reject_non_claim_lease_binding(lease_id: Option<&str>) -> Result<(), AppError> {
+    if let Some(provided_lease) = lease_id {
+        return Err(AppError::InvalidArgument(format!(
+            "{CLAIM_ONLY_LEASE_BINDING}: caller provided '{provided_lease}'"
+        )));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_non_claim_lease(
+    knot: &crate::app::KnotView,
+    lease_id: Option<&str>,
+) -> Result<(), AppError> {
+    let Some(provided_lease) = lease_id else {
+        return Ok(());
+    };
+
+    match knot.lease_id.as_deref() {
+        Some(knot_lease) if knot_lease == provided_lease => Ok(()),
+        Some(knot_lease) => Err(AppError::InvalidArgument(format!(
+            "lease mismatch: knot has '{knot_lease}', caller provided '{provided_lease}'"
+        ))),
+        None => Err(AppError::InvalidArgument(format!(
+            "knot has no active lease but caller provided \
+             '{provided_lease}'; {CLAIM_ONLY_LEASE_BINDING}"
+        ))),
+    }
 }
 
 pub(crate) fn execute_with_terminal_cascade_prompt<T, F>(
