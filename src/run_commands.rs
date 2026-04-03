@@ -30,11 +30,10 @@ pub fn run_ls(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::App
 pub fn run_show(app: &app::App, args: crate::cli::ShowArgs) -> Result<(), app::AppError> {
     match app.show_knot(&args.id)? {
         Some(knot) => {
+            reject_generic_lease_show(&knot, &args.id)?;
             if args.json {
-                let mut value = serde_json::to_value(&knot).expect("json serialize");
-                if !args.verbose {
-                    ui::trim_json_metadata(&mut value, &knot);
-                }
+                let mut value = show_json_value(&knot);
+                trim_show_json_metadata(&mut value, &knot, args.verbose);
                 print_json(&value);
             } else {
                 ui::print_knot_show(&knot, args.verbose);
@@ -42,6 +41,30 @@ pub fn run_show(app: &app::App, args: crate::cli::ShowArgs) -> Result<(), app::A
             Ok(())
         }
         None => Err(app::AppError::NotFound(args.id)),
+    }
+}
+
+fn reject_generic_lease_show(knot: &app::KnotView, id: &str) -> Result<(), app::AppError> {
+    if knot.knot_type == domain::knot_type::KnotType::Lease {
+        return Err(app::AppError::InvalidArgument(format!(
+            "'{id}' is a lease knot; use `kno lease show {}` instead",
+            knot.id
+        )));
+    }
+    Ok(())
+}
+
+fn show_json_value(knot: &app::KnotView) -> serde_json::Value {
+    let mut value = serde_json::to_value(knot).expect("json serialize");
+    if let Some(object) = value.as_object_mut() {
+        object.remove("lease_id");
+    }
+    value
+}
+
+fn trim_show_json_metadata(value: &mut serde_json::Value, knot: &app::KnotView, verbose: bool) {
+    if !verbose {
+        ui::trim_json_metadata(value, knot);
     }
 }
 

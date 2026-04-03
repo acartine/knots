@@ -235,6 +235,7 @@ fn knot_show_fields(knot: &KnotView, verbose: bool) -> Vec<ShowField> {
     }
     append_step_metadata_fields(&mut f, knot);
     append_metadata_fields(&mut f, knot, verbose);
+    append_lease_agent_fields(&mut f, knot);
     append_gate_fields(&mut f, knot);
     append_edge_fields(&mut f, knot);
     f
@@ -315,6 +316,20 @@ fn append_gate_fields(f: &mut Vec<ShowField>, knot: &KnotView) {
         }
     }
 }
+
+fn append_lease_agent_fields(f: &mut Vec<ShowField>, knot: &KnotView) {
+    let Some(agent) = knot.lease_agent.as_ref() else {
+        return;
+    };
+    f.push(ShowField::new(
+        "lease_agent",
+        format!(
+            "agent_type={} provider={} agent_name={} model={} model_version={}",
+            agent.agent_type, agent.provider, agent.agent_name, agent.model, agent.model_version
+        ),
+    ));
+}
+
 fn append_edge_fields(f: &mut Vec<ShowField>, knot: &KnotView) {
     if !knot.edges.is_empty() {
         for (kind, targets) in &group_edges_by_kind(&knot.edges, &knot.id) {

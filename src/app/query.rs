@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::knot_type::parse_knot_type;
+use crate::domain::knot_type::KnotType;
 use crate::domain::step_history::StepActorInfo;
 use crate::events::{new_event_id, now_utc_rfc3339, EventRecord, IndexEvent, IndexEventKind};
 use crate::locks::FileLock;
@@ -36,6 +37,7 @@ impl App {
             crate::trace::measure("get_knot_hot", || db::get_knot_hot(&self.conn, &id))?
         {
             let mut view = self.apply_alias_to_knot(KnotView::from(knot))?;
+            self.enrich_bound_lease_agent(&mut view)?;
             let edges = crate::trace::measure("list_edges", || {
                 db::list_edges(&self.conn, &id, db::EdgeDirection::Both)
             })?;
@@ -59,6 +61,23 @@ impl App {
             return Ok(Some(view));
         }
         Ok(None)
+    }
+
+    fn enrich_bound_lease_agent(&self, knot: &mut KnotView) -> Result<(), AppError> {
+        if knot.knot_type == KnotType::Lease {
+            return Ok(());
+        }
+        let Some(lease_id) = knot.lease_id.as_deref() else {
+            return Ok(());
+        };
+        let Some(lease_record) = db::get_knot_hot(&self.conn, lease_id)? else {
+            return Ok(());
+        };
+        if parse_knot_type(lease_record.knot_type.as_deref()) != KnotType::Lease {
+            return Ok(());
+        }
+        knot.lease_agent = lease_record.lease_data.agent_info;
+        Ok(())
     }
 
     pub fn step_annotate(&self, id: &str, actor: &StepActorInfo) -> Result<KnotView, AppError> {

@@ -366,6 +366,9 @@ mod tests_hierarchy_auto_resolve;
 #[path = "app/tests_hierarchy_ext.rs"]
 mod tests_hierarchy_ext;
 #[cfg(test)]
+#[path = "app/tests_show_lease.rs"]
+mod tests_show_lease;
+#[cfg(test)]
 #[path = "app/tests_step_history.rs"]
 mod tests_step_history;
 #[cfg(test)]

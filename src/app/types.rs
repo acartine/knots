@@ -4,7 +4,7 @@ use crate::db::{EdgeRecord, KnotCacheRecord};
 use crate::domain::gate::GateData;
 use crate::domain::invariant::Invariant;
 use crate::domain::knot_type::{parse_knot_type, KnotType};
-use crate::domain::lease::LeaseData;
+use crate::domain::lease::{AgentInfo, LeaseData};
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 use crate::workflow::StepMetadata;
@@ -35,6 +35,8 @@ pub struct KnotView {
     pub lease: Option<LeaseData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lease_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lease_agent: Option<AgentInfo>,
     pub workflow_id: String,
     pub profile_id: String,
     pub profile_etag: Option<String>,
@@ -180,6 +182,7 @@ impl From<KnotCacheRecord> for KnotView {
             gate,
             lease,
             lease_id: value.lease_id,
+            lease_agent: None,
             workflow_id: value.workflow_id,
             profile_id,
             profile_etag: value.profile_etag,

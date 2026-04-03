@@ -1,5 +1,6 @@
 use super::{filter_summary, format_show_fields, knot_show_fields, Palette, ShowField};
 use crate::app::KnotView;
+use crate::domain::lease::AgentInfo;
 use crate::domain::metadata::MetadataEntry;
 use crate::listing::KnotListFilter;
 #[test]
@@ -86,6 +87,7 @@ fn minimal_knot() -> KnotView {
         gate: None,
         lease: None,
         lease_id: None,
+        lease_agent: None,
         workflow_id: "compatibility".into(),
         profile_id: "default".into(),
         profile_etag: None,
@@ -135,6 +137,7 @@ fn knot_show_fields_include_optional_sections() {
         gate: None,
         lease: None,
         lease_id: None,
+        lease_agent: None,
         workflow_id: "compatibility".into(),
         profile_id: "default".into(),
         profile_etag: Some("etag-1".into()),
@@ -249,6 +252,33 @@ fn show_verbose_no_hint() {
     let l = super::format_knot_show(&k, &Palette { enabled: false }, 80, true);
     assert!(!l.join("\n").contains("not shown"));
     assert_eq!(l.iter().filter(|x| x.contains("note:")).count(), 2);
+}
+
+#[test]
+fn lease_agent_field_is_shown_without_exposing_lease_id() {
+    let mut k = minimal_knot();
+    k.lease_id = Some("knots-lease1".into());
+    k.lease_agent = Some(AgentInfo {
+        agent_type: "cli".into(),
+        provider: "Anthropic".into(),
+        agent_name: "claude".into(),
+        model: "opus".into(),
+        model_version: "4.6".into(),
+    });
+
+    let fields = knot_show_fields(&k, false);
+    assert!(
+        !fields.iter().any(|field| field.label == "lease_id"),
+        "plain-text show must not expose lease_id"
+    );
+    let lease_agent = fields
+        .iter()
+        .find(|field| field.label == "lease_agent")
+        .expect("lease_agent field should be present");
+    assert!(lease_agent.value.contains("Anthropic"));
+    assert!(lease_agent.value.contains("claude"));
+    assert!(lease_agent.value.contains("opus"));
+    assert!(lease_agent.value.contains("4.6"));
 }
 #[test]
 fn edges_grouped() {

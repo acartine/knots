@@ -1,6 +1,7 @@
 use super::*;
 
 use std::path::Path;
+use std::process::Command;
 
 const CUSTOM_BUNDLE: &str = r#"
 [workflow]
@@ -94,6 +95,30 @@ fn unique_workspace() -> std::path::PathBuf {
         std::env::temp_dir().join(format!("knots-run-command-test-{}", uuid::Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("workspace should be creatable");
     root
+}
+
+fn setup_git_repo(root: &Path) {
+    let run = |args: &[&str]| {
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(root)
+            .args(args)
+            .output()
+            .expect("git should run");
+        assert!(
+            output.status.success(),
+            "git {:?} failed: {}",
+            args,
+            String::from_utf8_lossy(&output.stderr)
+        );
+    };
+    run(&["init"]);
+    run(&["config", "user.email", "knots@example.com"]);
+    run(&["config", "user.name", "Knots Test"]);
+    std::fs::write(root.join("README.md"), "# knots\n").expect("readme should be writable");
+    run(&["add", "README.md"]);
+    run(&["commit", "-m", "init"]);
+    run(&["branch", "-M", "main"]);
 }
 
 fn install_custom_workflow(root: &Path) {
@@ -215,6 +240,125 @@ fn resolve_skill_by_name_rejects_legacy_fallbacks_for_custom_workflows() {
     let err = resolve_skill_by_name(&app, "implementation")
         .expect_err("missing custom state should not fall back");
     assert!(format!("{err}").contains("not a knot id or skill state name"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn show_json_value_hides_lease_id_and_keeps_lease_agent_metadata() {
+    let knot = app::KnotView {
+        id: "K-lease-bound".to_string(),
+        alias: None,
+        title: "Lease-bound work".to_string(),
+        state: "implementation".to_string(),
+        updated_at: "2026-04-03T00:00:00Z".to_string(),
+        body: None,
+        description: None,
+        acceptance: None,
+        priority: None,
+        knot_type: crate::domain::knot_type::KnotType::Work,
+        tags: Vec::new(),
+        notes: Vec::new(),
+        handoff_capsules: Vec::new(),
+        invariants: Vec::new(),
+        step_history: Vec::new(),
+        gate: None,
+        lease: None,
+        lease_id: Some("knots-lease-secret".to_string()),
+        lease_agent: Some(crate::domain::lease::AgentInfo {
+            agent_type: "cli".to_string(),
+            provider: "Anthropic".to_string(),
+            agent_name: "claude".to_string(),
+            model: "opus".to_string(),
+            model_version: "4.6".to_string(),
+        }),
+        workflow_id: "compatibility".to_string(),
+        profile_id: "autopilot".to_string(),
+        profile_etag: None,
+        deferred_from_state: None,
+        blocked_from_state: None,
+        created_at: None,
+        step_metadata: None,
+        next_step_metadata: None,
+        edges: Vec::new(),
+        child_summaries: Vec::new(),
+    };
+
+    let value = show_json_value(&knot);
+    assert!(
+        value.get("lease_id").is_none(),
+        "generic show JSON must not expose lease_id"
+    );
+    assert_eq!(value["lease_agent"]["provider"].as_str(), Some("Anthropic"));
+    assert_eq!(value["lease_agent"]["agent_name"].as_str(), Some("claude"));
+    assert_eq!(value["lease_agent"]["model"].as_str(), Some("opus"));
+    assert_eq!(value["lease_agent"]["model_version"].as_str(), Some("4.6"));
+}
+
+#[test]
+fn run_show_rejects_lease_knots_but_lease_show_still_allows_them() {
+    let root = unique_workspace();
+    setup_git_repo(&root);
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
+
+    let lease = crate::lease::create_lease(
+        &app,
+        "showable-lease",
+        crate::domain::lease::LeaseType::Agent,
+        Some(crate::domain::lease::AgentInfo {
+            agent_type: "cli".to_string(),
+            provider: "Anthropic".to_string(),
+            agent_name: "claude".to_string(),
+            model: "opus".to_string(),
+            model_version: "4.6".to_string(),
+        }),
+    )
+    .expect("lease should be created");
+
+    let text_err = run_show(
+        &app,
+        crate::cli::ShowArgs {
+            id: lease.id.clone(),
+            json: false,
+            verbose: false,
+        },
+    )
+    .expect_err("generic text show should reject lease knots");
+    assert!(text_err.to_string().contains("kno lease show"));
+
+    let json_err = run_show(
+        &app,
+        crate::cli::ShowArgs {
+            id: lease.id.clone(),
+            json: true,
+            verbose: false,
+        },
+    )
+    .expect_err("generic json show should reject lease knots");
+    assert!(json_err.to_string().contains("kno lease show"));
+
+    run_lease_read(
+        &app,
+        crate::cli::LeaseArgs {
+            command: crate::cli::LeaseSubcommands::Show(crate::cli::LeaseShowArgs {
+                id: lease.id.clone(),
+                json: false,
+            }),
+        },
+    )
+    .expect("lease show text should remain available");
+
+    run_lease_read(
+        &app,
+        crate::cli::LeaseArgs {
+            command: crate::cli::LeaseSubcommands::Show(crate::cli::LeaseShowArgs {
+                id: lease.id.clone(),
+                json: true,
+            }),
+        },
+    )
+    .expect("lease show json should remain available");
 
     let _ = std::fs::remove_dir_all(root);
 }
