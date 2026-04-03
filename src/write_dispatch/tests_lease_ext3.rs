@@ -1,6 +1,6 @@
 use crate::app::StateActorMetadata;
 use crate::poll_claim;
-use crate::write_queue::{UpdateOperation, WriteOperation};
+use crate::write_queue::{NextOperation, UpdateOperation, WriteOperation};
 
 use super::execute_operation;
 use super::tests_lease_ext::{create_test_lease, open_app, setup_repo, unique_workspace};
@@ -170,6 +170,166 @@ fn claimed_without_lease_then_update_cannot_bind() {
     let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
     assert_eq!(updated.title, "Unleased claim update");
     assert!(updated.lease_id.is_none(), "update should not bind a lease");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+/// AC-4: next on a bounded knot clears lease_id and terminates the lease.
+#[test]
+fn next_clears_lease_and_terminates() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot("Clear lease test", None, Some("work_item"), Some("default"))
+        .expect("create knot");
+
+    let claimed = poll_claim::claim_knot(&app, &work.id, claim_actor(true), None).expect("claim");
+    let lease_id = claimed.knot.lease_id.clone().expect("lease bound");
+
+    let next_op = WriteOperation::Next(NextOperation {
+        id: work.id.clone(),
+        expected_state: Some(claimed.knot.state.clone()),
+        json: false,
+        approve_terminal_cascade: false,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        lease_id: Some(lease_id.clone()),
+    });
+    execute_operation(&app, &next_op).expect("next should succeed");
+
+    let knot_after = app.show_knot(&work.id).expect("show").expect("knot exists");
+    assert!(
+        knot_after.lease_id.is_none(),
+        "lease_id should be cleared after next"
+    );
+
+    let lease_after = app
+        .show_knot(&lease_id)
+        .expect("show lease")
+        .expect("lease exists");
+    assert_eq!(
+        lease_after.state, "lease_terminated",
+        "lease should be terminated after next"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+/// AC-3: next on a bounded knot rejects when lease_id is omitted.
+#[test]
+fn next_rejects_missing_lease_on_bounded_knot() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot(
+            "Missing lease next",
+            None,
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("create knot");
+
+    let claimed = poll_claim::claim_knot(&app, &work.id, claim_actor(true), None).expect("claim");
+    assert!(claimed.knot.lease_id.is_some(), "should have lease");
+
+    let next_op = WriteOperation::Next(NextOperation {
+        id: work.id.clone(),
+        expected_state: Some(claimed.knot.state.clone()),
+        json: false,
+        approve_terminal_cascade: false,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        lease_id: None,
+    });
+    let err = execute_operation(&app, &next_op).expect_err("should reject missing lease");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("must provide --lease"),
+        "error should mention --lease: {msg}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+/// AC-3: next on a bounded knot rejects non-matching lease_id.
+#[test]
+fn next_rejects_wrong_lease_on_bounded_knot() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot("Wrong lease next", None, Some("work_item"), Some("default"))
+        .expect("create knot");
+
+    let claimed = poll_claim::claim_knot(&app, &work.id, claim_actor(true), None).expect("claim");
+
+    let next_op = WriteOperation::Next(NextOperation {
+        id: work.id.clone(),
+        expected_state: Some(claimed.knot.state.clone()),
+        json: false,
+        approve_terminal_cascade: false,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        lease_id: Some("wrong-id".to_string()),
+    });
+    let err = execute_operation(&app, &next_op).expect_err("should reject wrong lease");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("lease mismatch"),
+        "error should mention mismatch: {msg}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+/// AC-3 variant: next with lease on an unleased knot fails.
+#[test]
+fn next_with_lease_on_unleased_knot_fails() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let work = app
+        .create_knot(
+            "Unleased knot next",
+            None,
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("create knot");
+
+    // Claim without agent_name so no lease is created
+    let claimed = poll_claim::claim_knot(&app, &work.id, claim_actor(false), None).expect("claim");
+    assert!(claimed.knot.lease_id.is_none(), "should not have lease");
+
+    let next_op = WriteOperation::Next(NextOperation {
+        id: work.id.clone(),
+        expected_state: Some(claimed.knot.state.clone()),
+        json: false,
+        approve_terminal_cascade: false,
+        actor_kind: None,
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
+        lease_id: Some("fake-lease".to_string()),
+    });
+    let err = execute_operation(&app, &next_op).expect_err("should fail when knot has no lease");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("no active lease"),
+        "error should mention no active lease: {msg}"
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

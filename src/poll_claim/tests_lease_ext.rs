@@ -228,6 +228,7 @@ fn claim_with_external_lease_binds_it() {
         )
         .expect("create work knot");
 
+    // Create a lease in lease_ready (do NOT activate it)
     let lease = crate::lease::create_lease(
         &app,
         "test-external-lease",
@@ -235,7 +236,6 @@ fn claim_with_external_lease_binds_it() {
         Some(create_agent_info()),
     )
     .expect("create lease");
-    let _ = crate::lease::activate_lease(&app, &lease.id);
 
     let actor = StateActorMetadata {
         actor_kind: Some("agent".to_string()),
@@ -245,8 +245,13 @@ fn claim_with_external_lease_binds_it() {
     };
     let result = claim_knot(&app, &work.id, actor, Some(&lease.id)).expect("claim should succeed");
 
-    // Verify the external lease is bound (not a new one)
+    // Verify the external lease is bound and now active
     assert_eq!(result.knot.lease_id.as_deref(), Some(lease.id.as_str()));
+    let lease_after = app
+        .show_knot(&lease.id)
+        .expect("show")
+        .expect("lease exists");
+    assert_eq!(lease_after.state, "lease_active");
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -333,6 +338,7 @@ fn completion_command_includes_lease() {
         )
         .expect("create knot");
 
+    // Create a lease in lease_ready (claim will activate it)
     let lease = crate::lease::create_lease(
         &app,
         "test-completion-lease",
@@ -340,7 +346,6 @@ fn completion_command_includes_lease() {
         Some(create_agent_info()),
     )
     .expect("create lease");
-    let _ = crate::lease::activate_lease(&app, &lease.id);
 
     let actor = StateActorMetadata {
         actor_kind: Some("agent".to_string()),

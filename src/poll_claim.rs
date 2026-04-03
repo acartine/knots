@@ -202,13 +202,15 @@ fn bind_external_lease(app: &App, knot_id: &str, lid: &str) -> Result<Option<Str
         )));
     }
     match lease_knot.state.as_str() {
-        "lease_active" => { /* already active */ }
         "lease_ready" => {
-            let _ = crate::lease::activate_lease(app, lid);
+            crate::lease::activate_lease(app, lid)?;
         }
         other => {
+            if other != "lease_active" && other != "lease_terminated" {
+                eprintln!("warning: lease '{}' has unexpected state '{}'", lid, other);
+            }
             return Err(AppError::InvalidArgument(format!(
-                "lease '{}' is in state '{}' -- expected lease_active or lease_ready",
+                "lease '{}' is in state '{}' -- expected lease_ready",
                 lid, other
             )));
         }
@@ -426,3 +428,7 @@ mod tests_gate_ext;
 #[cfg(test)]
 #[path = "poll_claim/tests_lease_ext.rs"]
 mod tests_lease_ext;
+
+#[cfg(test)]
+#[path = "poll_claim/tests_lease_ext2.rs"]
+mod tests_lease_ext2;

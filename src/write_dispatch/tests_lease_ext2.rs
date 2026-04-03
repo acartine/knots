@@ -402,7 +402,7 @@ fn next_with_wrong_lease_fails() {
 }
 
 #[test]
-fn next_without_lease_still_works() {
+fn next_without_lease_on_unleased_knot_works() {
     let root = unique_workspace();
     setup_repo(&root);
     let app = open_app(&root);
@@ -411,13 +411,15 @@ fn next_without_lease_still_works() {
         .create_knot("No lease next", None, Some("work_item"), Some("default"))
         .expect("create knot");
 
+    // Claim without agent_name so no lease is created
     let actor = StateActorMetadata {
         actor_kind: Some("agent".to_string()),
-        agent_name: Some("test-agent".to_string()),
-        agent_model: Some("test-model".to_string()),
-        agent_version: Some("1.0".to_string()),
+        agent_name: None,
+        agent_model: None,
+        agent_version: None,
     };
     let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
+    assert!(claimed.knot.lease_id.is_none(), "should have no lease");
 
     let next_op = WriteOperation::Next(NextOperation {
         id: work.id.clone(),
@@ -433,49 +435,7 @@ fn next_without_lease_still_works() {
     let result = execute_operation(&app, &next_op);
     assert!(
         result.is_ok(),
-        "next without lease should still work (backwards compat)"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn next_with_lease_on_unleasedknot_fails() {
-    let root = unique_workspace();
-    setup_repo(&root);
-    let app = open_app(&root);
-
-    let work = app
-        .create_knot("No lease on knot", None, Some("work_item"), Some("default"))
-        .expect("create knot");
-
-    // Claim without creating a lease (no agent_name)
-    let actor = StateActorMetadata {
-        actor_kind: Some("agent".to_string()),
-        agent_name: None,
-        agent_model: None,
-        agent_version: None,
-    };
-    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
-    assert!(claimed.knot.lease_id.is_none(), "should not have a lease");
-
-    let next_op = WriteOperation::Next(NextOperation {
-        id: work.id.clone(),
-        expected_state: Some(claimed.knot.state.clone()),
-        json: false,
-        approve_terminal_cascade: false,
-        actor_kind: None,
-        agent_name: None,
-        agent_model: None,
-        agent_version: None,
-        lease_id: Some("fake-lease".to_string()),
-    });
-    let result = execute_operation(&app, &next_op);
-    assert!(result.is_err(), "should fail when knot has no lease");
-    let err = result.unwrap_err().to_string();
-    assert!(
-        err.contains("no active lease"),
-        "error should mention no active lease: {err}"
+        "next without lease on unleased knot should work"
     );
 
     let _ = std::fs::remove_dir_all(root);
