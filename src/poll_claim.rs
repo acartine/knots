@@ -3,6 +3,7 @@ use crate::app::{App, AppError, KnotView, StateActorMetadata};
 use crate::cli::{ClaimArgs, PollArgs};
 use crate::dispatch::profile_lookup_id;
 use crate::domain::knot_type::KnotType;
+use crate::lease_guard::validate_claim_external_lease;
 use crate::prompt;
 use crate::workflow::{OwnerKind, ProfileRegistry};
 use crate::workflow_runtime;
@@ -164,6 +165,9 @@ pub fn claim_knot(
         ..actor
     };
     let agent_info = build_agent_info_from_actor(&claim_actor);
+    if let Some(lease_id) = external_lease {
+        validate_claim_external_lease(app, lease_id)?;
+    }
     let claimed = app.set_state_with_actor_and_options(
         &knot.id,
         &next_action,
@@ -195,28 +199,8 @@ pub fn claim_knot(
 }
 
 fn bind_external_lease(app: &App, knot_id: &str, lid: &str) -> Result<Option<String>, AppError> {
-    let lease_knot = app
-        .show_knot(lid)?
-        .ok_or_else(|| AppError::NotFound(format!("lease {}", lid)))?;
-    if lease_knot.knot_type != KnotType::Lease {
-        return Err(AppError::InvalidArgument(format!(
-            "'{}' is not a lease (type: {})",
-            lid,
-            lease_knot.knot_type.as_str()
-        )));
-    }
-    match lease_knot.state.as_str() {
-        "lease_active" => { /* already active */ }
-        "lease_ready" => {
-            let _ = crate::lease::activate_lease(app, lid);
-        }
-        other => {
-            return Err(AppError::InvalidArgument(format!(
-                "lease '{}' is in state '{}' -- expected lease_active or lease_ready",
-                lid, other
-            )));
-        }
-    }
+    validate_claim_external_lease(app, lid)?;
+    crate::lease::activate_lease(app, lid)?;
     crate::lease::bind_lease(app, knot_id, lid)?;
     Ok(Some(lid.to_string()))
 }
@@ -232,8 +216,8 @@ fn create_and_bind_lease(
         crate::domain::lease::LeaseType::Agent,
         Some(info),
     )?;
-    let _ = crate::lease::activate_lease(app, &lease.id);
-    let _ = crate::lease::bind_lease(app, knot_id, &lease.id);
+    crate::lease::activate_lease(app, &lease.id)?;
+    crate::lease::bind_lease(app, knot_id, &lease.id)?;
     Ok(Some(lease.id))
 }
 
@@ -430,3 +414,7 @@ mod tests_gate_ext;
 #[cfg(test)]
 #[path = "poll_claim/tests_lease_ext.rs"]
 mod tests_lease_ext;
+
+#[cfg(test)]
+#[path = "poll_claim/tests_lease_ext2.rs"]
+mod tests_lease_ext2;

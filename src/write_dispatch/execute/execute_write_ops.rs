@@ -2,6 +2,7 @@ use crate::app::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::dispatch::{knot_ref, resolve_next_state};
 use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::MetadataEntryInput;
+use crate::lease_guard::{release_bound_lease, validate_next_bound_lease};
 use crate::rollback::resolve_rollback_state;
 use crate::ui;
 use crate::write_queue::NextOperation;
@@ -146,7 +147,7 @@ pub(super) fn execute_next(app: &App, args: &NextOperation) -> Result<String, Ap
     let knot = app
         .show_knot(&args.id)?
         .ok_or_else(|| AppError::NotFound(args.id.clone()))?;
-    validate_next_preconditions(&knot, args)?;
+    validate_next_preconditions(app, &knot, args)?;
     let (knot, next, owner_kind) = resolve_next_state(app, &knot.id)?;
     let previous_state = knot.state.clone();
     let updated = execute_with_terminal_cascade_prompt(
@@ -169,7 +170,7 @@ pub(super) fn execute_next(app: &App, args: &NextOperation) -> Result<String, Ap
         },
     )?;
     if updated.lease_id.is_some() {
-        let _ = crate::lease::unbind_lease(app, &updated.id);
+        release_bound_lease(app, &updated.id)?;
     }
     Ok(format_next_output(
         &updated,
@@ -180,6 +181,7 @@ pub(super) fn execute_next(app: &App, args: &NextOperation) -> Result<String, Ap
 }
 
 fn validate_next_preconditions(
+    app: &App,
     knot: &crate::app::KnotView,
     args: &NextOperation,
 ) -> Result<(), AppError> {
@@ -193,7 +195,7 @@ fn validate_next_preconditions(
             )));
         }
     }
-    validate_non_claim_lease(knot, args.lease_id.as_deref())
+    validate_next_bound_lease(app, knot, args.lease_id.as_deref())
 }
 
 pub(super) fn execute_rollback(

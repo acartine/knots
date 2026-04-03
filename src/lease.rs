@@ -67,17 +67,3 @@ pub fn list_active_leases(app: &App) -> Result<Vec<KnotView>, AppError> {
 pub fn bind_lease(app: &App, knot_id: &str, lease_id: &str) -> Result<(), AppError> {
     app.set_lease_id(knot_id, Some(lease_id))
 }
-
-/// Unbind and terminate a lease from a knot.
-pub fn unbind_lease(app: &App, knot_id: &str) -> Result<(), AppError> {
-    let knot = app
-        .show_knot(knot_id)?
-        .ok_or_else(|| AppError::NotFound(knot_id.to_string()))?;
-    if let Some(lid) = &knot.lease_id {
-        let _ = terminate_lease(app, lid);
-    }
-    app.set_lease_id(knot_id, None)?;
-    // Best-effort: run any queued sync now that a lease has ended.
-    let _ = app.trigger_queued_sync();
-    Ok(())
-}

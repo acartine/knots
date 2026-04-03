@@ -402,7 +402,7 @@ fn next_with_wrong_lease_fails() {
 }
 
 #[test]
-fn next_without_lease_still_works() {
+fn next_without_lease_fails_when_knot_has_bound_lease() {
     let root = unique_workspace();
     setup_repo(&root);
     let app = open_app(&root);
@@ -432,8 +432,13 @@ fn next_without_lease_still_works() {
     });
     let result = execute_operation(&app, &next_op);
     assert!(
-        result.is_ok(),
-        "next without lease should still work (backwards compat)"
+        result.is_err(),
+        "next without lease should fail for leased knots"
+    );
+    let err = result.unwrap_err().to_string();
+    assert!(
+        err.contains("bound lease"),
+        "error should require the bound lease: {err}"
     );
 
     let _ = std::fs::remove_dir_all(root);

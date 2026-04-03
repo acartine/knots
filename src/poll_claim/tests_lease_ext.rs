@@ -7,13 +7,13 @@ use crate::app::{App, StateActorMetadata};
 use crate::cli::PollArgs;
 use crate::domain::knot_type::KnotType;
 
-fn unique_workspace() -> PathBuf {
+pub(super) fn unique_workspace() -> PathBuf {
     let root = std::env::temp_dir().join(format!("knots-poll-lease-ext-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("workspace should be creatable");
     root
 }
 
-fn open_app(root: &Path) -> App {
+pub(super) fn open_app(root: &Path) -> App {
     let db_path = root.join(".knots/cache/state.sqlite");
     App::open(db_path.to_str().expect("utf8 db path"), root.to_path_buf()).expect("app should open")
 }
@@ -184,7 +184,7 @@ fn run_poll_with_claim_creates_lease() {
     let _ = std::fs::remove_dir_all(root);
 }
 
-fn setup_repo(root: &std::path::Path) {
+pub(super) fn setup_repo(root: &std::path::Path) {
     use std::process::Command;
     let run = |args: &[&str]| {
         let output = Command::new("git")
@@ -204,7 +204,7 @@ fn setup_repo(root: &std::path::Path) {
     run(&["branch", "-M", "main"]);
 }
 
-fn create_agent_info() -> crate::domain::lease::AgentInfo {
+pub(super) fn create_agent_info() -> crate::domain::lease::AgentInfo {
     crate::domain::lease::AgentInfo {
         agent_type: "cli".to_string(),
         provider: "test".to_string(),
@@ -235,7 +235,6 @@ fn claim_with_external_lease_binds_it() {
         Some(create_agent_info()),
     )
     .expect("create lease");
-    let _ = crate::lease::activate_lease(&app, &lease.id);
 
     let actor = StateActorMetadata {
         actor_kind: Some("agent".to_string()),
@@ -340,7 +339,6 @@ fn completion_command_includes_lease() {
         Some(create_agent_info()),
     )
     .expect("create lease");
-    let _ = crate::lease::activate_lease(&app, &lease.id);
 
     let actor = StateActorMetadata {
         actor_kind: Some("agent".to_string()),
@@ -394,7 +392,7 @@ fn claim_with_non_lease_knot_as_lease_rejects() {
         Ok(_) => panic!("claiming with non-lease knot should fail"),
     };
     assert!(
-        err.contains("is not a lease"),
+        err.contains("does not point to a lease knot"),
         "error should mention not a lease: {err}"
     );
 

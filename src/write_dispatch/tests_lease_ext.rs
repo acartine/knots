@@ -92,7 +92,7 @@ fn next_terminates_lease() {
         agent_name: Some("test-agent".to_string()),
         agent_model: Some("test-model".to_string()),
         agent_version: Some("1.0".to_string()),
-        lease_id: None,
+        lease_id: Some(lease_id.clone()),
     });
     execute_operation(&app, &next_op).expect("next should succeed");
 
