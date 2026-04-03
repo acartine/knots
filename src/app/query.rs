@@ -218,14 +218,11 @@ impl App {
         let Some(title) = title else {
             return Ok(None);
         };
-        let state = cold
-            .as_ref()
-            .map(|r| r.state.clone())
-            .unwrap_or_else(|| "ready_for_implementation".to_string());
-        let updated_at = cold
-            .as_ref()
-            .map(|r| r.updated_at.clone())
-            .unwrap_or_else(crate::events::now_utc_rfc3339);
+        let Some(cold_record) = cold.as_ref() else {
+            return Ok(None);
+        };
+        let state = cold_record.state.clone();
+        let updated_at = cold_record.updated_at.clone();
         let record = rehydrate_from_events(&self.store_paths.root, id, title, state, updated_at)?;
         db::upsert_knot_hot(
             &self.conn,

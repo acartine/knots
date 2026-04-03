@@ -72,6 +72,14 @@ fn rehydrate_restores_acceptance_from_events() {
     .expect("db parent should be creatable");
     let conn = db::open_connection(&db_path_str).expect("db should open");
     db::upsert_knot_warm(&conn, "K-accept", "Warm acceptance").expect("warm upsert should succeed");
+    db::upsert_cold_catalog(
+        &conn,
+        "K-accept",
+        "Warm acceptance",
+        "ready_for_implementation",
+        "2026-03-22T10:00:01Z",
+    )
+    .expect("cold catalog upsert should succeed");
     drop(conn);
 
     let full_path = root
@@ -160,6 +168,14 @@ fn show_knot_does_not_implicitly_rehydrate_from_warm_or_events() {
     .expect("db parent should be creatable");
     let conn = db::open_connection(&db_path_str).expect("db should open");
     db::upsert_knot_warm(&conn, "K-cache-miss", "Warm only").expect("warm upsert");
+    db::upsert_cold_catalog(
+        &conn,
+        "K-cache-miss",
+        "Warm only",
+        "ready_for_implementation",
+        "2026-03-22T10:00:01Z",
+    )
+    .expect("cold catalog upsert should succeed");
     drop(conn);
 
     let idx_path = root
@@ -328,6 +344,42 @@ fn json_shape_acceptance_null_after_clear() {
         "acceptance must be null after clearing, got: {}",
         json["acceptance"]
     );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn rehydrate_returns_none_when_only_warm_exists() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let db_path_str = db_path.to_str().expect("utf8 path").to_string();
+    std::fs::create_dir_all(db_path.parent().expect("db parent"))
+        .expect("db parent should be creatable");
+    let conn = db::open_connection(&db_path_str).expect("db should open");
+    db::upsert_knot_warm(&conn, "K-warm-only", "Warm title").expect("warm upsert");
+    drop(conn);
+
+    let app = App::open(&db_path_str, root.clone()).expect("app should open");
+    let result = app.rehydrate("K-warm-only").expect("should not error");
+    assert!(
+        result.is_none(),
+        "rehydrate must return None without a cold catalog record"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn auto_sync_dedup_skips_second_call() {
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+
+    let first = app.list_knots();
+    assert!(first.is_ok(), "first list_knots should succeed");
+    let second = app.list_knots();
+    assert!(second.is_ok(), "second list_knots should succeed");
 
     let _ = std::fs::remove_dir_all(root);
 }

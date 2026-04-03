@@ -30,7 +30,9 @@ pub struct PollResult {
 }
 
 pub fn run_poll(app: &App, args: PollArgs) -> Result<(), AppError> {
-    let result = poll_queue(app, args.stage.as_deref(), args.owner.as_deref())?;
+    let result = crate::trace::measure("poll_queue", || {
+        poll_queue(app, args.stage.as_deref(), args.owner.as_deref())
+    })?;
     match result {
         None => {
             if !args.json {
@@ -57,17 +59,19 @@ pub fn run_poll(app: &App, args: PollArgs) -> Result<(), AppError> {
 }
 
 pub fn run_claim(app: &App, args: ClaimArgs) -> Result<(), AppError> {
-    let result = if args.peek {
-        peek_knot(app, &args.id)?
-    } else {
-        let actor = StateActorMetadata {
-            actor_kind: Some("agent".to_string()),
-            agent_name: args.agent_name,
-            agent_model: args.agent_model,
-            agent_version: args.agent_version,
-        };
-        claim_knot(app, &args.id, actor, args.lease.as_deref())?
-    };
+    let result = crate::trace::measure("claim", || {
+        if args.peek {
+            peek_knot(app, &args.id)
+        } else {
+            let actor = StateActorMetadata {
+                actor_kind: Some("agent".to_string()),
+                agent_name: args.agent_name.clone(),
+                agent_model: args.agent_model.clone(),
+                agent_version: args.agent_version.clone(),
+            };
+            claim_knot(app, &args.id, actor, args.lease.as_deref())
+        }
+    })?;
     print_result_verbose(&result, args.json, args.verbose);
     Ok(())
 }

@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::path::PathBuf;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
@@ -59,6 +60,7 @@ pub struct App {
     project_id: Option<String>,
     profile_registry: ProfileRegistry,
     home_override: Option<Option<PathBuf>>,
+    auto_sync_done: Cell<bool>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -108,6 +110,7 @@ impl App {
             project_id: context.project_id.clone(),
             profile_registry,
             home_override: None,
+            auto_sync_done: Cell::new(false),
         })
     }
 
@@ -218,6 +221,14 @@ impl App {
     }
 
     fn maybe_auto_sync_for_read(&self) -> Result<(), AppError> {
+        if self.auto_sync_done.get() {
+            crate::trace::record(
+                "auto_sync",
+                std::time::Duration::ZERO,
+                Some("skipped:already_synced".to_string()),
+            );
+            return Ok(());
+        }
         if !self.is_git_distribution() {
             crate::trace::record(
                 "auto_sync",
@@ -226,7 +237,7 @@ impl App {
             );
             return Ok(());
         }
-        match self.read_sync_policy()? {
+        let result = match self.read_sync_policy()? {
             SyncPolicy::Never => {
                 crate::trace::record(
                     "auto_sync",
@@ -240,7 +251,11 @@ impl App {
                 Ok(())
             }
             SyncPolicy::Auto => self.try_auto_sync_for_read(),
+        };
+        if result.is_ok() {
+            self.auto_sync_done.set(true);
         }
+        result
     }
 
     fn try_auto_sync_for_read(&self) -> Result<(), AppError> {
