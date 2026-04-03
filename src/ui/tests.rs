@@ -64,6 +64,7 @@ fn make_entry(id: &str, c: &str) -> MetadataEntry {
         agentname: "a".into(),
         model: "m".into(),
         version: "v".into(),
+        lease_ref: None,
     }
 }
 fn minimal_knot() -> KnotView {
@@ -120,6 +121,7 @@ fn knot_show_fields_include_optional_sections() {
             agentname: "codex".into(),
             model: "gpt-5".into(),
             version: "1".into(),
+            lease_ref: None,
         }],
         handoff_capsules: vec![MetadataEntry {
             entry_id: "h1".into(),
@@ -129,6 +131,7 @@ fn knot_show_fields_include_optional_sections() {
             agentname: "codex".into(),
             model: "gpt-5".into(),
             version: "1".into(),
+            lease_ref: None,
         }],
         invariants: vec![],
         step_history: vec![],

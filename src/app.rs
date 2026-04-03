@@ -18,6 +18,7 @@ pub mod error;
 mod gate;
 mod gate_metadata;
 pub mod helpers;
+mod immutable_records;
 mod knot_create;
 mod knot_lease;
 mod knot_profile;
@@ -365,6 +366,9 @@ mod tests_hierarchy_auto_resolve;
 #[cfg(test)]
 #[path = "app/tests_hierarchy_ext.rs"]
 mod tests_hierarchy_ext;
+#[cfg(test)]
+#[path = "app/tests_open_paths.rs"]
+mod tests_open_paths;
 #[cfg(test)]
 #[path = "app/tests_step_history.rs"]
 mod tests_step_history;

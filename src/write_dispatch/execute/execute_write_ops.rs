@@ -76,6 +76,7 @@ fn build_update_patch(
         clear_gate_failure_modes: args.clear_gate_failure_modes,
         add_note,
         add_handoff_capsule,
+        lease_id: args.lease_id.clone(),
         expected_profile_etag: args.if_match.clone(),
         force: args.force,
         state_actor: StateActorMetadata {
@@ -110,6 +111,7 @@ fn build_note_input(
             .note_version
             .clone()
             .or_else(|| lai.map(|i| i.model_version.clone())),
+        lease_ref: None,
     })
 }
 
@@ -138,6 +140,7 @@ fn build_handoff_input(
                 .handoff_version
                 .clone()
                 .or_else(|| lai.map(|i| i.model_version.clone())),
+            lease_ref: None,
         })
 }
 

@@ -117,6 +117,7 @@ pub(super) fn default_update_patch() -> UpdateKnotPatch {
         clear_gate_failure_modes: false,
         add_note: None,
         add_handoff_capsule: None,
+        lease_id: None,
         expected_profile_etag: None,
         force: false,
         state_actor: StateActorMetadata::default(),

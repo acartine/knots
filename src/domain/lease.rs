@@ -86,6 +86,44 @@ pub struct AgentInfo {
     pub model_version: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct LeaseReference {
+    pub knot_id: String,
+}
+
+impl LeaseReference {
+    pub fn new(knot_id: &str) -> Result<Self, LeaseReferenceError> {
+        let knot_id = knot_id.trim();
+        if knot_id.is_empty() {
+            return Err(LeaseReferenceError::EmptyKnotId);
+        }
+        Ok(Self {
+            knot_id: knot_id.to_string(),
+        })
+    }
+
+    pub fn from_option(knot_id: Option<&str>) -> Result<Option<Self>, LeaseReferenceError> {
+        knot_id.map(Self::new).transpose()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LeaseReferenceError {
+    EmptyKnotId,
+}
+
+impl fmt::Display for LeaseReferenceError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LeaseReferenceError::EmptyKnotId => {
+                write!(f, "lease reference knot_id must not be empty")
+            }
+        }
+    }
+}
+
+impl Error for LeaseReferenceError {}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct LeaseData {
     #[serde(default)]
@@ -188,6 +226,26 @@ mod tests {
         assert_eq!(data.lease_type, LeaseType::Agent);
         assert_eq!(data.nickname, "");
         assert!(data.agent_info.is_none());
+    }
+
+    #[test]
+    fn lease_reference_rejects_empty_knot_id() {
+        let err = LeaseReference::new("   ").unwrap_err();
+        assert_eq!(err, LeaseReferenceError::EmptyKnotId);
+        assert!(err.to_string().contains("must not be empty"));
+    }
+
+    #[test]
+    fn lease_reference_from_option_preserves_none() {
+        assert_eq!(LeaseReference::from_option(None).unwrap(), None);
+    }
+
+    #[test]
+    fn lease_reference_round_trips_through_json() {
+        let reference = LeaseReference::new("knots-lease").unwrap();
+        let json = serde_json::to_string(&reference).unwrap();
+        let parsed: LeaseReference = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, reference);
     }
 
     #[test]

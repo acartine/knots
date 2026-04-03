@@ -8,7 +8,7 @@ use serde_json::{Map, Value};
 use crate::db::{self, KnotCacheRecord, UpsertKnotHot};
 use crate::domain::gate::GateData;
 use crate::domain::invariant::Invariant;
-use crate::domain::lease::LeaseData;
+use crate::domain::lease::{LeaseData, LeaseReference};
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 use crate::installed_workflows;
@@ -196,6 +196,14 @@ pub(super) fn parse_metadata_entry(
     let agentname = required_string(object, "agentname", path)?;
     let model = required_string(object, "model", path)?;
     let version = required_string(object, "version", path)?;
+    let lease_ref = match object.get("lease_ref") {
+        Some(value) if !value.is_null() => Some(
+            serde_json::from_value::<LeaseReference>(value.clone()).map_err(|err| {
+                invalid_event(path, &format!("invalid 'lease_ref' payload: {}", err))
+            })?,
+        ),
+        _ => None,
+    };
     Ok(MetadataEntry {
         entry_id,
         content,
@@ -204,6 +212,7 @@ pub(super) fn parse_metadata_entry(
         agentname,
         model,
         version,
+        lease_ref,
     })
 }
 

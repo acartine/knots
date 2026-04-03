@@ -1,5 +1,10 @@
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use super::immutable::ImmutableRecord;
+use super::lease::LeaseReference;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StepRecord {
@@ -25,12 +30,14 @@ pub struct StepRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub lease_id: Option<String>,
+    pub lease_ref: Option<LeaseReference>,
     pub started_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ended_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supersedes_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -64,15 +71,53 @@ impl StepRecord {
             agent_version: actor.agent_version.clone(),
             agent_command: actor.agent_command.clone(),
             session_id: actor.session_id.clone(),
-            lease_id: actor.lease_id.clone(),
+            lease_ref: actor.lease_ref.clone(),
             started_at: started_at.to_string(),
             ended_at: None,
             metadata: None,
+            supersedes_id: None,
         }
     }
 
-    pub fn is_active(&self) -> bool {
-        self.status == StepStatus::Started
+    pub fn new_completed(superseded: &Self, to_state: Option<&str>, ended_at: &str) -> Self {
+        Self {
+            id: new_step_id(),
+            step: superseded.step.clone(),
+            phase: superseded.phase.clone(),
+            from_state: superseded.from_state.clone(),
+            to_state: to_state.map(ToString::to_string),
+            status: StepStatus::Completed,
+            actor_kind: superseded.actor_kind.clone(),
+            agent_id: superseded.agent_id.clone(),
+            agent_name: superseded.agent_name.clone(),
+            agent_model: superseded.agent_model.clone(),
+            agent_version: superseded.agent_version.clone(),
+            agent_command: superseded.agent_command.clone(),
+            session_id: superseded.session_id.clone(),
+            lease_ref: superseded.lease_ref.clone(),
+            started_at: superseded.started_at.clone(),
+            ended_at: Some(ended_at.to_string()),
+            metadata: superseded.metadata.clone(),
+            supersedes_id: Some(superseded.id.clone()),
+        }
+    }
+
+    fn is_open_started_record(&self) -> bool {
+        self.status == StepStatus::Started && self.supersedes_id.is_none()
+    }
+}
+
+impl ImmutableRecord for StepRecord {
+    fn record_id(&self) -> &str {
+        &self.id
+    }
+
+    fn created_at(&self) -> &str {
+        &self.started_at
+    }
+
+    fn lease_ref(&self) -> Option<&LeaseReference> {
+        self.lease_ref.as_ref()
     }
 }
 
@@ -85,7 +130,7 @@ pub struct StepActorInfo {
     pub agent_version: Option<String>,
     pub agent_command: Option<String>,
     pub session_id: Option<String>,
-    pub lease_id: Option<String>,
+    pub lease_ref: Option<LeaseReference>,
 }
 
 pub fn derive_phase(state: &str) -> &str {
@@ -100,9 +145,27 @@ fn new_step_id() -> String {
     Uuid::now_v7().to_string()
 }
 
+pub fn active_step_records(history: &[StepRecord]) -> Vec<&StepRecord> {
+    let superseded_ids: HashSet<&str> = history
+        .iter()
+        .filter_map(|record| record.supersedes_id.as_deref())
+        .collect();
+    history
+        .iter()
+        .filter(|record| {
+            record.is_open_started_record() && !superseded_ids.contains(record.id.as_str())
+        })
+        .collect()
+}
+
+pub fn has_active_step(history: &[StepRecord]) -> bool {
+    !active_step_records(history).is_empty()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::lease::LeaseReference;
 
     #[test]
     fn new_started_record_has_correct_defaults() {
@@ -120,7 +183,7 @@ mod tests {
             "2026-03-06T10:00:00Z",
             &actor,
         );
-        assert!(record.is_active());
+        assert!(record.is_open_started_record());
         assert_eq!(record.status, StepStatus::Started);
         assert_eq!(record.step, "implementation");
         assert_eq!(record.phase, "action");
@@ -129,6 +192,7 @@ mod tests {
         assert!(record.ended_at.is_none());
         assert_eq!(record.agent_name.as_deref(), Some("claude"));
         assert!(!record.id.is_empty());
+        assert!(record.supersedes_id.is_none());
     }
 
     #[test]
@@ -181,5 +245,49 @@ mod tests {
         assert!(!json.contains("to_state"));
         assert!(!json.contains("ended_at"));
         assert!(!json.contains("metadata"));
+    }
+
+    #[test]
+    fn completed_record_supersedes_started_record() {
+        let actor = StepActorInfo {
+            lease_ref: Some(LeaseReference::new("knots-lease").unwrap()),
+            ..Default::default()
+        };
+        let started = StepRecord::new_started(
+            "planning",
+            "action",
+            "ready_for_planning",
+            "2026-03-06T10:00:00Z",
+            &actor,
+        );
+        let completed = StepRecord::new_completed(
+            &started,
+            Some("ready_for_plan_review"),
+            "2026-03-06T11:00:00Z",
+        );
+        assert_eq!(
+            completed.supersedes_id.as_deref(),
+            Some(started.id.as_str())
+        );
+        assert_eq!(completed.lease_ref, started.lease_ref);
+        assert_eq!(completed.status, StepStatus::Completed);
+    }
+
+    #[test]
+    fn active_step_detection_ignores_superseded_records() {
+        let started = StepRecord::new_started(
+            "planning",
+            "action",
+            "ready_for_planning",
+            "2026-03-06T10:00:00Z",
+            &StepActorInfo::default(),
+        );
+        let completed = StepRecord::new_completed(
+            &started,
+            Some("ready_for_plan_review"),
+            "2026-03-06T11:00:00Z",
+        );
+        let history = vec![started, completed];
+        assert!(!has_active_step(&history));
     }
 }

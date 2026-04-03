@@ -121,6 +121,7 @@ pub struct UpdateKnotPatch {
     pub clear_gate_failure_modes: bool,
     pub add_note: Option<crate::domain::metadata::MetadataEntryInput>,
     pub add_handoff_capsule: Option<crate::domain::metadata::MetadataEntryInput>,
+    pub lease_id: Option<String>,
     pub expected_profile_etag: Option<String>,
     pub force: bool,
     pub state_actor: StateActorMetadata,

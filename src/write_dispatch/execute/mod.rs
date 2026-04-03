@@ -221,11 +221,12 @@ fn execute_step_annotate(
     };
     let knot = app.step_annotate(&args.id, &actor)?;
     if args.json {
-        let result = serde_json::json!({
+        let mut result = serde_json::json!({
             "id": &knot.id,
             "state": &knot.state,
             "step_history": &knot.step_history,
         });
+        ui::redact_internal_metadata(&mut result);
         Ok(format_json(&result))
     } else {
         let palette = ui::Palette::auto();

@@ -31,6 +31,7 @@ fn sample_knot() -> KnotView {
             agentname: "a".to_string(),
             model: "m".to_string(),
             version: "v".to_string(),
+            lease_ref: None,
         }],
         handoff_capsules: vec![MetadataEntry {
             entry_id: "h1".to_string(),
@@ -40,6 +41,7 @@ fn sample_knot() -> KnotView {
             agentname: "a".to_string(),
             model: "m".to_string(),
             version: "v".to_string(),
+            lease_ref: None,
         }],
         invariants: vec![],
         step_history: vec![],

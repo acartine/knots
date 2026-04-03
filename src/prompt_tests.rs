@@ -26,6 +26,7 @@ fn sample_knot() -> KnotView {
             agentname: "unknown".to_string(),
             model: "unknown".to_string(),
             version: "unknown".to_string(),
+            lease_ref: None,
         }],
         handoff_capsules: vec![],
         invariants: vec![],
@@ -55,6 +56,7 @@ fn make_entry(id: &str, content: &str, agent: &str) -> MetadataEntry {
         agentname: agent.to_string(),
         model: "m".to_string(),
         version: "v".to_string(),
+        lease_ref: None,
     }
 }
 
@@ -165,6 +167,7 @@ fn render_handoff_capsules_appear_in_notes() {
         agentname: "agent1".to_string(),
         model: "m".to_string(),
         version: "v".to_string(),
+        lease_ref: None,
     }];
     let output = render_prompt(&knot, "# S\n", "cmd");
     assert!(output.contains("handoff content"));

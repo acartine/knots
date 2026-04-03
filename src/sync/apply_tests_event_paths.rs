@@ -4,6 +4,7 @@ use std::process::Command;
 use uuid::Uuid;
 
 use crate::db::{self, UpsertKnotHot};
+use crate::domain::metadata::MetadataEntry;
 use crate::sync::{GitAdapter, SyncError};
 
 use super::{read_json_file, IncrementalApplier};
@@ -48,6 +49,10 @@ fn open_conn(root: &Path) -> rusqlite::Connection {
 }
 
 fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
+    seed_hot_knot_with_notes(conn, knot_id, &[]);
+}
+
+fn seed_hot_knot_with_notes(conn: &rusqlite::Connection, knot_id: &str, notes: &[MetadataEntry]) {
     db::upsert_knot_hot(
         conn,
         &UpsertKnotHot {
@@ -61,7 +66,7 @@ fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
             priority: None,
             knot_type: None,
             tags: &[],
-            notes: &[],
+            notes,
             handoff_capsules: &[],
             invariants: &[],
             step_history: &[],
@@ -261,6 +266,61 @@ fn apply_full_event_covers_priority_type_tag_remove_note_and_handoff() {
     assert_eq!(updated.knot_type.as_deref(), Some("task"));
     assert_eq!(updated.notes.len(), 1);
     assert_eq!(updated.handoff_capsules.len(), 1);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn apply_full_event_rejects_note_mutation_for_existing_entry() {
+    let root = setup_repo();
+    let conn = open_conn(&root);
+    seed_hot_knot_with_notes(
+        &conn,
+        "K-1",
+        &[MetadataEntry {
+            entry_id: "n1".to_string(),
+            content: "original note".to_string(),
+            username: "u".to_string(),
+            datetime: "2026-02-25T10:00:00Z".to_string(),
+            agentname: "codex".to_string(),
+            model: "gpt-5".to_string(),
+            version: "1".to_string(),
+            lease_ref: None,
+        }],
+    );
+    let applier = IncrementalApplier::new(&conn, root.clone(), GitAdapter::new());
+
+    let events_dir = root.join(".knots/events/2026/02/25");
+    std::fs::create_dir_all(&events_dir).expect("events directory should be creatable");
+    write_event_file(
+        &events_dir,
+        "6000-knot.note_added.json",
+        concat!(
+            "{\n",
+            "  \"event_id\": \"6000\",\n",
+            "  \"occurred_at\": \"2026-02-25T10:05:00Z\",\n",
+            "  \"knot_id\": \"K-1\",\n",
+            "  \"type\": \"knot.note_added\",\n",
+            "  \"data\": {\n",
+            "    \"entry_id\": \"n1\",\n",
+            "    \"content\": \"mutated note\",\n",
+            "    \"username\": \"u\",\n",
+            "    \"datetime\": \"2026-02-25T10:00:00Z\",\n",
+            "    \"agentname\": \"codex\",\n",
+            "    \"model\": \"gpt-5\",\n",
+            "    \"version\": \"1\"\n",
+            "  }\n",
+            "}\n"
+        ),
+    );
+
+    let err = applier
+        .apply_full_event(Path::new(
+            ".knots/events/2026/02/25/6000-knot.note_added.json",
+        ))
+        .expect_err("mutating note payload should fail");
+    assert!(matches!(err, SyncError::InvalidEvent { .. }));
+    assert!(err.to_string().contains("append-only"));
 
     let _ = std::fs::remove_dir_all(root);
 }

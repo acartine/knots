@@ -3,6 +3,25 @@ mod cli_dispatch_helpers;
 use cli_dispatch_helpers::*;
 use serde_json::Value;
 
+fn create_manual_lease(root: &std::path::Path, db: &std::path::Path) -> String {
+    let output = run_knots(
+        root,
+        db,
+        &[
+            "lease",
+            "create",
+            "--nickname",
+            "metadata-lease",
+            "--type",
+            "manual",
+            "--json",
+        ],
+    );
+    assert_success(&output);
+    let json: Value = serde_json::from_slice(&output.stdout).expect("lease json should parse");
+    json["id"].as_str().expect("lease id").to_string()
+}
+
 fn add_notes_and_handoffs(root: &std::path::Path, db: &std::path::Path, knot_id: &str) {
     assert_success(&run_knots(
         root,
@@ -235,4 +254,64 @@ fn assert_claim_verbose_includes_all(root: &std::path::Path, db: &std::path::Pat
     assert!(stdout.contains("old handoff"), "verbose: {stdout}");
     assert!(stdout.contains("new handoff"), "verbose: {stdout}");
     assert!(!stdout.contains("not shown"), "verbose: {stdout}");
+}
+
+#[test]
+fn show_json_redacts_internal_metadata_fields() {
+    let root = unique_workspace("knots-cli-show-metadata-redaction");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &["new", "Metadata redaction", "--profile", "autopilot"],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+    let lease_id = create_manual_lease(&root, &db);
+
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--title",
+            "Metadata redaction bound",
+            "--lease",
+            &lease_id,
+        ],
+    ));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &[
+            "update",
+            &knot_id,
+            "--add-note",
+            "corrected note",
+            "--add-handoff-capsule",
+            "corrected handoff",
+        ],
+    ));
+    assert_success(&run_knots(&root, &db, &["state", &knot_id, "planning"]));
+    assert_success(&run_knots(
+        &root,
+        &db,
+        &["state", &knot_id, "ready_for_plan_review"],
+    ));
+
+    let shown = run_knots(&root, &db, &["show", &knot_id, "--json"]);
+    assert_success(&shown);
+    let json: Value = serde_json::from_slice(&shown.stdout).expect("show json should parse");
+
+    assert!(json["notes"][0].get("lease_ref").is_none());
+    assert!(json["handoff_capsules"][0].get("lease_ref").is_none());
+    for record in json["step_history"].as_array().expect("step history array") {
+        assert!(record.get("lease_ref").is_none());
+        assert!(record.get("supersedes_id").is_none());
+    }
+
+    let _ = std::fs::remove_dir_all(root);
 }

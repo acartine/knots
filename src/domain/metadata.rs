@@ -3,6 +3,9 @@ use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+use super::immutable::ImmutableRecord;
+use super::lease::LeaseReference;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MetadataEntry {
     pub entry_id: String,
@@ -12,6 +15,8 @@ pub struct MetadataEntry {
     pub agentname: String,
     pub model: String,
     pub version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lease_ref: Option<LeaseReference>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -22,6 +27,7 @@ pub struct MetadataEntryInput {
     pub agentname: Option<String>,
     pub model: Option<String>,
     pub version: Option<String>,
+    pub lease_ref: Option<LeaseReference>,
 }
 
 impl MetadataEntry {
@@ -36,7 +42,22 @@ impl MetadataEntry {
             agentname: normalize_text(input.agentname.as_deref(), "unknown"),
             model: normalize_text(input.model.as_deref(), "unknown"),
             version: normalize_text(input.version.as_deref(), "unknown"),
+            lease_ref: input.lease_ref,
         }
+    }
+}
+
+impl ImmutableRecord for MetadataEntry {
+    fn record_id(&self) -> &str {
+        &self.entry_id
+    }
+
+    fn created_at(&self) -> &str {
+        &self.datetime
+    }
+
+    fn lease_ref(&self) -> Option<&LeaseReference> {
+        self.lease_ref.as_ref()
     }
 }
 
@@ -59,7 +80,9 @@ pub fn normalize_datetime(value: Option<&str>) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_datetime, normalize_text};
+    use super::{normalize_datetime, normalize_text, MetadataEntry, MetadataEntryInput};
+    use crate::domain::immutable::ImmutableRecord;
+    use crate::domain::lease::LeaseReference;
 
     #[test]
     fn normalize_text_returns_fallback_for_none() {
@@ -106,5 +129,33 @@ mod tests {
         let result = normalize_datetime(Some("2026-02-23T10:00:00Z"));
         assert!(result.is_some());
         assert!(result.unwrap().contains("2026-02-23"));
+    }
+
+    #[test]
+    fn metadata_entry_from_input_preserves_lease_reference() {
+        let lease_ref = LeaseReference::new("knots-lease").unwrap();
+        let entry = MetadataEntry::from_input(
+            MetadataEntryInput {
+                content: "note".to_string(),
+                lease_ref: Some(lease_ref.clone()),
+                ..Default::default()
+            },
+            "2026-02-23T10:00:00Z",
+        );
+        assert_eq!(entry.lease_ref, Some(lease_ref));
+    }
+
+    #[test]
+    fn metadata_entry_implements_immutable_record() {
+        let entry = MetadataEntry::from_input(
+            MetadataEntryInput {
+                content: "note".to_string(),
+                ..Default::default()
+            },
+            "2026-02-23T10:00:00Z",
+        );
+        assert_eq!(entry.record_id(), entry.entry_id);
+        assert_eq!(entry.created_at(), entry.datetime);
+        assert!(entry.lease_ref().is_none());
     }
 }

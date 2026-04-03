@@ -16,6 +16,7 @@ use super::helpers::{
     next_blocked_from_state, next_deferred_from_state, normalize_state_input,
     resolve_step_metadata, KnotHeadData, StateEventParams,
 };
+use super::immutable_records::{ensure_append_only_metadata, ensure_append_only_step_history};
 use super::types::{KnotView, UpdateKnotPatch};
 use super::App;
 
@@ -363,6 +364,21 @@ fn write_update_events_and_cache(
         idx_event = idx_event.with_precondition(expected);
     }
     app.writer.write(&EventRecord::index(idx_event))?;
+    let step_history = apply_step_transition(
+        &current.step_history,
+        &current.state,
+        &us.state,
+        occurred_at,
+        &patch.state_actor,
+        current.lease_id.as_deref(),
+    );
+    ensure_append_only_metadata(&current.notes, &us.notes, "note")?;
+    ensure_append_only_metadata(
+        &current.handoff_capsules,
+        &us.handoff_capsules,
+        "handoff capsule",
+    )?;
+    ensure_append_only_step_history(&current.step_history, &step_history)?;
     db::upsert_knot_hot(
         &app.conn,
         &UpsertKnotHot {
@@ -379,14 +395,7 @@ fn write_update_events_and_cache(
             notes: &us.notes,
             handoff_capsules: &us.handoff_capsules,
             invariants: &us.invariants,
-            step_history: &apply_step_transition(
-                &current.step_history,
-                &current.state,
-                &us.state,
-                occurred_at,
-                &patch.state_actor,
-                current.lease_id.as_deref(),
-            ),
+            step_history: &step_history,
             gate_data: &us.gate_data,
             lease_data: &current.lease_data,
             lease_id: current.lease_id.as_deref(),

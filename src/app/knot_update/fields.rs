@@ -7,6 +7,7 @@ use crate::app::error::AppError;
 use crate::app::helpers::{
     metadata_entry_from_input, non_empty, normalize_tag, require_gate_metadata_scope,
 };
+use crate::app::immutable_records::{lease_ref_from_lease_id, metadata_entry_event_data};
 use crate::app::types::UpdateKnotPatch;
 
 use super::UpdateState;
@@ -19,6 +20,7 @@ pub(crate) fn collect_field_events(
     us: &mut UpdateState,
     current: &KnotCacheRecord,
 ) -> Result<(), AppError> {
+    let metadata_lease_id = patch.lease_id.as_deref().or(current.lease_id.as_deref());
     collect_title(patch, events, id, at, &mut us.title)?;
     collect_description(patch, events, id, at, &mut us.description, &mut us.body);
     collect_acceptance(patch, events, id, at, &mut us.acceptance);
@@ -27,8 +29,15 @@ pub(crate) fn collect_field_events(
     collect_gate(patch, events, id, at, &mut us.gate_data, us.knot_type)?;
     collect_tags(patch, events, id, at, &mut us.tags);
     collect_invariants(patch, events, id, at, &mut us.invariants, current);
-    collect_note(patch, events, id, at, &mut us.notes)?;
-    collect_handoff(patch, events, id, at, &mut us.handoff_capsules)?;
+    collect_note(patch, events, id, at, &mut us.notes, metadata_lease_id)?;
+    collect_handoff(
+        patch,
+        events,
+        id,
+        at,
+        &mut us.handoff_capsules,
+        metadata_lease_id,
+    )?;
     Ok(())
 }
 
@@ -264,9 +273,12 @@ fn collect_note(
     id: &str,
     at: &str,
     notes: &mut Vec<crate::domain::metadata::MetadataEntry>,
+    lease_id: Option<&str>,
 ) -> Result<(), AppError> {
     if let Some(ref input) = patch.add_note {
-        let entry = metadata_entry_from_input(input.clone(), at)?;
+        let mut input = input.clone();
+        input.lease_ref = lease_ref_from_lease_id(lease_id)?;
+        let entry = metadata_entry_from_input(input, at)?;
         if !notes.iter().any(|e| e.entry_id == entry.entry_id) {
             notes.push(entry.clone());
             events.push(FullEvent::with_identity(
@@ -274,15 +286,7 @@ fn collect_note(
                 at.to_string(),
                 id.to_string(),
                 FullEventKind::KnotNoteAdded.as_str(),
-                json!({
-                    "entry_id": entry.entry_id,
-                    "content": entry.content,
-                    "username": entry.username,
-                    "datetime": entry.datetime,
-                    "agentname": entry.agentname,
-                    "model": entry.model,
-                    "version": entry.version,
-                }),
+                metadata_entry_event_data(&entry),
             ));
         }
     }
@@ -295,9 +299,12 @@ fn collect_handoff(
     id: &str,
     at: &str,
     handoff_capsules: &mut Vec<crate::domain::metadata::MetadataEntry>,
+    lease_id: Option<&str>,
 ) -> Result<(), AppError> {
     if let Some(ref input) = patch.add_handoff_capsule {
-        let entry = metadata_entry_from_input(input.clone(), at)?;
+        let mut input = input.clone();
+        input.lease_ref = lease_ref_from_lease_id(lease_id)?;
+        let entry = metadata_entry_from_input(input, at)?;
         if !handoff_capsules
             .iter()
             .any(|e| e.entry_id == entry.entry_id)
@@ -308,15 +315,7 @@ fn collect_handoff(
                 at.to_string(),
                 id.to_string(),
                 FullEventKind::KnotHandoffCapsuleAdded.as_str(),
-                json!({
-                    "entry_id": entry.entry_id,
-                    "content": entry.content,
-                    "username": entry.username,
-                    "datetime": entry.datetime,
-                    "agentname": entry.agentname,
-                    "model": entry.model,
-                    "version": entry.version,
-                }),
+                metadata_entry_event_data(&entry),
             ));
         }
     }

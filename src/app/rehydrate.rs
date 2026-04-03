@@ -6,7 +6,7 @@ use serde_json::Value;
 use crate::domain::gate::GateData;
 use crate::domain::invariant::Invariant;
 use crate::domain::knot_type::{parse_knot_type, KnotType};
-use crate::domain::lease::LeaseData;
+use crate::domain::lease::{LeaseData, LeaseReference};
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 use crate::events::{FullEvent, IndexEvent, IndexEventKind};
@@ -258,6 +258,13 @@ pub(crate) fn parse_metadata_entry_for_rehydrate(
     let agentname = data.get("agentname")?.as_str()?.to_string();
     let model = data.get("model")?.as_str()?.to_string();
     let version = data.get("version")?.as_str()?.to_string();
+    let lease_ref = data
+        .get("lease_ref")
+        .cloned()
+        .map(serde_json::from_value::<LeaseReference>)
+        .transpose()
+        .ok()
+        .flatten();
     Some(MetadataEntry {
         entry_id,
         content,
@@ -266,5 +273,6 @@ pub(crate) fn parse_metadata_entry_for_rehydrate(
         agentname,
         model,
         version,
+        lease_ref,
     })
 }

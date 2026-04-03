@@ -60,6 +60,7 @@ fn update_can_abandon_parent_with_deferred_child_without_auto_resolution() {
                 clear_gate_failure_modes: false,
                 add_note: None,
                 add_handoff_capsule: None,
+                lease_id: None,
                 expected_profile_etag: None,
                 force: false,
                 state_actor: StateActorMetadata::default(),

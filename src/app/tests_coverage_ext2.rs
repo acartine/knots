@@ -94,6 +94,7 @@ fn update_knot_state_change_writes_actor_metadata() {
                 clear_gate_failure_modes: false,
                 add_note: None,
                 add_handoff_capsule: None,
+                lease_id: None,
                 expected_profile_etag: created.profile_etag.clone(),
                 force: false,
                 state_actor: StateActorMetadata {
@@ -310,6 +311,7 @@ fn evaluate_gate_failure_reopens_linked_knots_and_adds_metadata() {
                 clear_gate_failure_modes: false,
                 add_note: None,
                 add_handoff_capsule: None,
+                lease_id: None,
                 expected_profile_etag: gate.profile_etag.clone(),
                 force: false,
                 state_actor: StateActorMetadata::default(),

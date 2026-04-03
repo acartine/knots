@@ -12,7 +12,17 @@ use palette::ShowField;
 pub(crate) use progress::format_progress_line;
 pub(crate) use progress::StdoutProgressReporter;
 const SHOW_VALUE_WIDTH: usize = 80;
+
+pub fn redact_internal_metadata(value: &mut serde_json::Value) {
+    if let Some(obj) = value.as_object_mut() {
+        redact_metadata_array(obj.get_mut("notes"), &["lease_ref"]);
+        redact_metadata_array(obj.get_mut("handoff_capsules"), &["lease_ref"]);
+        redact_metadata_array(obj.get_mut("step_history"), &["lease_ref", "supersedes_id"]);
+    }
+}
+
 pub fn trim_json_metadata(value: &mut serde_json::Value, knot: &KnotView) {
+    redact_internal_metadata(value);
     if let Some(obj) = value.as_object_mut() {
         if let Some(notes) = obj.get_mut("notes") {
             if let Some(arr) = notes.as_array() {
@@ -33,6 +43,23 @@ pub fn trim_json_metadata(value: &mut serde_json::Value, knot: &KnotView) {
         let hint = hidden_metadata_hint(knot);
         if !hint.is_empty() {
             obj.insert("other".to_string(), serde_json::Value::String(hint));
+        }
+    }
+}
+
+fn redact_metadata_array(target: Option<&mut serde_json::Value>, keys: &[&str]) {
+    let Some(target) = target else {
+        return;
+    };
+    let Some(entries) = target.as_array_mut() else {
+        return;
+    };
+    for entry in entries {
+        let Some(object) = entry.as_object_mut() else {
+            continue;
+        };
+        for key in keys {
+            object.remove(*key);
         }
     }
 }

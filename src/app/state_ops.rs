@@ -16,6 +16,7 @@ use super::helpers::{
     next_blocked_from_state, next_deferred_from_state, normalize_state_input,
     resolve_step_metadata, KnotHeadData, StateCascadeMetadata, StateEventParams,
 };
+use super::immutable_records::ensure_append_only_step_history;
 use super::types::{KnotView, StateActorMetadata};
 use super::App;
 
@@ -264,6 +265,7 @@ impl App {
             state_actor,
             current.lease_id.as_deref(),
         );
+        ensure_append_only_step_history(&current.step_history, &step_history)?;
         db::upsert_knot_hot(
             &self.conn,
             &UpsertKnotHot {

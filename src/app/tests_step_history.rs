@@ -1,4 +1,5 @@
 use super::{App, StateActorMetadata};
+use crate::domain::lease::LeaseType;
 use crate::domain::step_history::{StepActorInfo, StepStatus};
 use std::path::PathBuf;
 
@@ -86,11 +87,20 @@ fn next_finalizes_active_step_record() {
         )
         .expect("next should advance");
 
-    assert_eq!(advanced.step_history.len(), 1);
-    let step = &advanced.step_history[0];
-    assert_eq!(step.status, StepStatus::Completed);
-    assert_eq!(step.to_state.as_deref(), Some("ready_for_plan_review"));
-    assert!(step.ended_at.is_some());
+    assert_eq!(advanced.step_history.len(), 2);
+    let started = &advanced.step_history[0];
+    assert_eq!(started.status, StepStatus::Started);
+    assert!(started.to_state.is_none());
+    assert!(started.ended_at.is_none());
+
+    let completed = &advanced.step_history[1];
+    assert_eq!(completed.status, StepStatus::Completed);
+    assert_eq!(completed.to_state.as_deref(), Some("ready_for_plan_review"));
+    assert!(completed.ended_at.is_some());
+    assert_eq!(
+        completed.supersedes_id.as_deref(),
+        Some(started.id.as_str()),
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -158,13 +168,17 @@ fn repeated_action_review_cycles_produce_multiple_records() {
         )
         .expect("to implementation");
 
-    assert_eq!(v.step_history.len(), 3);
+    assert_eq!(v.step_history.len(), 5);
     assert_eq!(v.step_history[0].step, "planning");
-    assert_eq!(v.step_history[0].status, StepStatus::Completed);
-    assert_eq!(v.step_history[1].step, "plan_review");
+    assert_eq!(v.step_history[0].status, StepStatus::Started);
+    assert_eq!(v.step_history[1].step, "planning");
     assert_eq!(v.step_history[1].status, StepStatus::Completed);
-    assert_eq!(v.step_history[2].step, "implementation");
+    assert_eq!(v.step_history[2].step, "plan_review");
     assert_eq!(v.step_history[2].status, StepStatus::Started);
+    assert_eq!(v.step_history[3].step, "plan_review");
+    assert_eq!(v.step_history[3].status, StepStatus::Completed);
+    assert_eq!(v.step_history[4].step, "implementation");
+    assert_eq!(v.step_history[4].status, StepStatus::Started);
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -261,12 +275,19 @@ fn step_annotate_changes_agent_on_active_step() {
         .step_annotate(&created.id, &new_actor)
         .expect("annotate");
 
-    assert_eq!(annotated.step_history.len(), 2);
+    assert_eq!(annotated.step_history.len(), 3);
     let old_step = &annotated.step_history[0];
-    assert_eq!(old_step.status, StepStatus::Completed);
+    assert_eq!(old_step.status, StepStatus::Started);
     assert_eq!(old_step.agent_name.as_deref(), Some("claude-code"));
 
-    let new_step = &annotated.step_history[1];
+    let completion = &annotated.step_history[1];
+    assert_eq!(completion.status, StepStatus::Completed);
+    assert_eq!(
+        completion.supersedes_id.as_deref(),
+        Some(old_step.id.as_str()),
+    );
+
+    let new_step = &annotated.step_history[2];
     assert_eq!(new_step.status, StepStatus::Started);
     assert_eq!(new_step.agent_name.as_deref(), Some("different-agent"));
     assert_eq!(new_step.agent_model.as_deref(), Some("sonnet-4.6"));
@@ -312,6 +333,42 @@ fn step_history_persists_across_show_calls() {
 
     assert_eq!(first.step_history, second.step_history);
     assert_eq!(first.step_history.len(), 1);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn step_records_include_typed_lease_reference_when_knot_has_lease() {
+    let root = unique_workspace();
+    let app = open_app(&root);
+    let created = app
+        .create_knot("Lease history test", None, None, None)
+        .expect("create");
+    let lease = crate::lease::create_lease(&app, "metadata", LeaseType::Manual, None)
+        .expect("create lease");
+    crate::lease::bind_lease(&app, &created.id, &lease.id).expect("bind");
+    let leased = app
+        .show_knot(&created.id)
+        .expect("show")
+        .expect("knot exists");
+
+    let claimed = app
+        .set_state_with_actor(
+            &leased.id,
+            "planning",
+            false,
+            leased.profile_etag.as_deref(),
+            agent_actor(),
+        )
+        .expect("claim");
+
+    let step = &claimed.step_history[0];
+    assert_eq!(
+        step.lease_ref
+            .as_ref()
+            .map(|reference| reference.knot_id.as_str()),
+        Some(lease.id.as_str()),
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

@@ -1,4 +1,5 @@
 pub mod gate;
+pub mod immutable;
 pub mod invariant;
 pub mod knot_type;
 pub mod lease;

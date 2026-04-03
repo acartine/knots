@@ -43,6 +43,7 @@ fn empty_patch() -> UpdateKnotPatch {
         clear_gate_failure_modes: false,
         add_note: None,
         add_handoff_capsule: None,
+        lease_id: None,
         expected_profile_etag: None,
         force: false,
         state_actor: StateActorMetadata::default(),
@@ -96,6 +97,7 @@ fn build_parity_patch() -> UpdateKnotPatch {
             agentname: Some("codex".into()),
             model: Some("gpt-5".into()),
             version: Some("0.1".into()),
+            lease_ref: None,
         }),
         add_handoff_capsule: Some(MetadataEntryInput {
             content: "next owner details".into(),
@@ -104,6 +106,7 @@ fn build_parity_patch() -> UpdateKnotPatch {
             agentname: Some("codex".into()),
             model: Some("gpt-5".into()),
             version: Some("0.1".into()),
+            lease_ref: None,
         }),
         ..empty_patch()
     }
@@ -275,4 +278,94 @@ fn write_rehydrate_events(root: &Path) {
     let ip = root.join(".knots/index/2026/02/24/1002-idx.knot_head.json");
     std::fs::create_dir_all(ip.parent().expect("p")).expect("m");
     std::fs::write(&ip, "{\"event_id\":\"1002\",\"occurred_at\":\"2026-02-24T10:00:01Z\",\"type\":\"idx.knot_head\",\"data\":{\"knot_id\":\"K-9\",\"title\":\"Warm title\",\"state\":\"work_item\",\"profile_id\":\"default\",\"updated_at\":\"2026-02-24T10:00:01Z\",\"terminal\":false}}").expect("w");
+}
+
+#[test]
+fn leased_updates_capture_typed_lease_references_for_metadata_corrections() {
+    let root = unique_workspace();
+    let db = root.join(".knots/cache/state.sqlite");
+    let app = App::open(db.to_str().expect("u"), root.clone()).expect("o");
+    let created = app
+        .create_knot("Leased metadata", None, Some("work_item"), Some("default"))
+        .expect("create");
+    let lease = crate::lease::create_lease(
+        &app,
+        "metadata",
+        crate::domain::lease::LeaseType::Manual,
+        None,
+    )
+    .expect("lease");
+
+    let _updated = app
+        .update_knot(
+            &created.id,
+            UpdateKnotPatch {
+                add_note: Some(MetadataEntryInput {
+                    content: "first note".into(),
+                    lease_ref: None,
+                    ..Default::default()
+                }),
+                add_handoff_capsule: Some(MetadataEntryInput {
+                    content: "first handoff".into(),
+                    lease_ref: None,
+                    ..Default::default()
+                }),
+                lease_id: Some(lease.id.clone()),
+                ..empty_patch()
+            },
+        )
+        .expect("update");
+    crate::lease::bind_lease(&app, &created.id, &lease.id).expect("bind");
+
+    let corrected = app
+        .update_knot(
+            &created.id,
+            UpdateKnotPatch {
+                add_note: Some(MetadataEntryInput {
+                    content: "corrected note".into(),
+                    lease_ref: None,
+                    ..Default::default()
+                }),
+                add_handoff_capsule: Some(MetadataEntryInput {
+                    content: "corrected handoff".into(),
+                    lease_ref: None,
+                    ..Default::default()
+                }),
+                ..empty_patch()
+            },
+        )
+        .expect("correction");
+
+    assert_eq!(corrected.notes.len(), 2);
+    assert_eq!(corrected.handoff_capsules.len(), 2);
+    assert_eq!(
+        corrected.notes[0]
+            .lease_ref
+            .as_ref()
+            .map(|reference| reference.knot_id.as_str()),
+        Some(lease.id.as_str()),
+    );
+    assert_eq!(
+        corrected.notes[1]
+            .lease_ref
+            .as_ref()
+            .map(|reference| reference.knot_id.as_str()),
+        Some(lease.id.as_str()),
+    );
+    assert_eq!(
+        corrected.handoff_capsules[0]
+            .lease_ref
+            .as_ref()
+            .map(|reference| reference.knot_id.as_str()),
+        Some(lease.id.as_str()),
+    );
+    assert_eq!(
+        corrected.handoff_capsules[1]
+            .lease_ref
+            .as_ref()
+            .map(|reference| reference.knot_id.as_str()),
+        Some(lease.id.as_str()),
+    );
+
+    let _ = std::fs::remove_dir_all(root);
 }

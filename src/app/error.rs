@@ -42,6 +42,7 @@ pub enum AppError {
         target_state: String,
         descendants: Vec<HierarchyKnot>,
     },
+    ImmutableRecordViolation(String),
     InvalidArgument(String),
     UnsupportedDistribution {
         action: String,
@@ -105,6 +106,7 @@ impl fmt::Display for AppError {
                 target_state,
                 state_hierarchy::format_hierarchy_knots(descendants)
             ),
+            AppError::ImmutableRecordViolation(message) => write!(f, "{}", message),
             AppError::InvalidArgument(message) => write!(f, "{}", message),
             AppError::UnsupportedDistribution { action, mode } => {
                 write!(f, "{action} is not supported in {mode} mode")
@@ -140,6 +142,7 @@ impl Error for AppError {
             AppError::StaleWorkflowHead { .. }
             | AppError::HierarchyProgressBlocked { .. }
             | AppError::TerminalCascadeApprovalRequired { .. }
+            | AppError::ImmutableRecordViolation(_)
             | AppError::InvalidArgument(_)
             | AppError::UnsupportedDistribution { .. }
             | AppError::NotFound(_)

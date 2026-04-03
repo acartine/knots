@@ -32,6 +32,7 @@ pub fn run_show(app: &app::App, args: crate::cli::ShowArgs) -> Result<(), app::A
         Some(knot) => {
             if args.json {
                 let mut value = serde_json::to_value(&knot).expect("json serialize");
+                ui::redact_internal_metadata(&mut value);
                 if !args.verbose {
                     ui::trim_json_metadata(&mut value, &knot);
                 }

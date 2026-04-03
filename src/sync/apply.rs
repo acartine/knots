@@ -2,22 +2,26 @@ use std::path::{Path, PathBuf};
 
 use rusqlite::Connection;
 use serde_json::Value;
-use time::OffsetDateTime;
 
 use crate::db;
+use crate::domain::immutable::ensure_append_only_records;
+use crate::domain::metadata::MetadataEntry;
 use crate::events::{FullEvent, IndexEvent, IndexEventKind};
 use crate::snapshots::apply_latest_snapshots;
-use crate::tiering::{classify_knot_tier, CacheTier};
+use crate::tiering::CacheTier;
 
 use super::{GitAdapter, SyncError, SyncSummary};
 
 #[path = "apply_helpers.rs"]
 mod apply_helpers;
+#[path = "apply_index.rs"]
+mod apply_index;
 use apply_helpers::{
     current_unix_ms_string, invalid_event, is_stale_precondition, optional_i64, optional_string,
     parse_gate_data, parse_invariants, parse_lease_data, parse_metadata_entry, read_json_file,
     required_profile_id, required_string, required_workflow_id, MetadataProjection,
 };
+use apply_index::{build_index_upsert, resolve_tier, IndexUpsertParams};
 
 pub struct IncrementalApplier<'a> {
     conn: &'a Connection,
@@ -258,56 +262,52 @@ impl<'a> IncrementalApplier<'a> {
         path: &Path,
     ) -> Result<(), SyncError> {
         match event_type {
-            "knot.description_set" => self.apply_metadata_update(knot_id, |r| {
+            "knot.description_set" => self.apply_metadata_update(knot_id, path, |r| {
                 r.description = optional_string(data.get("description"));
                 r.body = r.description.clone();
             }),
-            "knot.acceptance_set" => self.apply_metadata_update(knot_id, |r| {
+            "knot.acceptance_set" => self.apply_metadata_update(knot_id, path, |r| {
                 r.acceptance = optional_string(data.get("acceptance"));
             }),
-            "knot.priority_set" => self.apply_metadata_update(knot_id, |r| {
+            "knot.priority_set" => self.apply_metadata_update(knot_id, path, |r| {
                 r.priority = optional_i64(data.get("priority"));
             }),
-            "knot.type_set" => self.apply_metadata_update(knot_id, |r| {
+            "knot.type_set" => self.apply_metadata_update(knot_id, path, |r| {
                 r.knot_type = optional_string(data.get("type"));
             }),
             "knot.tag_add" => self.apply_tag_add(data, knot_id, path),
             "knot.tag_remove" => self.apply_tag_remove(data, knot_id, path),
             "knot.note_added" => {
                 let entry = parse_metadata_entry(data, path)?;
-                self.apply_metadata_update(knot_id, |r| {
-                    if !r.notes.iter().any(|e| e.entry_id == entry.entry_id) {
-                        r.notes.push(entry.clone());
-                    }
+                self.apply_metadata_entry_append(knot_id, path, entry, "note", |projection| {
+                    &mut projection.notes
                 })
             }
             "knot.handoff_capsule_added" => {
                 let entry = parse_metadata_entry(data, path)?;
-                self.apply_metadata_update(knot_id, |r| {
-                    if !r
-                        .handoff_capsules
-                        .iter()
-                        .any(|e| e.entry_id == entry.entry_id)
-                    {
-                        r.handoff_capsules.push(entry.clone());
-                    }
-                })
+                self.apply_metadata_entry_append(
+                    knot_id,
+                    path,
+                    entry,
+                    "handoff capsule",
+                    |projection| &mut projection.handoff_capsules,
+                )
             }
             "knot.invariants_set" => {
                 let invariants = parse_invariants(data, path)?;
-                self.apply_metadata_update(knot_id, |r| r.invariants = invariants)
+                self.apply_metadata_update(knot_id, path, |r| r.invariants = invariants)
             }
             "knot.gate_data_set" => {
                 let gate_data = parse_gate_data(data, path)?;
-                self.apply_metadata_update(knot_id, |r| r.gate_data = gate_data)
+                self.apply_metadata_update(knot_id, path, |r| r.gate_data = gate_data)
             }
             "knot.lease_data_set" => {
                 let ld = parse_lease_data(data, path)?;
-                self.apply_metadata_update(knot_id, |r| r.lease_data = ld)
+                self.apply_metadata_update(knot_id, path, |r| r.lease_data = ld)
             }
             "knot.lease_id_set" => {
                 let lid = optional_string(data.get("lease_id"));
-                self.apply_metadata_update(knot_id, |r| r.lease_id = lid)
+                self.apply_metadata_update(knot_id, path, |r| r.lease_id = lid)
             }
             _ => Ok(()),
         }
@@ -323,7 +323,7 @@ impl<'a> IncrementalApplier<'a> {
             .trim()
             .to_ascii_lowercase();
         if !tag.is_empty() {
-            self.apply_metadata_update(knot_id, |r| {
+            self.apply_metadata_update(knot_id, path, |r| {
                 if !r.tags.iter().any(|existing| existing == &tag) {
                     r.tags.push(tag.clone());
                 }
@@ -342,14 +342,19 @@ impl<'a> IncrementalApplier<'a> {
             .trim()
             .to_ascii_lowercase();
         if !tag.is_empty() {
-            self.apply_metadata_update(knot_id, |r| {
+            self.apply_metadata_update(knot_id, path, |r| {
                 r.tags.retain(|existing| existing != &tag);
             })?;
         }
         Ok(())
     }
 
-    fn apply_metadata_update<F>(&self, knot_id: &str, mutate: F) -> Result<(), SyncError>
+    fn apply_metadata_update<F>(
+        &self,
+        knot_id: &str,
+        path: &Path,
+        mutate: F,
+    ) -> Result<(), SyncError>
     where
         F: FnOnce(&mut MetadataProjection),
     {
@@ -359,128 +364,75 @@ impl<'a> IncrementalApplier<'a> {
 
         let mut projection = MetadataProjection::from_existing(&existing);
         mutate(&mut projection);
+        ensure_append_only_records(&existing.notes, &projection.notes, "note")
+            .map_err(|message| invalid_event(path, &message))?;
+        ensure_append_only_records(
+            &existing.handoff_capsules,
+            &projection.handoff_capsules,
+            "handoff capsule",
+        )
+        .map_err(|message| invalid_event(path, &message))?;
+        ensure_append_only_records(
+            &existing.step_history,
+            &projection.step_history,
+            "step history",
+        )
+        .map_err(|message| invalid_event(path, &message))?;
+        projection.upsert(self.conn, knot_id)?;
+        Ok(())
+    }
+
+    fn apply_metadata_entry_append<F>(
+        &self,
+        knot_id: &str,
+        path: &Path,
+        entry: MetadataEntry,
+        kind: &str,
+        select: F,
+    ) -> Result<(), SyncError>
+    where
+        F: Fn(&mut MetadataProjection) -> &mut Vec<MetadataEntry>,
+    {
+        let Some(existing) = db::get_knot_hot(self.conn, knot_id)? else {
+            return Ok(());
+        };
+
+        let mut projection = MetadataProjection::from_existing(&existing);
+        let records = select(&mut projection);
+        if let Some(current) = records
+            .iter()
+            .find(|record| record.entry_id == entry.entry_id)
+        {
+            if current == &entry {
+                return Ok(());
+            }
+            return Err(invalid_event(
+                path,
+                &format!(
+                    "cannot modify or delete existing {kind} records; metadata is \
+                     append-only. Add a new record instead."
+                ),
+            ));
+        }
+        records.push(entry);
+        ensure_append_only_records(&existing.notes, &projection.notes, "note")
+            .map_err(|message| invalid_event(path, &message))?;
+        ensure_append_only_records(
+            &existing.handoff_capsules,
+            &projection.handoff_capsules,
+            "handoff capsule",
+        )
+        .map_err(|message| invalid_event(path, &message))?;
         projection.upsert(self.conn, knot_id)?;
         Ok(())
     }
 }
 
+#[derive(Debug)]
 enum FullApplyOutcome {
     EdgeAdded,
     EdgeRemoved,
     Ignored,
-}
-
-fn resolve_tier(
-    conn: &Connection,
-    data: &serde_json::Map<String, Value>,
-    state: &str,
-    updated_at: &str,
-) -> Result<CacheTier, SyncError> {
-    let hot_window_days = db::get_hot_window_days(conn)?;
-    let terminal_flag = data
-        .get("terminal")
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let now = OffsetDateTime::now_utc();
-    if terminal_flag {
-        Ok(CacheTier::Cold)
-    } else {
-        Ok(classify_knot_tier(state, updated_at, hot_window_days, now))
-    }
-}
-
-struct IndexUpsertParams<'a> {
-    conn: &'a Connection,
-    data: &'a serde_json::Map<String, Value>,
-    absolute_path: &'a Path,
-    knot_id: &'a str,
-    title: &'a str,
-    state: &'a str,
-    updated_at: &'a str,
-    profile_id: &'a str,
-    workflow_id: &'a str,
-    event_id: &'a str,
-}
-
-fn build_index_upsert(params: &IndexUpsertParams<'_>) -> Result<MetadataProjection, SyncError> {
-    let existing = db::get_knot_hot(params.conn, params.knot_id)?;
-    let body = existing.as_ref().and_then(|r| r.body.clone());
-    let description = existing.as_ref().and_then(|r| r.description.clone());
-    let acceptance = existing.as_ref().and_then(|r| r.acceptance.clone());
-    let priority = existing.as_ref().and_then(|r| r.priority);
-    let knot_type = existing.as_ref().and_then(|r| r.knot_type.clone());
-    let tags = existing
-        .as_ref()
-        .map(|r| r.tags.clone())
-        .unwrap_or_default();
-    let notes = existing
-        .as_ref()
-        .map(|r| r.notes.clone())
-        .unwrap_or_default();
-    let handoff_capsules = existing
-        .as_ref()
-        .map(|r| r.handoff_capsules.clone())
-        .unwrap_or_default();
-    let mut invariants = existing
-        .as_ref()
-        .map(|r| r.invariants.clone())
-        .unwrap_or_default();
-    if params.data.contains_key("invariants") {
-        invariants = parse_invariants(params.data, params.absolute_path)?;
-    }
-    let step_history = existing
-        .as_ref()
-        .map(|r| r.step_history.clone())
-        .unwrap_or_default();
-    let mut gate_data = existing
-        .as_ref()
-        .map(|r| r.gate_data.clone())
-        .unwrap_or_default();
-    if params.data.contains_key("gate") {
-        gate_data = parse_gate_data(params.data, params.absolute_path)?;
-    }
-    let lease_data = existing
-        .as_ref()
-        .map(|r| r.lease_data.clone())
-        .unwrap_or_default();
-    let lease_id = existing.as_ref().and_then(|r| r.lease_id.clone());
-    let deferred_from_state =
-        optional_string(params.data.get("deferred_from_state")).or_else(|| {
-            existing
-                .as_ref()
-                .and_then(|r| r.deferred_from_state.clone())
-        });
-    let blocked_from_state = optional_string(params.data.get("blocked_from_state"))
-        .or_else(|| existing.as_ref().and_then(|r| r.blocked_from_state.clone()));
-    let created_at = existing
-        .as_ref()
-        .and_then(|r| r.created_at.clone())
-        .unwrap_or_else(|| params.updated_at.to_string());
-
-    Ok(MetadataProjection {
-        title: params.title.to_string(),
-        state: params.state.to_string(),
-        updated_at: params.updated_at.to_string(),
-        body,
-        description,
-        acceptance,
-        priority,
-        knot_type,
-        tags,
-        notes,
-        handoff_capsules,
-        invariants,
-        step_history,
-        gate_data,
-        lease_data,
-        lease_id,
-        workflow_id: params.workflow_id.to_string(),
-        profile_id: params.profile_id.to_string(),
-        profile_etag: Some(params.event_id.to_string()),
-        deferred_from_state,
-        blocked_from_state,
-        created_at: Some(created_at),
-    })
 }
 
 #[cfg(test)]

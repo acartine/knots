@@ -1,5 +1,3 @@
-use serde_json::json;
-
 use crate::db::{self, KnotCacheRecord, UpsertKnotHot};
 use crate::domain::knot_type::parse_knot_type;
 use crate::domain::metadata::MetadataEntryInput;
@@ -12,6 +10,9 @@ use crate::workflow_runtime;
 use super::error::AppError;
 use super::helpers::{
     build_knot_head_data, metadata_entry_from_input, resolve_step_metadata, KnotHeadData,
+};
+use super::immutable_records::{
+    ensure_append_only_metadata, lease_ref_from_lease_id, metadata_entry_event_data,
 };
 use super::types::StateActorMetadata;
 use super::App;
@@ -30,7 +31,12 @@ impl App {
              this knot for planning.",
             gate_id, invariant
         );
-        let (note, handoff) = build_gate_failure_entries(&message, state_actor, &occurred_at)?;
+        let (note, handoff) = build_gate_failure_entries(
+            &message,
+            state_actor,
+            &occurred_at,
+            current.lease_id.as_deref(),
+        )?;
         self.write_gate_failure_events(current, &note, &handoff, &occurred_at)?;
         self.persist_gate_failure_cache(current, note, handoff, &occurred_at)
     }
@@ -47,30 +53,14 @@ impl App {
             occurred_at.to_string(),
             current.id.clone(),
             FullEventKind::KnotNoteAdded.as_str(),
-            json!({
-                "entry_id": note.entry_id,
-                "content": note.content,
-                "username": note.username,
-                "datetime": note.datetime,
-                "agentname": note.agentname,
-                "model": note.model,
-                "version": note.version,
-            }),
+            metadata_entry_event_data(note),
         );
         let mut handoff_event = FullEvent::with_identity(
             new_event_id(),
             occurred_at.to_string(),
             current.id.clone(),
             FullEventKind::KnotHandoffCapsuleAdded.as_str(),
-            json!({
-                "entry_id": handoff.entry_id,
-                "content": handoff.content,
-                "username": handoff.username,
-                "datetime": handoff.datetime,
-                "agentname": handoff.agentname,
-                "model": handoff.model,
-                "version": handoff.version,
-            }),
+            metadata_entry_event_data(handoff),
         );
         if let Some(expected) = current.profile_etag.as_deref() {
             note_event = note_event.with_precondition(expected);
@@ -92,6 +82,12 @@ impl App {
         notes.push(note);
         let mut handoff_capsules = current.handoff_capsules.clone();
         handoff_capsules.push(handoff);
+        ensure_append_only_metadata(&current.notes, &notes, "note")?;
+        ensure_append_only_metadata(
+            &current.handoff_capsules,
+            &handoff_capsules,
+            "handoff capsule",
+        )?;
         let profile = self.resolve_profile_for_record(current)?;
         let knot_type = parse_knot_type(current.knot_type.as_deref());
         let terminal = workflow_runtime::is_terminal_state(
@@ -171,6 +167,7 @@ fn build_gate_failure_entries(
     message: &str,
     state_actor: &StateActorMetadata,
     occurred_at: &str,
+    lease_id: Option<&str>,
 ) -> Result<
     (
         crate::domain::metadata::MetadataEntry,
@@ -184,6 +181,7 @@ fn build_gate_failure_entries(
             agentname: state_actor.agent_name.clone(),
             model: state_actor.agent_model.clone(),
             version: state_actor.agent_version.clone(),
+            lease_ref: lease_ref_from_lease_id(lease_id)?,
             ..Default::default()
         },
         occurred_at,
@@ -194,6 +192,7 @@ fn build_gate_failure_entries(
             agentname: state_actor.agent_name.clone(),
             model: state_actor.agent_model.clone(),
             version: state_actor.agent_version.clone(),
+            lease_ref: lease_ref_from_lease_id(lease_id)?,
             ..Default::default()
         },
         occurred_at,

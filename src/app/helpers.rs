@@ -5,12 +5,13 @@ use crate::domain::gate::GateData;
 use crate::domain::invariant::Invariant;
 use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::{normalize_datetime, MetadataEntry, MetadataEntryInput};
-use crate::domain::step_history::{derive_phase, StepActorInfo, StepRecord, StepStatus};
+use crate::domain::step_history::{active_step_records, derive_phase, StepActorInfo, StepRecord};
 use crate::installed_workflows;
 use crate::workflow::{normalize_profile_id, ProfileDefinition, ProfileRegistry, StepMetadata};
 use crate::workflow_runtime;
 
 use super::error::AppError;
+use super::immutable_records::lease_ref_from_lease_id;
 use super::types::StateActorMetadata;
 
 pub(crate) fn ensure_parent_dir(path: &str) -> Result<(), AppError> {
@@ -410,12 +411,12 @@ pub(crate) fn apply_step_transition(
 ) -> Vec<StepRecord> {
     let mut history: Vec<StepRecord> = existing.to_vec();
     if from_state != to_state {
-        for record in &mut history {
-            if record.is_active() {
-                record.to_state = Some(to_state.to_string());
-                record.ended_at = Some(occurred_at.to_string());
-                record.status = StepStatus::Completed;
-            }
+        for record in active_step_records(existing) {
+            history.push(StepRecord::new_completed(
+                record,
+                Some(to_state),
+                occurred_at,
+            ));
         }
     }
     if is_action_state(to_state) && from_state != to_state {
@@ -424,7 +425,8 @@ pub(crate) fn apply_step_transition(
             agent_name: actor.agent_name.clone(),
             agent_model: actor.agent_model.clone(),
             agent_version: actor.agent_version.clone(),
-            lease_id: lease_id.map(|s| s.to_string()),
+            lease_ref: lease_ref_from_lease_id(lease_id)
+                .expect("lease ids stored in cache should be valid"),
             ..Default::default()
         };
         let phase = derive_phase(to_state);
@@ -440,25 +442,21 @@ pub fn annotate_step_history(
     occurred_at: &str,
 ) -> Vec<StepRecord> {
     let mut history: Vec<StepRecord> = existing.to_vec();
-    let has_active = history.iter().any(|r| r.is_active());
-    if has_active {
-        let mut new_record: Option<StepRecord> = None;
-        for record in &mut history {
-            if record.is_active() {
-                record.ended_at = Some(occurred_at.to_string());
-                record.status = StepStatus::Completed;
-                new_record = Some(StepRecord::new_started(
-                    &record.step,
-                    &record.phase,
-                    &record.from_state,
-                    occurred_at,
-                    actor,
-                ));
-            }
+    let active_records = active_step_records(existing);
+    if let Some(current) = active_records.last() {
+        let step = current.step.clone();
+        let phase = current.phase.clone();
+        let from_state = current.from_state.clone();
+        for record in active_records {
+            history.push(StepRecord::new_completed(record, None, occurred_at));
         }
-        if let Some(new) = new_record {
-            history.push(new);
-        }
+        history.push(StepRecord::new_started(
+            &step,
+            &phase,
+            &from_state,
+            occurred_at,
+            actor,
+        ));
     }
     history
 }

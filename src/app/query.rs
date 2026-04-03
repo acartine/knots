@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::knot_type::parse_knot_type;
-use crate::domain::step_history::StepActorInfo;
+use crate::domain::step_history::{has_active_step, StepActorInfo};
 use crate::events::{new_event_id, now_utc_rfc3339, EventRecord, IndexEvent, IndexEventKind};
 use crate::locks::FileLock;
 use crate::workflow_runtime;
@@ -11,6 +11,7 @@ use super::error::AppError;
 use super::helpers::{
     annotate_step_history, build_knot_head_data, resolve_step_metadata, KnotHeadData,
 };
+use super::immutable_records::ensure_append_only_step_history;
 use super::rehydrate::rehydrate_from_events;
 use super::types::{ChildSummary, ColdKnotView, EdgeView, KnotView};
 use super::App;
@@ -68,7 +69,7 @@ impl App {
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let current =
             db::get_knot_hot(&self.conn, &id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        if !current.step_history.iter().any(|r| r.is_active()) {
+        if !has_active_step(&current.step_history) {
             return Err(AppError::InvalidArgument(
                 "no active step to annotate".to_string(),
             ));
@@ -124,6 +125,7 @@ impl App {
             }),
         );
         self.writer.write(&EventRecord::index(idx_event))?;
+        ensure_append_only_step_history(&current.step_history, updated_history)?;
         db::upsert_knot_hot(
             &self.conn,
             &UpsertKnotHot {

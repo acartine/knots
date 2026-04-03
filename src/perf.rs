@@ -147,6 +147,7 @@ fn benchmark_write_path(app: &App, iterations: u32) -> Result<f64, PerfError> {
                     clear_gate_failure_modes: false,
                     add_note: None,
                     add_handoff_capsule: None,
+                    lease_id: None,
                     expected_profile_etag: knot.profile_etag.clone(),
                     force: false,
                     state_actor: crate::app::StateActorMetadata::default(),
