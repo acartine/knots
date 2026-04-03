@@ -9,13 +9,17 @@ use crate::write_queue::NextOperation;
 use crate::write_dispatch::helpers::{
     execute_with_terminal_cascade_prompt, format_next_output, format_rollback_output,
     normalize_expected_state, parse_gate_failure_modes_option, parse_gate_owner_kind_arg,
-    resolve_lease_agent_info,
+    resolve_lease_agent_info, validate_non_claim_lease,
 };
 
 pub(super) fn execute_update(
     app: &App,
     args: &crate::write_queue::UpdateOperation,
 ) -> Result<String, AppError> {
+    let knot = app
+        .show_knot(&args.id)?
+        .ok_or_else(|| AppError::NotFound(args.id.clone()))?;
+    validate_non_claim_lease(&knot, args.lease_id.as_deref())?;
     let patch = build_update_patch(app, args)?;
     let knot = execute_with_terminal_cascade_prompt(
         args.approve_terminal_cascade,
@@ -23,9 +27,6 @@ pub(super) fn execute_update(
             app.update_knot_with_options(&args.id, patch.clone(), approve_terminal_cascade)
         },
     )?;
-    if let Some(lid) = &args.lease_id {
-        crate::lease::bind_lease(app, &knot.id, lid)?;
-    }
     let palette = ui::Palette::auto();
     Ok(format!(
         "updated {} {} {}\n",
@@ -192,26 +193,7 @@ fn validate_next_preconditions(
             )));
         }
     }
-    if let Some(ref provided_lease) = args.lease_id {
-        match &knot.lease_id {
-            Some(knot_lease) if knot_lease == provided_lease => {}
-            Some(knot_lease) => {
-                return Err(AppError::InvalidArgument(format!(
-                    "lease mismatch: knot has '{}', \
-                     caller provided '{}'",
-                    knot_lease, provided_lease
-                )));
-            }
-            None => {
-                return Err(AppError::InvalidArgument(format!(
-                    "knot has no active lease but \
-                     caller provided '{}'",
-                    provided_lease
-                )));
-            }
-        }
-    }
-    Ok(())
+    validate_non_claim_lease(knot, args.lease_id.as_deref())
 }
 
 pub(super) fn execute_rollback(
