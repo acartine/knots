@@ -33,8 +33,10 @@ pub struct KnotView {
     pub gate: Option<GateData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lease: Option<LeaseData>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip)]
     pub lease_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lease_agent: Option<LeaseAgentView>,
     pub workflow_id: String,
     pub profile_id: String,
     pub profile_etag: Option<String>,
@@ -63,6 +65,30 @@ pub struct ChildSummary {
     pub id: String,
     pub title: String,
     pub state: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct LeaseAgentView {
+    pub lease_type: String,
+    pub nickname: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_provider: Option<String>,
+}
+
+impl LeaseAgentView {
+    pub fn from_lease_data(data: &LeaseData) -> Self {
+        Self {
+            lease_type: data.lease_type.to_string(),
+            nickname: data.nickname.clone(),
+            agent_name: data.agent_info.as_ref().map(|a| a.agent_name.clone()),
+            agent_model: data.agent_info.as_ref().map(|a| a.model.clone()),
+            agent_provider: data.agent_info.as_ref().map(|a| a.provider.clone()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -180,6 +206,7 @@ impl From<KnotCacheRecord> for KnotView {
             gate,
             lease,
             lease_id: value.lease_id,
+            lease_agent: None,
             workflow_id: value.workflow_id,
             profile_id,
             profile_etag: value.profile_etag,

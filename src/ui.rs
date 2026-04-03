@@ -236,6 +236,7 @@ fn knot_show_fields(knot: &KnotView, verbose: bool) -> Vec<ShowField> {
     append_step_metadata_fields(&mut f, knot);
     append_metadata_fields(&mut f, knot, verbose);
     append_gate_fields(&mut f, knot);
+    append_lease_agent_fields(&mut f, knot);
     append_edge_fields(&mut f, knot);
     f
 }
@@ -312,6 +313,21 @@ fn append_gate_fields(f: &mut Vec<ShowField>, knot: &KnotView) {
                     .collect::<Vec<_>>()
                     .join("\n"),
             ));
+        }
+    }
+}
+fn append_lease_agent_fields(f: &mut Vec<ShowField>, knot: &KnotView) {
+    if let Some(la) = &knot.lease_agent {
+        f.push(ShowField::new("lease_agent", &la.nickname));
+        f.push(ShowField::new("lease_type", &la.lease_type));
+        if let Some(name) = &la.agent_name {
+            f.push(ShowField::new("agent_name", name));
+        }
+        if let Some(model) = &la.agent_model {
+            f.push(ShowField::new("agent_model", model));
+        }
+        if let Some(provider) = &la.agent_provider {
+            f.push(ShowField::new("agent_provider", provider));
         }
     }
 }

@@ -12,7 +12,7 @@ use super::helpers::{
     annotate_step_history, build_knot_head_data, resolve_step_metadata, KnotHeadData,
 };
 use super::rehydrate::rehydrate_from_events;
-use super::types::{ChildSummary, ColdKnotView, EdgeView, KnotView};
+use super::types::{ChildSummary, ColdKnotView, EdgeView, KnotView, LeaseAgentView};
 use super::App;
 
 impl App {
@@ -56,6 +56,7 @@ impl App {
                 })
                 .collect();
             workflow_runtime::enrich_step_metadata(&mut view, &self.profile_registry);
+            self.resolve_lease_agent(&mut view);
             return Ok(Some(view));
         }
         Ok(None)
@@ -155,6 +156,15 @@ impl App {
         let updated =
             db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
         self.apply_alias_and_enrich_knot(KnotView::from(updated))
+    }
+
+    fn resolve_lease_agent(&self, view: &mut KnotView) {
+        let Some(lease_id) = view.lease_id.as_deref() else {
+            return;
+        };
+        if let Ok(Some(lease_record)) = db::get_knot_hot(&self.conn, lease_id) {
+            view.lease_agent = Some(LeaseAgentView::from_lease_data(&lease_record.lease_data));
+        }
     }
 
     pub fn cold_sync(&self) -> Result<crate::sync::SyncSummary, AppError> {

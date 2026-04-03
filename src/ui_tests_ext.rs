@@ -46,6 +46,7 @@ fn sample_knot() -> KnotView {
         gate: None,
         lease: None,
         lease_id: None,
+        lease_agent: None,
         workflow_id: "compatibility".to_string(),
         profile_id: "default".to_string(),
         profile_etag: Some("etag".to_string()),

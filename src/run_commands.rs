@@ -30,6 +30,13 @@ pub fn run_ls(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::App
 pub fn run_show(app: &app::App, args: crate::cli::ShowArgs) -> Result<(), app::AppError> {
     match app.show_knot(&args.id)? {
         Some(knot) => {
+            if knot.knot_type == domain::knot_type::KnotType::Lease {
+                return Err(app::AppError::InvalidArgument(
+                    "lease knots cannot be displayed directly; \
+                     use `kno lease show` instead"
+                        .to_string(),
+                ));
+            }
             if args.json {
                 let mut value = serde_json::to_value(&knot).expect("json serialize");
                 if !args.verbose {

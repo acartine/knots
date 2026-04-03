@@ -86,6 +86,7 @@ fn minimal_knot() -> KnotView {
         gate: None,
         lease: None,
         lease_id: None,
+        lease_agent: None,
         workflow_id: "compatibility".into(),
         profile_id: "default".into(),
         profile_etag: None,
@@ -135,6 +136,7 @@ fn knot_show_fields_include_optional_sections() {
         gate: None,
         lease: None,
         lease_id: None,
+        lease_agent: None,
         workflow_id: "compatibility".into(),
         profile_id: "default".into(),
         profile_etag: Some("etag-1".into()),
@@ -296,4 +298,97 @@ fn no_edges_when_empty() {
     assert!(!knot_show_fields(&minimal_knot(), false)
         .iter()
         .any(|f| f.label == "parent_of" || f.label == "blocked_by" || f.label == "blocks"));
+}
+#[test]
+fn lease_agent_fields_shown_when_present() {
+    use crate::app::types::LeaseAgentView;
+    let mut k = minimal_knot();
+    k.lease_agent = Some(LeaseAgentView {
+        lease_type: "agent".into(),
+        nickname: "claude-bot".into(),
+        agent_name: Some("claude".into()),
+        agent_model: Some("opus".into()),
+        agent_provider: Some("Anthropic".into()),
+    });
+    let fields = knot_show_fields(&k, false);
+    let labels: Vec<&str> = fields.iter().map(|f| f.label.as_str()).collect();
+    assert!(labels.contains(&"lease_agent"));
+    assert!(labels.contains(&"lease_type"));
+    assert!(labels.contains(&"agent_name"));
+    assert!(labels.contains(&"agent_model"));
+    assert!(labels.contains(&"agent_provider"));
+    let la = fields.iter().find(|f| f.label == "lease_agent").unwrap();
+    assert_eq!(la.value, "claude-bot");
+}
+#[test]
+fn lease_agent_fields_hidden_when_absent() {
+    let k = minimal_knot();
+    let fields = knot_show_fields(&k, false);
+    let labels: Vec<&str> = fields.iter().map(|f| f.label.as_str()).collect();
+    assert!(!labels.contains(&"lease_agent"));
+    assert!(!labels.contains(&"lease_type"));
+    assert!(!labels.contains(&"agent_name"));
+}
+#[test]
+fn lease_id_not_in_json() {
+    let mut k = minimal_knot();
+    k.lease_id = Some("knots-secret-lease".into());
+    let v = serde_json::to_value(&k).unwrap();
+    assert!(v.get("lease_id").is_none());
+}
+#[test]
+fn lease_agent_in_json_when_present() {
+    use crate::app::types::LeaseAgentView;
+    let mut k = minimal_knot();
+    k.lease_agent = Some(LeaseAgentView {
+        lease_type: "agent".into(),
+        nickname: "claude-bot".into(),
+        agent_name: Some("claude".into()),
+        agent_model: Some("opus".into()),
+        agent_provider: Some("Anthropic".into()),
+    });
+    let v = serde_json::to_value(&k).unwrap();
+    let la = v.get("lease_agent").expect("lease_agent present");
+    assert_eq!(la["nickname"].as_str().unwrap(), "claude-bot");
+    assert_eq!(la["lease_type"].as_str().unwrap(), "agent");
+    assert_eq!(la["agent_name"].as_str().unwrap(), "claude");
+    assert_eq!(la["agent_model"].as_str().unwrap(), "opus");
+    assert_eq!(la["agent_provider"].as_str().unwrap(), "Anthropic");
+    assert!(v.get("lease_id").is_none());
+}
+#[test]
+fn lease_agent_not_in_json_when_absent() {
+    let k = minimal_knot();
+    let v = serde_json::to_value(&k).unwrap();
+    assert!(v.get("lease_agent").is_none());
+}
+#[test]
+fn json_text_parity_for_lease_agent() {
+    use crate::app::types::LeaseAgentView;
+    let mut k = minimal_knot();
+    k.lease_agent = Some(LeaseAgentView {
+        lease_type: "agent".into(),
+        nickname: "bot-1".into(),
+        agent_name: Some("claude".into()),
+        agent_model: None,
+        agent_provider: None,
+    });
+    let fields = knot_show_fields(&k, false);
+    let text_labels: Vec<&str> = fields
+        .iter()
+        .filter(|f| f.label.starts_with("lease_") || f.label.starts_with("agent_"))
+        .map(|f| f.label.as_str())
+        .collect();
+    let json = serde_json::to_value(&k).unwrap();
+    let la = json.get("lease_agent").unwrap();
+    assert_eq!(la["nickname"].as_str().unwrap(), "bot-1");
+    assert_eq!(la["lease_type"].as_str().unwrap(), "agent");
+    assert_eq!(la["agent_name"].as_str().unwrap(), "claude");
+    assert!(la.get("agent_model").is_none());
+    assert!(la.get("agent_provider").is_none());
+    assert!(text_labels.contains(&"lease_agent"));
+    assert!(text_labels.contains(&"lease_type"));
+    assert!(text_labels.contains(&"agent_name"));
+    assert!(!text_labels.contains(&"agent_model"));
+    assert!(!text_labels.contains(&"agent_provider"));
 }
