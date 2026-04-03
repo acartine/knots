@@ -9,7 +9,7 @@ use crate::write_queue::NextOperation;
 use crate::write_dispatch::helpers::{
     execute_with_terminal_cascade_prompt, format_next_output, format_rollback_output,
     normalize_expected_state, parse_gate_failure_modes_option, parse_gate_owner_kind_arg,
-    resolve_lease_agent_info, validate_non_claim_lease,
+    resolve_lease_agent_info, validate_next_lease, validate_non_claim_lease,
 };
 
 pub(super) fn execute_update(
@@ -169,7 +169,9 @@ pub(super) fn execute_next(app: &App, args: &NextOperation) -> Result<String, Ap
         },
     )?;
     if updated.lease_id.is_some() {
-        let _ = crate::lease::unbind_lease(app, &updated.id);
+        if let Err(e) = crate::lease::unbind_lease(app, &updated.id) {
+            eprintln!("warning: lease cleanup failed after next transition: {e}");
+        }
     }
     Ok(format_next_output(
         &updated,
@@ -193,7 +195,7 @@ fn validate_next_preconditions(
             )));
         }
     }
-    validate_non_claim_lease(knot, args.lease_id.as_deref())
+    validate_next_lease(knot, args.lease_id.as_deref())
 }
 
 pub(super) fn execute_rollback(

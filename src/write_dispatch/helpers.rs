@@ -49,6 +49,34 @@ pub(crate) fn validate_non_claim_lease(
     }
 }
 
+/// Strict lease validation for `next`: if the knot has a bound lease,
+/// the caller **must** supply the matching lease_id.
+pub(crate) fn validate_next_lease(
+    knot: &crate::app::KnotView,
+    lease_id: Option<&str>,
+) -> Result<(), AppError> {
+    match (knot.lease_id.as_deref(), lease_id) {
+        (None, None) => Ok(()),
+        (None, Some(provided)) => Err(AppError::InvalidArgument(format!(
+            "knot has no active lease but caller provided \
+             '{provided}'; {CLAIM_ONLY_LEASE_BINDING}"
+        ))),
+        (Some(_knot_lease), None) => {
+            eprintln!("warning: next called on leased knot without lease_id");
+            Err(AppError::InvalidArgument(
+                "knot has an active lease; caller must provide \
+                 --lease with the matching lease id"
+                    .to_string(),
+            ))
+        }
+        (Some(knot_lease), Some(provided)) if knot_lease == provided => Ok(()),
+        (Some(knot_lease), Some(provided)) => Err(AppError::InvalidArgument(format!(
+            "lease mismatch: knot has '{knot_lease}', \
+                 caller provided '{provided}'"
+        ))),
+    }
+}
+
 pub(crate) fn execute_with_terminal_cascade_prompt<T, F>(
     preapproved: bool,
     mut action: F,

@@ -69,12 +69,44 @@ pub fn bind_lease(app: &App, knot_id: &str, lease_id: &str) -> Result<(), AppErr
 }
 
 /// Unbind and terminate a lease from a knot.
+///
+/// Emits warnings for corrupt lease state (missing lease record,
+/// non-lease knot type, unexpected state) without leaking lease ids.
 pub fn unbind_lease(app: &App, knot_id: &str) -> Result<(), AppError> {
     let knot = app
         .show_knot(knot_id)?
         .ok_or_else(|| AppError::NotFound(knot_id.to_string()))?;
     if let Some(lid) = &knot.lease_id {
-        let _ = terminate_lease(app, lid);
+        match app.show_knot(lid) {
+            Ok(Some(lease_knot)) => {
+                if lease_knot.knot_type != KnotType::Lease {
+                    eprintln!(
+                        "warning: bound lease reference is not a \
+                         lease knot type"
+                    );
+                }
+                if lease_knot.state == "lease_terminated" {
+                    eprintln!(
+                        "warning: lease already terminated during \
+                         unbind"
+                    );
+                } else if let Err(_e) = terminate_lease(app, lid) {
+                    eprintln!(
+                        "warning: failed to terminate lease during \
+                         unbind"
+                    );
+                }
+            }
+            Ok(None) => {
+                eprintln!(
+                    "warning: bound lease record not found during \
+                     unbind"
+                );
+            }
+            Err(_e) => {
+                eprintln!("warning: error looking up lease during unbind");
+            }
+        }
     }
     app.set_lease_id(knot_id, None)?;
     // Best-effort: run any queued sync now that a lease has ended.

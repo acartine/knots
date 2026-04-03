@@ -195,6 +195,10 @@ fn bind_external_lease(app: &App, knot_id: &str, lid: &str) -> Result<Option<Str
         .show_knot(lid)?
         .ok_or_else(|| AppError::NotFound(format!("lease {}", lid)))?;
     if lease_knot.knot_type != KnotType::Lease {
+        eprintln!(
+            "warning: claim attempted with non-lease knot type '{}'",
+            lease_knot.knot_type.as_str()
+        );
         return Err(AppError::InvalidArgument(format!(
             "'{}' is not a lease (type: {})",
             lid,
@@ -202,14 +206,16 @@ fn bind_external_lease(app: &App, knot_id: &str, lid: &str) -> Result<Option<Str
         )));
     }
     match lease_knot.state.as_str() {
-        "lease_active" => { /* already active */ }
         "lease_ready" => {
-            let _ = crate::lease::activate_lease(app, lid);
+            crate::lease::activate_lease(app, lid).map_err(|e| {
+                eprintln!("warning: lease activation failed during claim");
+                AppError::InvalidArgument(format!("failed to activate lease: {e}"))
+            })?;
         }
         other => {
+            eprintln!("warning: claim rejected lease in unexpected state '{other}'");
             return Err(AppError::InvalidArgument(format!(
-                "lease '{}' is in state '{}' -- expected lease_active or lease_ready",
-                lid, other
+                "lease is in state '{other}' -- only lease_ready is accepted"
             )));
         }
     }
