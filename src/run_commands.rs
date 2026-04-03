@@ -28,7 +28,7 @@ pub fn run_ls(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::App
 }
 
 pub fn run_show(app: &app::App, args: crate::cli::ShowArgs) -> Result<(), app::AppError> {
-    match app.show_knot(&args.id)? {
+    match crate::trace::measure("show_knot", || app.show_knot(&args.id))? {
         Some(knot) => {
             reject_generic_lease_show(&knot, &args.id)?;
             if args.json {
@@ -175,7 +175,7 @@ pub fn run_sync(app: &app::App, args: crate::cli::SyncArgs) -> Result<(), app::A
 }
 
 pub fn run_fsck(app: &app::App, args: FsckArgs) -> Result<(), app::AppError> {
-    let report = app.fsck()?;
+    let report = crate::trace::measure("fsck", || app.fsck())?;
     if args.json {
         print_json(&report);
     } else {
@@ -263,7 +263,7 @@ pub fn run_compact(app: &app::App, args: CompactArgs) -> Result<(), app::AppErro
 pub fn run_cold(app: &app::App, args: crate::cli::ColdArgs) -> Result<(), app::AppError> {
     match args.command {
         ColdSubcommands::Sync(sync_args) => {
-            let summary = app.cold_sync()?;
+            let summary = crate::trace::measure("cold_sync", || app.cold_sync())?;
             if sync_args.json {
                 print_json(&summary);
             } else {
@@ -282,7 +282,8 @@ pub fn run_cold(app: &app::App, args: crate::cli::ColdArgs) -> Result<(), app::A
             }
         }
         ColdSubcommands::Search(search_args) => {
-            let matches = app.cold_search(&search_args.term)?;
+            let matches =
+                crate::trace::measure("cold_search", || app.cold_search(&search_args.term))?;
             if search_args.json {
                 print_json(&matches);
             } else if matches.is_empty() {
@@ -301,7 +302,7 @@ pub fn run_cold(app: &app::App, args: crate::cli::ColdArgs) -> Result<(), app::A
 }
 
 pub fn run_rehydrate(app: &app::App, args: crate::cli::RehydrateArgs) -> Result<(), app::AppError> {
-    match app.rehydrate(&args.id)? {
+    match crate::trace::measure("rehydrate", || app.rehydrate(&args.id))? {
         Some(knot) => {
             if args.json {
                 print_json(&knot);
@@ -323,7 +324,9 @@ pub fn run_edge_list(
     app: &app::App,
     edge_args: crate::cli::EdgeListArgs,
 ) -> Result<(), app::AppError> {
-    let edges = app.list_edges(&edge_args.id, &edge_args.direction)?;
+    let edges = crate::trace::measure("list_edges", || {
+        app.list_edges(&edge_args.id, &edge_args.direction)
+    })?;
     if edge_args.json {
         print_json(&edges);
     } else if edges.is_empty() {
@@ -337,10 +340,10 @@ pub fn run_edge_list(
 }
 
 pub fn run_skill(app: &app::App, args: SkillArgs) -> Result<(), app::AppError> {
-    let content = match app.show_knot(&args.id)? {
-        Some(knot) => resolve_skill_for_knot(app, &knot, &args.id)?,
-        None => resolve_skill_by_name(app, &args.id)?,
-    };
+    let content = crate::trace::measure("resolve_skill", || match app.show_knot(&args.id)? {
+        Some(knot) => resolve_skill_for_knot(app, &knot, &args.id),
+        None => resolve_skill_by_name(app, &args.id),
+    })?;
     print!("{content}");
     Ok(())
 }
@@ -372,8 +375,7 @@ fn resolve_skill_by_name(app: &app::App, id: &str) -> Result<String, app::AppErr
 pub fn run_lease_read(app: &app::App, args: crate::cli::LeaseArgs) -> Result<(), app::AppError> {
     match args.command {
         LeaseSubcommands::Show(ref show) => {
-            let knot = app
-                .show_knot(&show.id)?
+            let knot = crate::trace::measure("lease_show", || app.show_knot(&show.id))?
                 .ok_or_else(|| app::AppError::NotFound(show.id.clone()))?;
             if show.json {
                 print_json(&knot);
@@ -382,14 +384,17 @@ pub fn run_lease_read(app: &app::App, args: crate::cli::LeaseArgs) -> Result<(),
             }
         }
         LeaseSubcommands::List(ref list) => {
-            let leases = if list.all {
-                app.list_knots()?
-                    .into_iter()
-                    .filter(|k| k.knot_type == domain::knot_type::KnotType::Lease)
-                    .collect::<Vec<_>>()
-            } else {
-                lease::list_active_leases(app)?
-            };
+            let leases = crate::trace::measure("lease_list", || {
+                if list.all {
+                    Ok(app
+                        .list_knots()?
+                        .into_iter()
+                        .filter(|k| k.knot_type == domain::knot_type::KnotType::Lease)
+                        .collect::<Vec<_>>())
+                } else {
+                    lease::list_active_leases(app)
+                }
+            })?;
             if list.json {
                 print_json(&leases);
             } else if leases.is_empty() {

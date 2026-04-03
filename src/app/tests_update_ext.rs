@@ -258,6 +258,14 @@ fn rehydrate_builds_hot_record_from_warm_and_full_events() {
     std::fs::create_dir_all(db.parent().expect("p")).expect("m");
     let conn = crate::db::open_connection(&ds).expect("o");
     crate::db::upsert_knot_warm(&conn, "K-9", "Warm title").expect("u");
+    crate::db::upsert_cold_catalog(
+        &conn,
+        "K-9",
+        "Warm title",
+        "work_item",
+        "2026-02-24T10:00:01Z",
+    )
+    .expect("c");
     drop(conn);
     write_rehydrate_events(&root);
     let app = App::open(&ds, root.clone()).expect("o");
