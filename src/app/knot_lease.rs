@@ -10,6 +10,11 @@ use super::error::AppError;
 use super::App;
 
 impl App {
+    pub fn set_lease_expiry(&self, id: &str, ts: i64) -> Result<(), AppError> {
+        crate::db::update_lease_expiry_ts(&self.conn, id, ts)
+            .map_err(|e| AppError::Io(std::io::Error::other(e.to_string())))
+    }
+
     pub fn set_lease_id(&self, knot_id: &str, lease_id: Option<&str>) -> Result<(), AppError> {
         let id = self.resolve_knot_token(knot_id)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;

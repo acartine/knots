@@ -265,6 +265,7 @@ fn show_json_value_hides_lease_id_and_keeps_lease_agent_metadata() {
         gate: None,
         lease: None,
         lease_id: Some("knots-lease-secret".to_string()),
+        lease_expiry_ts: 0,
         lease_agent: Some(crate::domain::lease::AgentInfo {
             agent_type: "cli".to_string(),
             provider: "Anthropic".to_string(),
@@ -313,6 +314,7 @@ fn run_show_rejects_lease_knots_but_lease_show_still_allows_them() {
             model: "opus".to_string(),
             model_version: "4.6".to_string(),
         }),
+        600,
     )
     .expect("lease should be created");
 

@@ -38,6 +38,7 @@ fn sample_record(id: &str, state: &str, deferred_from_state: Option<&str>) -> Kn
         gate_data: crate::domain::gate::GateData::default(),
         lease_data: crate::domain::lease::LeaseData::default(),
         lease_id: None,
+        lease_expiry_ts: 0,
         workflow_id: "compatibility".to_string(),
         profile_id: "default".to_string(),
         profile_etag: None,

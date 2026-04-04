@@ -210,7 +210,7 @@ fn claim_rejects_knot_in_action_state() {
     };
     app.set_state_with_actor(&created.id, "implementation", false, None, actor.clone())
         .expect("advance should succeed");
-    let result = claim_knot(&app, &created.id, actor, None);
+    let result = claim_knot(&app, &created.id, actor, None, 600);
     let err = match result {
         Err(e) => e.to_string(),
         Ok(_) => panic!("claim should reject action state"),
@@ -343,7 +343,7 @@ fn claim_poll_and_peek_use_installed_workflow_prompt_body() {
         agent_model: None,
         agent_version: None,
     };
-    let claimed = claim_knot(&app, &created.id, actor, None).expect("claim should succeed");
+    let claimed = claim_knot(&app, &created.id, actor, None, 600).expect("claim should succeed");
     assert!(claimed.skill.contains("Ship {{ output }} output."));
     assert!(claimed.skill.contains("Built output"));
 

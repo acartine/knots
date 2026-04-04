@@ -31,6 +31,7 @@ pub struct PollResult {
 }
 
 pub fn run_poll(app: &App, args: PollArgs) -> Result<(), AppError> {
+    use crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS;
     let result = crate::trace::measure("poll_queue", || {
         poll_queue(app, args.stage.as_deref(), args.owner.as_deref())
     })?;
@@ -49,7 +50,10 @@ pub fn run_poll(app: &App, args: PollArgs) -> Result<(), AppError> {
                     agent_model: args.agent_model,
                     agent_version: args.agent_version,
                 };
-                let claimed = claim_knot(app, &result.knot.id, actor, None)?;
+                let timeout = args
+                    .timeout_seconds
+                    .unwrap_or(DEFAULT_LEASE_TIMEOUT_SECONDS);
+                let claimed = claim_knot(app, &result.knot.id, actor, None, timeout)?;
                 print_result(&claimed, args.json);
             } else {
                 print_result(&result, args.json);
@@ -60,6 +64,7 @@ pub fn run_poll(app: &App, args: PollArgs) -> Result<(), AppError> {
 }
 
 pub fn run_claim(app: &App, args: ClaimArgs) -> Result<(), AppError> {
+    use crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS;
     let result = crate::trace::measure("claim", || {
         if args.peek {
             peek_knot(app, &args.id)
@@ -70,7 +75,10 @@ pub fn run_claim(app: &App, args: ClaimArgs) -> Result<(), AppError> {
                 agent_model: args.agent_model.clone(),
                 agent_version: args.agent_version.clone(),
             };
-            claim_knot(app, &args.id, actor, args.lease.as_deref())
+            let timeout = args
+                .timeout_seconds
+                .unwrap_or(DEFAULT_LEASE_TIMEOUT_SECONDS);
+            claim_knot(app, &args.id, actor, args.lease.as_deref(), timeout)
         }
     })?;
     print_result_verbose(&result, args.json, args.verbose);
@@ -140,11 +148,18 @@ pub fn claim_knot(
     id: &str,
     actor: StateActorMetadata,
     external_lease: Option<&str>,
+    timeout_seconds: u64,
 ) -> Result<PollResult, AppError> {
     let registry = app.profile_registry();
     let knot = app
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.to_string()))?;
+    let knot = if crate::lease_guard::materialize_expired_lease(app, &knot)? {
+        app.show_knot(id)?
+            .ok_or_else(|| AppError::NotFound(id.to_string()))?
+    } else {
+        knot
+    };
     require_queue_state(registry, &knot)?;
     let profile_id = profile_lookup_id(&knot);
     let next_action = workflow_runtime::next_happy_path_state(
@@ -180,9 +195,9 @@ pub fn claim_knot(
 
     // Lease handling: use external lease or create a new one
     let bound_lease_id = if let Some(lid) = external_lease {
-        bind_external_lease(app, &claimed.id, lid)?
+        bind_external_lease(app, &claimed.id, lid, timeout_seconds)?
     } else if let Some(info) = agent_info {
-        create_and_bind_lease(app, &claimed.id, info)?
+        create_and_bind_lease(app, &claimed.id, info, timeout_seconds)?
     } else {
         None
     };
@@ -198,9 +213,15 @@ pub fn claim_knot(
     })
 }
 
-fn bind_external_lease(app: &App, knot_id: &str, lid: &str) -> Result<Option<String>, AppError> {
+fn bind_external_lease(
+    app: &App,
+    knot_id: &str,
+    lid: &str,
+    timeout_seconds: u64,
+) -> Result<Option<String>, AppError> {
     validate_claim_external_lease(app, lid)?;
     crate::lease::activate_lease(app, lid)?;
+    app.set_lease_expiry(lid, crate::lease_expiry::compute_expiry_ts(timeout_seconds))?;
     crate::lease::bind_lease(app, knot_id, lid)?;
     Ok(Some(lid.to_string()))
 }
@@ -209,12 +230,14 @@ fn create_and_bind_lease(
     app: &App,
     knot_id: &str,
     info: crate::domain::lease::AgentInfo,
+    timeout_seconds: u64,
 ) -> Result<Option<String>, AppError> {
     let lease = crate::lease::create_lease(
         app,
         &format!("claim-{}", knot_id),
         crate::domain::lease::LeaseType::Agent,
         Some(info),
+        timeout_seconds,
     )?;
     crate::lease::activate_lease(app, &lease.id)?;
     crate::lease::bind_lease(app, knot_id, &lease.id)?;

@@ -1,8 +1,9 @@
 use crate::cli::{Commands, EdgeSubcommands, GateSubcommands, LeaseSubcommands, StepSubcommands};
 use crate::write_queue::{
     ClaimOperation, EdgeOperation, GateEvaluateOperation, LeaseCreateOperation,
-    LeaseTerminateOperation, NewOperation, NextOperation, PollClaimOperation, QuickNewOperation,
-    RollbackOperation, StateOperation, StepAnnotateOperation, UpdateOperation, WriteOperation,
+    LeaseExtendOperation, LeaseTerminateOperation, NewOperation, NextOperation, PollClaimOperation,
+    QuickNewOperation, RollbackOperation, StateOperation, StepAnnotateOperation, UpdateOperation,
+    WriteOperation,
 };
 
 pub(crate) fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
@@ -142,6 +143,7 @@ fn map_claim(args: &crate::cli::ClaimArgs) -> WriteOperation {
         agent_model: args.agent_model.clone(),
         agent_version: args.agent_version.clone(),
         lease_id: args.lease.clone(),
+        timeout_seconds: args.timeout_seconds,
     })
 }
 
@@ -153,6 +155,7 @@ fn map_poll_claim(args: &crate::cli::PollArgs) -> WriteOperation {
         agent_name: args.agent_name.clone(),
         agent_model: args.agent_model.clone(),
         agent_version: args.agent_version.clone(),
+        timeout_seconds: args.timeout_seconds,
     })
 }
 
@@ -208,6 +211,7 @@ fn map_lease(args: &crate::cli::LeaseArgs) -> Option<WriteOperation> {
                 model: create.model.clone(),
                 model_version: create.model_version.clone(),
                 json: create.json,
+                timeout_seconds: create.timeout_seconds,
             }))
         }
         LeaseSubcommands::Terminate(term) => {
@@ -215,6 +219,11 @@ fn map_lease(args: &crate::cli::LeaseArgs) -> Option<WriteOperation> {
                 id: term.id.clone(),
             }))
         }
+        LeaseSubcommands::Extend(ext) => Some(WriteOperation::LeaseExtend(LeaseExtendOperation {
+            lease_id: ext.lease_id.clone(),
+            timeout_seconds: ext.timeout_seconds,
+            json: ext.json,
+        })),
         _ => None, // Show and List are read operations
     }
 }

@@ -8,14 +8,16 @@ pub fn create_lease(
     nickname: &str,
     lease_type: LeaseType,
     agent_info: Option<AgentInfo>,
+    timeout_seconds: u64,
 ) -> Result<KnotView, AppError> {
     let lease_data = LeaseData {
         lease_type,
         nickname: nickname.to_string(),
         agent_info,
+        timeout_seconds: Some(timeout_seconds),
     };
     let title = format!("Lease: {}", nickname);
-    app.create_knot_with_options(
+    let lease = app.create_knot_with_options(
         &title,
         None,
         Some("lease_ready"),
@@ -26,7 +28,12 @@ pub fn create_lease(
             lease_data,
             ..CreateKnotOptions::default()
         },
-    )
+    )?;
+    app.set_lease_expiry(
+        &lease.id,
+        crate::lease_expiry::compute_expiry_ts(timeout_seconds),
+    )?;
+    Ok(lease)
 }
 
 /// Transition a lease from lease_ready to lease_active.
@@ -51,14 +58,17 @@ pub fn terminate_lease(app: &App, lease_id: &str) -> Result<KnotView, AppError> 
     )
 }
 
-/// List leases in lease_ready or lease_active state.
+/// List leases whose effective state is lease_ready or lease_active.
 pub fn list_active_leases(app: &App) -> Result<Vec<KnotView>, AppError> {
     let all = app.list_knots()?;
     Ok(all
         .into_iter()
         .filter(|k| {
             k.knot_type == KnotType::Lease
-                && matches!(k.state.as_str(), "lease_ready" | "lease_active")
+                && matches!(
+                    crate::lease_expiry::effective_lease_state(&k.state, k.lease_expiry_ts,),
+                    "lease_ready" | "lease_active"
+                )
         })
         .collect())
 }

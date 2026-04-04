@@ -67,6 +67,7 @@ impl<'a> ReplicationService<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn pull(&self) -> Result<SyncSummary, SyncError> {
         self.require_no_active_leases()?;
         let service = SyncService::with_store_paths(

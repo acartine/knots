@@ -81,6 +81,7 @@ impl Drop for TraceSession {
 }
 
 impl TracePhaseGuard {
+    #[allow(dead_code)]
     pub fn detail(&mut self, detail: impl Into<String>) {
         self.detail = Some(detail.into());
     }
@@ -109,6 +110,7 @@ pub fn measure<T>(name: &str, f: impl FnOnce() -> T) -> T {
     f()
 }
 
+#[allow(dead_code)]
 pub fn record(name: &str, elapsed: Duration, detail: Option<String>) {
     if !is_enabled() {
         return;
@@ -154,5 +156,21 @@ mod tests {
             lock.detail("acquired");
         }
         measure("query", || std::thread::sleep(Duration::from_millis(1)));
+    }
+
+    #[test]
+    fn trace_record_and_empty_args() {
+        let _session = TraceSession::start("show", &[], true);
+        super::record(
+            "cache_hit",
+            Duration::from_millis(2),
+            Some("ok".to_string()),
+        );
+        super::record("cache_miss", Duration::from_millis(1), None);
+    }
+
+    #[test]
+    fn record_noop_when_disabled() {
+        super::record("orphan", Duration::from_millis(1), None);
     }
 }

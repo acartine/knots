@@ -267,31 +267,17 @@ should produce, and `review_hint` to tell reviewers what to inspect.
 
 ## Leases
 
-Leases track agent sessions. When an agent claims a knot, a lease is
-automatically created and bound to it. When the agent advances (`kno next`),
-the lease is terminated and unbound.
+A lease is a session token automatically created when an agent claims a knot and
+terminated when the agent advances (`kno next`). Every claim gets its own
+dedicated lease — they are never shared. Leases block sync (push/pull) while
+active, preventing in-progress work from replicating to other machines.
 
-### Manual lease management
+Leases expire after a configurable timeout (default: 10 minutes). Write commands
+that touch a bound knot automatically refresh the timer. Expired leases are
+lazily terminated on the next interaction and unblock sync.
 
-```bash
-kno lease create --nickname "my-session" --type agent \
-    --agent-name claude --model opus --model-version 4.6
-kno lease create --nickname "manual-fix" --type manual
-kno lease show <id>
-kno lease show <id> --json
-kno lease terminate <id>
-kno lease ls                   # active leases only
-kno lease ls --all             # include terminated
-kno lease ls --json
-```
-
-### Sync safety
-
-Push, pull, and sync are blocked when active leases exist. This prevents
-partial work from being replicated. In interactive mode the CLI prompts to
-terminate leases and proceed; in non-interactive mode it exits with an error.
-
-`kno doctor` detects stuck leases and `kno doctor --fix` terminates them.
+For full lifecycle details, timeout configuration, extension, and manual
+management commands see [docs/leases.md](docs/leases.md).
 
 ## JSON output
 

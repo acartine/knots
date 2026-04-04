@@ -270,6 +270,13 @@ fn check_stuck_leases_warns_when_active() {
         },
     )
     .expect("upsert should succeed");
+    // Set future expiry so the lease counts as active
+    crate::db::update_lease_expiry_ts(
+        &conn,
+        "K-stuck",
+        crate::lease_expiry::compute_expiry_ts(600),
+    )
+    .expect("expiry update should succeed");
     drop(conn);
 
     let report = run_doctor(&root).expect("doctor should run");

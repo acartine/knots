@@ -340,7 +340,7 @@ fn next_with_matching_lease_succeeds() {
         agent_model: Some("test-model".to_string()),
         agent_version: Some("1.0".to_string()),
     };
-    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
+    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None, 600).expect("claim");
     let lease_id = claimed.knot.lease_id.clone().expect("should have lease");
 
     let next_op = WriteOperation::Next(NextOperation {
@@ -376,7 +376,7 @@ fn next_with_wrong_lease_fails() {
         agent_model: Some("test-model".to_string()),
         agent_version: Some("1.0".to_string()),
     };
-    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
+    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None, 600).expect("claim");
 
     let next_op = WriteOperation::Next(NextOperation {
         id: work.id.clone(),
@@ -417,7 +417,7 @@ fn next_without_lease_fails_when_knot_has_bound_lease() {
         agent_model: Some("test-model".to_string()),
         agent_version: Some("1.0".to_string()),
     };
-    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
+    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None, 600).expect("claim");
 
     let next_op = WriteOperation::Next(NextOperation {
         id: work.id.clone(),
@@ -461,7 +461,7 @@ fn next_with_lease_on_unleasedknot_fails() {
         agent_model: None,
         agent_version: None,
     };
-    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim");
+    let claimed = poll_claim::claim_knot(&app, &work.id, actor, None, 600).expect("claim");
     assert!(claimed.knot.lease_id.is_none(), "should not have a lease");
 
     let next_op = WriteOperation::Next(NextOperation {

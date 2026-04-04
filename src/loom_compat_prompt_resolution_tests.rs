@@ -270,7 +270,7 @@ fn compat_harness_claim_resolves_loom_body_for_builtin_profile() {
         agent_version: None,
     };
     let claimed =
-        poll_claim::claim_knot(&app, &knot.id, actor, None).expect("claim should succeed");
+        poll_claim::claim_knot(&app, &knot.id, actor, None, 600).expect("claim should succeed");
 
     assert!(
         claimed.skill.contains("# Implementation"),

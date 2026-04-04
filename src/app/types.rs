@@ -35,6 +35,8 @@ pub struct KnotView {
     pub lease: Option<LeaseData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lease_id: Option<String>,
+    #[serde(default)]
+    pub lease_expiry_ts: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lease_agent: Option<AgentInfo>,
     pub workflow_id: String,
@@ -182,6 +184,7 @@ impl From<KnotCacheRecord> for KnotView {
             gate,
             lease,
             lease_id: value.lease_id,
+            lease_expiry_ts: value.lease_expiry_ts,
             lease_agent: None,
             workflow_id: value.workflow_id,
             profile_id,

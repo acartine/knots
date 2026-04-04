@@ -26,6 +26,7 @@ mod init;
 mod installed_workflows;
 mod knot_id;
 mod lease;
+mod lease_expiry;
 mod lease_guard;
 mod list_layout;
 #[cfg(test)]

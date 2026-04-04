@@ -173,6 +173,7 @@ fn enqueue_and_wait_spins_until_worker_lock_is_released() {
             agent_model: None,
             agent_version: None,
             lease_id: None,
+            timeout_seconds: None,
         }),
         |request| QueuedWriteResponse::success(request.request_id.clone()),
     )
@@ -226,6 +227,7 @@ fn lease_create_operation_serializes_round_trip() {
         model: Some("opus".to_string()),
         model_version: Some("4.6".to_string()),
         json: false,
+        timeout_seconds: None,
     });
     let json = serde_json::to_string(&op).expect("should serialize");
     let parsed: WriteOperation = serde_json::from_str(&json).expect("should deserialize");
@@ -253,6 +255,19 @@ fn lease_create_operation_with_no_optional_fields() {
         model: None,
         model_version: None,
         json: false,
+        timeout_seconds: None,
+    });
+    let json = serde_json::to_string(&op).expect("should serialize");
+    let parsed: WriteOperation = serde_json::from_str(&json).expect("should deserialize");
+    assert_eq!(parsed, op);
+}
+
+#[test]
+fn lease_extend_operation_serializes_round_trip() {
+    let op = WriteOperation::LeaseExtend(LeaseExtendOperation {
+        lease_id: "knot-lease-1".to_string(),
+        timeout_seconds: Some(1200),
+        json: true,
     });
     let json = serde_json::to_string(&op).expect("should serialize");
     let parsed: WriteOperation = serde_json::from_str(&json).expect("should deserialize");

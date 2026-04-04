@@ -107,8 +107,9 @@ fn upsert_knot_hot_with_empty_invariants_round_trips() {
 
 #[test]
 fn count_active_leases_returns_count() {
-    use crate::db::{count_active_leases, upsert_knot_hot, UpsertKnotHot};
+    use crate::db::{count_active_leases, update_lease_expiry_ts, upsert_knot_hot, UpsertKnotHot};
     use crate::domain::lease::LeaseData;
+    use crate::lease_expiry::compute_expiry_ts;
 
     let path = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
@@ -158,6 +159,11 @@ fn count_active_leases_returns_count() {
         )
         .expect("upsert should succeed");
     }
+
+    // Set future expiry on active leases so they count as active
+    let future = compute_expiry_ts(600);
+    update_lease_expiry_ts(&conn, "K-lease-1", future).expect("expiry update should succeed");
+    update_lease_expiry_ts(&conn, "K-lease-2", future).expect("expiry update should succeed");
 
     let count = count_active_leases(&conn).expect("count should succeed");
     assert_eq!(count, 2);

@@ -55,6 +55,7 @@ impl<'a> SyncService<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn sync(&self) -> Result<SyncSummary, SyncError> {
         let mut reporter = None;
         self.sync_with_progress(&mut reporter)

@@ -94,6 +94,8 @@ pub struct LeaseData {
     pub nickname: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_info: Option<AgentInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout_seconds: Option<u64>,
 }
 
 #[allow(dead_code)]
@@ -176,6 +178,7 @@ mod tests {
                 model: "opus".to_string(),
                 model_version: "4".to_string(),
             }),
+            timeout_seconds: Some(600),
         };
         let json = serde_json::to_string(&data).unwrap();
         let parsed: LeaseData = serde_json::from_str(&json).unwrap();
@@ -220,6 +223,7 @@ mod tests {
             lease_type: LeaseType::Agent,
             nickname: "my-agent".to_string(),
             agent_info: None,
+            ..Default::default()
         };
         let err = validate_lease_data(&data).unwrap_err();
         assert_eq!(err, LeaseValidationError::MissingAgentInfo);
@@ -244,6 +248,7 @@ mod tests {
                 model: "m".to_string(),
                 model_version: "1".to_string(),
             }),
+            ..Default::default()
         };
         assert!(validate_lease_data(&data).is_ok());
     }
@@ -254,6 +259,7 @@ mod tests {
             lease_type: LeaseType::Manual,
             nickname: "manual".to_string(),
             agent_info: None,
+            ..Default::default()
         };
         assert!(validate_lease_data(&data).is_ok());
     }

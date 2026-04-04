@@ -121,6 +121,78 @@ fn execute_operation_rollback_covers_dry_run_and_real_paths() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+#[test]
+fn rollback_releases_bound_lease() {
+    let root = unique_workspace("knots-wd-rb-lease");
+    setup_repo(&root);
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app = App::open(
+        db_path.to_str().expect("db path should be utf8"),
+        root.clone(),
+    )
+    .expect("app should open");
+    let created = app
+        .create_knot(
+            "Rollback with lease",
+            None,
+            Some("work_item"),
+            Some("default"),
+        )
+        .expect("knot should be created");
+    let claimed = crate::poll_claim::claim_knot(
+        &app,
+        &created.id,
+        StateActorMetadata {
+            actor_kind: Some("agent".to_string()),
+            agent_name: Some("test-agent".to_string()),
+            agent_model: Some("test-model".to_string()),
+            agent_version: Some("1.0".to_string()),
+        },
+        None,
+        600,
+    )
+    .expect("claim should succeed");
+    let lease_id = claimed
+        .knot
+        .lease_id
+        .clone()
+        .expect("lease should be bound after claim");
+
+    let output = execute_operation(
+        &app,
+        &WriteOperation::Rollback(RollbackOperation {
+            id: created.id.clone(),
+            dry_run: false,
+            actor_kind: Some("agent".to_string()),
+            agent_name: None,
+            agent_model: None,
+            agent_version: None,
+        }),
+    )
+    .expect("rollback should succeed");
+    assert!(output.contains("rolled back"));
+
+    let after = app
+        .show_knot(&created.id)
+        .expect("knot should load")
+        .expect("knot should exist");
+    assert!(
+        after.lease_id.is_none(),
+        "rollback should unbind lease from knot"
+    );
+
+    let lease = app
+        .show_knot(&lease_id)
+        .expect("lease should load")
+        .expect("lease should exist");
+    assert_eq!(
+        lease.state, "lease_terminated",
+        "rollback should terminate the bound lease"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
 fn advance_and_rollback(app: &App, implementation: &crate::app::KnotView) {
     app.set_state_with_actor(
         &implementation.id,
@@ -193,6 +265,7 @@ fn normalize_and_format_helpers() {
         gate: None,
         lease: None,
         lease_id: None,
+        lease_expiry_ts: 0,
         lease_agent: None,
         workflow_id: "compatibility".to_string(),
         profile_id: "default".to_string(),

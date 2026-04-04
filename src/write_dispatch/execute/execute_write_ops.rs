@@ -20,6 +20,12 @@ pub(super) fn execute_update(
     let knot = app
         .show_knot(&args.id)?
         .ok_or_else(|| AppError::NotFound(args.id.clone()))?;
+    let knot = if crate::lease_guard::materialize_expired_lease(app, &knot)? {
+        app.show_knot(&args.id)?
+            .ok_or_else(|| AppError::NotFound(args.id.clone()))?
+    } else {
+        knot
+    };
     validate_non_claim_lease(&knot, args.lease_id.as_deref())?;
     let patch = build_update_patch(app, args)?;
     let knot = execute_with_terminal_cascade_prompt(
@@ -28,6 +34,7 @@ pub(super) fn execute_update(
             app.update_knot_with_options(&args.id, patch.clone(), approve_terminal_cascade)
         },
     )?;
+    refresh_lease_heartbeat(app, &knot);
     let palette = ui::Palette::auto();
     Ok(format!(
         "updated {} {} {}\n",
@@ -35,6 +42,27 @@ pub(super) fn execute_update(
         palette.state(&knot.state),
         knot.title
     ))
+}
+
+/// Refresh the lease expiry when a write command touches a bound knot.
+fn refresh_lease_heartbeat(app: &App, knot: &crate::app::KnotView) {
+    let Some(lease_id) = knot.lease_id.as_deref() else {
+        return;
+    };
+    let Ok(Some(lease)) = app.show_knot(lease_id) else {
+        return;
+    };
+    let state = crate::lease_expiry::effective_lease_state(&lease.state, lease.lease_expiry_ts);
+    if state != crate::workflow_runtime::LEASE_ACTIVE {
+        return;
+    }
+    let timeout = lease
+        .lease
+        .as_ref()
+        .and_then(|d| d.timeout_seconds)
+        .unwrap_or(crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS);
+    let new_ts = crate::lease_expiry::compute_expiry_ts(timeout);
+    let _ = app.set_lease_expiry(lease_id, new_ts);
 }
 
 fn build_update_patch(
@@ -226,6 +254,9 @@ pub(super) fn execute_rollback(
         false,
         false,
     )?;
+    if updated.lease_id.is_some() {
+        release_bound_lease(app, &updated.id)?;
+    }
     Ok(format_rollback_output(
         &updated,
         &resolution.target_state,

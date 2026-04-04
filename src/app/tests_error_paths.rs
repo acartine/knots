@@ -41,6 +41,7 @@ fn sample_record() -> KnotCacheRecord {
         gate_data: crate::domain::gate::GateData::default(),
         lease_data: crate::domain::lease::LeaseData::default(),
         lease_id: None,
+        lease_expiry_ts: 0,
         workflow_id: "compatibility".to_string(),
         profile_id: "default".to_string(),
         profile_etag: Some("etag-1".to_string()),

@@ -69,7 +69,7 @@ fn next_terminates_lease() {
         agent_version: Some("1.0".to_string()),
     };
     let claimed =
-        poll_claim::claim_knot(&app, &work.id, actor, None).expect("claim should succeed");
+        poll_claim::claim_knot(&app, &work.id, actor, None, 600).expect("claim should succeed");
 
     // Verify lease was created and bound
     let knot_after_claim = app
@@ -193,6 +193,7 @@ fn execute_lease_create_and_terminate() {
         model: Some("opus".to_string()),
         model_version: Some("4.6".to_string()),
         json: false,
+        timeout_seconds: None,
     });
     let output = execute_operation(&app, &create_op).expect("create should succeed");
     assert!(
@@ -234,6 +235,7 @@ fn lease_create_json_output() {
         model: Some("opus".to_string()),
         model_version: Some("4.6".to_string()),
         json: true,
+        timeout_seconds: None,
     });
     let output = execute_operation(&app, &op).expect("create should succeed");
     let parsed: serde_json::Value =
@@ -259,6 +261,7 @@ fn lease_create_text_output_when_json_false() {
         model: None,
         model_version: None,
         json: false,
+        timeout_seconds: None,
     });
     let output = execute_operation(&app, &op).expect("create should succeed");
     assert!(
@@ -279,6 +282,7 @@ pub(super) fn create_test_lease(app: &App) -> String {
         model: Some("opus".to_string()),
         model_version: Some("4.6".to_string()),
         json: false,
+        timeout_seconds: None,
     });
     execute_operation(app, &op).expect("lease create should succeed");
     let leases = crate::lease::list_active_leases(app).expect("list");

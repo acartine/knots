@@ -86,6 +86,7 @@ fn execute_operation_poll_claim_empty_and_json() {
         agent_name: None,
         agent_model: None,
         agent_version: None,
+        timeout_seconds: None,
     });
     let err = execute_operation(&app, &empty).expect_err("empty poll should fail");
     match err {
@@ -103,6 +104,7 @@ fn execute_operation_poll_claim_empty_and_json() {
         agent_name: Some("agent".to_string()),
         agent_model: Some("model".to_string()),
         agent_version: Some("1.0".to_string()),
+        timeout_seconds: None,
     });
     let output = execute_operation(&app, &json).expect("poll claim json should succeed");
     let parsed: serde_json::Value = serde_json::from_str(&output).expect("json parse");
@@ -303,4 +305,28 @@ fn maybe_run_queued_command_returns_none_for_read_only() {
     let cli = crate::cli::Cli::parse_from(["kno", "show", "knots-1"]);
     let result = maybe_run_queued_command(&cli).expect("read-only commands should skip queue");
     assert!(result.is_none());
+}
+
+#[test]
+fn operation_from_command_maps_lease_extend() {
+    let cli = crate::cli::Cli::parse_from([
+        "kno",
+        "lease",
+        "extend",
+        "--lease-id",
+        "L-123",
+        "--timeout-seconds",
+        "900",
+        "--json",
+    ]);
+    let op =
+        operation_from_command(&cli.command).expect("lease extend should produce an operation");
+    match op {
+        WriteOperation::LeaseExtend(ext) => {
+            assert_eq!(ext.lease_id, "L-123");
+            assert_eq!(ext.timeout_seconds, Some(900));
+            assert!(ext.json);
+        }
+        other => panic!("unexpected: {other:?}"),
+    }
 }

@@ -364,13 +364,17 @@ pub fn canonical_or_original(path: &Path) -> PathBuf {
 pub fn find_git_root(start: &Path) -> Option<PathBuf> {
     let mut current = canonical_or_original(start);
     loop {
-        if current.join(".git").exists() {
+        if current.join(".git").exists() && !is_inside_knots_store(&current) {
             return Some(current);
         }
         if !current.pop() {
             return None;
         }
     }
+}
+
+fn is_inside_knots_store(path: &Path) -> bool {
+    path.components().any(|c| c.as_os_str() == ".knots")
 }
 
 fn named_project_context(home_override: Option<&Path>, id: &str) -> Result<ProjectContext, String> {
@@ -450,6 +454,22 @@ mod tests {
         assert_eq!(context.project_id, None);
         assert_eq!(context.distribution, DistributionMode::Git);
         let _ = fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn find_git_root_skips_knots_worktree() {
+        let root = temp_home();
+        let repo = root.join("repo");
+        fs::create_dir_all(repo.join(".git")).expect("repo .git");
+        // Simulate a knots sync worktree inside .knots/_worktree
+        let worktree = repo.join(".knots").join("_worktree");
+        fs::create_dir_all(&worktree).expect("worktree dir");
+        fs::write(worktree.join(".git"), "gitdir: /tmp/fake").expect(".git file");
+        // Starting from inside the worktree should skip it and find the real repo
+        let found = find_git_root(&worktree);
+        let expected = canonical_or_original(&repo);
+        assert_eq!(found.as_deref(), Some(expected.as_path()));
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]
