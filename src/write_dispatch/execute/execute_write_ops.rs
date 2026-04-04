@@ -20,6 +20,12 @@ pub(super) fn execute_update(
     let knot = app
         .show_knot(&args.id)?
         .ok_or_else(|| AppError::NotFound(args.id.clone()))?;
+    let knot = if crate::lease_guard::materialize_expired_lease(app, &knot)? {
+        app.show_knot(&args.id)?
+            .ok_or_else(|| AppError::NotFound(args.id.clone()))?
+    } else {
+        knot
+    };
     validate_non_claim_lease(&knot, args.lease_id.as_deref())?;
     let patch = build_update_patch(app, args)?;
     let knot = execute_with_terminal_cascade_prompt(
@@ -50,8 +56,12 @@ fn refresh_lease_heartbeat(app: &App, knot: &crate::app::KnotView) {
     if state != crate::workflow_runtime::LEASE_ACTIVE {
         return;
     }
-    let new_ts =
-        crate::lease_expiry::compute_expiry_ts(crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS);
+    let timeout = lease
+        .lease
+        .as_ref()
+        .and_then(|d| d.timeout_seconds)
+        .unwrap_or(crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS);
+    let new_ts = crate::lease_expiry::compute_expiry_ts(timeout);
     let _ = app.set_lease_expiry(lease_id, new_ts);
 }
 

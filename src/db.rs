@@ -45,6 +45,14 @@ pub fn open_connection(path: &str) -> Result<Connection> {
     Ok(conn)
 }
 
+/// Open a connection with pragmas but without applying migrations.
+/// Used by diagnostics that need to inspect the raw schema state.
+pub fn open_connection_raw(path: &str) -> Result<Connection> {
+    let conn = Connection::open(path)?;
+    configure_for_speed(&conn)?;
+    Ok(conn)
+}
+
 fn configure_for_speed(conn: &Connection) -> Result<()> {
     conn.pragma_update(None::<DatabaseName>, "journal_mode", "WAL")?;
     conn.pragma_update(None::<DatabaseName>, "synchronous", "NORMAL")?;

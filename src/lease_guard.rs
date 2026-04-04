@@ -1,4 +1,4 @@
-use crate::app::{App, AppError, KnotView};
+use crate::app::{App, AppError, KnotView, StateActorMetadata};
 use crate::domain::knot_type::KnotType;
 use crate::lease_expiry::effective_lease_state;
 use crate::workflow_runtime;
@@ -94,8 +94,11 @@ pub(crate) fn validate_next_bound_lease(
         return Ok(());
     }
 
-    // Exception: expired lease still bound → allow progression
+    // Exception: expired lease still bound → allow progression.
+    // Only applies when raw state is NOT terminated (time-based expiry
+    // caused the effective state change, not explicit termination).
     if state == workflow_runtime::LEASE_TERMINATED
+        && lease_knot.state != workflow_runtime::LEASE_TERMINATED
         && knot.lease_id.as_deref() == Some(provided_lease)
     {
         return Ok(());
@@ -130,5 +133,60 @@ pub(crate) fn release_bound_lease(app: &App, knot_id: &str) -> Result<(), AppErr
 
     app.set_lease_id(knot_id, None)?;
     let _ = app.trigger_queued_sync();
+    Ok(())
+}
+
+/// Materialize a single work knot's expired bound lease.
+///
+/// If the knot has a bound lease whose effective state is terminated but
+/// whose raw DB state is still active/ready, this function terminates
+/// the lease, unbinds it, and rolls the knot back to its prior queue
+/// state. Returns `true` if materialization occurred.
+pub(crate) fn materialize_expired_lease(app: &App, knot: &KnotView) -> Result<bool, AppError> {
+    if knot.knot_type == KnotType::Lease {
+        return Ok(false);
+    }
+    let Some(lease_id) = knot.lease_id.as_deref() else {
+        return Ok(false);
+    };
+    let Some(lease_knot) = app.show_knot(lease_id)? else {
+        return Ok(false);
+    };
+    if lease_knot.knot_type != KnotType::Lease {
+        return Ok(false);
+    }
+    let effective = effective_lease_state(&lease_knot.state, lease_knot.lease_expiry_ts);
+    if effective != workflow_runtime::LEASE_TERMINATED
+        || lease_knot.state == workflow_runtime::LEASE_TERMINATED
+    {
+        return Ok(false);
+    }
+
+    // 1. Terminate the lease
+    crate::lease::terminate_lease(app, lease_id)?;
+    // 2. Unbind the lease from the work knot
+    app.set_lease_id(&knot.id, None)?;
+    // 3. Roll the work knot back to its prior queue state
+    let resolution = crate::rollback::resolve_rollback_state(app, &knot.id)?;
+    app.set_state_with_actor_and_options(
+        &knot.id,
+        &resolution.target_state,
+        resolution.requires_force,
+        None,
+        StateActorMetadata::default(),
+        false,
+        false,
+    )?;
+    Ok(true)
+}
+
+/// Materialize all expired leases across all work knots.
+///
+/// Call at the start of read commands so displayed state is accurate.
+pub(crate) fn materialize_all_expired(app: &App) -> Result<(), AppError> {
+    let knots = app.list_knots()?;
+    for knot in &knots {
+        let _ = materialize_expired_lease(app, knot);
+    }
     Ok(())
 }

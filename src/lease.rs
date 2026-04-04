@@ -14,6 +14,7 @@ pub fn create_lease(
         lease_type,
         nickname: nickname.to_string(),
         agent_info,
+        timeout_seconds: Some(timeout_seconds),
     };
     let title = format!("Lease: {}", nickname);
     let lease = app.create_knot_with_options(

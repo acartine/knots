@@ -110,3 +110,7 @@ mod tests_lease_ext3;
 #[cfg(test)]
 #[path = "write_dispatch/tests_lease_ext4.rs"]
 mod tests_lease_ext4;
+
+#[cfg(test)]
+#[path = "write_dispatch/tests_lease_ext5.rs"]
+mod tests_lease_ext5;

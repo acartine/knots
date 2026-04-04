@@ -344,7 +344,7 @@ fn check_schema_version(store_paths: &StorePaths) -> Result<DoctorCheck, DoctorE
             detail: "no cache database found".to_string(),
         });
     }
-    let conn = crate::db::open_connection(db_path.to_str().unwrap_or("cache/state.sqlite"))
+    let conn = crate::db::open_connection_raw(db_path.to_str().unwrap_or("cache/state.sqlite"))
         .map_err(|e| DoctorError::Io(std::io::Error::other(e.to_string())))?;
 
     let applied: i64 = conn
@@ -353,7 +353,7 @@ fn check_schema_version(store_paths: &StorePaths) -> Result<DoctorCheck, DoctorE
             [],
             |row| row.get(0),
         )
-        .map_err(|e| DoctorError::Io(std::io::Error::other(e.to_string())))?;
+        .unwrap_or(0);
 
     let expected = crate::db::CURRENT_SCHEMA_VERSION;
     if applied >= expected {

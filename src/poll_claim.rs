@@ -154,6 +154,12 @@ pub fn claim_knot(
     let knot = app
         .show_knot(id)?
         .ok_or_else(|| AppError::NotFound(id.to_string()))?;
+    let knot = if crate::lease_guard::materialize_expired_lease(app, &knot)? {
+        app.show_knot(id)?
+            .ok_or_else(|| AppError::NotFound(id.to_string()))?
+    } else {
+        knot
+    };
     require_queue_state(registry, &knot)?;
     let profile_id = profile_lookup_id(&knot);
     let next_action = workflow_runtime::next_happy_path_state(
