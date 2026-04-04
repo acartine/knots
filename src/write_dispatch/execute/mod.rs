@@ -3,7 +3,9 @@ use crate::dispatch::knot_ref;
 use crate::domain::step_history::StepActorInfo;
 use crate::poll_claim;
 use crate::ui;
-use crate::write_queue::{LeaseCreateOperation, LeaseTerminateOperation, WriteOperation};
+use crate::write_queue::{
+    LeaseCreateOperation, LeaseExtendOperation, LeaseTerminateOperation, WriteOperation,
+};
 
 use super::helpers::{
     format_json, parse_gate_data_args, parse_gate_decision, parse_knot_type_arg,
@@ -40,6 +42,7 @@ pub(crate) fn execute_operation(app: &App, operation: &WriteOperation) -> Result
         WriteOperation::StepAnnotate(args) => execute_step_annotate(app, args),
         WriteOperation::LeaseCreate(op) => execute_lease_create(app, op),
         WriteOperation::LeaseTerminate(op) => execute_lease_terminate(app, op),
+        WriteOperation::LeaseExtend(op) => execute_lease_extend(app, op),
     }
 }
 
@@ -133,13 +136,17 @@ fn execute_state(app: &App, args: &crate::write_queue::StateOperation) -> Result
 }
 
 fn execute_claim(app: &App, args: &crate::write_queue::ClaimOperation) -> Result<String, AppError> {
+    use crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS;
     let actor = StateActorMetadata {
         actor_kind: Some("agent".to_string()),
         agent_name: args.agent_name.clone(),
         agent_model: args.agent_model.clone(),
         agent_version: args.agent_version.clone(),
     };
-    let claimed = poll_claim::claim_knot(app, &args.id, actor, args.lease_id.as_deref())?;
+    let timeout = args
+        .timeout_seconds
+        .unwrap_or(DEFAULT_LEASE_TIMEOUT_SECONDS);
+    let claimed = poll_claim::claim_knot(app, &args.id, actor, args.lease_id.as_deref(), timeout)?;
     if args.json {
         let value = poll_claim::render_json_verbose(&claimed, args.verbose);
         Ok(format_json(&value))
@@ -152,6 +159,7 @@ fn execute_poll_claim(
     app: &App,
     args: &crate::write_queue::PollClaimOperation,
 ) -> Result<String, AppError> {
+    use crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS;
     let polled = poll_claim::poll_queue(app, args.stage.as_deref(), args.owner.as_deref())?;
     let Some(polled) = polled else {
         return Err(AppError::InvalidArgument(
@@ -164,7 +172,10 @@ fn execute_poll_claim(
         agent_model: args.agent_model.clone(),
         agent_version: args.agent_version.clone(),
     };
-    let claimed = poll_claim::claim_knot(app, &polled.knot.id, actor, None)?;
+    let timeout = args
+        .timeout_seconds
+        .unwrap_or(DEFAULT_LEASE_TIMEOUT_SECONDS);
+    let claimed = poll_claim::claim_knot(app, &polled.knot.id, actor, None, timeout)?;
     if args.json {
         let value = poll_claim::render_json(&claimed);
         Ok(format_json(&value))
@@ -236,6 +247,7 @@ fn execute_step_annotate(
 
 fn execute_lease_create(app: &App, op: &LeaseCreateOperation) -> Result<String, AppError> {
     use crate::domain::lease::{AgentInfo, LeaseType};
+    use crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS;
     let lease_type = match op.lease_type.as_str() {
         "manual" => LeaseType::Manual,
         _ => LeaseType::Agent,
@@ -251,7 +263,8 @@ fn execute_lease_create(app: &App, op: &LeaseCreateOperation) -> Result<String, 
     } else {
         None
     };
-    let view = crate::lease::create_lease(app, &op.nickname, lease_type, agent_info)?;
+    let timeout = op.timeout_seconds.unwrap_or(DEFAULT_LEASE_TIMEOUT_SECONDS);
+    let view = crate::lease::create_lease(app, &op.nickname, lease_type, agent_info, timeout)?;
     if op.json {
         Ok(format_json(
             &serde_json::to_value(&view).expect("serialize"),
@@ -275,4 +288,42 @@ fn execute_lease_terminate(app: &App, op: &LeaseTerminateOperation) -> Result<St
         palette.id(&knot_ref(&view)),
         palette.state(&view.state),
     ))
+}
+
+fn execute_lease_extend(app: &App, args: &LeaseExtendOperation) -> Result<String, AppError> {
+    let lease = app
+        .show_knot(&args.lease_id)?
+        .ok_or_else(|| AppError::NotFound(args.lease_id.clone()))?;
+    if lease.knot_type != crate::domain::knot_type::KnotType::Lease {
+        return Err(AppError::InvalidArgument(
+            "specified knot is not a lease".to_string(),
+        ));
+    }
+    let effective = crate::lease_expiry::effective_lease_state(&lease.state, lease.lease_expiry_ts);
+    if effective == crate::workflow_runtime::LEASE_TERMINATED {
+        return Err(AppError::InvalidArgument(
+            "cannot extend a terminated or expired lease".to_string(),
+        ));
+    }
+    let timeout = args
+        .timeout_seconds
+        .unwrap_or(crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS);
+    let new_ts = crate::lease_expiry::compute_expiry_ts(timeout);
+    app.set_lease_expiry(&args.lease_id, new_ts)?;
+    let palette = crate::ui::Palette::auto();
+    if args.json {
+        Ok(serde_json::json!({
+            "id": args.lease_id,
+            "lease_expiry_ts": new_ts,
+            "timeout_seconds": timeout,
+        })
+        .to_string()
+            + "\n")
+    } else {
+        Ok(format!(
+            "extended {} for {}s\n",
+            palette.id(&args.lease_id),
+            timeout
+        ))
+    }
 }

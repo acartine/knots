@@ -194,10 +194,21 @@ pub fn count_active_leases(conn: &Connection) -> Result<i64> {
 SELECT COUNT(*) FROM knot_hot
 WHERE knot_type = 'lease'
   AND state IN ('lease_ready', 'lease_active')
+  AND lease_expiry_ts > unixepoch('now')
 "#,
         [],
         |row| row.get(0),
     )
+}
+
+pub fn update_lease_expiry_ts(conn: &Connection, id: &str, ts: i64) -> Result<()> {
+    super::with_write_retry(|| {
+        conn.execute(
+            "UPDATE knot_hot SET lease_expiry_ts = ?1 WHERE id = ?2",
+            params![ts, id],
+        )?;
+        Ok(())
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

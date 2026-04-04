@@ -59,6 +59,7 @@ fn show_knot_populates_lease_agent_from_bound_lease_record() {
             model: "opus".to_string(),
             model_version: "4.6".to_string(),
         }),
+        600,
     )
     .expect("lease should be created");
     crate::lease::bind_lease(&app, &work.id, &lease.id).expect("bind should succeed");

@@ -14,7 +14,7 @@ use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 13;
+pub const CURRENT_SCHEMA_VERSION: i64 = 14;
 
 mod catalog;
 mod migrations;
@@ -23,8 +23,8 @@ pub use catalog::{
     count_active_leases, delete_cold_catalog, delete_edge, delete_knot_warm, get_cold_catalog,
     get_hot_window_days, get_knot_warm, get_pull_drift_warn_threshold,
     get_sync_fetch_blob_limit_kb, insert_edge, list_cold_catalog, list_edges, list_edges_by_kind,
-    list_knot_warm, search_cold_catalog, upsert_cold_catalog, upsert_knot_warm, EdgeDirection,
-    EdgeRecord,
+    list_knot_warm, search_cold_catalog, update_lease_expiry_ts, upsert_cold_catalog,
+    upsert_knot_warm, EdgeDirection, EdgeRecord,
 };
 
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
@@ -130,6 +130,8 @@ pub struct KnotCacheRecord {
     #[serde(default)]
     pub lease_data: LeaseData,
     pub lease_id: Option<String>,
+    #[serde(default)]
+    pub lease_expiry_ts: i64,
     #[serde(default = "default_workflow_id")]
     pub workflow_id: String,
     pub profile_id: String,
@@ -271,8 +273,8 @@ pub fn get_knot_hot(conn: &Connection, id: &str) -> Result<Option<KnotCacheRecor
         r#"
 SELECT id, title, state, updated_at, body, description, acceptance,
        priority, knot_type, tags_json, notes_json,
-       handoff_capsules_json, invariants_json, step_history_json, gate_data_json,
-       lease_data_json, lease_id,
+       handoff_capsules_json, invariants_json, step_history_json,
+       gate_data_json, lease_data_json, lease_id, lease_expiry_ts,
        workflow_id, profile_id, profile_etag,
        deferred_from_state, blocked_from_state, created_at
 FROM knot_hot
@@ -289,8 +291,8 @@ pub fn list_knot_hot(conn: &Connection) -> Result<Vec<KnotCacheRecord>> {
         r#"
 SELECT id, title, state, updated_at, body, description, acceptance,
        priority, knot_type, tags_json, notes_json,
-       handoff_capsules_json, invariants_json, step_history_json, gate_data_json,
-       lease_data_json, lease_id,
+       handoff_capsules_json, invariants_json, step_history_json,
+       gate_data_json, lease_data_json, lease_id, lease_expiry_ts,
        workflow_id, profile_id, profile_etag,
        deferred_from_state, blocked_from_state, created_at
 FROM knot_hot
@@ -333,12 +335,13 @@ fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> 
         gate_data: from_json_text(gate_data_json, 14)?,
         lease_data: from_json_text(lease_data_json, 15)?,
         lease_id: row.get(16)?,
-        workflow_id: row.get(17)?,
-        profile_id: row.get(18)?,
-        profile_etag: row.get(19)?,
-        deferred_from_state: row.get(20)?,
-        blocked_from_state: row.get(21)?,
-        created_at: row.get(22)?,
+        lease_expiry_ts: row.get(17)?,
+        workflow_id: row.get(18)?,
+        profile_id: row.get(19)?,
+        profile_etag: row.get(20)?,
+        deferred_from_state: row.get(21)?,
+        blocked_from_state: row.get(22)?,
+        created_at: row.get(23)?,
     })
 }
 

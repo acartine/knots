@@ -18,7 +18,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 13] = [
+const MIGRATIONS: [Migration; 14] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -202,6 +202,13 @@ ALTER TABLE knot_hot ADD COLUMN acceptance TEXT;
         name: "knot_blocked_provenance_v1",
         sql: r#"
 ALTER TABLE knot_hot ADD COLUMN blocked_from_state TEXT;
+"#,
+    },
+    Migration {
+        version: 14,
+        name: "lease_expiry_v1",
+        sql: r#"
+ALTER TABLE knot_hot ADD COLUMN lease_expiry_ts INTEGER NOT NULL DEFAULT 0;
 "#,
     },
 ];

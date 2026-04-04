@@ -27,14 +27,12 @@ pub struct NewOperation {
     pub gate_failure_modes: Vec<String>,
     pub lease_id: Option<String>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct QuickNewOperation {
     pub title: String,
     pub description: Option<String>,
     pub state: Option<String>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StateOperation {
     pub id: String,
@@ -47,7 +45,6 @@ pub struct StateOperation {
     pub agent_model: Option<String>,
     pub agent_version: Option<String>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UpdateOperation {
     pub id: String,
@@ -86,7 +83,6 @@ pub struct UpdateOperation {
     pub approve_terminal_cascade: bool,
     pub lease_id: Option<String>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct NextOperation {
     pub id: String,
@@ -99,7 +95,6 @@ pub struct NextOperation {
     pub agent_version: Option<String>,
     pub lease_id: Option<String>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RollbackOperation {
     pub id: String,
@@ -109,7 +104,6 @@ pub struct RollbackOperation {
     pub agent_model: Option<String>,
     pub agent_version: Option<String>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ClaimOperation {
     pub id: String,
@@ -119,8 +113,8 @@ pub struct ClaimOperation {
     pub agent_model: Option<String>,
     pub agent_version: Option<String>,
     pub lease_id: Option<String>,
+    pub timeout_seconds: Option<u64>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PollClaimOperation {
     pub stage: Option<String>,
@@ -129,8 +123,8 @@ pub struct PollClaimOperation {
     pub agent_name: Option<String>,
     pub agent_model: Option<String>,
     pub agent_version: Option<String>,
+    pub timeout_seconds: Option<u64>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GateEvaluateOperation {
     pub id: String,
@@ -170,13 +164,19 @@ pub struct LeaseCreateOperation {
     pub model: Option<String>,
     pub model_version: Option<String>,
     pub json: bool,
+    pub timeout_seconds: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct LeaseTerminateOperation {
     pub id: String,
 }
-
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LeaseExtendOperation {
+    pub lease_id: String,
+    pub timeout_seconds: Option<u64>,
+    pub json: bool,
+}
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[allow(clippy::large_enum_variant)]
 pub enum WriteOperation {
@@ -194,6 +194,7 @@ pub enum WriteOperation {
     StepAnnotate(StepAnnotateOperation),
     LeaseCreate(LeaseCreateOperation),
     LeaseTerminate(LeaseTerminateOperation),
+    LeaseExtend(LeaseExtendOperation),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

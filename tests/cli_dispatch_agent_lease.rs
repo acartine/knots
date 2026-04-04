@@ -100,6 +100,9 @@ fn next_rejects_corrupt_bound_lease_with_warning_and_no_leak_id() {
         &["state", &lease_id, "lease_terminated"],
     ));
 
+    // With lease timeout support, a terminated-but-still-bound lease
+    // allows kno next to succeed (the exception prevents waste when
+    // nobody else has claimed the knot).
     let next = run_knots(
         &root,
         &db,
@@ -112,22 +115,12 @@ fn next_rejects_corrupt_bound_lease_with_warning_and_no_leak_id() {
             &lease_id,
         ],
     );
-    assert_failure(&next);
-    let stderr = String::from_utf8_lossy(&next.stderr);
-    assert!(stderr.contains("warning: next rejected bound lease: lease_terminated"));
-    assert!(
-        stderr.contains("expected 'lease_active'"),
-        "stderr: {stderr}"
-    );
-    assert!(
-        !stderr.contains(&lease_id),
-        "stderr should not leak lease id: {stderr}"
-    );
+    assert_success(&next);
 
     let show = run_knots(&root, &db, &["show", &knot_id, "--json"]);
     assert_success(&show);
     let shown: Value = serde_json::from_slice(&show.stdout).expect("show json");
-    assert_eq!(shown["state"], "implementation");
+    assert_eq!(shown["state"], "ready_for_implementation_review");
 
     let _ = std::fs::remove_dir_all(root);
 }

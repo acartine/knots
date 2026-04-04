@@ -39,7 +39,8 @@ fn trigger_queued_sync_skips_when_leases_active() {
     let conn = db::open_connection(&db_str).expect("open");
     db::set_meta(&conn, "sync_pending", "true").expect("set meta");
 
-    let l = lease::create_lease(&app, "blocker", LeaseType::Agent, None).expect("create lease");
+    let l =
+        lease::create_lease(&app, "blocker", LeaseType::Agent, None, 600).expect("create lease");
     lease::activate_lease(&app, &l.id).expect("activate");
 
     let triggered = app.trigger_queued_sync().expect("should succeed");
@@ -79,8 +80,10 @@ fn trigger_queued_sync_not_triggered_with_remaining_leases() {
     let conn = db::open_connection(&db_str).expect("open");
     db::set_meta(&conn, "sync_pending", "true").expect("set meta");
 
-    let l1 = lease::create_lease(&app, "first", LeaseType::Agent, None).expect("create lease 1");
-    let l2 = lease::create_lease(&app, "second", LeaseType::Agent, None).expect("create lease 2");
+    let l1 =
+        lease::create_lease(&app, "first", LeaseType::Agent, None, 600).expect("create lease 1");
+    let l2 =
+        lease::create_lease(&app, "second", LeaseType::Agent, None, 600).expect("create lease 2");
     lease::activate_lease(&app, &l1.id).expect("activate l1");
     lease::activate_lease(&app, &l2.id).expect("activate l2");
 

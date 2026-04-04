@@ -83,6 +83,8 @@ pub struct PollArgs {
     pub agent_model: Option<String>,
     #[arg(long = "agent-version", help = "Agent version for claim metadata.")]
     pub agent_version: Option<String>,
+    #[arg(long, help = "Lease timeout in seconds (default: 600).")]
+    pub timeout_seconds: Option<u64>,
 }
 
 #[derive(Debug, Args)]
@@ -104,6 +106,8 @@ pub struct ClaimArgs {
     pub verbose: bool,
     #[arg(long, help = "Bind an existing lease instead of creating a new one.")]
     pub lease: Option<String>,
+    #[arg(long, help = "Lease timeout in seconds (default: 600).")]
+    pub timeout_seconds: Option<u64>,
 }
 
 #[derive(Debug, Args)]
@@ -253,6 +257,8 @@ pub enum LeaseSubcommands {
     Show(LeaseShowArgs),
     #[command(about = "Terminate an active lease.")]
     Terminate(LeaseTerminateArgs),
+    #[command(about = "Extend an active lease.")]
+    Extend(LeaseExtendArgs),
     #[command(about = "List leases.", alias = "ls")]
     List(LeaseListArgs),
 }
@@ -279,6 +285,8 @@ pub struct LeaseCreateArgs {
     pub model_version: Option<String>,
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
+    #[arg(long, help = "Lease timeout in seconds (default: 600).")]
+    pub timeout_seconds: Option<u64>,
 }
 #[derive(Debug, Args)]
 #[command(about = "Show a lease.")]
@@ -293,6 +301,16 @@ pub struct LeaseShowArgs {
 pub struct LeaseTerminateArgs {
     #[arg(help = "Lease knot id.")]
     pub id: String,
+}
+#[derive(Debug, Args)]
+#[command(about = "Extend an active lease.")]
+pub struct LeaseExtendArgs {
+    #[arg(long = "lease-id", help = "Lease knot id to extend.")]
+    pub lease_id: String,
+    #[arg(long, help = "New timeout in seconds (default: 600).")]
+    pub timeout_seconds: Option<u64>,
+    #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
+    pub json: bool,
 }
 #[derive(Debug, Args)]
 #[command(about = "List leases.")]

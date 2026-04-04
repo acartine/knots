@@ -385,6 +385,12 @@ fn push_blocks_with_active_leases() {
         },
     )
     .expect("lease upsert should succeed");
+    db::update_lease_expiry_ts(
+        &conn,
+        "K-lease-block",
+        crate::lease_expiry::compute_expiry_ts(600),
+    )
+    .expect("expiry update should succeed");
 
     let service = ReplicationService::new(&conn, dev1.clone());
     let err = service

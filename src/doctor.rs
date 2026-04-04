@@ -95,6 +95,7 @@ pub fn run_doctor_at(
         check_remote(repo_root, distribution)?,
         check_version(),
         check_hooks(repo_root, distribution),
+        check_schema_version(&store_paths)?,
         check_stuck_leases(&store_paths)?,
         check_terminal_parents(repo_root, &store_paths)?,
     ];
@@ -331,6 +332,45 @@ fn build_version_check(current: &str, tag: Option<String>) -> DoctorCheck {
             status: DoctorStatus::Warn,
             detail: format!("v{current} (unable to check for updates)"),
         },
+    }
+}
+
+fn check_schema_version(store_paths: &StorePaths) -> Result<DoctorCheck, DoctorError> {
+    let db_path = store_paths.db_path();
+    if !db_path.exists() {
+        return Ok(DoctorCheck {
+            name: "schema_version".to_string(),
+            status: DoctorStatus::Pass,
+            detail: "no cache database found".to_string(),
+        });
+    }
+    let conn = crate::db::open_connection(db_path.to_str().unwrap_or("cache/state.sqlite"))
+        .map_err(|e| DoctorError::Io(std::io::Error::other(e.to_string())))?;
+
+    let applied: i64 = conn
+        .query_row(
+            "SELECT COALESCE(MAX(version), 0) FROM schema_migrations",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| DoctorError::Io(std::io::Error::other(e.to_string())))?;
+
+    let expected = crate::db::CURRENT_SCHEMA_VERSION;
+    if applied >= expected {
+        Ok(DoctorCheck {
+            name: "schema_version".to_string(),
+            status: DoctorStatus::Pass,
+            detail: format!("schema version {applied} is current"),
+        })
+    } else {
+        Ok(DoctorCheck {
+            name: "schema_version".to_string(),
+            status: DoctorStatus::Warn,
+            detail: format!(
+                "schema version {applied} is behind expected \
+                 {expected} (run `kno doctor --fix`)"
+            ),
+        })
     }
 }
 
