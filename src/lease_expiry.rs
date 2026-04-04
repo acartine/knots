@@ -81,4 +81,12 @@ mod tests {
         assert_eq!(effective_lease_state("lease_active", 0), "lease_terminated");
         assert!(is_lease_expired(0));
     }
+
+    #[test]
+    fn unknown_state_is_treated_as_terminated() {
+        assert_eq!(
+            effective_lease_state("garbage", now_unix() + 600),
+            "lease_terminated"
+        );
+    }
 }
