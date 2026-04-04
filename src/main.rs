@@ -275,7 +275,6 @@ fn command_name(command: &cli::Commands) -> &'static str {
 }
 
 fn dispatch_read_command(command: cli::Commands, app: &app::App) -> Result<(), app::AppError> {
-    lease_guard::materialize_all_expired(app)?;
     use cli::{Commands, EdgeSubcommands};
     match command {
         Commands::Ls(args) => run_commands::run_ls(app, args),

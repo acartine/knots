@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use crate::db;
 use crate::doctor::{run_doctor_with_fix_at, DoctorReport};
 use crate::fsck::{run_fsck_at_store, FsckReport};
 use crate::locks::FileLock;
@@ -128,20 +127,6 @@ impl App {
             self.mark_sync_pending()?;
         }
         Ok(outcome)
-    }
-
-    pub fn trigger_queued_sync(&self) -> Result<bool, AppError> {
-        let pending = db::get_meta(&self.conn, "sync_pending")?;
-        if pending.as_deref() != Some("true") {
-            return Ok(false);
-        }
-        if db::count_active_leases(&self.conn)? > 0 {
-            return Ok(false);
-        }
-        match self.sync() {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
     }
 
     pub fn init_remote(&self) -> Result<(), AppError> {

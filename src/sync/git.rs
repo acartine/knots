@@ -45,8 +45,14 @@ impl GitAdapter {
     }
 
     pub fn status_clean(&self, cwd: &Path) -> Result<bool, SyncError> {
-        let output =
-            self.run_checked(cwd, vec!["status".to_string(), "--porcelain".to_string()])?;
+        let output = self.run_checked(
+            cwd,
+            vec![
+                "status".to_string(),
+                "--porcelain".to_string(),
+                "-uno".to_string(),
+            ],
+        )?;
         Ok(output.trim().is_empty())
     }
 

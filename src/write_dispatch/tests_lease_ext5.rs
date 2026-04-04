@@ -1,5 +1,5 @@
 use crate::app::StateActorMetadata;
-use crate::lease_guard::{materialize_all_expired, materialize_expired_lease};
+use crate::lease_guard::materialize_expired_lease;
 use crate::poll_claim;
 use crate::write_queue::{UpdateOperation, WriteOperation};
 
@@ -207,45 +207,6 @@ fn materialize_expired_lease_skips_non_expired() {
     let knot = app.show_knot(&knot_id).expect("show").expect("knot exists");
     assert_eq!(knot.state, "implementation");
     assert_eq!(knot.lease_id.as_deref(), Some(lease_id.as_str()));
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn materialize_all_expired_handles_multiple_knots() {
-    let root = unique_workspace();
-    setup_repo(&root);
-    let app = open_app(&root);
-
-    let (knot_a, lease_a) = claim_work_knot(&app, 600);
-    let (knot_b, _lease_b) = claim_work_knot(&app, 600);
-
-    // Expire only lease A
-    app.set_lease_expiry(&lease_a, 1).expect("set expiry");
-
-    materialize_all_expired(&app).expect("materialize_all should succeed");
-
-    // Knot A: rolled back
-    let a = app
-        .show_knot(&knot_a)
-        .expect("show")
-        .expect("knot A exists");
-    assert_eq!(
-        a.state, "ready_for_implementation",
-        "knot A should roll back"
-    );
-    assert!(a.lease_id.is_none(), "knot A lease should be unbound");
-
-    // Knot B: unchanged
-    let b = app
-        .show_knot(&knot_b)
-        .expect("show")
-        .expect("knot B exists");
-    assert_eq!(
-        b.state, "implementation",
-        "knot B should stay in implementation"
-    );
-    assert!(b.lease_id.is_some(), "knot B should still have a lease");
 
     let _ = std::fs::remove_dir_all(root);
 }

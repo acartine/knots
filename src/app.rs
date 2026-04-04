@@ -1,16 +1,13 @@
-use std::cell::Cell;
 use std::path::PathBuf;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use rusqlite::Connection;
 
 use crate::db::{self, KnotCacheRecord};
 use crate::events::EventWriter;
 use crate::installed_workflows;
-use crate::locks::FileLock;
 use crate::project::{DistributionMode, GlobalConfig, ProjectContext, StorePaths};
 use crate::replication::ReplicationService;
-use crate::sync::{SyncError, SyncSummary};
+use crate::sync::SyncSummary;
 use crate::workflow::{ProfileDefinition, ProfileRegistry};
 
 mod alias;
@@ -60,14 +57,6 @@ pub struct App {
     project_id: Option<String>,
     profile_registry: ProfileRegistry,
     home_override: Option<Option<PathBuf>>,
-    auto_sync_done: Cell<bool>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum SyncPolicy {
-    Auto,
-    Always,
-    Never,
 }
 
 impl App {
@@ -110,7 +99,6 @@ impl App {
             project_id: context.project_id.clone(),
             profile_registry,
             home_override: None,
-            auto_sync_done: Cell::new(false),
         })
     }
 
@@ -125,27 +113,6 @@ impl App {
 
     fn cache_lock_path(&self) -> PathBuf {
         self.store_paths.cache_lock_path()
-    }
-
-    fn read_sync_policy(&self) -> Result<SyncPolicy, AppError> {
-        let raw = db::get_meta(&self.conn, "sync_policy")?.unwrap_or_else(|| "auto".to_string());
-        match raw.trim().to_ascii_lowercase().as_str() {
-            "always" => Ok(SyncPolicy::Always),
-            "never" => Ok(SyncPolicy::Never),
-            _ => Ok(SyncPolicy::Auto),
-        }
-    }
-
-    fn read_sync_budget_ms(&self) -> Result<u64, AppError> {
-        let raw =
-            db::get_meta(&self.conn, "sync_auto_budget_ms")?.unwrap_or_else(|| "750".to_string());
-        Ok(raw.trim().parse::<u64>().unwrap_or(750))
-    }
-
-    fn read_auto_sync_min_interval_ms(&self) -> Result<u64, AppError> {
-        let raw = db::get_meta(&self.conn, "sync_auto_min_interval_ms")?
-            .unwrap_or_else(|| "30000".to_string());
-        Ok(raw.trim().parse::<u64>().unwrap_or(30_000))
     }
 
     fn read_pull_drift_warn_threshold(&self) -> Result<u64, AppError> {
@@ -220,112 +187,6 @@ impl App {
         Ok(())
     }
 
-    fn maybe_auto_sync_for_read(&self) -> Result<(), AppError> {
-        if self.auto_sync_done.get() {
-            crate::trace::record(
-                "auto_sync",
-                std::time::Duration::ZERO,
-                Some("skipped:already_synced".to_string()),
-            );
-            return Ok(());
-        }
-        if !self.is_git_distribution() {
-            crate::trace::record(
-                "auto_sync",
-                std::time::Duration::ZERO,
-                Some("skipped:non_git".to_string()),
-            );
-            return Ok(());
-        }
-        let result = match self.read_sync_policy()? {
-            SyncPolicy::Never => {
-                crate::trace::record(
-                    "auto_sync",
-                    std::time::Duration::ZERO,
-                    Some("skipped:policy=never".to_string()),
-                );
-                Ok(())
-            }
-            SyncPolicy::Always => {
-                let _ = crate::trace::measure("auto_sync", || self.pull())?;
-                Ok(())
-            }
-            SyncPolicy::Auto => self.try_auto_sync_for_read(),
-        };
-        if result.is_ok() {
-            self.auto_sync_done.set(true);
-        }
-        result
-    }
-
-    fn try_auto_sync_for_read(&self) -> Result<(), AppError> {
-        let min_interval_ms = self.read_auto_sync_min_interval_ms()?;
-        if self.synced_recently(min_interval_ms)? {
-            crate::trace::record(
-                "auto_sync",
-                std::time::Duration::ZERO,
-                Some(format!("skipped:recent_sync<{}ms", min_interval_ms)),
-            );
-            return Ok(());
-        }
-        let mut repo_lock = crate::trace::phase("repo_lock");
-        let rl = FileLock::try_acquire(&self.repo_lock_path())?;
-        let Some(_rg) = rl else {
-            repo_lock.detail("skipped:busy");
-            return self.mark_sync_pending();
-        };
-        repo_lock.detail("acquired");
-        let mut cache_lock = crate::trace::phase("cache_lock");
-        let cl = FileLock::try_acquire(&self.cache_lock_path())?;
-        let Some(_cg) = cl else {
-            cache_lock.detail("skipped:busy");
-            return self.mark_sync_pending();
-        };
-        cache_lock.detail("acquired");
-        let start = Instant::now();
-        let sync_result = crate::trace::measure("auto_sync", || self.pull_unlocked());
-        if let Err(err) = sync_result {
-            return match err {
-                AppError::Sync(SyncError::GitCommandFailed { .. })
-                | AppError::Sync(SyncError::GitUnavailable)
-                | AppError::Sync(SyncError::ActiveLeasesExist(_)) => {
-                    self.mark_sync_pending()?;
-                    Ok(())
-                }
-                other => Err(other),
-            };
-        }
-        let budget = self.read_sync_budget_ms()? as u128;
-        if start.elapsed().as_millis() > budget {
-            self.mark_sync_pending()?;
-        }
-        Ok(())
-    }
-
-    fn synced_recently(&self, min_interval_ms: u64) -> Result<bool, AppError> {
-        let Some(raw) = db::get_meta(&self.conn, "last_sync_success_at_ms")? else {
-            return Ok(false);
-        };
-        let Ok(last_sync) = raw.parse::<u128>() else {
-            return Ok(false);
-        };
-        let now_ms = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis();
-        Ok(now_ms.saturating_sub(last_sync) < u128::from(min_interval_ms))
-    }
-
-    fn pull_unlocked(&self) -> Result<SyncSummary, AppError> {
-        self.require_git_distribution("pull")?;
-        let svc = ReplicationService::with_store_paths(
-            &self.conn,
-            self.repo_root.clone(),
-            self.store_paths.clone(),
-        );
-        Ok(svc.pull()?)
-    }
-
     fn pull_unlocked_with_progress(
         &self,
         reporter: &mut Option<&mut dyn crate::progress::ProgressReporter>,
@@ -362,9 +223,6 @@ mod tests_coverage_ext;
 #[cfg(test)]
 #[path = "app/tests_coverage_ext2.rs"]
 mod tests_coverage_ext2;
-#[cfg(test)]
-#[path = "app/tests_deferred_sync.rs"]
-mod tests_deferred_sync;
 #[cfg(test)]
 #[path = "app/tests_error_paths.rs"]
 mod tests_error_paths;

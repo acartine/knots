@@ -132,7 +132,6 @@ pub(crate) fn release_bound_lease(app: &App, knot_id: &str) -> Result<(), AppErr
     }
 
     app.set_lease_id(knot_id, None)?;
-    let _ = app.trigger_queued_sync();
     Ok(())
 }
 
@@ -178,15 +177,4 @@ pub(crate) fn materialize_expired_lease(app: &App, knot: &KnotView) -> Result<bo
         false,
     )?;
     Ok(true)
-}
-
-/// Materialize all expired leases across all work knots.
-///
-/// Call at the start of read commands so displayed state is accurate.
-pub(crate) fn materialize_all_expired(app: &App) -> Result<(), AppError> {
-    let knots = app.list_knots()?;
-    for knot in &knots {
-        let _ = materialize_expired_lease(app, knot);
-    }
-    Ok(())
 }

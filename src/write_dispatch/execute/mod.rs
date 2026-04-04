@@ -160,7 +160,6 @@ fn execute_poll_claim(
     args: &crate::write_queue::PollClaimOperation,
 ) -> Result<String, AppError> {
     use crate::lease_expiry::DEFAULT_LEASE_TIMEOUT_SECONDS;
-    crate::lease_guard::materialize_all_expired(app)?;
     let polled = poll_claim::poll_queue(app, args.stage.as_deref(), args.owner.as_deref())?;
     let Some(polled) = polled else {
         return Err(AppError::InvalidArgument(
@@ -282,7 +281,6 @@ fn execute_lease_create(app: &App, op: &LeaseCreateOperation) -> Result<String, 
 
 fn execute_lease_terminate(app: &App, op: &LeaseTerminateOperation) -> Result<String, AppError> {
     let view = crate::lease::terminate_lease(app, &op.id)?;
-    let _ = app.trigger_queued_sync();
     let palette = ui::Palette::auto();
     Ok(format!(
         "terminated lease {} -> {}\n",

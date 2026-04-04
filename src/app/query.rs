@@ -18,7 +18,6 @@ use super::App;
 
 impl App {
     pub fn list_knots(&self) -> Result<Vec<KnotView>, AppError> {
-        self.maybe_auto_sync_for_read()?;
         let mut knots: Vec<KnotView> =
             crate::trace::measure("list_knot_hot", || db::list_knot_hot(&self.conn))?
                 .into_iter()
@@ -32,7 +31,6 @@ impl App {
 
     pub fn show_knot(&self, id: &str) -> Result<Option<KnotView>, AppError> {
         let id = self.resolve_knot_token(id)?;
-        self.maybe_auto_sync_for_read()?;
         if let Some(knot) =
             crate::trace::measure("get_knot_hot", || db::get_knot_hot(&self.conn, &id))?
         {
@@ -181,7 +179,6 @@ impl App {
     }
 
     pub fn cold_search(&self, term: &str) -> Result<Vec<ColdKnotView>, AppError> {
-        self.maybe_auto_sync_for_read()?;
         Ok(crate::trace::measure("search_cold_catalog", || {
             db::search_cold_catalog(&self.conn, term)
         })?
