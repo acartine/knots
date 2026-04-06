@@ -1,0 +1,15 @@
+{
+  "event_id": "019d51d9-e372-77a3-b747-de3a3ce2d70e",
+  "occurred_at": "2026-04-03T05:38:47.282163Z",
+  "knot_id": "knots-87bd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan complete. 6 work packages created as child knots of 87bd, linked with blocked_by dependency chain. Execution order: WP1 (8817) domain types → WP2 (a6a8) immutability enforcement → WP3 (2d33) creation paths → WP4 (ecae) rehydration/compat → WP5 (0840) visibility filtering → WP6 (9767) integration tests. Key design: LeaseReference typed struct replaces Option<String> lease_id; ImmutableRecord trait enforces shared contract; step history goes fully append-only via supersedes_id pattern. Riskiest change is WP2 (step history refactor). All new fields use serde(default) for backward compatibility.",
+    "datetime": "2026-04-03T05:38:47.282163Z",
+    "entry_id": "019d51d9-e372-77a3-b747-de24bfafb793",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d5221-22d3-7120-ba74-103c79111c1d",
+  "occurred_at": "2026-04-03T06:56:36.563199Z",
+  "knot_id": "knots-5f74",
+  "type": "knot.created",
+  "data": {
+    "body": "Require external lease claims to accept only lease_ready, activate the lease as part of claim before binding, and reject lease_active or any unexpected lease state with explicit errors and warning signals. Keep lease ids out of user-visible output.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Enforce ready-only lease activation during claim",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

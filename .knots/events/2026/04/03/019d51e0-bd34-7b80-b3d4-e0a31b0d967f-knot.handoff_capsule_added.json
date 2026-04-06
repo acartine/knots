@@ -1,0 +1,15 @@
+{
+  "event_id": "019d51e0-bd34-7b80-b3d4-e0a31b0d967f",
+  "occurred_at": "2026-04-03T05:46:16.244045Z",
+  "knot_id": "knots-ae85",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented claim-only lease binding validation. Branch: knots-ae85-lease-claim-only. Commit: c8fbe3cafc2d. Validation: make sanity passed with 95.18% coverage.",
+    "datetime": "2026-04-03T05:43:27Z",
+    "entry_id": "019d51e0-bd34-7b80-b3d4-e097a06b616c",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "2026-04-03"
+  }
+}

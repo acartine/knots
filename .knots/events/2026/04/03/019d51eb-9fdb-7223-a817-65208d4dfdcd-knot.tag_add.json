@@ -1,0 +1,9 @@
+{
+  "event_id": "019d51eb-9fdb-7223-a817-65208d4dfdcd",
+  "occurred_at": "2026-04-03T05:58:09.627598Z",
+  "knot_id": "knots-43fe",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-43fe-lease-agent-metadata"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4df4-9f06-7b61-8d47-fb2f23a94a43",
+  "occurred_at": "2026-04-02T11:29:30.374033Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation complete: 6 test gaps filled across 4 files (~130 new test lines). CLI warn-not-reject observable test (TOML+JSON), output fallback chain, access_hint/output_hint propagation, resolve_output_specific_sections unit coverage, per-action StepMetadata variation with 4 artifact types, and legacy global output propagation. All tests pass, 95.40% coverage, make sanity green. Branch: worktree-knots-9727-output-target-tests",
+    "datetime": "2026-04-02T11:29:30.374033Z",
+    "entry_id": "019d4df4-9f06-7b61-8d47-fb1a66bb1c57",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

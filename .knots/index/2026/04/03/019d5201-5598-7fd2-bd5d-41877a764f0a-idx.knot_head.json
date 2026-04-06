@@ -1,0 +1,47 @@
+{
+  "event_id": "019d5201-5598-7fd2-bd5d-41877a764f0a",
+  "occurred_at": "2026-04-03T06:21:52.39323Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-2d33",
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "implementation",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "implementation",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "WP3: Creation path updates — wire LeaseReference through note/handoff/step creation",
+    "type": "work",
+    "updated_at": "2026-04-03T06:21:52.39323Z",
+    "workflow_id": "compatibility"
+  }
+}

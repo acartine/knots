@@ -1,0 +1,9 @@
+{
+  "event_id": "019d5236-ac6d-7aa0-ba3a-3913b0e0bf8e",
+  "occurred_at": "2026-04-03T07:20:08.045978Z",
+  "knot_id": "knots-e4b3",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-lease-enforcement"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d51dc-eaf3-78d3-9f39-82c9ad020042",
+  "occurred_at": "2026-04-03T05:42:05.811822Z",
+  "knot_id": "knots-87bd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan review approved. The proposed work is feasible and covers the main acceptance criteria: shared immutable record contract, typed lease references, append-only step history, compatibility, visibility filtering, and integration tests. During implementation, keep the secondary metadata paths in src/app/gate_metadata.rs and sync parsing aligned with the new lease_ref and immutability rules.",
+    "datetime": "2026-04-03T05:42:05.811822Z",
+    "entry_id": "019d51dc-eaf3-78d3-9f39-82b666d35224",
+    "model": "gpt-5",
+    "username": "Codex",
+    "version": "5"
+  }
+}

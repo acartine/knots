@@ -1,0 +1,17 @@
+{
+  "event_id": "019d620f-53ae-7c01-a6e7-df2835dc5dc8",
+  "occurred_at": "2026-04-06T09:11:04.878829Z",
+  "knot_id": "knots-23a5",
+  "type": "knot.created",
+  "data": {
+    "body": "## Problem\n\n`kno ls --json` buffers the entire result set in memory and emits a single JSON array. For large result sets (500+ knots), this means the calling process (foolery's KnotsBackend) must wait for the entire CLI process to complete before it can start processing any results. Combined with the lack of pagination, this creates an all-or-nothing latency profile.\n\n## Proposed Fix\n\n1. **`--stream` flag**: Add a new output mode to `kno ls` that writes one JSON object per line (NDJSON/JSON Lines format). Each line is a complete, parseable JSON object representing one knot.\n\n2. **Streaming write in `src/ui.rs` or a new `src/stream_output.rs`**: Instead of collecting into a Vec and serializing, iterate through results and `writeln!` each serialized knot immediately. This allows the calling process to start consuming results as soon as the first knot is serialized.\n\n3. **Pagination metadata in stream**: Emit a final metadata line (distinguished by a `_meta` field) with total count and completion status: `{\"_meta\": true, \"total\": N, \"complete\": true}`.\n\n4. **foolery integration path**: foolery's `KnotsBackend.list()` in `src/lib/backends/knots-backend.ts` currently does `JSON.parse(stdout)` on the complete output. With NDJSON, it can parse line-by-line and yield results incrementally to the streaming aggregation layer.\n\n## Key Files\n- `src/cli.rs` \\u2014 add --stream flag\n- `src/ui.rs` or new `src/stream_output.rs` \\u2014 NDJSON writer\n- `src/run_commands.rs` \\u2014 dispatch streaming vs buffered output\n- `src/app/query.rs` \\u2014 may need iterator-based API instead of Vec return\n\n## Constraints\n- Each line must be valid JSON (no trailing commas, no array wrapper)\n- Must work with pipe consumers (flush after each line)\n- `--stream` and `--json` are complementary (--stream implies JSON format)\n- Backward compatible: without --stream, output is unchanged\n- Consider interaction with --limit (stream up to limit, then stop)",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add NDJSON streaming output mode for kno ls",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

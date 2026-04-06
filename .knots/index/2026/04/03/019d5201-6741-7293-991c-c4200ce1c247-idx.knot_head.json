@@ -1,0 +1,21 @@
+{
+  "event_id": "019d5201-6741-7293-991c-c4200ce1c247",
+  "occurred_at": "2026-04-03T06:21:56.929877Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a6a8",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "WP2: Immutability enforcement — append-only step history, mutation guards",
+    "type": "work",
+    "updated_at": "2026-04-03T06:21:56.929877Z",
+    "workflow_id": "compatibility"
+  }
+}

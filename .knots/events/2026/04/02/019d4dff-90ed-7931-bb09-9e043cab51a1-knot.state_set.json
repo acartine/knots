@@ -1,0 +1,17 @@
+{
+  "event_id": "019d4dff-90ed-7931-bb09-9e043cab51a1",
+  "occurred_at": "2026-04-02T11:41:27.661503Z",
+  "knot_id": "knots-9727",
+  "type": "knot.state_set",
+  "data": {
+    "actor_kind": "agent",
+    "force": false,
+    "from": "ready_for_shipment_review",
+    "profile_id": "autopilot",
+    "to": "shipment_review",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d4dff-841e-7aa2-9212-0bdd43055d01"
+  }
+}

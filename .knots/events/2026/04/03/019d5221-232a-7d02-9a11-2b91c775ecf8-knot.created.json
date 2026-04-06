@@ -1,0 +1,17 @@
+{
+  "event_id": "019d5221-232a-7d02-9a11-2b91c775ecf8",
+  "occurred_at": "2026-04-03T06:56:36.65003Z",
+  "knot_id": "knots-e4b3",
+  "type": "knot.created",
+  "data": {
+    "body": "Add coverage for corrupt or suspicious lease-state handling in claim and next, including warning or log emission and privacy assertions. Because current lease test files are near the 500-line cap, prefer a new focused test module or shared helper instead of overfilling existing files.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "Add corrupt lease warning coverage without leaking lease ids",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "event_id": "019d523d-8c36-7753-b965-8c13bd9cdbbf",
+  "occurred_at": "2026-04-03T07:27:38.550395Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-2640",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Improve kno read tracing and cache-miss behavior",
+    "type": "work",
+    "updated_at": "2026-04-03T07:27:38.550395Z",
+    "workflow_id": "compatibility"
+  }
+}

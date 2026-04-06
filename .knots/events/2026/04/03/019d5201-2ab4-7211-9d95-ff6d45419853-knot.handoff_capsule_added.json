@@ -1,0 +1,15 @@
+{
+  "event_id": "019d5201-2ab4-7211-9d95-ff6d45419853",
+  "occurred_at": "2026-04-03T06:21:41.428605Z",
+  "knot_id": "knots-87bd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude",
+    "content": "Implementation complete on branch worktree-knots-87bd-immutable-metadata (commit d077b43). All 6 work packages implemented: (1) LeaseReference type and ImmutableRecord trait in domain layer, (2) append-only enforcement via ensure_append_only_records guard, (3) lease_ref wired through all creation paths for notes/handoffs/steps, (4) backward-compatible serde with supersedes_id pattern replacing in-place step mutation, (5) lease_ref and supersedes_id stripped from CLI/JSON output, (6) integration tests in tests/cli_dispatch_metadata.rs. make sanity passes: 865 tests green, 95.12% coverage.",
+    "datetime": "2026-04-03T06:21:41.428605Z",
+    "entry_id": "019d5201-2ab4-7211-9d95-ff55bda85005",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

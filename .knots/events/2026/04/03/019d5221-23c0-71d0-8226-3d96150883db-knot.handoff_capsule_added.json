@@ -1,0 +1,15 @@
+{
+  "event_id": "019d5221-23c0-71d0-8226-3d96150883db",
+  "occurred_at": "2026-04-03T06:56:36.800432Z",
+  "knot_id": "knots-8f7d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Planning complete. Implementation should focus on three child knots: 5f74 for claim-side ready-only lease activation, 65bd for next-side matching-lease enforcement plus cleanup, and e4b3 for corrupt-state warning coverage and privacy assertions. The main code risk is partial state change in the current claim flow, and the main repo constraint is the 500-line file cap in the existing lease test modules.",
+    "datetime": "2026-04-03T06:56:36.800432Z",
+    "entry_id": "019d5221-23c0-71d0-8226-3d869550fb8a",
+    "model": "gpt-5",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

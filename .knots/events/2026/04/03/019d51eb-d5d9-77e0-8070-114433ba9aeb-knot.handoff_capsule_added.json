@@ -1,0 +1,15 @@
+{
+  "event_id": "019d51eb-d5d9-77e0-8070-114433ba9aeb",
+  "occurred_at": "2026-04-03T05:58:23.4491Z",
+  "knot_id": "knots-43fe",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Branch: worktree-knots-43fe-lease-agent-metadata. Adds LeaseAgentView struct, resolves lease agent metadata in show_knot, displays it in plain-text and JSON show output, hides lease_id from serialization, blocks direct display of lease-type knots in run_show. All tests pass, coverage at 95.17%.",
+    "datetime": "2026-04-03T05:58:23.4491Z",
+    "entry_id": "019d51eb-d5d9-77e0-8070-1133989d8eb8",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "event_id": "019d5201-67b8-70b3-bca6-9c9d8a1725b9",
+  "occurred_at": "2026-04-03T06:21:57.048367Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-87bd",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Implement immutable append-only metadata with unified lease identity",
+    "type": "work",
+    "updated_at": "2026-04-03T06:21:57.048367Z",
+    "workflow_id": "compatibility"
+  }
+}

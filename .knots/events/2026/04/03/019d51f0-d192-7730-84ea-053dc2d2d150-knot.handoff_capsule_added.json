@@ -1,0 +1,15 @@
+{
+  "event_id": "019d51f0-d192-7730-84ea-053dc2d2d150",
+  "occurred_at": "2026-04-03T06:03:50.034174Z",
+  "knot_id": "knots-43fe",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "1. [src/app/query.rs:58] and [src/app/query.rs:161] add new DB-backed lease-agent enrichment in `show_knot`, but the added tests only build `KnotView` fixtures directly in [src/ui/tests.rs:303] and do not assert the lookup behavior from a bound lease record.\n2. [src/run_commands.rs:30] adds a new rejection path for `kno show <lease-id>`, but there is no automated regression test covering that command behavior or its JSON variant. This repo’s guardrails require tests for each new behavior.\nManual verification in a disposable repo succeeded, and `make sanity` passed at 95.17% coverage.",
+    "datetime": "2026-04-03T06:02:42Z",
+    "entry_id": "019d51f0-d192-7730-84ea-052e3d589795",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5"
+  }
+}

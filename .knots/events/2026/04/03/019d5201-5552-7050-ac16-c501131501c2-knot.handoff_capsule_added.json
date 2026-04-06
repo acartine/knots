@@ -1,0 +1,15 @@
+{
+  "event_id": "019d5201-5552-7050-ac16-c501131501c2",
+  "occurred_at": "2026-04-03T06:21:52.338795Z",
+  "knot_id": "knots-a6a8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "claude",
+    "content": "Implemented as part of parent knots-87bd on branch worktree-knots-87bd-immutable-metadata (commit d077b43). All tests pass, coverage 95.12%.",
+    "datetime": "2026-04-03T06:21:52.338795Z",
+    "entry_id": "019d5201-5552-7050-ac16-c4fb81800ffc",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

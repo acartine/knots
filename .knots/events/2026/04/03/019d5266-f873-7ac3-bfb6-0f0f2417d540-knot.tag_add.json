@@ -1,0 +1,9 @@
+{
+  "event_id": "019d5266-f873-7ac3-bfb6-0f0f2417d540",
+  "occurred_at": "2026-04-03T08:12:53.235528Z",
+  "knot_id": "knots-8f7d",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-8f7d-lease-lifecycle"
+  }
+}

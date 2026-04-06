@@ -1,0 +1,9 @@
+{
+  "event_id": "019d620f-53b4-7d20-bcec-e7bcbb538cd4",
+  "occurred_at": "2026-04-06T09:11:04.878829Z",
+  "knot_id": "knots-23a5",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. `kno ls --stream` outputs one JSON object per line, each line independently parseable.\n2. Output is flushed after each line (verified by pipe consumer seeing partial results).\n3. A terminal metadata line with `_meta: true` indicates stream completion and total count.\n4. `kno ls --stream --limit 20` streams up to 20 results then emits metadata and exits.\n5. `kno ls --json` (without --stream) output format is unchanged.\n6. All existing tests pass; new tests verify NDJSON format and line-by-line parseability.\n7. Performance: for 500+ knot repos, first result line appears within 50ms of process start."
+  }
+}

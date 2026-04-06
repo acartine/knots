@@ -1,0 +1,17 @@
+{
+  "event_id": "019d51d9-7f26-71a2-bca7-682309dabf39",
+  "occurred_at": "2026-04-03T05:38:21.606813Z",
+  "knot_id": "knots-2d33",
+  "type": "knot.created",
+  "data": {
+    "body": "Update MetadataEntryInput and metadata_entry_from_input to accept optional LeaseReference. Update MetadataEntry::from_input to propagate lease_ref. Update collect_note and collect_handoff to pass knot lease_id as LeaseReference. Update apply_step_transition to construct LeaseReference. Update event JSON payloads.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "WP3: Creation path updates — wire LeaseReference through note/handoff/step creation",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

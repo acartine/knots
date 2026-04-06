@@ -1,0 +1,17 @@
+{
+  "event_id": "019d51d9-7f8a-7530-ab5a-ee5382585d41",
+  "occurred_at": "2026-04-03T05:38:21.706731Z",
+  "knot_id": "knots-9767",
+  "type": "knot.created",
+  "data": {
+    "body": "Integration tests: (a) modifying existing records is rejected with clear error, (b) corrections create new records with correct lease references, (c) lease identity is present and typed in all new records when knot has lease, (d) step completion creates superseding record with original unchanged, (e) backward compat with legacy records.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "WP6: Integration tests for immutability and lease identity",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

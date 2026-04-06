@@ -1,0 +1,15 @@
+{
+  "event_id": "019d51f0-d192-7730-84ea-051a9cba9c3a",
+  "occurred_at": "2026-04-03T06:03:50.034174Z",
+  "knot_id": "knots-43fe",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Manual CLI validation and `make sanity` passed, but the implementation still needs automated coverage for the new query/command paths. Add tests that assert `App::show_knot` resolves `lease_agent` from a bound lease record and that `kno show <lease-id>` is rejected (including the JSON path) while lease-specific display remains available through `kno lease show`.",
+    "datetime": "2026-04-03T06:02:42Z",
+    "entry_id": "019d51f0-d192-7730-84ea-050cdd7d3458",
+    "model": "gpt-5",
+    "username": "cartine",
+    "version": "gpt-5"
+  }
+}

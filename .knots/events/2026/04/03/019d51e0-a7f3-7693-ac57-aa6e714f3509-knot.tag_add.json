@@ -1,0 +1,9 @@
+{
+  "event_id": "019d51e0-a7f3-7693-ac57-aa6e714f3509",
+  "occurred_at": "2026-04-03T05:46:10.803056Z",
+  "knot_id": "knots-ae85",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:knots-ae85-lease-claim-only"
+  }
+}

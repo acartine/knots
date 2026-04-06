@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4dff-ca2c-7300-9b59-7a27d3852a5e",
+  "occurred_at": "2026-04-02T11:41:42.316452Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review approved. Both commits (43d61fe23193, b9b93b46beac) are on main and tagged. 6 new files, 362 test lines added. 853 tests pass, 95.15% coverage. No invariant violations. No regressions.",
+    "datetime": "2026-04-02T11:41:42.316452Z",
+    "entry_id": "019d4dff-ca2c-7300-9b59-7a1ed6236e52",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

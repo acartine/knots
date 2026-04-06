@@ -1,0 +1,17 @@
+{
+  "event_id": "019d620f-1880-7a82-a641-b047c212c511",
+  "occurred_at": "2026-04-06T09:10:49.728733Z",
+  "knot_id": "knots-9da3",
+  "type": "knot.created",
+  "data": {
+    "body": "## Problem\n\n`list_knots()` in `src/app/query.rs` loads the entire hot table into memory and filters in-memory via `src/listing.rs`. There is no SQL-level LIMIT/OFFSET, so every `kno ls --json` returns the full dataset regardless of how many results the caller needs. For foolery's All Repositories Mode, this means transferring and parsing hundreds/thousands of knots per repo on every query.\n\n## Proposed Fix\n\n1. **SQL-level pagination in `src/db/catalog.rs`**: Add `LIMIT ? OFFSET ?` clauses to `list_knot_hot()`. Accept optional `limit` and `offset` parameters. When both are None, behavior is unchanged (full load for backward compat).\n\n2. **CLI flags**: Add `--limit <N>` and `--offset <N>` flags to `kno ls` in `src/cli.rs`. Pass through to `list_knots()` in `src/app/query.rs`.\n\n3. **JSON pagination metadata**: When `--json` output includes pagination, add a wrapper: `{ \"data\": [...], \"total\": N, \"offset\": M, \"limit\": L, \"has_more\": bool }`. The `total` field requires a separate `SELECT COUNT(*)` with the same filters (or use SQLite's window function).\n\n4. **Push filters into SQL**: Currently all filtering (state, type, tags, query) happens post-load in `listing.rs`. Move state and type filters into the SQL WHERE clause so LIMIT operates on the filtered set, not the raw table. Tag and text filtering can remain in-memory initially.\n\n## Key Files\n- `src/db/catalog.rs` \\u2014 SQLite queries\n- `src/app/query.rs` \\u2014 list_knots() orchestration\n- `src/listing.rs` \\u2014 in-memory filtering\n- `src/cli.rs` \\u2014 CLI argument definitions\n- `src/run_commands.rs` \\u2014 command dispatch\n\n## Constraints\n- Backward compatible: no flags = current behavior (full load)\n- Must not break warm/cold catalog queries\n- Total count should be efficient (avoid full table scan if possible)\n- Consider interaction with sort order (priority ASC, updated_at ASC)",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add paginated list output with LIMIT/OFFSET SQL support",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

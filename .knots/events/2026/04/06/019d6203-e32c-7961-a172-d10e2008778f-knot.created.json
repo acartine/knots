@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6203-e32c-7961-a172-d10e2008778f",
+  "occurred_at": "2026-04-06T08:58:35.180547Z",
+  "knot_id": "knots-cf36",
+  "type": "knot.created",
+  "data": {
+    "body": "Support lightweight exploration knots via 'kno new -e' shorthand. Workflow: ready_for_exploration → exploration → shipped | abandoned. Shipped requires at least one related knot (the output of exploration). If no related knots exist, the knot must be abandoned. The -e flag is shorthand for selecting the exploration workflow.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add exploration workflow with simple ready/explore/shipped/abandoned states",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "event_id": "019d5272-4f60-7d22-b462-aa7d2115de2b",
+  "occurred_at": "2026-04-03T08:25:16.384374Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-e4b3",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add corrupt lease warning coverage without leaking lease ids",
+    "type": "work",
+    "updated_at": "2026-04-03T08:25:16.384374Z",
+    "workflow_id": "compatibility"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019d5201-55c3-71c2-b64b-cfa81128faa3",
+  "occurred_at": "2026-04-03T06:21:52.451134Z",
+  "knot_id": "knots-ecae",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-87bd-immutable-metadata"
+  }
+}

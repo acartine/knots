@@ -1,0 +1,9 @@
+{
+  "event_id": "019d5232-aeed-7691-b1c2-c63743f43ada",
+  "occurred_at": "2026-04-03T07:15:46.541811Z",
+  "knot_id": "knots-2640",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-2640-trace-cache-miss"
+  }
+}

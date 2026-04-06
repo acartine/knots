@@ -1,0 +1,21 @@
+{
+  "event_id": "019d5201-6778-7043-be67-d20b87975353",
+  "occurred_at": "2026-04-03T06:21:56.983996Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ecae",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "WP4: Rehydration and backward compatibility",
+    "type": "work",
+    "updated_at": "2026-04-03T06:21:56.983996Z",
+    "workflow_id": "compatibility"
+  }
+}

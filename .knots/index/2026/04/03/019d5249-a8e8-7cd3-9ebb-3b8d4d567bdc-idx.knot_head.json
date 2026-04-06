@@ -1,0 +1,21 @@
+{
+  "event_id": "019d5249-a8e8-7cd3-9ebb-3b8d4d567bdc",
+  "occurred_at": "2026-04-03T07:40:52.31073Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-2f2b",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "smoke git repo behavior 1774778201",
+    "type": "work",
+    "updated_at": "2026-04-03T07:40:52.31073Z",
+    "workflow_id": "compatibility"
+  }
+}

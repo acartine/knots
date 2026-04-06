@@ -1,0 +1,21 @@
+{
+  "event_id": "019d5201-67ab-7ce1-af26-9d273b43ca25",
+  "occurred_at": "2026-04-03T06:21:57.035722Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-9767",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "WP6: Integration tests for immutability and lease identity",
+    "type": "work",
+    "updated_at": "2026-04-03T06:21:57.035722Z",
+    "workflow_id": "compatibility"
+  }
+}

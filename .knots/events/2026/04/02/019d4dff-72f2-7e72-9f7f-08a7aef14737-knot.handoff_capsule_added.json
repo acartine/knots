@@ -1,0 +1,15 @@
+{
+  "event_id": "019d4dff-72f2-7e72-9f7f-08a7aef14737",
+  "occurred_at": "2026-04-02T11:41:19.986Z",
+  "knot_id": "knots-9727",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment complete. Feature branch merged to main (b9b93b46beac), pushed to origin. make sanity green on main: 853 tests pass, 95.15% coverage. CI green.",
+    "datetime": "2026-04-02T11:41:19.986Z",
+    "entry_id": "019d4dff-72f2-7e72-9f7f-089452677f14",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d5267-139e-7823-a40a-d8dd0f4aa977",
+  "occurred_at": "2026-04-03T08:13:00.190471Z",
+  "knot_id": "knots-8f7d",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Branch: worktree-knots-8f7d-lease-lifecycle\nCommit: b028f0549e7bb685ad590e7bf52f0929b9b394da\nSummary: Tightened lease enforcement so claim requires external leases in lease_ready and activates them atomically; next now requires the matching lease id for bound leases and terminates/clears the lease on success.\nValidation: make sanity passed, including full tests and 95.07% coverage.",
+    "datetime": "2026-04-03T08:13:00.190471Z",
+    "entry_id": "019d5267-139e-7823-a40a-d8c8a5e79bc8",
+    "model": "gpt",
+    "username": "Codex",
+    "version": "5.4"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d51d9-7f4b-7c63-8f99-392b8ab5a6bf",
+  "occurred_at": "2026-04-03T05:38:21.643042Z",
+  "knot_id": "knots-ecae",
+  "type": "knot.created",
+  "data": {
+    "body": "Update apply_note_added and apply_handoff_capsule_added rehydration to parse lease_ref (default None for legacy events). Ensure supersedes_id deserializes as None for legacy step records. Serde defaults handle backward compat.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot_no_planning",
+    "state": "ready_for_implementation",
+    "title": "WP4: Rehydration and backward compatibility",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

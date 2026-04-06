@@ -1,0 +1,21 @@
+{
+  "event_id": "019d5201-675e-7500-9d00-a86e0527cb0d",
+  "occurred_at": "2026-04-03T06:21:56.958302Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-2d33",
+    "profile_id": "autopilot_no_planning",
+    "state": "shipped",
+    "terminal": true,
+    "title": "WP3: Creation path updates — wire LeaseReference through note/handoff/step creation",
+    "type": "work",
+    "updated_at": "2026-04-03T06:21:56.958302Z",
+    "workflow_id": "compatibility"
+  }
+}

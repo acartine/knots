@@ -1,0 +1,15 @@
+{
+  "event_id": "019d5232-ed92-7531-8e60-90c3f761b033",
+  "occurred_at": "2026-04-03T07:16:02.578507Z",
+  "knot_id": "knots-2640",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Claude",
+    "content": "Branch: worktree-knots-2640-trace-cache-miss. Three changes: (1) trace::measure added to all read handlers; (2) Cell<bool> auto_sync_done deduplicates sync; (3) rehydrate returns None without cold record. Tests pass, 95.16% coverage.",
+    "datetime": "2026-04-03T07:16:02.578507Z",
+    "entry_id": "019d5232-ed92-7531-8e60-90b644cdf21d",
+    "model": "opus/claude",
+    "username": "Claude",
+    "version": "4.6"
+  }
+}

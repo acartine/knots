@@ -1,0 +1,15 @@
+{
+  "event_id": "019d5222-b2b2-7f42-a284-434b7a4bddca",
+  "occurred_at": "2026-04-03T06:58:18.930389Z",
+  "knot_id": "knots-2640",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "# Implementation Plan\n\n## Summary\nThree focused improvements to the kno read path: (1) add trace instrumentation to all read command handlers, (2) reduce auto-sync churn by deduplicating calls within a single command, (3) eliminate fabricated defaults on cache miss in rehydration.\n\n## Complexity: Medium\nPrimarily additive changes (trace calls) and small refactors (sync dedup, fallback removal). Well-scoped; no architectural changes.\n\n## Step 1: Per-command trace output for all read handlers\n\n**Problem:** Only `run_ls` in `src/run_commands.rs` has trace::measure calls. All other read command handlers lack top-level trace instrumentation.\n\n**Changes:**\n- `src/run_commands.rs`: Wrap core app calls in each handler with `trace::measure()` or `trace::phase()`.\n- `src/poll_claim.rs` / ready handlers: Add trace instrumentation.\n\n**Deliverable:** Every read command emits trace phases when `--trace` is set.\n\n## Step 2: Reduce read-path auto-sync churn\n\n**Problem:** `maybe_auto_sync_for_read()` is called in `list_knots()`, `show_knot()`, and `cold_search()`. Chained read operations (e.g., claim calls show_knot twice) trigger redundant syncs.\n\n**Changes:**\n- Add a `Cell<bool>` flag (`auto_sync_done`) to `App` that tracks whether auto-sync has already run this session. Check flag first in `maybe_auto_sync_for_read()`; skip with trace detail \"skipped:already_synced\" if set.\n\n**Deliverable:** At most one auto-sync attempt per command invocation.\n\n## Step 3: Cache-miss returns not-found instead of fabricated defaults\n\n**Problem:** `rehydrate_from_warm_cold()` in `src/app/query.rs` fabricates \"ready_for_implementation\" state and current timestamp when cold record is missing (lines 224, 228).\n\n**Changes:**\n- When `cold` is `None`, return `Ok(None)` instead of fabricating defaults. Rehydration should only proceed with sufficient source data.\n- Update tests in `src/app/tests_acceptance_ext.rs`.\n\n**Deliverable:** Cache misses surface as \"not found\" rather than silently fabricating state.\n\n## Test Strategy\n1. Trace: verify stderr output with `--trace` for each read command.\n2. Sync dedup: test that chained reads only trigger one auto-sync.\n3. Cache-miss: extend acceptance tests to verify rehydrate returns None without cold record.\n\n## Files Affected\n- `src/run_commands.rs`, `src/poll_claim.rs` — trace calls\n- `src/app.rs` — auto_sync_done flag\n- `src/app/query.rs` — sync dedup check, rehydrate fallback fix\n- `src/app/tests_acceptance_ext.rs` — new/updated tests",
+    "datetime": "2026-04-03T06:58:18.930389Z",
+    "entry_id": "019d5222-b2b2-7f42-a284-433dca4a5de2",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

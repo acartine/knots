@@ -1,0 +1,21 @@
+{
+  "event_id": "019d4df4-9f17-7c02-bd36-5aa1a379b019",
+  "occurred_at": "2026-04-02T11:29:30.374033Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-9727",
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "terminal": false,
+    "title": "Add regression coverage for per-step output-target modeling",
+    "type": "work",
+    "updated_at": "2026-04-02T11:29:30.374033Z",
+    "workflow_id": "compatibility"
+  }
+}

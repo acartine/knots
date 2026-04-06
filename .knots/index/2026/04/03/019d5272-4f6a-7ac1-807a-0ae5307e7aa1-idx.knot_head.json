@@ -1,0 +1,21 @@
+{
+  "event_id": "019d5272-4f6a-7ac1-807a-0ae5307e7aa1",
+  "occurred_at": "2026-04-03T08:25:16.394719Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-8f7d",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Tighten lease enforcement for claim and next transitions",
+    "type": "work",
+    "updated_at": "2026-04-03T08:25:16.394719Z",
+    "workflow_id": "compatibility"
+  }
+}
