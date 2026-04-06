@@ -3,6 +3,7 @@
 /.knots/
 /.DS_Store
 /.claude/
+/.worktrees/
 /coverage/
 /*.profraw
 /tarpaulin-report.html
