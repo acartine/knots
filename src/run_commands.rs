@@ -2,10 +2,20 @@ use crate::action_prompt;
 use crate::cli::{
     ColdSubcommands, CompactArgs, DoctorArgs, FsckArgs, LeaseSubcommands, PerfArgs, SkillArgs,
 };
+use crate::db::ListHotParams;
 use crate::{app, dispatch, domain, lease, list_layout, listing};
 use crate::{print_json, progress, progress_reporter, ui};
 
 pub fn run_ls(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::AppError> {
+    let is_paginated = args.limit.is_some() || args.offset.is_some();
+    if is_paginated {
+        run_ls_paginated(app, args)
+    } else {
+        run_ls_full(app, args)
+    }
+}
+
+fn run_ls_full(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::AppError> {
     let filter = listing::KnotListFilter {
         include_all: args.all,
         state: args.state.clone(),
@@ -19,6 +29,42 @@ pub fn run_ls(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::App
         print_json(&knots);
     } else {
         let layout_edges = crate::trace::measure("list_layout_edges", || app.list_layout_edges())?;
+        let rows = crate::trace::measure("layout_knots", || {
+            list_layout::layout_knots(knots, &layout_edges)
+        });
+        ui::print_knot_list(&rows, &filter);
+    }
+    Ok(())
+}
+
+fn run_ls_paginated(
+    app: &app::App,
+    args: crate::cli::ListArgs,
+) -> Result<(), app::AppError> {
+    let limit = args.limit.unwrap_or(50);
+    let offset = args.offset.unwrap_or(0);
+    let db_params = ListHotParams {
+        state: args.state.clone(),
+        knot_type: args.knot_type.clone(),
+        limit: Some(limit),
+        offset: Some(offset),
+    };
+    let (knots, total) = app.list_knots_paginated(&db_params)?;
+    let filter = listing::KnotListFilter {
+        include_all: args.all,
+        state: None,
+        knot_type: None,
+        profile_id: args.profile_id.clone(),
+        tags: args.tags.clone(),
+        query: args.query.clone(),
+    };
+    let knots = listing::apply_filters(knots, &filter);
+    if args.json {
+        let page = app::PaginatedList::new(knots, total, offset, limit);
+        print_json(&page);
+    } else {
+        let layout_edges =
+            crate::trace::measure("list_layout_edges", || app.list_layout_edges())?;
         let rows = crate::trace::measure("layout_knots", || {
             list_layout::layout_knots(knots, &layout_edges)
         });

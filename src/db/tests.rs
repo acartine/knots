@@ -384,3 +384,7 @@ fn set_meta_retries_when_database_is_temporarily_locked() {
 #[cfg(test)]
 #[path = "tests_ext.rs"]
 mod tests_ext;
+
+#[cfg(test)]
+#[path = "tests_pagination.rs"]
+mod tests_pagination;

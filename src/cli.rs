@@ -303,6 +303,20 @@ pub struct ListArgs {
         help = "Text query over id, alias, title, and description."
     )]
     pub query: Option<String>,
+
+    #[arg(
+        short = 'l',
+        long,
+        help = "Maximum number of knots to return (SQL LIMIT)."
+    )]
+    pub limit: Option<usize>,
+
+    #[arg(
+        short = 'o',
+        long,
+        help = "Number of knots to skip (SQL OFFSET)."
+    )]
+    pub offset: Option<usize>,
 }
 
 #[derive(Debug, Args)]

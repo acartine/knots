@@ -317,6 +317,86 @@ ORDER BY updated_at DESC, id ASC
     Ok(result)
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct ListHotParams {
+    pub state: Option<String>,
+    pub knot_type: Option<String>,
+    pub limit: Option<usize>,
+    pub offset: Option<usize>,
+}
+
+pub fn list_knot_hot_paginated(
+    conn: &Connection,
+    params: &ListHotParams,
+) -> Result<(Vec<KnotCacheRecord>, i64)> {
+    let (where_clause, bind_values) = build_hot_where(params);
+    let total = count_knot_hot_filtered(conn, &where_clause, &bind_values)?;
+
+    let mut sql = format!(
+        "SELECT id, title, state, updated_at, body, description, \
+         acceptance, priority, knot_type, tags_json, notes_json, \
+         handoff_capsules_json, invariants_json, step_history_json, \
+         gate_data_json, lease_data_json, lease_id, lease_expiry_ts, \
+         workflow_id, profile_id, profile_etag, \
+         deferred_from_state, blocked_from_state, created_at \
+         FROM knot_hot{} ORDER BY updated_at DESC, id ASC",
+        where_clause
+    );
+    let mut all_binds: Vec<Box<dyn rusqlite::types::ToSql>> =
+        bind_values.into_iter().map(|s| box_str(s)).collect();
+    if let Some(limit) = params.limit {
+        sql.push_str(" LIMIT ?");
+        all_binds.push(Box::new(limit as i64));
+    }
+    if let Some(offset) = params.offset {
+        sql.push_str(" OFFSET ?");
+        all_binds.push(Box::new(offset as i64));
+    }
+
+    let refs: Vec<&dyn rusqlite::types::ToSql> =
+        all_binds.iter().map(|b| b.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let mut rows = stmt.query(refs.as_slice())?;
+    let mut result = Vec::new();
+    while let Some(row) = rows.next()? {
+        result.push(row_to_knot_cache_record(row)?);
+    }
+    Ok((result, total))
+}
+
+fn count_knot_hot_filtered(
+    conn: &Connection,
+    where_clause: &str,
+    bind_values: &[String],
+) -> Result<i64> {
+    let sql = format!("SELECT COUNT(*) FROM knot_hot{}", where_clause);
+    let refs: Vec<&dyn rusqlite::types::ToSql> =
+        bind_values.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+    conn.query_row(&sql, refs.as_slice(), |row| row.get(0))
+}
+
+fn build_hot_where(params: &ListHotParams) -> (String, Vec<String>) {
+    let mut conditions: Vec<String> = Vec::new();
+    let mut values: Vec<String> = Vec::new();
+    if let Some(ref state) = params.state {
+        values.push(state.to_ascii_lowercase());
+        conditions.push(format!("LOWER(state) = ?{}", values.len()));
+    }
+    if let Some(ref knot_type) = params.knot_type {
+        values.push(knot_type.to_ascii_lowercase());
+        conditions.push(format!("LOWER(knot_type) = ?{}", values.len()));
+    }
+    if conditions.is_empty() {
+        (String::new(), values)
+    } else {
+        (format!(" WHERE {}", conditions.join(" AND ")), values)
+    }
+}
+
+fn box_str(s: String) -> Box<dyn rusqlite::types::ToSql> {
+    Box::new(s)
+}
+
 fn row_to_knot_cache_record(row: &rusqlite::Row<'_>) -> Result<KnotCacheRecord> {
     let tags_json: String = row.get(9)?;
     let notes_json: String = row.get(10)?;

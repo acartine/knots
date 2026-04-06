@@ -29,6 +29,22 @@ impl App {
         self.apply_aliases_to_knots(knots)
     }
 
+    pub fn list_knots_paginated(
+        &self,
+        params: &db::ListHotParams,
+    ) -> Result<(Vec<KnotView>, i64), AppError> {
+        let (records, total) = crate::trace::measure("list_knot_hot_paginated", || {
+            db::list_knot_hot_paginated(&self.conn, params)
+        })?;
+        let mut knots: Vec<KnotView> =
+            records.into_iter().map(KnotView::from).collect();
+        for knot in &mut knots {
+            workflow_runtime::enrich_step_metadata(knot, &self.profile_registry);
+        }
+        let knots = self.apply_aliases_to_knots(knots)?;
+        Ok((knots, total))
+    }
+
     pub fn show_knot(&self, id: &str) -> Result<Option<KnotView>, AppError> {
         let id = self.resolve_knot_token(id)?;
         if let Some(knot) =

@@ -265,3 +265,67 @@ fn trace_flag_parses_as_global_option() {
     assert!(cli.trace);
     assert!(matches!(cli.command, Commands::Ls(_)));
 }
+
+#[test]
+fn ls_limit_and_offset_parse() {
+    let cli = parse(&["kno", "ls", "--limit", "25", "--offset", "10"]);
+    match cli.command {
+        Commands::Ls(args) => {
+            assert_eq!(args.limit, Some(25));
+            assert_eq!(args.offset, Some(10));
+        }
+        other => panic!("expected Ls, got {:?}", other),
+    }
+}
+
+#[test]
+fn ls_limit_short_flag_parses() {
+    let cli = parse(&["kno", "ls", "-l", "10"]);
+    match cli.command {
+        Commands::Ls(args) => {
+            assert_eq!(args.limit, Some(10));
+            assert_eq!(args.offset, None);
+        }
+        other => panic!("expected Ls, got {:?}", other),
+    }
+}
+
+#[test]
+fn ls_offset_short_flag_parses() {
+    let cli = parse(&["kno", "ls", "-o", "5"]);
+    match cli.command {
+        Commands::Ls(args) => {
+            assert_eq!(args.limit, None);
+            assert_eq!(args.offset, Some(5));
+        }
+        other => panic!("expected Ls, got {:?}", other),
+    }
+}
+
+#[test]
+fn ls_without_pagination_defaults_none() {
+    let cli = parse(&["kno", "ls"]);
+    match cli.command {
+        Commands::Ls(args) => {
+            assert_eq!(args.limit, None);
+            assert_eq!(args.offset, None);
+        }
+        other => panic!("expected Ls, got {:?}", other),
+    }
+}
+
+#[test]
+fn ls_limit_combines_with_filters() {
+    let cli = parse(&[
+        "kno", "ls", "-s", "planning", "-l", "5", "-o", "2", "--json",
+    ]);
+    match cli.command {
+        Commands::Ls(args) => {
+            assert_eq!(args.state.as_deref(), Some("planning"));
+            assert_eq!(args.limit, Some(5));
+            assert_eq!(args.offset, Some(2));
+            assert!(args.json);
+        }
+        other => panic!("expected Ls, got {:?}", other),
+    }
+}

@@ -30,7 +30,8 @@ pub mod types;
 
 pub use error::AppError;
 pub use types::{
-    CreateKnotOptions, EdgeView, GateDecision, KnotView, StateActorMetadata, UpdateKnotPatch,
+    CreateKnotOptions, EdgeView, GateDecision, KnotView, PaginatedList, StateActorMetadata,
+    UpdateKnotPatch,
 };
 
 #[cfg(test)]

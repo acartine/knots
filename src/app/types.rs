@@ -200,6 +200,28 @@ impl From<KnotCacheRecord> for KnotView {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct PaginatedList<T: Serialize> {
+    pub data: Vec<T>,
+    pub total: i64,
+    pub offset: usize,
+    pub limit: usize,
+    pub has_more: bool,
+}
+
+impl<T: Serialize> PaginatedList<T> {
+    pub fn new(data: Vec<T>, total: i64, offset: usize, limit: usize) -> Self {
+        let has_more = (offset + data.len()) < total as usize;
+        Self {
+            data,
+            total,
+            offset,
+            limit,
+            has_more,
+        }
+    }
+}
+
 impl From<EdgeRecord> for EdgeView {
     fn from(value: EdgeRecord) -> Self {
         Self {
@@ -207,5 +229,42 @@ impl From<EdgeRecord> for EdgeView {
             kind: value.kind,
             dst: value.dst,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PaginatedList;
+
+    #[test]
+    fn paginated_list_has_more_true_when_more_pages() {
+        let page = PaginatedList::new(vec!["a", "b"], 10, 0, 2);
+        assert!(page.has_more);
+        assert_eq!(page.total, 10);
+        assert_eq!(page.offset, 0);
+        assert_eq!(page.limit, 2);
+    }
+
+    #[test]
+    fn paginated_list_has_more_false_at_end() {
+        let page = PaginatedList::new(vec!["a"], 3, 2, 5);
+        assert!(!page.has_more);
+    }
+
+    #[test]
+    fn paginated_list_has_more_false_when_empty() {
+        let page: PaginatedList<String> = PaginatedList::new(vec![], 0, 0, 10);
+        assert!(!page.has_more);
+    }
+
+    #[test]
+    fn paginated_list_serializes_envelope() {
+        let page = PaginatedList::new(vec!["one", "two"], 5, 0, 2);
+        let json = serde_json::to_value(&page).expect("serialize");
+        assert_eq!(json["data"], serde_json::json!(["one", "two"]));
+        assert_eq!(json["total"], 5);
+        assert_eq!(json["offset"], 0);
+        assert_eq!(json["limit"], 2);
+        assert_eq!(json["has_more"], true);
     }
 }
