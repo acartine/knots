@@ -11,7 +11,11 @@ use crate::app::{AppError, KnotView};
 /// Flushes after every line so pipe consumers see partial results.
 pub fn stream_ndjson_knots(knots: &[KnotView]) -> Result<(), AppError> {
     let stdout = std::io::stdout();
-    let mut writer = BufWriter::new(stdout.lock());
+    let writer = BufWriter::new(stdout.lock());
+    write_ndjson(knots, writer)
+}
+
+fn write_ndjson<W: Write>(knots: &[KnotView], mut writer: W) -> Result<(), AppError> {
     for knot in knots {
         let line = serde_json::to_string(knot)
             .map_err(|e| AppError::InvalidArgument(format!("json serialize: {e}")))?;
@@ -72,20 +76,9 @@ mod tests {
         }
     }
 
-    /// Write NDJSON to a Vec<u8> buffer instead of stdout for testing.
     fn stream_to_buffer(knots: &[KnotView]) -> Result<Vec<u8>, AppError> {
         let mut buf = Vec::new();
-        for knot in knots {
-            let line = serde_json::to_string(knot)
-                .map_err(|e| AppError::InvalidArgument(format!("json serialize: {e}")))?;
-            writeln!(buf, "{line}").map_err(io_error)?;
-        }
-        let meta = serde_json::json!({
-            "_meta": true,
-            "total": knots.len(),
-            "complete": true
-        });
-        writeln!(buf, "{meta}").map_err(io_error)?;
+        write_ndjson(knots, &mut buf)?;
         Ok(buf)
     }
 

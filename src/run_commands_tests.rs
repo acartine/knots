@@ -364,3 +364,65 @@ fn run_show_rejects_lease_knots_but_lease_show_still_allows_them() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn run_ls_stream_succeeds_with_knots() {
+    let root = unique_workspace();
+    setup_git_repo(&root);
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
+
+    app.create_knot("Stream test knot", None, Some("work_item"), None)
+        .expect("create");
+
+    // stream=true exercises stream_ndjson_knots -> write_ndjson path
+    run_ls(
+        &app,
+        crate::cli::ListArgs {
+            all: false,
+            json: false,
+            state: None,
+            knot_type: None,
+            profile_id: None,
+            tags: Vec::new(),
+            query: None,
+            stream: true,
+            limit: None,
+        },
+    )
+    .expect("stream ls should succeed");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn run_ls_stream_with_limit_caps_output() {
+    let root = unique_workspace();
+    setup_git_repo(&root);
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
+
+    app.create_knot("Limit A", None, Some("work_item"), None)
+        .expect("create");
+    app.create_knot("Limit B", None, Some("work_item"), None)
+        .expect("create");
+
+    // stream=true with limit=1 exercises the truncate + stream path
+    run_ls(
+        &app,
+        crate::cli::ListArgs {
+            all: false,
+            json: false,
+            state: None,
+            knot_type: None,
+            profile_id: None,
+            tags: Vec::new(),
+            query: None,
+            stream: true,
+            limit: Some(1),
+        },
+    )
+    .expect("stream ls with limit should succeed");
+
+    let _ = std::fs::remove_dir_all(root);
+}
