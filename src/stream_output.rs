@@ -13,9 +13,8 @@ pub fn stream_ndjson_knots(knots: &[KnotView]) -> Result<(), AppError> {
     let stdout = std::io::stdout();
     let mut writer = BufWriter::new(stdout.lock());
     for knot in knots {
-        let line = serde_json::to_string(knot).map_err(|e| {
-            AppError::InvalidArgument(format!("json serialize: {e}"))
-        })?;
+        let line = serde_json::to_string(knot)
+            .map_err(|e| AppError::InvalidArgument(format!("json serialize: {e}")))?;
         writeln!(writer, "{line}").map_err(io_error)?;
         writer.flush().map_err(io_error)?;
     }
@@ -77,9 +76,8 @@ mod tests {
     fn stream_to_buffer(knots: &[KnotView]) -> Result<Vec<u8>, AppError> {
         let mut buf = Vec::new();
         for knot in knots {
-            let line = serde_json::to_string(knot).map_err(|e| {
-                AppError::InvalidArgument(format!("json serialize: {e}"))
-            })?;
+            let line = serde_json::to_string(knot)
+                .map_err(|e| AppError::InvalidArgument(format!("json serialize: {e}")))?;
             writeln!(buf, "{line}").map_err(io_error)?;
         }
         let meta = serde_json::json!({
@@ -119,8 +117,7 @@ mod tests {
         let buf = stream_to_buffer(&knots).expect("stream");
         let output = String::from_utf8(buf).expect("utf8");
         let last_line = output.lines().last().expect("has lines");
-        let meta: serde_json::Value =
-            serde_json::from_str(last_line).expect("meta valid JSON");
+        let meta: serde_json::Value = serde_json::from_str(last_line).expect("meta valid JSON");
 
         assert_eq!(meta["_meta"], serde_json::json!(true));
         assert_eq!(meta["total"], serde_json::json!(3));
@@ -137,12 +134,10 @@ mod tests {
         let output = String::from_utf8(buf).expect("utf8");
         let lines: Vec<&str> = output.lines().collect();
 
-        let k1: serde_json::Value =
-            serde_json::from_str(lines[0]).expect("line 0");
+        let k1: serde_json::Value = serde_json::from_str(lines[0]).expect("line 0");
         assert_eq!(k1["id"], serde_json::json!("K-1"));
 
-        let k2: serde_json::Value =
-            serde_json::from_str(lines[1]).expect("line 1");
+        let k2: serde_json::Value = serde_json::from_str(lines[1]).expect("line 1");
         assert_eq!(k2["id"], serde_json::json!("K-2"));
     }
 
@@ -154,8 +149,7 @@ mod tests {
         let lines: Vec<&str> = output.lines().collect();
 
         assert_eq!(lines.len(), 1, "only metadata line");
-        let meta: serde_json::Value =
-            serde_json::from_str(lines[0]).expect("meta valid JSON");
+        let meta: serde_json::Value = serde_json::from_str(lines[0]).expect("meta valid JSON");
         assert_eq!(meta["_meta"], serde_json::json!(true));
         assert_eq!(meta["total"], serde_json::json!(0));
         assert_eq!(meta["complete"], serde_json::json!(true));

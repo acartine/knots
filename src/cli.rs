@@ -304,17 +304,10 @@ pub struct ListArgs {
     )]
     pub query: Option<String>,
 
-    #[arg(
-        long,
-        help = "Stream results as one JSON object per line (NDJSON)."
-    )]
+    #[arg(long, help = "Stream results as one JSON object per line (NDJSON).")]
     pub stream: bool,
 
-    #[arg(
-        short = 'n',
-        long,
-        help = "Maximum number of results to return."
-    )]
+    #[arg(short = 'n', long, help = "Maximum number of results to return.")]
     pub limit: Option<usize>,
 }
 
