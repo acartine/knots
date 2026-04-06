@@ -37,10 +37,7 @@ fn run_ls_full(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::Ap
     Ok(())
 }
 
-fn run_ls_paginated(
-    app: &app::App,
-    args: crate::cli::ListArgs,
-) -> Result<(), app::AppError> {
+fn run_ls_paginated(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::AppError> {
     let limit = args.limit.unwrap_or(50);
     let offset = args.offset.unwrap_or(0);
     let db_params = ListHotParams {
@@ -63,8 +60,7 @@ fn run_ls_paginated(
         let page = app::PaginatedList::new(knots, total, offset, limit);
         print_json(&page);
     } else {
-        let layout_edges =
-            crate::trace::measure("list_layout_edges", || app.list_layout_edges())?;
+        let layout_edges = crate::trace::measure("list_layout_edges", || app.list_layout_edges())?;
         let rows = crate::trace::measure("layout_knots", || {
             list_layout::layout_knots(knots, &layout_edges)
         });

@@ -36,8 +36,7 @@ impl App {
         let (records, total) = crate::trace::measure("list_knot_hot_paginated", || {
             db::list_knot_hot_paginated(&self.conn, params)
         })?;
-        let mut knots: Vec<KnotView> =
-            records.into_iter().map(KnotView::from).collect();
+        let mut knots: Vec<KnotView> = records.into_iter().map(KnotView::from).collect();
         for knot in &mut knots {
             workflow_runtime::enrich_step_metadata(knot, &self.profile_registry);
         }

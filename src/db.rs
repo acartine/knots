@@ -353,8 +353,7 @@ pub fn list_knot_hot_paginated(
         all_binds.push(Box::new(offset as i64));
     }
 
-    let refs: Vec<&dyn rusqlite::types::ToSql> =
-        all_binds.iter().map(|b| b.as_ref()).collect();
+    let refs: Vec<&dyn rusqlite::types::ToSql> = all_binds.iter().map(|b| b.as_ref()).collect();
     let mut stmt = conn.prepare(&sql)?;
     let mut rows = stmt.query(refs.as_slice())?;
     let mut result = Vec::new();
@@ -370,8 +369,10 @@ fn count_knot_hot_filtered(
     bind_values: &[String],
 ) -> Result<i64> {
     let sql = format!("SELECT COUNT(*) FROM knot_hot{}", where_clause);
-    let refs: Vec<&dyn rusqlite::types::ToSql> =
-        bind_values.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+    let refs: Vec<&dyn rusqlite::types::ToSql> = bind_values
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
     conn.query_row(&sql, refs.as_slice(), |row| row.get(0))
 }
 

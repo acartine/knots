@@ -311,11 +311,7 @@ pub struct ListArgs {
     )]
     pub limit: Option<usize>,
 
-    #[arg(
-        short = 'o',
-        long,
-        help = "Number of knots to skip (SQL OFFSET)."
-    )]
+    #[arg(short = 'o', long, help = "Number of knots to skip (SQL OFFSET).")]
     pub offset: Option<usize>,
 }
 

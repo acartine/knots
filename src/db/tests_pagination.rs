@@ -19,7 +19,11 @@ fn insert_test_knots(conn: &rusqlite::Connection, count: usize) {
         } else {
             "shipped"
         };
-        let knot_type = if i % 5 == 0 { Some("gate") } else { Some("work") };
+        let knot_type = if i % 5 == 0 {
+            Some("gate")
+        } else {
+            Some("work")
+        };
         let updated = format!("2026-04-06T{:02}:00:00Z", i % 24);
         upsert_knot_hot(
             conn,
@@ -154,8 +158,7 @@ fn paginated_state_filter_with_limit() {
         state: Some("planning".to_string()),
         ..Default::default()
     };
-    let (_, total_planning) =
-        list_knot_hot_paginated(&conn, &all_planning).expect("count");
+    let (_, total_planning) = list_knot_hot_paginated(&conn, &all_planning).expect("count");
 
     let params = ListHotParams {
         state: Some("planning".to_string()),
