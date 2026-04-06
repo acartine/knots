@@ -313,6 +313,9 @@ pub struct ListArgs {
 
     #[arg(short = 'o', long, help = "Number of knots to skip (SQL OFFSET).")]
     pub offset: Option<usize>,
+
+    #[arg(long, help = "Stream results as one JSON object per line (NDJSON).")]
+    pub stream: bool,
 }
 
 #[derive(Debug, Args)]

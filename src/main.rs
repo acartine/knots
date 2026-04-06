@@ -70,6 +70,7 @@ mod self_manage;
 mod skills;
 mod snapshots;
 mod state_hierarchy;
+mod stream_output;
 mod sync;
 mod tiering;
 mod trace;
