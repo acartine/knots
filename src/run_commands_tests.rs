@@ -388,6 +388,7 @@ fn run_ls_stream_succeeds_with_knots() {
             query: None,
             stream: true,
             limit: None,
+            offset: None,
         },
     )
     .expect("stream ls should succeed");
@@ -420,6 +421,7 @@ fn run_ls_stream_with_limit_caps_output() {
             query: None,
             stream: true,
             limit: Some(1),
+            offset: None,
         },
     )
     .expect("stream ls with limit should succeed");
