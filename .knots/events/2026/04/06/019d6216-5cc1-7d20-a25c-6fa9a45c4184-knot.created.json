@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6216-5cc1-7d20-a25c-6fa9a45c4184",
+  "occurred_at": "2026-04-06T09:18:45.953705Z",
+  "knot_id": "knots-ec83",
+  "type": "knot.created",
+  "data": {
+    "body": "Draft a schema (protobuf, flatbuffers, or similar) covering core knots operations: create, update, list, show, sync, claim, next, rollback. Include event subscription RPCs. Goal is to validate that the chosen schema language can express knots semantics cleanly and produces good multi-language output.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Prototype schema-first API definition for knots core operations",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

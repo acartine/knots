@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6216-486f-7661-b225-6f6588adff97",
+  "occurred_at": "2026-04-06T09:18:40.751421Z",
+  "knot_id": "knots-b6bf",
+  "type": "knot.created",
+  "data": {
+    "body": "Compare gRPC, Connect (Buf), Cap'n Proto, Tarpc, and similar frameworks. Evaluate: TypeScript/Rust/Swift codegen quality, streaming support for event subscriptions, local-first friendliness, binary size, and ecosystem maturity. Produce a recommendation or shortlist.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Evaluate RPC frameworks for multi-language knots API",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

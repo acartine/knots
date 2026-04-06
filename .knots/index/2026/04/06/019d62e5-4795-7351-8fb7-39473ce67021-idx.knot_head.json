@@ -1,0 +1,21 @@
+{
+  "event_id": "019d62e5-4795-7351-8fb7-39473ce67021",
+  "occurred_at": "2026-04-06T13:04:46.485466Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-23a5",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add NDJSON streaming output mode for kno ls",
+    "type": "work",
+    "updated_at": "2026-04-06T13:04:46.485466Z",
+    "workflow_id": "compatibility"
+  }
+}

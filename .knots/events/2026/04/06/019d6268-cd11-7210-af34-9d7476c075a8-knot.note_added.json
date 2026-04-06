@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6268-cd11-7210-af34-9d7476c075a8",
+  "occurred_at": "2026-04-06T10:48:48.657163Z",
+  "knot_id": "knots-23a5",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "claude-code",
+    "content": "# Implementation Plan: NDJSON Streaming Output for kno ls\n\n## Overview\nAdd a --stream flag to kno ls that writes one JSON object per line (NDJSON format) with stdout flushing after each line. This enables pipe consumers to process results incrementally.\n\n## Files to Change\n\n### 1. src/cli.rs - Add --stream flag to ListArgs\n- Add stream: bool field to ListArgs struct with long --stream\n- Help text: Stream results as one JSON object per line (NDJSON).\n- Complexity: trivial (2 lines)\n\n### 2. src/run_commands.rs - Branch streaming vs buffered path in run_ls\n- After applying filters, if args.stream is true, call a new stream_ndjson function\n- The streaming path iterates the filtered Vec, serializes each knot as compact JSON, writes via writeln!, and calls flush() after each line\n- Emit final metadata line: {\"_meta\":true,\"total\":N,\"complete\":true}\n- If args.stream is false, fall through to existing args.json / text path\n- The --stream flag implies JSON format (no need to also pass --json)\n- Complexity: moderate (~15 lines to add dispatch)\n\n### 3. New file: src/stream_output.rs - NDJSON writer\n- pub fn stream_ndjson_knots(knots: Vec<KnotView>) -> Result<(), AppError>\n- Acquires a BufWriter<Stdout> lock, iterates knots, serializes each with serde_json::to_string (compact), writes with writeln!, and flushes after each line\n- Emits terminal metadata line with _meta, total, and complete fields\n- All errors mapped to AppError\n- Complexity: ~35 lines\n\n### 4. src/main.rs - Register new module\n- Add mod stream_output; to module declarations\n- Complexity: trivial (1 line)\n\n### 5. Tests\n- Unit test in src/stream_output.rs: verify output format, metadata line, flush behavior\n- Integration test in run_commands_tests: verify end-to-end with stream flag\n\n## Architecture Decisions\n1. No iterator-based refactor of list_knots(): streaming benefit is on output side, not query side\n2. --stream implies JSON: no need for both --stream and --json\n3. Compact JSON per line: serde_json::to_string (not to_string_pretty)\n4. BufWriter with explicit flush after each writeln!\n5. Metadata line: {\"_meta\":true,\"total\":N,\"complete\":true}\n\n## Complexity: Low-moderate. ~50 LOC production, ~60 LOC tests. No changes to data model or existing paths.",
+    "datetime": "2026-04-06T10:48:48.657163Z",
+    "entry_id": "019d6268-cd11-7210-af34-9d65f8bab3b7",
+    "model": "claude-opus-4-6",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

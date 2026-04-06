@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6269-5f4a-7343-aa56-4094a5826ed1",
+  "occurred_at": "2026-04-06T10:49:26.090261Z",
+  "knot_id": "knots-9da3",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "claude",
+    "content": "## Plan: Add paginated list output with LIMIT/OFFSET SQL support\n\n### Goal\nAdd --limit and --offset CLI flags to kno ls that push pagination into SQLite queries, plus a JSON pagination envelope when flags are active.\n\n### Implementation steps\n\n1. Add --limit and --offset flags to ListArgs in src/cli.rs\n2. Add ListHotParams struct and list_knot_hot_paginated() in src/db.rs\n3. Add list_knots_paginated() in src/app/query.rs\n4. Add PaginatedList<T> struct in src/app/types.rs\n5. Wire pagination through run_ls in src/run_commands.rs\n6. Tests for DB pagination, JSON envelope, CLI flags\n\n### Design decisions\n- Separate function (not overload) for backward compat\n- Push state/knot_type into SQL WHERE; tags/query/profile stay in-memory\n- Separate COUNT(*) query for total\n- No flags = exact same behavior as today\n- JSON envelope only when --limit or --offset provided\n- has_more = offset + data.len() < total",
+    "datetime": "2026-04-06T10:49:26.090261Z",
+    "entry_id": "019d6269-5f4a-7343-aa56-4080e5cda0a2",
+    "model": "opus-4.6",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

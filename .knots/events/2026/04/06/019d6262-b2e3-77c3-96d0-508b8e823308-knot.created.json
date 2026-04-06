@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6262-b2e3-77c3-96d0-508b8e823308",
+  "occurred_at": "2026-04-06T10:42:08.739372Z",
+  "knot_id": "knots-b962",
+  "type": "knot.created",
+  "data": {
+    "body": "Add Gemini CLI as a supported tool in managed skills installation, update, uninstall, and doctor checks. Follow the existing pattern used by Codex/Claude/OpenCode in managed_skills.rs, cli_skills.rs, and doctor.rs. Determine the correct skills directory convention for Gemini CLI.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add managed skills support for Gemini CLI",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

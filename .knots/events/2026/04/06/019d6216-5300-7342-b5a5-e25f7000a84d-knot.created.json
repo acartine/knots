@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6216-5300-7342-b5a5-e25f7000a84d",
+  "occurred_at": "2026-04-06T09:18:43.456362Z",
+  "knot_id": "knots-f0ae",
+  "type": "knot.created",
+  "data": {
+    "body": "Define how clients subscribe to knot lifecycle events (state changes, sync events, edge updates). Explore patterns: server-streaming RPC, bidirectional streams, SSE, pub/sub. Consider local-first constraints — API may serve both local UI and networked clients. Define the event schema and delivery guarantees.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Design event subscription model for knots API",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}
