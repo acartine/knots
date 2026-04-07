@@ -2,6 +2,12 @@ use crate::profile::ProfileError;
 
 use super::{render_prompt_body, BundleFormat, WorkflowDefinition, COMPATIBILITY_WORKFLOW_ID};
 
+/// Test-visible wrapper to build the compatibility workflow.
+#[cfg(test)]
+pub fn compatibility_workflow_for_test() -> Result<WorkflowDefinition, ProfileError> {
+    compatibility_workflow()
+}
+
 pub(super) fn compatibility_workflow() -> Result<WorkflowDefinition, ProfileError> {
     let mut workflow =
         super::parse_bundle(crate::loom_compat_bundle::BUNDLE_JSON, BundleFormat::Json)?;

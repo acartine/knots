@@ -49,6 +49,7 @@ mod perf;
 mod poll_claim;
 mod profile;
 mod profile_commands;
+mod profile_consts;
 mod profile_normalize;
 mod progress;
 mod project;

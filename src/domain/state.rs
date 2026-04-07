@@ -10,6 +10,8 @@ pub enum KnotState {
     PlanReview,
     ReadyToEvaluate,
     Evaluating,
+    ReadyForExploration,
+    Exploration,
     ReadyForImplementation,
     Implementation,
     ReadyForImplementationReview,
@@ -27,13 +29,15 @@ pub enum KnotState {
 }
 
 impl KnotState {
-    pub const ALL: [KnotState; 20] = [
+    pub const ALL: [KnotState; 22] = [
         KnotState::ReadyForPlanning,
         KnotState::Planning,
         KnotState::ReadyForPlanReview,
         KnotState::PlanReview,
         KnotState::ReadyToEvaluate,
         KnotState::Evaluating,
+        KnotState::ReadyForExploration,
+        KnotState::Exploration,
         KnotState::ReadyForImplementation,
         KnotState::Implementation,
         KnotState::ReadyForImplementationReview,
@@ -58,6 +62,8 @@ impl KnotState {
             KnotState::PlanReview => "plan_review",
             KnotState::ReadyToEvaluate => "ready_to_evaluate",
             KnotState::Evaluating => "evaluating",
+            KnotState::ReadyForExploration => "ready_for_exploration",
+            KnotState::Exploration => "exploration",
             KnotState::ReadyForImplementation => "ready_for_implementation",
             KnotState::Implementation => "implementation",
             KnotState::ReadyForImplementationReview => "ready_for_implementation_review",
@@ -101,6 +107,8 @@ impl KnotState {
                 | (KnotState::PlanReview, KnotState::ReadyForPlanning)
                 | (KnotState::ReadyToEvaluate, KnotState::Evaluating)
                 | (KnotState::Evaluating, KnotState::Shipped)
+                | (KnotState::ReadyForExploration, KnotState::Exploration)
+                | (KnotState::Exploration, KnotState::Shipped)
                 | (KnotState::ReadyForImplementation, KnotState::Implementation)
                 | (
                     KnotState::Implementation,
@@ -162,6 +170,8 @@ impl FromStr for KnotState {
             "plan_review" => KnotState::PlanReview,
             "ready_to_evaluate" => KnotState::ReadyToEvaluate,
             "evaluating" | "evaluate" => KnotState::Evaluating,
+            "ready_for_exploration" => KnotState::ReadyForExploration,
+            "exploration" | "exploring" => KnotState::Exploration,
             "ready_for_implementation" | "work_item" | "rejected" | "refining" => {
                 KnotState::ReadyForImplementation
             }
@@ -354,6 +364,48 @@ mod tests {
         assert!(KnotState::LeaseTerminated.is_terminal());
         assert!(!KnotState::LeaseReady.is_terminal());
         assert!(!KnotState::LeaseActive.is_terminal());
+    }
+
+    #[test]
+    fn parses_exploration_states() {
+        assert_eq!(
+            KnotState::from_str("ready_for_exploration").unwrap(),
+            KnotState::ReadyForExploration
+        );
+        assert_eq!(
+            KnotState::from_str("exploration").unwrap(),
+            KnotState::Exploration
+        );
+        assert_eq!(
+            KnotState::from_str("exploring").unwrap(),
+            KnotState::Exploration
+        );
+    }
+
+    #[test]
+    fn exploration_state_transitions() {
+        let transitions = [
+            (KnotState::ReadyForExploration, KnotState::Exploration),
+            (KnotState::Exploration, KnotState::Shipped),
+        ];
+        for (from, to) in transitions {
+            assert!(from.can_transition_to(to), "{from} -> {to} should be valid");
+        }
+    }
+
+    #[test]
+    fn exploration_state_round_trip() {
+        for state in [KnotState::ReadyForExploration, KnotState::Exploration] {
+            let s = state.as_str();
+            let parsed = KnotState::from_str(s).unwrap();
+            assert_eq!(parsed, state);
+        }
+    }
+
+    #[test]
+    fn exploration_states_are_not_terminal() {
+        assert!(!KnotState::ReadyForExploration.is_terminal());
+        assert!(!KnotState::Exploration.is_terminal());
     }
 
     #[test]

@@ -329,3 +329,40 @@ fn ls_limit_combines_with_filters() {
         other => panic!("expected Ls, got {:?}", other),
     }
 }
+
+#[test]
+fn new_exploration_short_flag_parses() {
+    let cli = parse(&["kno", "new", "-e", "Investigate caching"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert!(args.exploration);
+            assert!(!args.fast);
+            assert_eq!(args.title, "Investigate caching");
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}
+
+#[test]
+fn new_exploration_long_flag_parses() {
+    let cli = parse(&["kno", "new", "--exploration", "Investigate"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert!(args.exploration);
+            assert!(!args.fast);
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}
+
+#[test]
+fn new_without_exploration_defaults_false() {
+    let cli = parse(&["kno", "new", "A task"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert!(!args.exploration);
+            assert!(!args.fast);
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}

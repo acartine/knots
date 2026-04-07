@@ -334,11 +334,11 @@ fn effective_state_rank_covers_remaining_shipment_and_terminal_states() {
     );
     assert_eq!(
         effective_state_rank("shipped").expect("state should parse"),
-        14
+        16
     );
     assert_eq!(
         effective_state_rank("abandoned").expect("state should parse"),
-        14
+        16
     );
     assert_eq!(
         effective_state_rank("deferred").expect("state should parse"),

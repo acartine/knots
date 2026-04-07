@@ -228,6 +228,9 @@ mod tests_coverage_ext2;
 #[path = "app/tests_error_paths.rs"]
 mod tests_error_paths;
 #[cfg(test)]
+#[path = "app/tests_exploration.rs"]
+mod tests_exploration;
+#[cfg(test)]
 #[path = "app/tests_gate_ext.rs"]
 mod tests_gate_ext;
 #[cfg(test)]

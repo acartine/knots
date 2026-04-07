@@ -59,6 +59,7 @@ fn execute_queued_request_returns_failure_when_app_open_fails() {
             profile: None,
             workflow: None,
             fast: false,
+            exploration: false,
             knot_type: None,
             gate_owner_kind: None,
             gate_failure_modes: vec![],
@@ -329,4 +330,76 @@ fn operation_from_command_maps_lease_extend() {
         }
         other => panic!("unexpected: {other:?}"),
     }
+}
+
+fn exploration_op() -> NewOperation {
+    NewOperation {
+        title: "Explore caching".to_string(),
+        description: None,
+        acceptance: None,
+        state: None,
+        profile: None,
+        workflow: None,
+        fast: false,
+        exploration: true,
+        knot_type: None,
+        gate_owner_kind: None,
+        gate_failure_modes: vec![],
+        lease_id: None,
+    }
+}
+
+#[test]
+fn exploration_rejects_combined_fast_flag() {
+    let root = unique_workspace("knots-wd-explore-fast");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
+    let mut op = exploration_op();
+    op.fast = true;
+    let err = execute_operation(&app, &WriteOperation::New(op))
+        .expect_err("fast+exploration should fail");
+    assert!(err.to_string().contains("cannot combine"));
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn exploration_rejects_combined_profile_flag() {
+    let root = unique_workspace("knots-wd-explore-profile");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
+    let mut op = exploration_op();
+    op.profile = Some("autopilot".to_string());
+    let err = execute_operation(&app, &WriteOperation::New(op))
+        .expect_err("profile+exploration should fail");
+    assert!(err.to_string().contains("cannot combine"));
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn exploration_rejects_combined_workflow_flag() {
+    let root = unique_workspace("knots-wd-explore-workflow");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
+    let mut op = exploration_op();
+    op.workflow = Some("custom".to_string());
+    let err = execute_operation(&app, &WriteOperation::New(op))
+        .expect_err("workflow+exploration should fail");
+    assert!(err.to_string().contains("cannot combine"));
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn exploration_new_creates_knot_with_exploration_profile() {
+    let root = unique_workspace("knots-wd-explore-new");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
+    let output = execute_operation(&app, &WriteOperation::New(exploration_op()))
+        .expect("exploration new should succeed");
+    let lower = output.to_ascii_lowercase();
+    assert!(lower.contains("ready_for_exploration"), "output: {output}");
+    let _ = std::fs::remove_dir_all(&root);
 }

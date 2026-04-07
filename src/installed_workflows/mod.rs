@@ -1,6 +1,6 @@
 pub(crate) mod bundle_json;
 pub(crate) mod bundle_toml;
-mod compatibility;
+pub(crate) mod compatibility;
 mod loader;
 mod operations;
 pub(crate) mod profile_json;
