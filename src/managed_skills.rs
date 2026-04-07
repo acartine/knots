@@ -85,6 +85,12 @@ impl SkillTool {
         let mut locations = Vec::new();
         match self {
             SkillTool::Codex => {
+                push_location(
+                    &mut locations,
+                    LocationScope::Project,
+                    repo_root.join(".agents"),
+                    "skills",
+                );
                 if let Some(home) = home {
                     push_location(
                         &mut locations,
@@ -439,7 +445,7 @@ fn push_location(
 
 fn expected_root_hint(tool: SkillTool) -> &'static str {
     match tool {
-        SkillTool::Codex => "~/.codex",
+        SkillTool::Codex => ".agents or ~/.codex",
         SkillTool::Claude => "./.claude",
         SkillTool::OpenCode => ".opencode or ~/.config/opencode",
     }
