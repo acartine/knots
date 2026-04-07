@@ -1,7 +1,6 @@
-use std::fs;
 use std::path::{Path, PathBuf};
-use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{fs, thread};
 
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +21,7 @@ pub struct NewOperation {
     pub profile: Option<String>,
     pub workflow: Option<String>,
     pub fast: bool,
+    pub exploration: bool,
     pub knot_type: Option<String>,
     pub gate_owner_kind: Option<String>,
     pub gate_failure_modes: Vec<String>,

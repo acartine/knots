@@ -37,6 +37,7 @@ fn map_new(args: &crate::cli::NewArgs) -> WriteOperation {
         profile: args.profile.clone(),
         workflow: args.workflow.clone(),
         fast: args.fast,
+        exploration: args.exploration,
         knot_type: args.knot_type.clone(),
         gate_owner_kind: args.gate_owner_kind.clone(),
         gate_failure_modes: args.gate_failure_modes.clone(),

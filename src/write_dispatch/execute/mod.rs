@@ -48,13 +48,30 @@ pub(crate) fn execute_operation(app: &App, operation: &WriteOperation) -> Result
 
 fn execute_new(app: &App, args: &crate::write_queue::NewOperation) -> Result<String, AppError> {
     reject_non_claim_lease_binding(args.lease_id.as_deref())?;
+    if args.fast && args.exploration {
+        return Err(AppError::InvalidArgument(
+            "cannot combine -f (fast) and -e (exploration)".to_string(),
+        ));
+    }
+    if args.exploration && args.profile.is_some() {
+        return Err(AppError::InvalidArgument(
+            "cannot combine -e (exploration) with --profile".to_string(),
+        ));
+    }
+    if args.exploration && args.workflow.is_some() {
+        return Err(AppError::InvalidArgument(
+            "cannot combine -e (exploration) with --workflow".to_string(),
+        ));
+    }
     let profile_override = if args.fast {
         Some(app.default_quick_profile_id()?)
+    } else if args.exploration {
+        Some("exploration".to_string())
     } else {
         None
     };
     let profile = profile_override.as_deref().or(args.profile.as_deref());
-    let workflow = if args.fast {
+    let workflow = if args.fast || args.exploration {
         None
     } else {
         args.workflow.as_deref()

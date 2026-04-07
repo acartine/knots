@@ -305,6 +305,7 @@ fn new_with_lease_flag_rejects() {
         profile: None,
         workflow: None,
         fast: false,
+        exploration: false,
         knot_type: None,
         gate_owner_kind: None,
         gate_failure_modes: vec![],

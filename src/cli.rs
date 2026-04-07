@@ -231,6 +231,13 @@ pub struct NewArgs {
     )]
     pub fast: bool,
 
+    #[arg(
+        short = 'e',
+        long = "exploration",
+        help = "Use the exploration workflow (lightweight investigation)."
+    )]
+    pub exploration: bool,
+
     #[arg(long, help = "Bind a lease to this knot.")]
     pub lease: Option<String>,
 }

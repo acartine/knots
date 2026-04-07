@@ -238,9 +238,21 @@ fn collect_json_terminal_escape(
         if state.kind == "terminal" {
             super::push_unique(&mut ctx.ordered_states, state.id.clone());
             super::push_unique(&mut ctx.terminal_states, state.id.clone());
+            // "abandoned" gets a wildcard (reachable from any state)
+            // but "shipped" does not (only reachable via normal flow)
+            if state.id == "abandoned" {
+                ctx.transitions.push(WorkflowTransition {
+                    from: "*".to_string(),
+                    to: state.id.clone(),
+                });
+            }
         } else if state.kind == "escape" {
             super::push_unique(&mut ctx.ordered_states, state.id.clone());
             super::push_unique(&mut ctx.escape_states, state.id.clone());
+            ctx.transitions.push(WorkflowTransition {
+                from: "*".to_string(),
+                to: state.id.clone(),
+            });
         }
     }
 }

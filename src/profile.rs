@@ -5,26 +5,10 @@ use std::{error::Error, fmt};
 use serde::{Deserialize, Serialize};
 
 use crate::installed_workflows;
+pub use crate::profile_consts::*;
 
 const PROFILES_TOML: &str = include_str!("profiles.toml");
 const WILDCARD_STATE: &str = "*";
-
-pub const READY_FOR_PLANNING: &str = "ready_for_planning";
-pub const PLANNING: &str = "planning";
-pub const READY_FOR_PLAN_REVIEW: &str = "ready_for_plan_review";
-pub const PLAN_REVIEW: &str = "plan_review";
-pub const READY_FOR_IMPLEMENTATION: &str = "ready_for_implementation";
-pub const IMPLEMENTATION: &str = "implementation";
-pub const READY_FOR_IMPLEMENTATION_REVIEW: &str = "ready_for_implementation_review";
-pub const IMPLEMENTATION_REVIEW: &str = "implementation_review";
-pub const READY_FOR_SHIPMENT: &str = "ready_for_shipment";
-pub const SHIPMENT: &str = "shipment";
-pub const READY_FOR_SHIPMENT_REVIEW: &str = "ready_for_shipment_review";
-pub const SHIPMENT_REVIEW: &str = "shipment_review";
-pub const SHIPPED: &str = "shipped";
-pub const BLOCKED: &str = "blocked";
-pub const DEFERRED: &str = "deferred";
-pub const ABANDONED: &str = "abandoned";
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorkflowTransition {
@@ -157,7 +141,6 @@ impl fmt::Display for InvalidWorkflowTransition {
         )
     }
 }
-
 impl Error for InvalidWorkflowTransition {}
 
 #[derive(Debug)]
@@ -214,7 +197,17 @@ impl From<InvalidWorkflowTransition> for ProfileError {
 impl ProfileRegistry {
     #[cfg(test)]
     pub fn load() -> Result<Self, ProfileError> {
-        Self::from_toml(PROFILES_TOML)
+        let mut registry = Self::from_toml(PROFILES_TOML)?;
+        let compat = installed_workflows::compatibility::compatibility_workflow_for_test()?;
+        for profile in compat.list_profiles() {
+            if !registry.profiles.contains_key(&profile.id) {
+                registry
+                    .aliases
+                    .insert(profile.id.clone(), profile.id.clone());
+                registry.profiles.insert(profile.id.clone(), profile);
+            }
+        }
+        Ok(registry)
     }
 
     pub fn load_for_repo(repo_root: &Path) -> Result<Self, ProfileError> {
@@ -226,6 +219,11 @@ impl ProfileRegistry {
                     if let Some(existing) = registry.profiles.get_mut(&profile.id) {
                         existing.action_prompts = profile.action_prompts.clone();
                         existing.prompt_acceptance = profile.prompt_acceptance.clone();
+                    } else {
+                        registry
+                            .aliases
+                            .insert(profile.id.clone(), profile.id.clone());
+                        registry.profiles.insert(profile.id.clone(), profile);
                     }
                 }
                 continue;
@@ -315,8 +313,6 @@ impl ProfileOwners {
         }
     }
 
-    /// Returns the owner kind for any workflow state. Queue states map to their
-    /// corresponding action state owner. Terminal states return `None`.
     pub fn owner_kind_for_state(&self, state: &str) -> Option<&OwnerKind> {
         if let Some(owner) = self.states.get(state) {
             return Some(&owner.kind);
@@ -368,23 +364,21 @@ impl ProfileDefinition {
     }
 
     pub fn is_escape_state(&self, state: &str) -> bool {
-        self.escape_states
-            .iter()
-            .any(|candidate| candidate == normalize_state_alias(state))
+        let s = normalize_state_alias(state);
+        self.escape_states.iter().any(|c| c == s)
     }
 
-    pub fn prompt_for_action_state(&self, state: &str) -> Option<&str> {
-        self.action_prompts.get(state).map(String::as_str)
+    pub fn prompt_for_action_state(&self, s: &str) -> Option<&str> {
+        self.action_prompts.get(s).map(String::as_str)
     }
 
-    pub fn acceptance_for_action_state(&self, state: &str) -> &[String] {
+    pub fn acceptance_for_action_state(&self, s: &str) -> &[String] {
         self.prompt_acceptance
-            .get(state)
+            .get(s)
             .map(Vec::as_slice)
             .unwrap_or(&[])
     }
 
-    /// Build resolved step metadata for an action state.
     pub fn step_metadata_for(&self, action_state: &str) -> StepMetadata {
         let owner = self
             .owners
@@ -402,9 +396,7 @@ impl ProfileDefinition {
     }
 
     pub fn is_terminal_state(&self, state: &str) -> bool {
-        self.terminal_states
-            .iter()
-            .any(|candidate| candidate == state)
+        self.terminal_states.iter().any(|c| c == state)
     }
 
     pub fn require_state(&self, state: &str) -> Result<(), ProfileError> {
@@ -465,20 +457,16 @@ impl ProfileDefinition {
 }
 
 pub fn normalize_profile_id(raw: &str) -> Option<String> {
-    normalize_scalar(raw)
-}
-
-fn builtin_workflow_id() -> String {
-    installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string()
-}
-
-fn normalize_scalar(raw: &str) -> Option<String> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         None
     } else {
         Some(trimmed.to_ascii_lowercase())
     }
+}
+
+fn builtin_workflow_id() -> String {
+    installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string()
 }
 
 fn normalize_state_alias(raw: &str) -> &str {
@@ -497,3 +485,6 @@ fn normalize_state_alias(raw: &str) -> &str {
 #[cfg(test)]
 #[path = "profile_tests.rs"]
 mod tests;
+#[cfg(test)]
+#[path = "profile_tests_exploration.rs"]
+mod tests_exploration;

@@ -129,6 +129,19 @@ impl App {
             next_state,
         )?;
         self.validate_resume_or_transition(current, next_state, force, next_is_terminal)?;
+        // Exploration knots require at least one related edge before shipping.
+        if next_state == "shipped" && profile.id == "exploration" {
+            let out_edges = db::list_edges(&self.conn, &current.id, db::EdgeDirection::Outgoing)?;
+            let in_edges = db::list_edges(&self.conn, &current.id, db::EdgeDirection::Incoming)?;
+            if out_edges.is_empty() && in_edges.is_empty() {
+                return Err(AppError::InvalidArgument(
+                    "exploration knots require at least one related knot \
+                     before shipping; use 'kno edge add' to link an \
+                     outcome, or transition to 'abandoned' instead"
+                        .to_string(),
+                ));
+            }
+        }
         match state_hierarchy::plan_state_transition(
             &self.conn,
             current,
