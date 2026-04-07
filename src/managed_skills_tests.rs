@@ -226,6 +226,7 @@ fn skill_tool_helpers_cover_display_and_lookup_paths() {
     assert_eq!(SkillTool::Codex.slug(), "codex");
     assert_eq!(SkillTool::Claude.to_string(), "Claude");
     assert_eq!(SkillTool::OpenCode.doctor_check_name(), "skills_opencode");
+    assert_eq!(expected_root_hint(SkillTool::Codex), ".agents or ~/.codex");
     assert_eq!(expected_root_hint(SkillTool::Claude), "./.claude");
     assert_eq!(
         expected_root_hint(SkillTool::OpenCode),
@@ -239,12 +240,13 @@ fn skill_tool_helpers_cover_display_and_lookup_paths() {
 fn locations_detect_supported_roots_for_all_tools() {
     let repo_root = unique_root("managed-skills-locations");
     let home = unique_root("managed-skills-home");
+    fs::create_dir_all(repo_root.join(".agents")).expect("codex project root");
     fs::create_dir_all(repo_root.join(".claude")).expect("claude project root");
     fs::create_dir_all(repo_root.join(".opencode")).expect("opencode project root");
     fs::create_dir_all(home.join(".codex")).expect("codex user root");
     fs::create_dir_all(home.join(".config/opencode")).expect("opencode user root");
 
-    assert_eq!(SkillTool::Codex.locations(&repo_root, Some(&home)).len(), 1);
+    assert_eq!(SkillTool::Codex.locations(&repo_root, Some(&home)).len(), 2);
     assert_eq!(
         SkillTool::Claude.locations(&repo_root, Some(&home)).len(),
         1
@@ -264,7 +266,7 @@ fn doctor_checks_warn_when_roots_are_missing() {
     assert!(checks
         .iter()
         .all(|check| check.status == DoctorStatus::Warn));
-    assert!(checks[0].detail.contains("create ~/.codex"));
+    assert!(checks[0].detail.contains(".agents/skills"));
 }
 
 #[test]
@@ -402,9 +404,9 @@ fn helper_functions_cover_empty_and_missing_paths() {
     let preferred = preferred_location(&repo_root, Some(&home), SkillTool::Codex)
         .expect("preferred location should resolve to the user root");
     assert_eq!(preferred.tool_root, home.join(".codex"));
-    let missing = preferred_location(&repo_root, None, SkillTool::Codex)
-        .expect_err("preferred location should fail without HOME");
-    assert!(missing.to_string().contains("create ~/.codex first"));
+    let project = preferred_location(&repo_root, None, SkillTool::Codex)
+        .expect("should resolve to project .agents");
+    assert_eq!(project.tool_root, repo_root.join(".agents"));
 
     let empty_location = SkillLocation {
         scope: LocationScope::User,
@@ -468,6 +470,29 @@ fn public_environment_based_helpers_use_home_env() {
 
     match prior_home {
         Some(value) => std::env::set_var("HOME", value),
+        None => std::env::remove_var("HOME"),
+    }
+}
+
+#[test]
+fn codex_project_level_agents_skill_lifecycle() {
+    let _guard = env_lock().lock().expect("env lock");
+    let repo = unique_root("codex-agents");
+    let home = unique_root("codex-agents-home");
+    let prior = std::env::var_os("HOME");
+    fs::create_dir_all(repo.join(".agents")).expect(".agents");
+    fs::create_dir_all(home.join(".codex")).expect(".codex");
+    std::env::set_var("HOME", &home);
+    install_missing(&repo, Some(&home), SkillTool::Codex).expect("install");
+    assert!(repo.join(".agents/skills/knots/SKILL.md").exists());
+    let doc = doctor_check(&repo, Some(&home), SkillTool::Codex);
+    assert_eq!(doc.status, DoctorStatus::Pass);
+    fs::write(repo.join(".agents/skills/knots/SKILL.md"), "stale").expect("stale");
+    fix_doctor_check(&repo, "skills_codex");
+    let fixed = doctor_check(&repo, Some(&home), SkillTool::Codex);
+    assert_eq!(fixed.status, DoctorStatus::Pass);
+    match prior {
+        Some(v) => std::env::set_var("HOME", v),
         None => std::env::remove_var("HOME"),
     }
 }
