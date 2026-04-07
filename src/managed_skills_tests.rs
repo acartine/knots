@@ -68,7 +68,6 @@ fn update_requires_install_in_noninteractive_mode_when_skills_are_missing() {
     let repo_root = unique_root("managed-skills-update");
     let home = unique_root("managed-skills-home");
     fs::create_dir_all(home.join(".codex")).expect("codex root");
-
     let err = run_command_with_io(
         &repo_root,
         Some(&home),
@@ -99,13 +98,11 @@ fn doctor_warns_when_preferred_destination_has_drifted_skills() {
     let home = unique_root("managed-skills-home");
     let codex_root = home.join(".codex");
     fs::create_dir_all(&codex_root).expect("codex root");
-
     install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("install");
     let knots = codex_root.join("skills/knots/SKILL.md");
-    fs::write(&knots, "stale").expect("knots skill should be writable");
+    fs::write(&knots, "stale").expect("write stale");
 
     let check = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
-
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains("drift detected"));
     assert!(check.detail.contains(knots.to_string_lossy().as_ref()));
@@ -118,15 +115,13 @@ fn doctor_warns_when_preferred_destination_has_missing_and_drifted_skills() {
     let home = unique_root("managed-skills-home");
     let codex_root = home.join(".codex");
     fs::create_dir_all(&codex_root).expect("codex root");
-
     install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("install");
     let knots = codex_root.join("skills/knots/SKILL.md");
     let knots_e2e = codex_root.join("skills/knots-e2e/SKILL.md");
-    fs::write(&knots, "stale").expect("knots skill should be writable");
-    fs::remove_file(&knots_e2e).expect("knots-e2e skill should be removable");
+    fs::write(&knots, "stale").expect("write stale");
+    fs::remove_file(&knots_e2e).expect("remove e2e skill");
 
     let check = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
-
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains("missing"));
     assert!(check.detail.contains("drifted"));
@@ -143,14 +138,12 @@ fn doctor_treats_unreadable_existing_skill_as_drift() {
     let home = unique_root("managed-skills-home");
     let codex_root = home.join(".codex");
     fs::create_dir_all(&codex_root).expect("codex root");
-
     install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("install");
     let knots = codex_root.join("skills/knots/SKILL.md");
-    fs::remove_file(&knots).expect("knots skill should be removable");
-    fs::create_dir_all(&knots).expect("skill path should be creatable as a directory");
+    fs::remove_file(&knots).expect("remove knots skill");
+    fs::create_dir_all(&knots).expect("replace with directory");
 
     let check = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
-
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains("drift detected"));
     assert!(check.detail.contains(knots.to_string_lossy().as_ref()));
@@ -196,24 +189,23 @@ fn doctor_fix_reconciles_drifted_skills_for_detected_root() {
     let repo_root = unique_root("managed-skills-fix");
     let home = unique_root("managed-skills-home");
     let prior_home = std::env::var_os("HOME");
-    let codex_root = home.join(".codex");
-    fs::create_dir_all(&codex_root).expect("codex root");
+    fs::create_dir_all(home.join(".codex")).expect("codex root");
     std::env::set_var("HOME", &home);
 
     install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("install");
-    let knots = codex_root.join("skills/knots/SKILL.md");
-    fs::write(&knots, "stale").expect("knots skill should be writable");
-
-    let before = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
-    assert_eq!(before.status, DoctorStatus::Warn);
+    let knots = home.join(".codex/skills/knots/SKILL.md");
+    fs::write(&knots, "stale").expect("write stale");
+    assert_eq!(
+        doctor_check(&repo_root, Some(&home), SkillTool::Codex).status,
+        DoctorStatus::Warn
+    );
 
     fix_doctor_check(&repo_root, "skills_codex");
-
-    let after = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
-    assert_eq!(after.status, DoctorStatus::Pass);
-    assert!(fs::read_to_string(&knots)
-        .expect("knots should exist")
-        .contains("---"));
+    assert_eq!(
+        doctor_check(&repo_root, Some(&home), SkillTool::Codex).status,
+        DoctorStatus::Pass
+    );
+    assert!(fs::read_to_string(&knots).unwrap().contains("---"));
 
     match prior_home {
         Some(value) => std::env::set_var("HOME", value),
@@ -226,6 +218,7 @@ fn skill_tool_helpers_cover_display_and_lookup_paths() {
     assert_eq!(SkillTool::Codex.slug(), "codex");
     assert_eq!(SkillTool::Claude.to_string(), "Claude");
     assert_eq!(SkillTool::OpenCode.doctor_check_name(), "skills_opencode");
+    assert_eq!(expected_root_hint(SkillTool::Codex), ".agents or ~/.codex");
     assert_eq!(expected_root_hint(SkillTool::Claude), "./.claude");
     assert_eq!(
         expected_root_hint(SkillTool::OpenCode),
@@ -244,7 +237,9 @@ fn locations_detect_supported_roots_for_all_tools() {
     fs::create_dir_all(home.join(".codex")).expect("codex user root");
     fs::create_dir_all(home.join(".config/opencode")).expect("opencode user root");
 
-    assert_eq!(SkillTool::Codex.locations(&repo_root, Some(&home)).len(), 1);
+    fs::create_dir_all(repo_root.join(".agents")).expect("codex project root");
+
+    assert_eq!(SkillTool::Codex.locations(&repo_root, Some(&home)).len(), 2);
     assert_eq!(
         SkillTool::Claude.locations(&repo_root, Some(&home)).len(),
         1
@@ -264,7 +259,7 @@ fn doctor_checks_warn_when_roots_are_missing() {
     assert!(checks
         .iter()
         .all(|check| check.status == DoctorStatus::Warn));
-    assert!(checks[0].detail.contains("create ~/.codex"));
+    assert!(checks[0].detail.contains(".agents/skills"));
 }
 
 #[test]
@@ -272,11 +267,8 @@ fn install_reports_already_installed_when_nothing_is_missing() {
     let repo_root = unique_root("managed-skills-install-existing");
     let home = unique_root("managed-skills-home");
     fs::create_dir_all(home.join(".codex")).expect("codex root");
-
     install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("initial install");
-    let output =
-        install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("second install");
-
+    let output = install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("second");
     assert!(output.contains("already installed"));
 }
 
@@ -285,10 +277,8 @@ fn uninstall_errors_when_no_managed_skills_are_installed() {
     let repo_root = unique_root("managed-skills-uninstall-empty");
     let home = unique_root("managed-skills-home");
     fs::create_dir_all(home.join(".codex")).expect("codex root");
-
     let err = uninstall_managed(&repo_root, Some(&home), SkillTool::Codex)
         .expect_err("uninstall should fail");
-
     assert!(err.to_string().contains("no installed managed skills"));
 }
 
@@ -301,15 +291,11 @@ fn update_rewrites_existing_skills_when_install_is_complete() {
 
     install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("install");
     let knots = codex_root.join("skills/knots/SKILL.md");
-    fs::write(&knots, "stale").expect("knots skill should be writable");
-
+    fs::write(&knots, "stale").expect("write stale");
     let output = update_managed(&repo_root, Some(&home), false, SkillTool::Codex).expect("update");
-
     assert!(output.contains("updated"));
     assert!(output.contains(".codex/skills/knots/SKILL.md"));
-    assert!(fs::read_to_string(knots)
-        .expect("knots should exist")
-        .contains("---"));
+    assert!(fs::read_to_string(knots).unwrap().contains("---"));
 }
 
 #[test]
@@ -361,38 +347,27 @@ fn claude_ignores_user_level_root_even_when_home_is_set() {
 
 #[test]
 fn prompt_install_missing_accepts_yes_and_rejects_no() {
-    let destination = SkillLocation {
+    let dest = SkillLocation {
         scope: LocationScope::User,
         tool_root: PathBuf::from("/tmp/.codex"),
         skills_root: PathBuf::from("/tmp/.codex/skills"),
     };
     let missing = vec![managed_skills()[0], managed_skills()[1]];
-    let mut output = Vec::new();
-    let mut yes = std::io::Cursor::new("yes\n");
-    let approved = prompt_install_missing(
-        &mut output,
-        &mut yes,
-        SkillTool::Codex,
-        &destination,
-        &missing,
-    )
-    .expect("prompt should succeed");
-    assert!(approved);
-    let output = String::from_utf8(output).expect("utf8");
-    assert!(output.contains("/tmp/.codex/skills/knots/SKILL.md"));
-    assert!(output.contains("/tmp/.codex/skills/knots-e2e/SKILL.md"));
 
-    let mut output = Vec::new();
+    let mut buf = Vec::new();
+    let mut yes = std::io::Cursor::new("yes\n");
+    let ok = prompt_install_missing(&mut buf, &mut yes, SkillTool::Codex, &dest, &missing)
+        .expect("prompt should succeed");
+    assert!(ok);
+    let text = String::from_utf8(buf).expect("utf8");
+    assert!(text.contains("/tmp/.codex/skills/knots/SKILL.md"));
+    assert!(text.contains("/tmp/.codex/skills/knots-e2e/SKILL.md"));
+
+    let mut buf = Vec::new();
     let mut no = std::io::Cursor::new("n\n");
-    let approved = prompt_install_missing(
-        &mut output,
-        &mut no,
-        SkillTool::Codex,
-        &destination,
-        &missing,
-    )
-    .expect("prompt should succeed");
-    assert!(!approved);
+    let ok = prompt_install_missing(&mut buf, &mut no, SkillTool::Codex, &dest, &missing)
+        .expect("prompt should succeed");
+    assert!(!ok);
 }
 
 #[test]
@@ -402,9 +377,9 @@ fn helper_functions_cover_empty_and_missing_paths() {
     let preferred = preferred_location(&repo_root, Some(&home), SkillTool::Codex)
         .expect("preferred location should resolve to the user root");
     assert_eq!(preferred.tool_root, home.join(".codex"));
-    let missing = preferred_location(&repo_root, None, SkillTool::Codex)
-        .expect_err("preferred location should fail without HOME");
-    assert!(missing.to_string().contains("create ~/.codex first"));
+    let project_fallback = preferred_location(&repo_root, None, SkillTool::Codex)
+        .expect("preferred location should resolve to project .agents");
+    assert_eq!(project_fallback.tool_root, repo_root.join(".agents"));
 
     let empty_location = SkillLocation {
         scope: LocationScope::User,
@@ -426,13 +401,13 @@ fn doctor_fix_installs_missing_skills_when_user_root_is_absent() {
 
     let before = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
     assert_eq!(before.status, DoctorStatus::Warn);
-    assert!(before.detail.contains(".codex/skills"));
     assert!(!home.join(".codex/skills/knots/SKILL.md").exists());
 
     fix_doctor_check(&repo_root, "skills_codex");
-
-    let after = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
-    assert_eq!(after.status, DoctorStatus::Pass);
+    assert_eq!(
+        doctor_check(&repo_root, Some(&home), SkillTool::Codex).status,
+        DoctorStatus::Pass
+    );
     assert!(home.join(".codex/skills/knots/SKILL.md").exists());
 
     match prior_home {
@@ -447,24 +422,75 @@ fn public_environment_based_helpers_use_home_env() {
     let repo_root = unique_root("managed-skills-public");
     let home = unique_root("managed-skills-home");
     fs::create_dir_all(home.join(".codex")).expect("codex root");
-
     let prior_home = std::env::var_os("HOME");
     std::env::set_var("HOME", &home);
 
-    let install = run_command(&repo_root, SkillsCommand::Install(SkillTool::Codex))
-        .expect("install should succeed");
+    let install =
+        run_command(&repo_root, SkillsCommand::Install(SkillTool::Codex)).expect("install");
     assert!(install.contains("installed"));
-
-    let checks = doctor_checks(&repo_root);
-    assert!(checks
+    assert!(doctor_checks(&repo_root)
         .iter()
-        .any(|check| check.status == DoctorStatus::Pass));
+        .any(|c| c.status == DoctorStatus::Pass));
 
     let knots = home.join(".codex/skills/knots/SKILL.md");
-    fs::remove_file(&knots).expect("knots skill should exist");
+    fs::remove_file(&knots).expect("remove knots");
     fix_doctor_check(&repo_root, "skills_codex");
     assert!(knots.exists());
     fix_doctor_check(&repo_root, "unknown");
+
+    match prior_home {
+        Some(value) => std::env::set_var("HOME", value),
+        None => std::env::remove_var("HOME"),
+    }
+}
+
+#[test]
+fn codex_install_prefers_project_agents_and_falls_back_to_user() {
+    let project = unique_root("managed-skills-codex-project");
+    let fallback = unique_root("managed-skills-codex-fallback");
+    let home_a = unique_root("managed-skills-home");
+    let home_b = unique_root("managed-skills-home");
+    fs::create_dir_all(project.join(".agents")).expect("agents dir");
+    fs::create_dir_all(home_a.join(".codex")).expect("codex user root");
+    fs::create_dir_all(home_b.join(".codex")).expect("codex user root");
+
+    let out = install_missing(&project, Some(&home_a), SkillTool::Codex).expect("project install");
+    assert!(out.contains("installed"));
+    assert!(project.join(".agents/skills/knots/SKILL.md").exists());
+    assert!(!home_a.join(".codex/skills/knots/SKILL.md").exists());
+
+    let out =
+        install_missing(&fallback, Some(&home_b), SkillTool::Codex).expect("fallback install");
+    assert!(out.contains("installed"));
+    assert!(home_b.join(".codex/skills/knots/SKILL.md").exists());
+    assert!(!fallback.join(".agents/skills/knots/SKILL.md").exists());
+}
+
+#[test]
+fn doctor_and_fix_work_with_project_level_codex_skills() {
+    let _guard = env_lock().lock().expect("env lock");
+    let repo_root = unique_root("managed-skills-codex-proj-dr");
+    let home = unique_root("managed-skills-home");
+    let prior_home = std::env::var_os("HOME");
+    fs::create_dir_all(repo_root.join(".agents")).expect("agents dir");
+    std::env::set_var("HOME", &home);
+
+    install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("install");
+    let check = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
+    assert_eq!(check.status, DoctorStatus::Pass);
+    assert!(check.detail.contains(".agents/skills"));
+
+    let knots = repo_root.join(".agents/skills/knots/SKILL.md");
+    fs::write(&knots, "stale").expect("write stale");
+    assert_eq!(
+        doctor_check(&repo_root, Some(&home), SkillTool::Codex).status,
+        DoctorStatus::Warn
+    );
+
+    fix_doctor_check(&repo_root, "skills_codex");
+    let after = doctor_check(&repo_root, Some(&home), SkillTool::Codex);
+    assert_eq!(after.status, DoctorStatus::Pass);
+    assert!(fs::read_to_string(&knots).unwrap().contains("---"));
 
     match prior_home {
         Some(value) => std::env::set_var("HOME", value),
