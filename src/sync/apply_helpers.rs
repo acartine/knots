@@ -158,7 +158,7 @@ pub(super) fn required_workflow_id(object: &Map<String, Value>, profile_id: &str
     if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
         let trimmed = value.trim();
         if !trimmed.is_empty() {
-            return trimmed.to_ascii_lowercase();
+            return installed_workflows::repair_legacy_builtin_workflow_id(trimmed);
         }
     }
 

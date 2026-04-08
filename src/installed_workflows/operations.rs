@@ -22,7 +22,11 @@ pub fn read_repo_config(repo_root: &Path) -> Result<WorkflowRepoConfig, ProfileE
     let raw = fs::read_to_string(&path).map_err(|e| ProfileError::InvalidBundle(e.to_string()))?;
     let config: WorkflowRepoConfig =
         toml::from_str(&raw).map_err(|e| ProfileError::InvalidBundle(e.to_string()))?;
-    Ok(config.normalize())
+    let normalized = config.clone().normalize();
+    if normalized != config {
+        write_repo_config(repo_root, &normalized)?;
+    }
+    Ok(normalized)
 }
 
 pub fn write_repo_config(

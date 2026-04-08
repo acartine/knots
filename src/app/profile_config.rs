@@ -91,7 +91,7 @@ pub(crate) fn resolve_profile_id_inner(
     raw_profile_id: &str,
     workflow_id: Option<&str>,
 ) -> Result<String, AppError> {
-    let workflow_id = workflow_id.map(installed_workflows::canonical_workflow_id);
+    let workflow_id = workflow_id.map(installed_workflows::normalize_workflow_id);
     let workflow_id = workflow_id.as_deref();
     if let Some(wf) = workflow_id {
         let namespaced = installed_workflows::namespaced_profile_id(wf, raw_profile_id);
@@ -117,9 +117,7 @@ fn resolve_slash_profile(
         return Ok(None);
     };
     if let Some(wf) = workflow_id {
-        if prefix == wf
-            || (wf == installed_workflows::BUILTIN_WORKFLOW_ID && prefix == "compatibility")
-        {
+        if prefix == wf {
             let namespaced = installed_workflows::namespaced_profile_id(wf, suffix);
             if let Ok(p) = registry.require(&namespaced) {
                 return Ok(Some(p.id.clone()));

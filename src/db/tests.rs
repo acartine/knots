@@ -52,6 +52,28 @@ fn column_exists(conn: &rusqlite::Connection, table_name: &str, column_name: &st
     false
 }
 
+fn column_default(
+    conn: &rusqlite::Connection,
+    table_name: &str,
+    column_name: &str,
+) -> Option<String> {
+    let mut stmt = conn
+        .prepare(&format!("PRAGMA table_info({})", table_name))
+        .expect("table info pragma should prepare");
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(1)?, row.get::<_, Option<String>>(4)?))
+        })
+        .expect("table info rows should be readable");
+    for item in rows {
+        let (name, default_value) = item.expect("column info should read");
+        if name == column_name {
+            return default_value;
+        }
+    }
+    None
+}
+
 #[test]
 fn configures_connection_pragmas() {
     let path = unique_db_path();
@@ -160,6 +182,10 @@ fn initializes_required_tables_and_schema_version() {
         )
         .expect("pull_drift_warn_threshold default should exist");
     assert_eq!(drift_warn_threshold, "25");
+    assert_eq!(
+        column_default(&conn, "knot_hot", "workflow_id").as_deref(),
+        Some("'knots_sdlc'")
+    );
 
     cleanup_db_files(&path);
 }
@@ -274,6 +300,19 @@ CREATE TABLE cold_catalog (
         )
         .expect("legacy row should include profile_id");
     assert_eq!(profile_id, "autopilot");
+
+    let workflow_id: String = upgraded
+        .query_row(
+            "SELECT workflow_id FROM knot_hot WHERE id = 'K-legacy'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("legacy row should include workflow_id");
+    assert_eq!(workflow_id, "knots_sdlc");
+    assert_eq!(
+        column_default(&upgraded, "knot_hot", "workflow_id").as_deref(),
+        Some("'knots_sdlc'")
+    );
 
     cleanup_db_files(&path);
 }
