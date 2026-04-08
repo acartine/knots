@@ -37,9 +37,10 @@ pub fn run_poll(app: &App, args: PollArgs) -> Result<(), AppError> {
     })?;
     match result {
         None => {
-            if !args.json {
-                eprintln!("no claimable knots found");
-            }
+            // Emit the message regardless of --json so programmatic callers
+            // (e.g. quilt-worker) can distinguish "idle queue" from a real
+            // error by substring-matching stderr.
+            eprintln!("no claimable knots found");
             std::process::exit(1);
         }
         Some(result) => {
