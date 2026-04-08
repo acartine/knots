@@ -1,0 +1,149 @@
+{
+  "format": "knots-bundle",
+  "format_version": 2,
+  "workflow": {
+    "name": "gate_sdlc",
+    "version": 1,
+    "default_profile": "evaluate"
+  },
+  "states": [
+    {
+      "id": "evaluating",
+      "display_name": "Evaluating",
+      "kind": "action",
+      "action_kind": "produce",
+      "gate_kind": null,
+      "executor": "agent",
+      "constraints": [
+        "read_only",
+        "no_git_write",
+        "metadata_only"
+      ],
+      "prompt": "evaluating",
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "shipped",
+      "display_name": "Shipped",
+      "kind": "terminal",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "abandoned",
+      "display_name": "Abandoned",
+      "kind": "terminal",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "deferred",
+      "display_name": "Deferred",
+      "kind": "escape",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "ready_to_evaluate",
+      "display_name": "Ready to Evaluate",
+      "kind": "queue",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    }
+  ],
+  "steps": [
+    {
+      "id": "evaluating",
+      "queue": "ready_to_evaluate",
+      "action": "evaluating"
+    }
+  ],
+  "phases": [
+    {
+      "id": "evaluating_phase",
+      "produce_step": "evaluating",
+      "gate_step": null
+    }
+  ],
+  "profiles": [
+    {
+      "id": "evaluate",
+      "display_name": "Evaluate",
+      "description": "Binary gate evaluation workflow",
+      "phases": [
+        "evaluating_phase"
+      ],
+      "outputs": {},
+      "executors": {
+        "evaluating": "agent"
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "evaluating",
+      "accept": [],
+      "params": [],
+      "outcomes": [
+        {
+          "name": "gate_passed",
+          "target": "shipped",
+          "is_success": true
+        },
+        {
+          "name": "gate_failed",
+          "target": "abandoned",
+          "is_success": false
+        }
+      ],
+      "body": "# Evaluating\n\nAssess the gate as a binary yes/no decision.\n\n## Step Boundary\n\n- This session is authorized only for `evaluating`.\n- Complete exactly one evaluation action, then stop.\n- Allowed resting states after this session: `shipped` or `abandoned`.\n- If the gate passes, use the completion command below.\n- If the gate fails, run `kno gate evaluate <id> --decision no --invariant \"<violated invariant>\"`.\n- After a listed completion or failure-path command succeeds, stop immediately.\n\n## Actions\n\n1. Review the gate description, invariants, and failure modes.\n2. Decide whether the gate passes or fails.\n3. On pass, use the completion command below to move the gate to `shipped`.\n4. On failure, record the violated invariant with `kno gate evaluate ...`.\n5. Do not continue into follow-up work after the gate decision is recorded.",
+      "body_params": []
+    }
+  ],
+  "transitions": {
+    "wildcard_targets": [
+      "abandoned",
+      "deferred"
+    ],
+    "queue_to_action": [
+      {
+        "id": "evaluating",
+        "queue": "ready_for_evaluating",
+        "action": "evaluating"
+      }
+    ],
+    "outcome_tables": [
+      {
+        "action": "evaluating",
+        "prompt": "evaluating",
+        "success": {
+          "gate_passed": "shipped"
+        },
+        "failure": {
+          "gate_failed": "abandoned"
+        }
+      }
+    ]
+  }
+}

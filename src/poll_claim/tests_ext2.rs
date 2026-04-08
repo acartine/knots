@@ -91,6 +91,8 @@ changes = "ready_for_work"
 fn unique_workspace() -> PathBuf {
     let root = std::env::temp_dir().join(format!("knots-poll-test-{}", uuid::Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("workspace should be creatable");
+    crate::installed_workflows::ensure_builtin_workflows_registered(&root)
+        .expect("builtin workflows should register");
     root
 }
 

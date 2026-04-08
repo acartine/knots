@@ -1,0 +1,150 @@
+{
+  "format": "knots-bundle",
+  "format_version": 2,
+  "workflow": {
+    "name": "explore_sdlc",
+    "version": 1,
+    "default_profile": "explore"
+  },
+  "states": [
+    {
+      "id": "exploration",
+      "display_name": "Exploration",
+      "kind": "action",
+      "action_kind": "produce",
+      "gate_kind": null,
+      "executor": "agent",
+      "constraints": [],
+      "prompt": "exploration",
+      "output": "remote_main",
+      "output_hint": null
+    },
+    {
+      "id": "shipped",
+      "display_name": "Shipped",
+      "kind": "terminal",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "abandoned",
+      "display_name": "Abandoned",
+      "kind": "terminal",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "deferred",
+      "display_name": "Deferred",
+      "kind": "escape",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "ready_for_exploration",
+      "display_name": "Ready for Exploration",
+      "kind": "queue",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    }
+  ],
+  "steps": [
+    {
+      "id": "exploration",
+      "queue": "ready_for_exploration",
+      "action": "exploration"
+    }
+  ],
+  "phases": [
+    {
+      "id": "exploration_phase",
+      "produce_step": "exploration",
+      "gate_step": null
+    }
+  ],
+  "profiles": [
+    {
+      "id": "explore",
+      "display_name": "Explore",
+      "description": "Lightweight investigation workflow",
+      "phases": [
+        "exploration_phase"
+      ],
+      "outputs": {
+        "exploration": {
+          "artifact_type": "remote_main",
+          "access_hint": null
+        }
+      },
+      "executors": {
+        "exploration": "agent"
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "exploration",
+      "accept": [],
+      "params": [],
+      "outcomes": [
+        {
+          "name": "findings_captured",
+          "target": "shipped",
+          "is_success": true
+        },
+        {
+          "name": "no_actionable_result",
+          "target": "abandoned",
+          "is_success": false
+        }
+      ],
+      "body": "# Exploration\n\nConduct a lightweight discovery or investigation.\n\n## Step Boundary\n\n- This session is authorized only for `exploration`.\n- Complete exactly one exploration action, then stop.\n- Allowed resting states after this session: `shipped` or `abandoned`.\n- Before completing, create at least one related knot that captures findings or follow-up work.\n- Use `kno edge add <this-id> relates_to <related-id>` to link outcome knots.\n- Transition to `shipped` requires at least one related knot.\n- If the exploration yields no actionable results, transition to `abandoned`.\n\n## Actions\n\n1. Review the exploration description and goals.\n2. Investigate, research, or prototype as described.\n3. Create knots for any findings, follow-up work, or decisions.\n4. Link created knots with `kno edge add`.\n5. Transition to shipped (if outcomes exist) or abandoned (if not).",
+      "body_params": []
+    }
+  ],
+  "transitions": {
+    "wildcard_targets": [
+      "abandoned",
+      "deferred"
+    ],
+    "queue_to_action": [
+      {
+        "id": "exploration",
+        "queue": "ready_for_exploration",
+        "action": "exploration"
+      }
+    ],
+    "outcome_tables": [
+      {
+        "action": "exploration",
+        "prompt": "exploration",
+        "success": {
+          "findings_captured": "shipped"
+        },
+        "failure": {
+          "no_actionable_result": "abandoned"
+        }
+      }
+    ]
+  }
+}

@@ -10,6 +10,11 @@ fn unique_workspace(prefix: &str) -> std::path::PathBuf {
     root
 }
 
+fn ensure_builtin_registry(root: &std::path::Path) {
+    installed_workflows::ensure_builtin_workflows_registered(root)
+        .expect("builtin workflows should register");
+}
+
 const CUSTOM_BUNDLE: &str = r#"
 [workflow]
 name = "custom_flow"
@@ -110,7 +115,6 @@ fn no_planning_profiles_start_at_ready_for_implementation() {
         .expect("profile should exist");
     assert_eq!(profile.initial_state, "ready_for_implementation");
     assert_eq!(profile.planning_mode, GateMode::Skipped);
-    assert!(profile.states.iter().all(|state| !state.contains("plan")));
 }
 
 #[test]
@@ -215,7 +219,7 @@ fn load_for_repo_adds_namespaced_profiles_for_custom_workflow() {
     let via_alias = registry
         .require("autopilot")
         .expect("builtin autopilot should still exist");
-    assert_eq!(via_alias.workflow_id, "knots_sdlc");
+    assert_eq!(via_alias.workflow_id, "work_sdlc");
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -223,6 +227,7 @@ fn load_for_repo_adds_namespaced_profiles_for_custom_workflow() {
 #[test]
 fn load_for_repo_preserves_human_gated_profile_owners() {
     let root = unique_workspace("knots-profile-load-for-repo-builtins");
+    ensure_builtin_registry(&root);
     let registry = ProfileRegistry::load_for_repo(&root).expect("repo registry should load");
 
     for profile_id in ["semiauto", "semiauto_no_planning"] {

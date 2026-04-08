@@ -194,6 +194,7 @@ fn doctor_without_fix_prints_hint_and_fix_creates_knots_branch() {
     let root = unique_workspace("knots-cli-doctor-fix");
     let _remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db);
 
     let doctor = run_knots(&root, &db, &["doctor"]);
     assert_success(&doctor);
@@ -302,6 +303,7 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
     let db = root.join(".knots/cache/state.sqlite");
 
     assert_success(&run_knots(&root, &db, &["init-remote"]));
+    bootstrap_builtin_workflows(&root, &db);
     let gitignore = std::fs::read_to_string(root.join(".gitignore"))
         .expect(".gitignore should exist after init-remote");
     assert!(gitignore.lines().any(|line| line.trim() == "/.knots/"));

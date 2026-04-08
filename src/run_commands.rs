@@ -412,12 +412,24 @@ fn resolve_skill_for_knot(
 
 fn resolve_skill_by_name(app: &app::App, id: &str) -> Result<String, app::AppError> {
     let normalized = id.trim().to_ascii_lowercase().replace('-', "_");
-    let workflow_id = app.default_workflow_id()?;
-    let profile_id = app.default_profile_id_for_workflow(&workflow_id)?;
-    let profile = app.profile_registry().require(&profile_id)?;
-    action_prompt::render_for_profile(profile, &normalized).ok_or_else(|| {
-        app::AppError::InvalidArgument(format!("'{}' is not a knot id or skill state name", id))
-    })
+    let mut profile_ids = vec![app.default_profile_id()?];
+    for knot_type in crate::domain::knot_type::KnotType::ALL {
+        if let Ok(profile_id) = app.default_profile_id_for_knot_type(knot_type) {
+            if !profile_ids.iter().any(|existing| existing == &profile_id) {
+                profile_ids.push(profile_id);
+            }
+        }
+    }
+    for profile_id in profile_ids {
+        let profile = app.profile_registry().require(&profile_id)?;
+        if let Some(skill) = action_prompt::render_for_profile(profile, &normalized) {
+            return Ok(skill);
+        }
+    }
+    Err(app::AppError::InvalidArgument(format!(
+        "'{}' is not a knot id or skill state name",
+        id
+    )))
 }
 
 pub fn run_lease_read(app: &app::App, args: crate::cli::LeaseArgs) -> Result<(), app::AppError> {

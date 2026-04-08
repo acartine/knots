@@ -87,8 +87,16 @@ impl App {
         }
         helpers::ensure_parent_dir(db_path)?;
         let conn = crate::trace::measure("db_open", || db::open_connection(db_path))?;
+        let workflow_config_path =
+            installed_workflows::workflows_root(context.workflow_root()).join("current");
+        if !workflow_config_path.exists()
+            && (context.distribution == DistributionMode::LocalOnly
+                || context.store_paths.root.exists())
+        {
+            installed_workflows::ensure_builtin_workflows_registered(context.workflow_root())?;
+        }
         let profile_registry = crate::trace::measure("profile_registry", || {
-            ProfileRegistry::load_for_repo(&context.repo_root)
+            ProfileRegistry::load_for_repo(context.workflow_root())
         })?;
         let writer = EventWriter::new(context.store_paths.root.clone());
         Ok(Self {
@@ -175,8 +183,24 @@ impl App {
     }
 
     fn current_workflow_id(&self) -> Result<String, AppError> {
-        let registry = installed_workflows::InstalledWorkflowRegistry::load(&self.repo_root)?;
-        Ok(registry.current_workflow_id().to_string())
+        self.current_workflow_id_for_knot_type(crate::domain::knot_type::KnotType::Work)
+    }
+
+    fn current_workflow_id_for_knot_type(
+        &self,
+        knot_type: crate::domain::knot_type::KnotType,
+    ) -> Result<String, AppError> {
+        let registry = installed_workflows::InstalledWorkflowRegistry::load(self.workflow_root())?;
+        Ok(registry
+            .current_workflow_id_for_knot_type(knot_type)
+            .to_string())
+    }
+
+    fn workflow_root(&self) -> &std::path::Path {
+        match self.distribution {
+            DistributionMode::Git => &self.repo_root,
+            DistributionMode::LocalOnly => &self.store_paths.root,
+        }
     }
 
     pub fn default_workflow_id(&self) -> Result<String, AppError> {
@@ -257,3 +281,6 @@ mod tests_terminal_deferred;
 #[cfg(test)]
 #[path = "app/tests_update_ext.rs"]
 mod tests_update_ext;
+#[cfg(test)]
+#[path = "app/tests_workflow_roots.rs"]
+mod tests_workflow_roots;

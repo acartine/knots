@@ -1,0 +1,20 @@
+workflow explore_sdlc v1 {
+
+    action exploration {
+        produce agent
+        output remote_main
+    }
+
+    terminal shipped
+    terminal abandoned
+    escape deferred
+
+    * -> abandoned
+    * -> deferred
+
+    phase exploration_phase {
+        produce exploration
+    }
+
+    include "profiles/explore.loom"
+}

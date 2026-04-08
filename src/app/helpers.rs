@@ -153,40 +153,8 @@ pub(crate) fn require_state_for_knot_type(
     profile: &ProfileDefinition,
     state: &str,
 ) -> Result<(), AppError> {
-    match knot_type {
-        KnotType::Work | KnotType::Explore => Ok(profile.require_state(state)?),
-        KnotType::Gate => {
-            if matches!(
-                state,
-                workflow_runtime::READY_TO_EVALUATE
-                    | workflow_runtime::EVALUATING
-                    | "shipped"
-                    | "abandoned"
-            ) {
-                Ok(())
-            } else {
-                Err(AppError::InvalidArgument(format!(
-                    "state '{}' is not valid for gate knots",
-                    state
-                )))
-            }
-        }
-        KnotType::Lease => {
-            if matches!(
-                state,
-                workflow_runtime::LEASE_READY
-                    | workflow_runtime::LEASE_ACTIVE
-                    | workflow_runtime::LEASE_TERMINATED
-            ) {
-                Ok(())
-            } else {
-                Err(AppError::InvalidArgument(format!(
-                    "state '{}' is not valid for lease knots",
-                    state
-                )))
-            }
-        }
-    }
+    let _ = knot_type;
+    Ok(profile.require_state(state)?)
 }
 
 pub(crate) fn require_gate_metadata_scope(knot_type: KnotType) -> Result<(), AppError> {

@@ -12,20 +12,22 @@ use uuid::Uuid;
 fn unique_workspace(prefix: &str) -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&path).expect("workspace should be creatable");
+    crate::installed_workflows::ensure_builtin_workflows_registered(&path)
+        .expect("builtin workflows should register");
     path
 }
 
 #[test]
 fn lease_initial_state_is_lease_ready() {
     let registry = ProfileRegistry::load().unwrap();
-    let profile = registry.require("autopilot").unwrap();
+    let profile = registry.require("lease").unwrap();
     assert_eq!(initial_state(KnotType::Lease, profile), super::LEASE_READY);
 }
 
 #[test]
 fn explore_initial_state_is_ready_for_exploration() {
     let registry = ProfileRegistry::load().unwrap();
-    let profile = registry.require("exploration").unwrap();
+    let profile = registry.require("explore").unwrap();
     assert_eq!(
         initial_state(KnotType::Explore, profile),
         "ready_for_exploration"
@@ -36,23 +38,16 @@ fn explore_initial_state_is_ready_for_exploration() {
 fn lease_next_happy_path_follows_lifecycle() {
     let registry = ProfileRegistry::load().unwrap();
     assert_eq!(
-        next_happy_path_state(&registry, "autopilot", KnotType::Lease, super::LEASE_READY,)
-            .unwrap(),
+        next_happy_path_state(&registry, "lease", KnotType::Lease, super::LEASE_READY,).unwrap(),
         Some(super::LEASE_ACTIVE.to_string())
     );
     assert_eq!(
-        next_happy_path_state(&registry, "autopilot", KnotType::Lease, super::LEASE_ACTIVE,)
-            .unwrap(),
+        next_happy_path_state(&registry, "lease", KnotType::Lease, super::LEASE_ACTIVE,).unwrap(),
         Some(super::LEASE_TERMINATED.to_string())
     );
     assert_eq!(
-        next_happy_path_state(
-            &registry,
-            "autopilot",
-            KnotType::Lease,
-            super::LEASE_TERMINATED,
-        )
-        .unwrap(),
+        next_happy_path_state(&registry, "lease", KnotType::Lease, super::LEASE_TERMINATED,)
+            .unwrap(),
         None
     );
 }
@@ -60,16 +55,10 @@ fn lease_next_happy_path_follows_lifecycle() {
 #[test]
 fn lease_terminal_state_is_terminated() {
     let registry = ProfileRegistry::load().unwrap();
-    assert!(is_terminal_state(
-        &registry,
-        "autopilot",
-        KnotType::Lease,
-        super::LEASE_TERMINATED,
-    )
-    .unwrap());
     assert!(
-        !is_terminal_state(&registry, "autopilot", KnotType::Lease, super::LEASE_ACTIVE,).unwrap()
+        is_terminal_state(&registry, "lease", KnotType::Lease, super::LEASE_TERMINATED,).unwrap()
     );
+    assert!(!is_terminal_state(&registry, "lease", KnotType::Lease, super::LEASE_ACTIVE,).unwrap());
 }
 
 #[test]
@@ -79,7 +68,7 @@ fn lease_owner_kind_is_always_none() {
     assert_eq!(
         owner_kind_for_state(
             &registry,
-            "autopilot",
+            "lease",
             KnotType::Lease,
             &gate,
             super::LEASE_ACTIVE,
@@ -95,7 +84,7 @@ fn lease_transition_rules() {
     // Valid transitions
     assert!(validate_transition(
         &registry,
-        "autopilot",
+        "lease",
         KnotType::Lease,
         super::LEASE_READY,
         super::LEASE_ACTIVE,
@@ -104,27 +93,28 @@ fn lease_transition_rules() {
     .is_ok());
     assert!(validate_transition(
         &registry,
-        "autopilot",
+        "lease",
         KnotType::Lease,
         super::LEASE_ACTIVE,
         super::LEASE_TERMINATED,
         false,
     )
     .is_ok());
-    // Direct ready -> terminated
-    assert!(validate_transition(
+    // Direct ready -> terminated is not part of the lease workflow.
+    let err = validate_transition(
         &registry,
-        "autopilot",
+        "lease",
         KnotType::Lease,
         super::LEASE_READY,
         super::LEASE_TERMINATED,
         false,
     )
-    .is_ok());
+    .unwrap_err();
+    assert!(err.to_string().contains("invalid state transition"));
     // Noop (same state)
     assert!(validate_transition(
         &registry,
-        "autopilot",
+        "lease",
         KnotType::Lease,
         super::LEASE_ACTIVE,
         super::LEASE_ACTIVE,
@@ -134,18 +124,18 @@ fn lease_transition_rules() {
     // Invalid (terminated -> active)
     let err = validate_transition(
         &registry,
-        "autopilot",
+        "lease",
         KnotType::Lease,
         super::LEASE_TERMINATED,
         super::LEASE_ACTIVE,
         false,
     )
     .unwrap_err();
-    assert!(err.to_string().contains("invalid lease transition"));
+    assert!(err.to_string().contains("invalid state transition"));
     // Force overrides invalid
     assert!(validate_transition(
         &registry,
-        "autopilot",
+        "lease",
         KnotType::Lease,
         super::LEASE_TERMINATED,
         super::LEASE_ACTIVE,
@@ -196,7 +186,7 @@ fn explore_runtime_delegates_to_profile_definition() {
     assert_eq!(
         next_happy_path_state(
             &registry,
-            "exploration",
+            "explore",
             KnotType::Explore,
             "ready_for_exploration"
         )
@@ -205,7 +195,7 @@ fn explore_runtime_delegates_to_profile_definition() {
     );
     assert!(is_queue_state_for_profile(
         &registry,
-        "exploration",
+        "explore",
         KnotType::Explore,
         "ready_for_exploration",
     )
@@ -213,7 +203,7 @@ fn explore_runtime_delegates_to_profile_definition() {
     assert_eq!(
         owner_kind_for_state(
             &registry,
-            "exploration",
+            "explore",
             KnotType::Explore,
             &gate,
             "exploration"
@@ -238,26 +228,20 @@ fn queue_and_action_checks_report_unknown_profiles() {
 fn gate_and_lease_queue_action_helpers_cover_remaining_paths() {
     let registry = ProfileRegistry::load().unwrap();
     assert!(
-        is_queue_state_for_profile(&registry, "autopilot", KnotType::Gate, READY_TO_EVALUATE,)
+        is_queue_state_for_profile(&registry, "evaluate", KnotType::Gate, READY_TO_EVALUATE,)
             .unwrap()
     );
-    assert!(is_queue_state_for_profile(
-        &registry,
-        "autopilot",
-        KnotType::Lease,
-        super::LEASE_READY,
-    )
-    .unwrap());
     assert!(
-        is_action_state_for_profile(&registry, "autopilot", KnotType::Gate, EVALUATING,).unwrap()
+        is_queue_state_for_profile(&registry, "lease", KnotType::Lease, super::LEASE_READY,)
+            .unwrap()
     );
-    assert!(is_action_state_for_profile(
-        &registry,
-        "autopilot",
-        KnotType::Lease,
-        super::LEASE_ACTIVE,
-    )
-    .unwrap());
+    assert!(
+        is_action_state_for_profile(&registry, "evaluate", KnotType::Gate, EVALUATING,).unwrap()
+    );
+    assert!(
+        is_action_state_for_profile(&registry, "lease", KnotType::Lease, super::LEASE_ACTIVE,)
+            .unwrap()
+    );
     assert_eq!(queue_state_for_stage("unknown-stage"), None);
 }
 
@@ -382,8 +366,8 @@ fn non_work_outcomes_return_none_without_installed_workflow_lookup() {
         next_outcome_state(
             &registry,
             &root,
-            "custom_flow",
-            "autopilot",
+            "gate_sdlc",
+            "evaluate",
             KnotType::Gate,
             READY_TO_EVALUATE,
             "blocked",

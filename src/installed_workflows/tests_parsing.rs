@@ -4,6 +4,7 @@ use super::bundle_json::parse_bundle_json;
 use super::bundle_toml::{parse_bundle_toml, render_json_bundle_from_toml};
 use super::tests_helpers::{build_prompt_params, render_prompt_template, SAMPLE_BUNDLE};
 use super::*;
+use crate::domain::knot_type::KnotType;
 use crate::profile::OwnerKind;
 
 #[test]
@@ -133,6 +134,66 @@ fn toml_reads_review_hints_per_action() {
 }
 
 #[test]
+fn output_builders_cover_override_fallback_and_missing_state_paths() {
+    let review_state = bundle_json::JsonStateSection {
+        id: "review".to_string(),
+        kind: "action".to_string(),
+        prompt: None,
+        output: Some("note".to_string()),
+        output_hint: Some("inspect".to_string()),
+        review_hint: None,
+    };
+    let json_states = BTreeMap::from([("review", &review_state)]);
+    let json = profile_json::build_outputs_from_json_profile(
+        &BTreeMap::from([(
+            "work".to_string(),
+            bundle_json::JsonOutputEntry {
+                artifact_type: "bogus".to_string(),
+                access_hint: Some("override".to_string()),
+            },
+        )]),
+        &[
+            "work".to_string(),
+            "review".to_string(),
+            "missing".to_string(),
+        ],
+        &json_states,
+    );
+    assert_eq!(json["work"].artifact_type, "bogus");
+    assert_eq!(json["review"].artifact_type, "note");
+    assert!(!json.contains_key("missing"));
+
+    let toml = profile_toml::build_outputs_from_toml_profile(
+        &BTreeMap::from([(
+            "work".to_string(),
+            bundle_toml::BundleOutputEntry {
+                artifact_type: "bogus".to_string(),
+                access_hint: Some("override".to_string()),
+            },
+        )]),
+        &[
+            "work".to_string(),
+            "review".to_string(),
+            "missing".to_string(),
+        ],
+        &BTreeMap::from([(
+            "review".to_string(),
+            bundle_toml::BundleStateSection {
+                kind: "action".to_string(),
+                executor: None,
+                prompt: None,
+                output: Some("note".to_string()),
+                output_hint: Some("inspect".to_string()),
+                review_hint: None,
+            },
+        )]),
+    );
+    assert_eq!(toml["work"].artifact_type, "bogus");
+    assert_eq!(toml["review"].artifact_type, "note");
+    assert!(!toml.contains_key("missing"));
+}
+
+#[test]
 fn builtin_workflow_has_prompts_and_profiles() {
     let workflow = builtin::knots_sdlc_workflow().expect("builtin workflow should build");
     assert!(workflow.builtin);
@@ -140,6 +201,75 @@ fn builtin_workflow_has_prompts_and_profiles() {
     assert!(workflow.prompts.contains_key("planning"));
     assert!(workflow.action_prompts.contains_key("implementation"));
     assert!(workflow.require_profile("autopilot").is_ok());
+}
+
+#[test]
+fn builtin_workflow_slice_excludes_gate_and_explore_actions() {
+    let workflow = builtin::work_sdlc_workflow_for_test().expect("work workflow should build");
+    assert_eq!(workflow.id, "work_sdlc");
+    assert!(workflow.prompts.contains_key("planning"));
+    assert!(workflow.prompts.contains_key("implementation"));
+    assert!(workflow.prompts.contains_key("shipment"));
+    assert!(!workflow.prompts.contains_key("evaluating"));
+    assert!(!workflow.prompts.contains_key("exploration"));
+}
+
+#[test]
+fn builtin_workflow_refs_cover_all_builtin_knot_types() {
+    let refs = [
+        (KnotType::Work, "work_sdlc"),
+        (KnotType::Gate, "gate_sdlc"),
+        (KnotType::Lease, "lease_sdlc"),
+        (KnotType::Explore, "explore_sdlc"),
+    ];
+    for (knot_type, workflow_id) in refs {
+        let reference = builtin::builtin_workflow_ref(knot_type);
+        assert_eq!(reference.workflow_id, workflow_id);
+        assert_eq!(reference.version, Some(1));
+    }
+
+    let workflows = builtin::builtin_workflows().expect("builtin workflows should load");
+    assert_eq!(workflows.len(), 4);
+    assert!(workflows
+        .iter()
+        .any(|(knot_type, workflow)| *knot_type == KnotType::Work && workflow.id == "work_sdlc"));
+    assert!(workflows
+        .iter()
+        .any(|(knot_type, workflow)| *knot_type == KnotType::Gate && workflow.id == "gate_sdlc"));
+    assert!(workflows
+        .iter()
+        .any(|(knot_type, workflow)| *knot_type == KnotType::Lease && workflow.id == "lease_sdlc"));
+    assert!(workflows.iter().any(|(knot_type, workflow)| {
+        *knot_type == KnotType::Explore && workflow.id == "explore_sdlc"
+    }));
+}
+
+#[test]
+fn builtin_non_work_workflows_expose_expected_profiles_and_prompts() {
+    let legacy = builtin::knots_sdlc_workflow_for_test().expect("legacy workflow should build");
+    assert_eq!(legacy.id, "work_sdlc");
+    assert!(legacy.require_profile("autopilot").is_ok());
+
+    let gate = builtin::gate_sdlc_workflow_for_test().expect("gate workflow should build");
+    assert!(gate.builtin);
+    assert_eq!(gate.id, "gate_sdlc");
+    assert_eq!(gate.default_profile.as_deref(), Some("evaluate"));
+    assert!(gate.prompts.contains_key("evaluating"));
+    assert!(gate.require_profile("evaluate").is_ok());
+
+    let lease = builtin::lease_sdlc_workflow_for_test().expect("lease workflow should build");
+    assert!(lease.builtin);
+    assert_eq!(lease.id, "lease_sdlc");
+    assert_eq!(lease.default_profile.as_deref(), Some("lease"));
+    assert!(lease.prompts.contains_key("lease_active"));
+    assert!(lease.require_profile("lease").is_ok());
+
+    let explore = builtin::explore_sdlc_workflow_for_test().expect("explore workflow should build");
+    assert!(explore.builtin);
+    assert_eq!(explore.id, "explore_sdlc");
+    assert_eq!(explore.default_profile.as_deref(), Some("explore"));
+    assert!(explore.prompts.contains_key("exploration"));
+    assert!(explore.require_profile("explore").is_ok());
 }
 
 #[test]
@@ -290,85 +420,4 @@ fn prompt_defaults_cover_param_and_output() {
         Some("operators")
     );
     assert_eq!(params.get("output").map(String::as_str), Some("branch"));
-}
-
-#[test]
-fn output_fallback_prefers_profile_level_over_state_level() {
-    // The SAMPLE_BUNDLE defines output="branch" at the state level for "work".
-    // Add a profile-level outputs section that overrides with "pr".
-    let with_override = SAMPLE_BUNDLE.replace(
-        "[profiles.autopilot]\n\
-         description = \"Custom profile\"\n\
-         phases = [\"main\"]\n",
-        "[profiles.autopilot]\n\
-         description = \"Custom profile\"\n\
-         phases = [\"main\"]\n\
-         \n\
-         [profiles.autopilot.outputs.work]\n\
-         artifact_type = \"pr\"\n\
-         access_hint = \"gh pr view\"\n",
-    );
-    let workflow = parse_bundle_toml(&with_override).expect("bundle should parse");
-    let profile = workflow.require_profile("autopilot").expect("profile");
-    let work_output = profile.outputs.get("work").expect("work output");
-    assert_eq!(work_output.artifact_type, "pr");
-    assert_eq!(work_output.access_hint.as_deref(), Some("gh pr view"));
-}
-
-#[test]
-fn output_fallback_uses_state_level_when_profile_absent() {
-    // SAMPLE_BUNDLE has state-level output="branch" + output_hint="git log"
-    // for "work" but no profile-level [profiles.autopilot.outputs.work].
-    // The fallback chain should pick up the state-level values.
-    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
-    let profile = workflow.require_profile("autopilot").expect("profile");
-    let work_output = profile.outputs.get("work").expect("work output");
-    assert_eq!(work_output.artifact_type, "branch");
-    assert_eq!(work_output.access_hint.as_deref(), Some("git log"));
-}
-
-#[test]
-fn build_prompt_params_propagates_access_hint() {
-    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
-    let profile = workflow.require_profile("autopilot").expect("profile");
-    let prompt = workflow.prompt_for_action_state("work").expect("prompt");
-    let params = build_prompt_params(&workflow, profile, prompt);
-    assert_eq!(
-        params.get("output_hint").map(String::as_str),
-        Some("git log"),
-    );
-}
-
-#[test]
-fn build_prompt_params_omits_hint_when_absent() {
-    let workflow = parse_bundle_toml(SAMPLE_BUNDLE).expect("bundle should parse");
-    let profile = workflow.require_profile("autopilot").expect("profile");
-    // "review" state has output="note" but no access_hint.
-    let prompt = workflow.prompt_for_action_state("review").expect("prompt");
-    let params = build_prompt_params(&workflow, profile, prompt);
-    assert_eq!(params.get("output").map(String::as_str), Some("note"));
-    assert!(
-        !params.contains_key("output_hint"),
-        "output_hint should be absent when access_hint is None",
-    );
-}
-
-#[test]
-fn build_prompt_params_uses_empty_output_when_state_omits_artifact() {
-    // When a state has no output declaration, the fallback chain still
-    // creates an ActionOutputDef with empty artifact_type. Verify the
-    // param is present but empty, and output_hint is absent.
-    let no_output = SAMPLE_BUNDLE
-        .replace("output = \"branch\"\noutput_hint = \"git log\"\n", "")
-        .replace("output = \"note\"\n", "");
-    let workflow = parse_bundle_toml(&no_output).expect("bundle should parse");
-    let profile = workflow.require_profile("autopilot").expect("profile");
-    let prompt = workflow.prompt_for_action_state("work").expect("prompt");
-    let params = build_prompt_params(&workflow, profile, prompt);
-    assert_eq!(
-        params.get("output").map(String::as_str),
-        Some(""),
-        "output should be empty string when state has no artifact_type",
-    );
-    assert!(!params.contains_key("output_hint"));
 }

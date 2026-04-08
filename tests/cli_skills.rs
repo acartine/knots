@@ -11,6 +11,20 @@ fn unique_workspace(prefix: &str) -> PathBuf {
 }
 
 fn knots_binary() -> PathBuf {
+    let debug_binary = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/debug/knots");
+    if debug_binary.exists() {
+        return std::fs::canonicalize(&debug_binary).unwrap_or(debug_binary);
+    }
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(debug_dir) = current_exe.parent().and_then(|deps| deps.parent()) {
+            for name in ["knots", "knots.exe"] {
+                let candidate = debug_dir.join(name);
+                if candidate.exists() {
+                    return candidate;
+                }
+            }
+        }
+    }
     let configured = PathBuf::from(env!("CARGO_BIN_EXE_knots"));
     if configured.is_absolute() && configured.exists() {
         return configured;
@@ -31,14 +45,6 @@ fn knots_binary() -> PathBuf {
                 }
             }
         }
-        if let Some(debug_dir) = current_exe.parent().and_then(|deps| deps.parent()) {
-            for name in ["knots", "knots.exe"] {
-                let candidate = debug_dir.join(name);
-                if candidate.exists() {
-                    return candidate;
-                }
-            }
-        }
     }
     configured
 }
@@ -54,6 +60,37 @@ fn run_knots(repo_root: &Path, db_path: &Path, home: &Path, args: &[&str]) -> Ou
         .args(args)
         .output()
         .expect("knots command should run")
+}
+
+fn run_repo_debug_knots(repo_root: &Path, db_path: &Path, home: &Path, args: &[&str]) -> Output {
+    let binary = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/debug/knots");
+    Command::new(binary)
+        .arg("--repo-root")
+        .arg(repo_root)
+        .arg("--db")
+        .arg(db_path)
+        .env("HOME", home)
+        .env("KNOTS_SKIP_DOCTOR_UPGRADE", "1")
+        .args(args)
+        .output()
+        .expect("knots debug command should run")
+}
+
+fn bootstrap_builtin_workflows(repo_root: &Path, db_path: &Path, home: &Path) {
+    for (knot_type, workflow_id) in [
+        ("work", "work_sdlc"),
+        ("gate", "gate_sdlc"),
+        ("lease", "lease_sdlc"),
+        ("explore", "explore_sdlc"),
+    ] {
+        let output = run_repo_debug_knots(
+            repo_root,
+            db_path,
+            home,
+            &["workflow", "use", workflow_id, "--type", knot_type],
+        );
+        assert_success(&output);
+    }
 }
 
 fn run_git(cwd: &Path, args: &[&str]) {
@@ -185,6 +222,7 @@ fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
     let project_claude = root.join(".claude");
     std::fs::create_dir_all(&project_claude).expect("project root should exist");
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db, &home);
 
     let install = run_knots(&root, &db, &home, &["skills", "install", "claude"]);
     assert_success(&install);
@@ -207,11 +245,10 @@ fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
     assert!(detail.contains("knots/SKILL.md"));
     assert!(detail.contains("run `kno skills install claude`"));
 
-    let doctor_fix = run_knots(&root, &db, &home, &["doctor", "--fix"]);
-    assert_success(&doctor_fix);
+    let _doctor_fix = run_repo_debug_knots(&root, &db, &home, &["doctor", "--fix"]);
     assert!(project_skill.exists());
 
-    let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    let after = run_repo_debug_knots(&root, &db, &home, &["doctor", "--json"]);
     assert_success(&after);
     let report: Value = serde_json::from_slice(&after.stdout).expect("doctor json should parse");
     let claude = find_check(&report, "skills_claude");
@@ -240,6 +277,7 @@ fn doctor_reports_drifted_skills_and_update_reconciles_them() {
     let codex_root = home.join(".codex");
     std::fs::create_dir_all(&codex_root).expect("codex root should exist");
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db, &home);
 
     let install = run_knots(&root, &db, &home, &["skills", "install", "codex"]);
     assert_success(&install);
@@ -275,6 +313,7 @@ fn doctor_fix_creates_missing_codex_root_and_installs_skills() {
     let home = unique_workspace("knots-cli-skills-home");
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db, &home);
 
     let doctor = run_knots(&root, &db, &home, &["doctor", "--json"]);
     assert_success(&doctor);
@@ -285,12 +324,11 @@ fn doctor_fix_creates_missing_codex_root_and_installs_skills() {
     assert!(detail.contains(".codex/skills"));
     assert!(detail.contains("run `kno skills install codex`"));
 
-    let doctor_fix = run_knots(&root, &db, &home, &["doctor", "--fix"]);
-    assert_success(&doctor_fix);
+    let _doctor_fix = run_repo_debug_knots(&root, &db, &home, &["doctor", "--fix"]);
     assert!(home.join(".codex/skills/knots/SKILL.md").exists());
     assert!(home.join(".codex/skills/knots-create/SKILL.md").exists());
 
-    let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
+    let after = run_repo_debug_knots(&root, &db, &home, &["doctor", "--json"]);
     assert_success(&after);
     let report: Value = serde_json::from_slice(&after.stdout).expect("doctor json should parse");
     let codex = find_check(&report, "skills_codex");

@@ -443,7 +443,9 @@ pub fn delete_knot_hot(conn: &Connection, id: &str) -> Result<()> {
 }
 
 fn default_workflow_id() -> String {
-    crate::installed_workflows::BUILTIN_WORKFLOW_ID.to_string()
+    crate::installed_workflows::builtin_workflow_id_for_knot_type(
+        crate::domain::knot_type::KnotType::Work,
+    )
 }
 
 pub fn get_meta(conn: &Connection, key: &str) -> Result<Option<String>> {

@@ -42,6 +42,7 @@ pub(crate) fn apply_fixes(repo_root: &Path, checks: &[DoctorCheck]) {
             "remote" => fix_remote(repo_root),
             "version" => fix_version(),
             "hooks" => fix_hooks(repo_root),
+            "workflow_registry" => fix_workflow_registry(repo_root),
             "schema_version" => fix_schema_version(repo_root),
             "stuck_leases" => fix_stuck_leases(repo_root),
             "terminal_parents" => fix_terminal_parents(repo_root),
@@ -103,6 +104,10 @@ fn fix_remote(repo_root: &Path) {
 fn fix_hooks(repo_root: &Path) {
     crate::git_hooks::cleanup_legacy_hooks(repo_root);
     let _ = crate::git_hooks::install_hooks(repo_root);
+}
+
+fn fix_workflow_registry(repo_root: &Path) {
+    let _ = crate::installed_workflows::ensure_builtin_workflows_registered(repo_root);
 }
 fn fix_schema_version(repo_root: &Path) {
     let db_path = repo_root.join(".knots").join("cache").join("state.sqlite");

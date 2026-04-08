@@ -96,6 +96,22 @@ fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
         .expect("knots command should run")
 }
 
+fn bootstrap_builtin_workflows(repo_root: &Path, db_path: &Path) {
+    for (knot_type, workflow_id) in [
+        ("work", "work_sdlc"),
+        ("gate", "gate_sdlc"),
+        ("lease", "lease_sdlc"),
+        ("explore", "explore_sdlc"),
+    ] {
+        let output = run_knots(
+            repo_root,
+            db_path,
+            &["workflow", "use", workflow_id, "--type", knot_type],
+        );
+        assert_success(&output);
+    }
+}
+
 fn assert_success(output: &Output) {
     assert!(
         output.status.success(),
@@ -136,6 +152,7 @@ fn doctor_warns_and_fix_resolves_terminal_parents_recursively() {
     let root = unique_workspace("knots-cli-doctor-terminal-parents");
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db);
 
     let grandparent = create_knot(&root, &db, "Grandparent", "implementation");
     let parent = create_knot(&root, &db, "Parent", "implementation");
@@ -196,6 +213,7 @@ fn doctor_ignores_deferred_children_when_checking_terminal_parents() {
     let root = unique_workspace("knots-cli-doctor-deferred-passive");
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db);
 
     let parent = create_knot(&root, &db, "Parent", "implementation");
     let shipped = create_knot(&root, &db, "Shipped child", "shipped");

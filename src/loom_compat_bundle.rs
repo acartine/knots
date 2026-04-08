@@ -1,6 +1,7 @@
 use std::io;
 use std::path::Path;
 
+#[cfg(test)]
 pub const BUNDLE_JSON: &str = include_str!("../loom/knots_sdlc/dist/bundle.json");
 
 const LOOM_TOML: &str = include_str!("../loom/knots_sdlc/loom.toml");

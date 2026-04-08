@@ -22,27 +22,21 @@ impl StorePaths {
     pub fn db_path(&self) -> PathBuf {
         self.root.join("cache").join("state.sqlite")
     }
-
     pub fn locks_dir(&self) -> PathBuf {
         self.root.join("locks")
     }
-
     pub fn queue_dir(&self) -> PathBuf {
         self.root.join("queue")
     }
-
     pub fn repo_lock_path(&self) -> PathBuf {
         self.locks_dir().join("repo.lock")
     }
-
     pub fn cache_lock_path(&self) -> PathBuf {
         self.root.join("cache").join("cache.lock")
     }
-
     pub fn write_queue_worker_lock_path(&self) -> PathBuf {
         self.locks_dir().join("write_queue_worker.lock")
     }
-
     pub fn worktree_path(&self) -> PathBuf {
         self.root.join("_worktree")
     }
@@ -54,6 +48,15 @@ pub struct ProjectContext {
     pub repo_root: PathBuf,
     pub store_paths: StorePaths,
     pub distribution: DistributionMode,
+}
+
+impl ProjectContext {
+    pub fn workflow_root(&self) -> &Path {
+        match self.distribution {
+            DistributionMode::Git => &self.repo_root,
+            DistributionMode::LocalOnly => &self.store_paths.root,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

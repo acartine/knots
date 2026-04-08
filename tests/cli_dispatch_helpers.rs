@@ -121,6 +121,22 @@ pub fn run_knots(repo_root: &Path, db_path: &Path, args: &[&str]) -> Output {
     command.output().expect("knots command should run")
 }
 
+pub fn bootstrap_builtin_workflows(repo_root: &Path, db_path: &Path) {
+    for (knot_type, workflow_id) in [
+        ("work", "work_sdlc"),
+        ("gate", "gate_sdlc"),
+        ("lease", "lease_sdlc"),
+        ("explore", "explore_sdlc"),
+    ] {
+        let output = run_knots(
+            repo_root,
+            db_path,
+            &["workflow", "use", workflow_id, "--type", knot_type],
+        );
+        assert_success(&output);
+    }
+}
+
 pub fn set_meta_value(db_path: &Path, key: &str, value: &str) {
     let conn = rusqlite::Connection::open(db_path).expect("db should open");
     conn.execute(

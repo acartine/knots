@@ -13,6 +13,8 @@ use super::*;
 fn unique_dir(prefix: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("{}-{}", prefix, uuid::Uuid::now_v7()));
     std::fs::create_dir_all(&dir).expect("temp dir should be creatable");
+    crate::installed_workflows::ensure_builtin_workflows_registered(&dir)
+        .expect("builtin workflows should register");
     dir
 }
 

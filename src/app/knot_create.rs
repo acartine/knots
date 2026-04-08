@@ -73,28 +73,25 @@ impl App {
         initial_state: Option<&str>,
         knot_type: KnotType,
     ) -> Result<(&crate::workflow::ProfileDefinition, String), AppError> {
+        let use_default_profile =
+            profile_id.is_none_or(|raw| raw.trim().eq_ignore_ascii_case("default"));
         let resolved_wf = match workflow_id {
             Some(id) => Some(id.to_string()),
-            None if profile_id.is_none() => {
-                Some(self.default_workflow_id_for_knot_type(knot_type)?)
-            }
+            None if use_default_profile => Some(self.default_workflow_id_for_knot_type(knot_type)?),
             None => None,
         };
-        let default_profile = if profile_id.is_none() {
-            Some(if knot_type == KnotType::Explore {
-                self.default_profile_id_for_knot_type(knot_type)?
-            } else {
-                match resolved_wf.as_deref() {
-                    Some(wf) => self.default_profile_id_for_workflow(wf)?,
-                    None => self.default_profile_id_for_knot_type(knot_type)?,
-                }
+        let default_profile = if use_default_profile {
+            Some(match resolved_wf.as_deref() {
+                Some(wf) => self.default_profile_id_for_workflow(wf)?,
+                None => self.default_profile_id_for_knot_type(knot_type)?,
             })
         } else {
             None
         };
-        let resolved_profile = match profile_id {
-            Some(raw) => Some(self.resolve_profile_id(raw, resolved_wf.as_deref())?),
-            None => default_profile,
+        let resolved_profile = match (profile_id, use_default_profile) {
+            (_, true) => default_profile,
+            (Some(raw), false) => Some(self.resolve_profile_id(raw, resolved_wf.as_deref())?),
+            (None, false) => None,
         };
         let profile = self.profile_registry.resolve(resolved_profile.as_deref())?;
         if let Some(wf) = resolved_wf.as_deref() {

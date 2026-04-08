@@ -158,14 +158,18 @@ pub(super) fn required_workflow_id(object: &Map<String, Value>, profile_id: &str
     if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
         let trimmed = value.trim();
         if !trimmed.is_empty() {
-            return installed_workflows::repair_legacy_builtin_workflow_id(trimmed);
+            return installed_workflows::normalize_workflow_id(trimmed);
         }
     }
 
     profile_id
         .split_once('/')
         .map(|(wid, _)| wid.to_string())
-        .unwrap_or_else(|| installed_workflows::BUILTIN_WORKFLOW_ID.to_string())
+        .unwrap_or_else(|| {
+            installed_workflows::builtin_workflow_id_for_knot_type(
+                crate::domain::knot_type::KnotType::Work,
+            )
+        })
 }
 
 pub(super) fn optional_string(value: Option<&Value>) -> Option<String> {

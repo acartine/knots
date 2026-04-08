@@ -1,0 +1,22 @@
+workflow gate_sdlc v1 {
+
+    action evaluating {
+        produce agent
+        constraint read_only
+        constraint no_git_write
+        constraint metadata_only
+    }
+
+    terminal shipped
+    terminal abandoned
+    escape deferred
+
+    * -> abandoned
+    * -> deferred
+
+    phase evaluating_phase {
+        produce evaluating
+    }
+
+    include "profiles/evaluate.loom"
+}

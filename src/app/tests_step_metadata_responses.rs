@@ -77,6 +77,8 @@ changes = "ready_for_work"
 fn unique_workspace() -> std::path::PathBuf {
     let root = std::env::temp_dir().join(format!("knots-app-step-meta-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
+    crate::installed_workflows::ensure_builtin_workflows_registered(&root)
+        .expect("builtin workflows should register");
     root
 }
 
@@ -115,14 +117,6 @@ fn install_review_flow(root: &Path) {
     let wf_root = root.join(".knots/workflows/review_flow/1");
     std::fs::create_dir_all(&wf_root).expect("workflow dir should create");
     std::fs::write(wf_root.join("bundle.toml"), RESPONSE_REVIEW_FLOW).expect("bundle should write");
-    let current = root.join(".knots/workflows/current");
-    std::fs::create_dir_all(current.parent().expect("current parent should exist"))
-        .expect("current dir should create");
-    std::fs::write(
-        current,
-        "current_workflow = \"review_flow\"\ncurrent_version = 1\n",
-    )
-    .expect("workflow config should write");
 }
 
 #[test]
@@ -263,7 +257,7 @@ fn gate_show_response_includes_owner_metadata() {
             "Gate metadata",
             Some("desc"),
             Some("ready_to_evaluate"),
-            Some("autopilot"),
+            Some("default"),
             None,
             CreateKnotOptions {
                 knot_type: crate::domain::knot_type::KnotType::Gate,

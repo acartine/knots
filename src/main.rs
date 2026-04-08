@@ -15,6 +15,7 @@ mod db;
 mod dispatch;
 mod doctor;
 mod doctor_fix;
+mod doctor_workflows;
 mod domain;
 mod events;
 mod fsck;
@@ -42,14 +43,20 @@ mod loom_compat_harness;
 mod loom_compat_harness_tests;
 #[cfg(test)]
 mod loom_compat_prompt_resolution_tests;
+mod loom_explore_bundle;
+mod loom_gate_bundle;
+mod loom_lease_bundle;
+mod loom_work_bundle;
 #[cfg(test)]
 mod main_tests;
 mod managed_skills;
 mod perf;
 mod poll_claim;
 mod profile;
+mod profile_behavior;
 mod profile_commands;
 mod profile_consts;
+#[cfg(test)]
 mod profile_normalize;
 mod progress;
 mod project;
@@ -216,7 +223,7 @@ fn run() -> Result<(), app::AppError> {
         return profile_commands::run_profile_command_with_context(args, &context, &db_path);
     }
     if let Commands::Workflow(args) = &cli.command {
-        return workflow_commands::run_workflow_command(args, &context.repo_root);
+        return workflow_commands::run_workflow_command(args, context.workflow_root());
     }
     if let Commands::Loom(args) = &cli.command {
         return loom_compat_commands::run_loom_command(args, &context.repo_root);

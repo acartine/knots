@@ -8,6 +8,8 @@ use uuid::Uuid;
 fn unique_workspace(prefix: &str) -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&path).expect("workspace should be creatable");
+    crate::installed_workflows::ensure_builtin_workflows_registered(&path)
+        .expect("builtin workflows should register");
     path
 }
 
@@ -160,13 +162,6 @@ fn custom_bundle_step_metadata_includes_review_hint() {
     std::fs::create_dir_all(&wf_root).expect("dir should create");
     std::fs::write(wf_root.join("bundle.toml"), BUNDLE_WITH_REVIEW_HINT)
         .expect("bundle should write");
-    std::fs::create_dir_all(workspace.join(".knots/workflows"))
-        .expect("workflows dir should exist");
-    std::fs::write(
-        workspace.join(".knots/workflows/current"),
-        "current_workflow = \"review_flow\"\ncurrent_version = 1\n",
-    )
-    .expect("config should write");
 
     let registry = ProfileRegistry::load_for_repo(&workspace).expect("registry should load");
     let gate = GateData::default();
@@ -309,7 +304,7 @@ fn gate_knot_step_metadata_reflects_gate_owner() {
     };
     let meta = step_metadata_for_state(
         &registry,
-        "autopilot",
+        "evaluate",
         KnotType::Gate,
         &gate,
         "ready_to_evaluate",
@@ -329,7 +324,7 @@ fn gate_knot_step_metadata_reflects_gate_owner() {
     };
     let agent_meta = step_metadata_for_state(
         &registry,
-        "autopilot",
+        "evaluate",
         KnotType::Gate,
         &agent_gate,
         "evaluating",
@@ -348,20 +343,14 @@ fn gate_knot_step_metadata_reflects_gate_owner() {
 fn lease_knot_step_metadata_for_active_state() {
     let registry = ProfileRegistry::load().expect("registry should load");
     let gate = GateData::default();
-    let meta = step_metadata_for_state(
-        &registry,
-        "autopilot",
-        KnotType::Lease,
-        &gate,
-        "lease_ready",
-    )
-    .expect("should resolve")
-    .expect("should have metadata");
+    let meta = step_metadata_for_state(&registry, "lease", KnotType::Lease, &gate, "lease_ready")
+        .expect("should resolve")
+        .expect("should have metadata");
     assert_eq!(meta.action_state, "lease_active");
 
     let terminated = step_metadata_for_state(
         &registry,
-        "autopilot",
+        "lease",
         KnotType::Lease,
         &gate,
         "lease_terminated",
