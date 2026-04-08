@@ -463,3 +463,6 @@ fn tool_for_check_name(name: &str) -> Option<SkillTool> {
 #[cfg(test)]
 #[path = "managed_skills_tests.rs"]
 mod tests;
+#[cfg(test)]
+#[path = "managed_skills_tests_ext.rs"]
+mod tests_ext;
