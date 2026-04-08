@@ -1,21 +1,20 @@
 use crate::profile::ProfileError;
 
-use super::{render_prompt_body, BundleFormat, WorkflowDefinition, COMPATIBILITY_WORKFLOW_ID};
+use super::{render_prompt_body, BundleFormat, WorkflowDefinition};
 
-/// Test-visible wrapper to build the compatibility workflow.
+/// Test-visible wrapper to build the bundled Knots workflow.
 #[cfg(test)]
-pub fn compatibility_workflow_for_test() -> Result<WorkflowDefinition, ProfileError> {
-    compatibility_workflow()
+pub fn knots_sdlc_workflow_for_test() -> Result<WorkflowDefinition, ProfileError> {
+    knots_sdlc_workflow()
 }
 
-pub(super) fn compatibility_workflow() -> Result<WorkflowDefinition, ProfileError> {
+pub(super) fn knots_sdlc_workflow() -> Result<WorkflowDefinition, ProfileError> {
     let mut workflow =
         super::parse_bundle(crate::loom_compat_bundle::BUNDLE_JSON, BundleFormat::Json)?;
 
-    let workflow_id = COMPATIBILITY_WORKFLOW_ID.to_string();
-    workflow.id = workflow_id.clone();
+    let workflow_id = workflow.id.clone();
     workflow.builtin = true;
-    workflow.description = Some("Built-in Knots compatibility workflow".to_string());
+    workflow.description = Some("Built-in Knots workflow".to_string());
     if workflow.default_profile.is_none() {
         workflow.default_profile = Some("autopilot".to_string());
     }

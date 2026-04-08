@@ -245,12 +245,12 @@ fn loom_failures_and_invalid_utf8_reported() {
 }
 
 #[test]
-fn compatibility_workflow_renders_builtin_prompt_variants_per_profile() {
+fn builtin_workflow_renders_builtin_prompt_variants_per_profile() {
     let root = unique_workspace("knots-installed-workflows-compat-prompts");
     let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
     let workflow = registry
-        .require_workflow(COMPATIBILITY_WORKFLOW_ID)
-        .expect("compatibility workflow should exist");
+        .require_workflow(BUILTIN_WORKFLOW_ID)
+        .expect("builtin workflow should exist");
     let branch_profile = workflow
         .require_profile("autopilot")
         .expect("autopilot should exist");

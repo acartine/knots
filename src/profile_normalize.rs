@@ -232,7 +232,7 @@ fn norm_scalar(raw: &str) -> Option<String> {
     }
 }
 fn builtin_wf_id() -> String {
-    installed_workflows::COMPATIBILITY_WORKFLOW_ID.into()
+    installed_workflows::BUILTIN_WORKFLOW_ID.into()
 }
 fn canonical_transitions() -> Vec<WorkflowTransition> {
     vec![

@@ -392,7 +392,7 @@ fn exploration_rejects_combined_workflow_flag() {
 }
 
 #[test]
-fn exploration_new_creates_knot_with_exploration_profile() {
+fn exploration_new_creates_knot_with_explore_type() {
     let root = unique_workspace("knots-wd-explore-new");
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
@@ -401,5 +401,11 @@ fn exploration_new_creates_knot_with_exploration_profile() {
         .expect("exploration new should succeed");
     let lower = output.to_ascii_lowercase();
     assert!(lower.contains("ready_for_exploration"), "output: {output}");
+    let knots = app.list_knots().expect("list should succeed");
+    assert_eq!(knots.len(), 1);
+    assert_eq!(
+        knots[0].knot_type,
+        crate::domain::knot_type::KnotType::Explore
+    );
     let _ = std::fs::remove_dir_all(&root);
 }

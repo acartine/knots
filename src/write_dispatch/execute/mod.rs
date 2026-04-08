@@ -1,5 +1,6 @@
 use crate::app::{App, AppError, CreateKnotOptions, StateActorMetadata};
 use crate::dispatch::knot_ref;
+use crate::domain::knot_type::KnotType;
 use crate::domain::step_history::StepActorInfo;
 use crate::poll_claim;
 use crate::ui;
@@ -63,10 +64,13 @@ fn execute_new(app: &App, args: &crate::write_queue::NewOperation) -> Result<Str
             "cannot combine -e (exploration) with --workflow".to_string(),
         ));
     }
+    let knot_type = if args.exploration {
+        KnotType::Explore
+    } else {
+        parse_knot_type_arg(args.knot_type.as_deref())?
+    };
     let profile_override = if args.fast {
         Some(app.default_quick_profile_id()?)
-    } else if args.exploration {
-        Some("exploration".to_string())
     } else {
         None
     };
@@ -76,7 +80,6 @@ fn execute_new(app: &App, args: &crate::write_queue::NewOperation) -> Result<Str
     } else {
         args.workflow.as_deref()
     };
-    let knot_type = parse_knot_type_arg(args.knot_type.as_deref())?;
     let gate_data = parse_gate_data_args(
         args.gate_owner_kind.as_deref(),
         &args.gate_failure_modes,

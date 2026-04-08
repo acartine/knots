@@ -198,8 +198,8 @@ impl ProfileRegistry {
     #[cfg(test)]
     pub fn load() -> Result<Self, ProfileError> {
         let mut registry = Self::from_toml(PROFILES_TOML)?;
-        let compat = installed_workflows::compatibility::compatibility_workflow_for_test()?;
-        for profile in compat.list_profiles() {
+        let builtin = installed_workflows::builtin::knots_sdlc_workflow_for_test()?;
+        for profile in builtin.list_profiles() {
             if !registry.profiles.contains_key(&profile.id) {
                 registry
                     .aliases
@@ -466,7 +466,7 @@ pub fn normalize_profile_id(raw: &str) -> Option<String> {
 }
 
 fn builtin_workflow_id() -> String {
-    installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string()
+    installed_workflows::BUILTIN_WORKFLOW_ID.to_string()
 }
 
 fn normalize_state_alias(raw: &str) -> &str {

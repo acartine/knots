@@ -366,3 +366,14 @@ fn new_without_exploration_defaults_false() {
         other => panic!("expected New, got {:?}", other),
     }
 }
+
+#[test]
+fn new_type_explore_parses() {
+    let cli = parse(&["kno", "new", "--type", "explore", "Investigate"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert_eq!(args.knot_type.as_deref(), Some("explore"));
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}

@@ -1,3 +1,4 @@
+use crate::domain::knot_type::KnotType;
 use crate::installed_workflows;
 use crate::workflow::ProfileRegistry;
 
@@ -8,6 +9,26 @@ impl App {
     pub fn default_profile_id(&self) -> Result<String, AppError> {
         let wf = self.default_workflow_id()?;
         self.default_profile_id_for_workflow(&wf)
+    }
+
+    pub fn default_workflow_id_for_knot_type(
+        &self,
+        knot_type: KnotType,
+    ) -> Result<String, AppError> {
+        match knot_type {
+            KnotType::Explore => Ok(installed_workflows::BUILTIN_WORKFLOW_ID.to_string()),
+            _ => self.default_workflow_id(),
+        }
+    }
+
+    pub fn default_profile_id_for_knot_type(
+        &self,
+        knot_type: KnotType,
+    ) -> Result<String, AppError> {
+        match knot_type {
+            KnotType::Explore => Ok(self.profile_registry.require("exploration")?.id.clone()),
+            _ => self.default_profile_id(),
+        }
     }
 
     pub fn set_default_profile_id(&self, profile_id: &str) -> Result<String, AppError> {
@@ -31,7 +52,7 @@ impl App {
         if let Some(id) = self.resolve_config_profile(&config.default_quick_profile) {
             return Ok(id);
         }
-        if self.current_workflow_id()? != installed_workflows::COMPATIBILITY_WORKFLOW_ID {
+        if !installed_workflows::is_builtin_workflow_id(&self.current_workflow_id()?) {
             return self.default_profile_id();
         }
         let profiles = self.profile_registry.list();
@@ -70,6 +91,8 @@ pub(crate) fn resolve_profile_id_inner(
     raw_profile_id: &str,
     workflow_id: Option<&str>,
 ) -> Result<String, AppError> {
+    let workflow_id = workflow_id.map(installed_workflows::canonical_workflow_id);
+    let workflow_id = workflow_id.as_deref();
     if let Some(wf) = workflow_id {
         let namespaced = installed_workflows::namespaced_profile_id(wf, raw_profile_id);
         if let Ok(p) = registry.require(&namespaced) {
@@ -94,7 +117,9 @@ fn resolve_slash_profile(
         return Ok(None);
     };
     if let Some(wf) = workflow_id {
-        if prefix == wf {
+        if prefix == wf
+            || (wf == installed_workflows::BUILTIN_WORKFLOW_ID && prefix == "compatibility")
+        {
             let namespaced = installed_workflows::namespaced_profile_id(wf, suffix);
             if let Ok(p) = registry.require(&namespaced) {
                 return Ok(Some(p.id.clone()));
@@ -103,7 +128,7 @@ fn resolve_slash_profile(
     } else if let Ok(p) = registry.require(raw_profile_id) {
         return Ok(Some(p.id.clone()));
     } else if let Ok(p) = registry.require(suffix) {
-        if p.workflow_id == installed_workflows::COMPATIBILITY_WORKFLOW_ID {
+        if installed_workflows::is_builtin_workflow_id(&p.workflow_id) {
             return Ok(Some(p.id.clone()));
         }
     }
@@ -140,7 +165,7 @@ fn default_profile_id_for_workflow_inner(app: &App, workflow_id: &str) -> Result
             return Ok(result);
         }
     }
-    if workflow_id == installed_workflows::COMPATIBILITY_WORKFLOW_ID {
+    if installed_workflows::is_builtin_workflow_id(workflow_id) {
         return app.fallback_profile_id();
     }
     Err(AppError::InvalidArgument(format!(

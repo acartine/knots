@@ -210,7 +210,7 @@ fn finalize_projection(
     knot_id: &str,
 ) -> Result<(), AppError> {
     if projection.workflow_id.trim().is_empty() {
-        projection.workflow_id = installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string();
+        projection.workflow_id = installed_workflows::BUILTIN_WORKFLOW_ID.to_string();
     }
     if projection.profile_id.trim().is_empty() {
         if !projection.workflow_id.trim().is_empty() {

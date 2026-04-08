@@ -10,16 +10,23 @@ pub enum KnotType {
     Work,
     Gate,
     Lease,
+    Explore,
 }
 
 impl KnotType {
-    pub const ALL: [KnotType; 3] = [KnotType::Work, KnotType::Gate, KnotType::Lease];
+    pub const ALL: [KnotType; 4] = [
+        KnotType::Work,
+        KnotType::Gate,
+        KnotType::Lease,
+        KnotType::Explore,
+    ];
 
     pub fn as_str(self) -> &'static str {
         match self {
             KnotType::Work => "work",
             KnotType::Gate => "gate",
             KnotType::Lease => "lease",
+            KnotType::Explore => "explore",
         }
     }
 }
@@ -39,6 +46,7 @@ impl FromStr for KnotType {
             "work" | "task" | "" => Ok(KnotType::Work),
             "gate" => Ok(KnotType::Gate),
             "lease" => Ok(KnotType::Lease),
+            "explore" | "exploration" => Ok(KnotType::Explore),
             _ => Err(ParseKnotTypeError {
                 value: value.to_string(),
             }),
@@ -177,6 +185,16 @@ mod tests {
     }
 
     #[test]
+    fn parses_explore_type() {
+        assert_eq!(KnotType::from_str("explore").unwrap(), KnotType::Explore);
+        assert_eq!(
+            KnotType::from_str("exploration").unwrap(),
+            KnotType::Explore
+        );
+        assert_eq!(KnotType::Explore.as_str(), "explore");
+    }
+
+    #[test]
     fn serde_round_trip_lease() {
         let serialized = serde_json::to_string(&KnotType::Lease).expect("serialize should succeed");
         assert_eq!(serialized, "\"lease\"");
@@ -188,6 +206,12 @@ mod tests {
     #[test]
     fn parse_knot_type_lease() {
         assert_eq!(parse_knot_type(Some("lease")), KnotType::Lease);
+    }
+
+    #[test]
+    fn parse_knot_type_explore() {
+        assert_eq!(parse_knot_type(Some("explore")), KnotType::Explore);
+        assert_eq!(parse_knot_type(Some("exploration")), KnotType::Explore);
     }
 
     #[test]

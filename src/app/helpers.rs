@@ -44,7 +44,7 @@ pub(crate) fn non_empty(raw: &str) -> Option<String> {
 pub(crate) fn canonical_profile_id(raw: &str, workflow_id: &str) -> String {
     let trimmed = raw.trim();
     let unqualified =
-        if workflow_id != installed_workflows::COMPATIBILITY_WORKFLOW_ID && trimmed.contains('/') {
+        if !installed_workflows::is_builtin_workflow_id(workflow_id) && trimmed.contains('/') {
             trimmed
         } else {
             trimmed.rsplit('/').next().unwrap_or(trimmed)
@@ -53,7 +53,7 @@ pub(crate) fn canonical_profile_id(raw: &str, workflow_id: &str) -> String {
 }
 
 pub(crate) fn profile_lookup_id(workflow_id: &str, profile_id: &str) -> String {
-    if workflow_id != installed_workflows::COMPATIBILITY_WORKFLOW_ID && !profile_id.contains('/') {
+    if !installed_workflows::is_builtin_workflow_id(workflow_id) && !profile_id.contains('/') {
         format!("{workflow_id}/{profile_id}")
     } else {
         profile_id.to_string()
@@ -154,7 +154,7 @@ pub(crate) fn require_state_for_knot_type(
     state: &str,
 ) -> Result<(), AppError> {
     match knot_type {
-        KnotType::Work => Ok(profile.require_state(state)?),
+        KnotType::Work | KnotType::Explore => Ok(profile.require_state(state)?),
         KnotType::Gate => {
             if matches!(
                 state,

@@ -299,9 +299,9 @@ fn rehydrate_from_events_reports_missing_workflow_and_invalid_json() {
         "work_item".to_string(),
         "2026-02-25T10:00:00Z".to_string(),
     );
-    let missing = missing.expect("rehydrate should fall back to compatibility workflow");
-    assert_eq!(missing.workflow_id, "compatibility");
-    assert_eq!(missing.profile_id, "compatibility");
+    let missing = missing.expect("rehydrate should fall back to builtin workflow");
+    assert_eq!(missing.workflow_id, "knots_sdlc");
+    assert_eq!(missing.profile_id, "knots_sdlc");
 
     let full_path = root
         .join(".knots")

@@ -133,9 +133,8 @@ fn toml_reads_review_hints_per_action() {
 }
 
 #[test]
-fn compatibility_workflow_has_prompts_and_profiles() {
-    let workflow =
-        compatibility::compatibility_workflow().expect("compatibility workflow should build");
+fn builtin_workflow_has_prompts_and_profiles() {
+    let workflow = builtin::knots_sdlc_workflow().expect("builtin workflow should build");
     assert!(workflow.builtin);
     assert_eq!(workflow.default_profile.as_deref(), Some("autopilot"));
     assert!(workflow.prompts.contains_key("planning"));

@@ -23,6 +23,16 @@ fn lease_initial_state_is_lease_ready() {
 }
 
 #[test]
+fn explore_initial_state_is_ready_for_exploration() {
+    let registry = ProfileRegistry::load().unwrap();
+    let profile = registry.require("exploration").unwrap();
+    assert_eq!(
+        initial_state(KnotType::Explore, profile),
+        "ready_for_exploration"
+    );
+}
+
+#[test]
 fn lease_next_happy_path_follows_lifecycle() {
     let registry = ProfileRegistry::load().unwrap();
     assert_eq!(
@@ -173,6 +183,40 @@ fn work_runtime_delegates_to_profile_definition() {
             KnotType::Work,
             &gate,
             "implementation"
+        )
+        .unwrap(),
+        Some(OwnerKind::Agent)
+    );
+}
+
+#[test]
+fn explore_runtime_delegates_to_profile_definition() {
+    let registry = ProfileRegistry::load().unwrap();
+    let gate = GateData::default();
+    assert_eq!(
+        next_happy_path_state(
+            &registry,
+            "exploration",
+            KnotType::Explore,
+            "ready_for_exploration"
+        )
+        .unwrap(),
+        Some("exploration".to_string())
+    );
+    assert!(is_queue_state_for_profile(
+        &registry,
+        "exploration",
+        KnotType::Explore,
+        "ready_for_exploration",
+    )
+    .unwrap());
+    assert_eq!(
+        owner_kind_for_state(
+            &registry,
+            "exploration",
+            KnotType::Explore,
+            &gate,
+            "exploration"
         )
         .unwrap(),
         Some(OwnerKind::Agent)

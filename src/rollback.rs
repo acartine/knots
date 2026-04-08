@@ -67,7 +67,7 @@ fn require_rollback_state(
     state: &str,
 ) -> Result<(), AppError> {
     match knot_type {
-        KnotType::Work | KnotType::Lease => Ok(profile.require_state(state)?),
+        KnotType::Work | KnotType::Explore | KnotType::Lease => Ok(profile.require_state(state)?),
         KnotType::Gate => {
             if matches!(
                 state,
@@ -106,7 +106,7 @@ fn reject_invalid_rollback_state(
             state
         )));
     }
-    if knot_type == KnotType::Work && profile.is_escape_state(state) {
+    if matches!(knot_type, KnotType::Work | KnotType::Explore) && profile.is_escape_state(state) {
         return Err(AppError::InvalidArgument(format!(
             "rollback is only allowed from action states; '{}' is a passive state",
             state
@@ -121,7 +121,7 @@ fn is_terminal_rollback_state(
     state: &str,
 ) -> bool {
     match knot_type {
-        KnotType::Work | KnotType::Lease => profile.is_terminal_state(state),
+        KnotType::Work | KnotType::Explore | KnotType::Lease => profile.is_terminal_state(state),
         KnotType::Gate => matches!(state, "shipped" | "abandoned"),
     }
 }
@@ -209,6 +209,15 @@ mod tests {
         let target = rollback_target(&profile, KnotType::Work, "implementation")
             .expect("implementation should roll back");
         assert_eq!(target.target_state, "ready_for_implementation");
+        assert!(target.reason.contains("preceding ready state"));
+    }
+
+    #[test]
+    fn rollback_target_rewinds_explore_states() {
+        let profile = profile("exploration");
+        let target = rollback_target(&profile, KnotType::Explore, "exploration")
+            .expect("exploration should roll back");
+        assert_eq!(target.target_state, "ready_for_exploration");
         assert!(target.reason.contains("preceding ready state"));
     }
 
