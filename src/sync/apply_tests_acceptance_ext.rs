@@ -71,7 +71,7 @@ fn apply_full_event_updates_acceptance_metadata() {
             gate_data: &crate::domain::gate::GateData::default(),
             lease_data: &crate::domain::lease::LeaseData::default(),
             lease_id: None,
-            workflow_id: "compatibility",
+            workflow_id: "knots_sdlc",
             profile_id: "autopilot",
             profile_etag: Some("etag-1"),
             deferred_from_state: None,

@@ -23,7 +23,7 @@ fn knot(id: &str, alias: Option<&str>, title: &str, state: &str) -> KnotView {
         lease_id: None,
         lease_expiry_ts: 0,
         lease_agent: None,
-        workflow_id: "compatibility".to_string(),
+        workflow_id: "knots_sdlc".to_string(),
         profile_id: "automation_granular".to_string(),
         profile_etag: None,
         deferred_from_state: None,

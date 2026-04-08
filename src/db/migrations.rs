@@ -18,7 +18,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 14] = [
+const MIGRATIONS: [Migration; 15] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -209,6 +209,63 @@ ALTER TABLE knot_hot ADD COLUMN blocked_from_state TEXT;
         name: "lease_expiry_v1",
         sql: r#"
 ALTER TABLE knot_hot ADD COLUMN lease_expiry_ts INTEGER NOT NULL DEFAULT 0;
+"#,
+    },
+    Migration {
+        version: 15,
+        name: "builtin_workflow_id_knots_sdlc_v1",
+        sql: r#"
+ALTER TABLE knot_hot RENAME TO knot_hot_legacy_builtin_workflow;
+
+CREATE TABLE knot_hot (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    state TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    body TEXT,
+    description TEXT,
+    priority INTEGER,
+    knot_type TEXT,
+    tags_json TEXT NOT NULL DEFAULT '[]',
+    notes_json TEXT NOT NULL DEFAULT '[]',
+    handoff_capsules_json TEXT NOT NULL DEFAULT '[]',
+    invariants_json TEXT NOT NULL DEFAULT '[]',
+    step_history_json TEXT NOT NULL DEFAULT '[]',
+    gate_data_json TEXT NOT NULL DEFAULT '{}',
+    lease_data_json TEXT NOT NULL DEFAULT '{}',
+    lease_id TEXT,
+    workflow_id TEXT NOT NULL DEFAULT 'knots_sdlc',
+    profile_id TEXT NOT NULL DEFAULT 'autopilot',
+    profile_etag TEXT,
+    deferred_from_state TEXT,
+    acceptance TEXT,
+    blocked_from_state TEXT,
+    lease_expiry_ts INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT
+);
+
+INSERT INTO knot_hot (
+    id, title, state, updated_at, body, description, priority, knot_type,
+    tags_json, notes_json, handoff_capsules_json, invariants_json, step_history_json,
+    gate_data_json, lease_data_json, lease_id, workflow_id, profile_id, profile_etag,
+    deferred_from_state, acceptance, blocked_from_state, lease_expiry_ts, created_at
+)
+SELECT
+    id, title, state, updated_at, body, description, priority, knot_type,
+    tags_json, notes_json, handoff_capsules_json, invariants_json, step_history_json,
+    gate_data_json, lease_data_json, lease_id,
+    CASE
+        WHEN lower(trim(workflow_id)) = 'compatibility' THEN 'knots_sdlc'
+        ELSE workflow_id
+    END,
+    profile_id, profile_etag, deferred_from_state, acceptance, blocked_from_state,
+    lease_expiry_ts, created_at
+FROM knot_hot_legacy_builtin_workflow;
+
+DROP TABLE knot_hot_legacy_builtin_workflow;
+
+CREATE INDEX IF NOT EXISTS idx_knot_hot_updated_at ON knot_hot(updated_at);
+CREATE INDEX IF NOT EXISTS idx_knot_hot_state ON knot_hot(state);
 "#,
     },
 ];

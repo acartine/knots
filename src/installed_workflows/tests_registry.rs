@@ -90,6 +90,40 @@ fn read_repo_config_migrates_legacy_current_profile() {
 }
 
 #[test]
+fn read_repo_config_repairs_legacy_builtin_workflow_id_and_writes_back() {
+    let root = unique_workspace("knots-installed-workflows-repair-builtin");
+    let path = repo_config_path(&root);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).expect("config dir should exist");
+    }
+    std::fs::write(
+        &path,
+        "current_workflow = \"compatibility\"\n\
+         current_version = 1\n\
+         [default_profiles]\n\
+         compatibility = \"compatibility/autopilot\"\n",
+    )
+    .expect("legacy config should write");
+
+    let loaded = read_repo_config(&root).expect("config should load");
+    assert_eq!(
+        loaded.current_workflow.as_deref(),
+        Some(BUILTIN_WORKFLOW_ID)
+    );
+    assert_eq!(loaded.current_profile_id(), Some("autopilot"));
+    assert_eq!(
+        loaded.default_profile_id_for_workflow(BUILTIN_WORKFLOW_ID),
+        Some("autopilot")
+    );
+
+    let repaired = std::fs::read_to_string(&path).expect("repaired config should read");
+    assert!(repaired.contains("current_workflow = \"knots_sdlc\""));
+    assert!(repaired.contains("knots_sdlc = \"autopilot\""));
+    assert!(!repaired.contains("compatibility"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn install_bundle_writes_registry_without_switching() {
     let root = unique_workspace("knots-installed-workflows-install");
     let source = root.join("custom-flow.toml");

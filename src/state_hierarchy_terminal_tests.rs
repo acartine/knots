@@ -39,7 +39,7 @@ fn sample_record(id: &str, state: &str, deferred_from_state: Option<&str>) -> Kn
         lease_data: crate::domain::lease::LeaseData::default(),
         lease_id: None,
         lease_expiry_ts: 0,
-        workflow_id: "compatibility".to_string(),
+        workflow_id: "knots_sdlc".to_string(),
         profile_id: "default".to_string(),
         profile_etag: None,
         deferred_from_state: deferred_from_state.map(ToString::to_string),

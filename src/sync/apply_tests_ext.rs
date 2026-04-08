@@ -73,7 +73,7 @@ fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
             gate_data: &crate::domain::gate::GateData::default(),
             lease_data: &crate::domain::lease::LeaseData::default(),
             lease_id: None,
-            workflow_id: "compatibility",
+            workflow_id: "knots_sdlc",
             profile_id: "automation_granular",
             profile_etag: Some("etag-1"),
             deferred_from_state: None,

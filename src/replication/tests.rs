@@ -376,7 +376,7 @@ fn push_blocks_with_active_leases() {
             gate_data: &gate_data,
             lease_data: &crate::domain::lease::LeaseData::default(),
             lease_id: None,
-            workflow_id: "compatibility",
+            workflow_id: "knots_sdlc",
             profile_id: "autopilot",
             profile_etag: None,
             deferred_from_state: None,
