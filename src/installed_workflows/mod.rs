@@ -1,6 +1,6 @@
+pub(crate) mod builtin;
 pub(crate) mod bundle_json;
 pub(crate) mod bundle_toml;
-pub(crate) mod compatibility;
 mod loader;
 mod operations;
 pub(crate) mod profile_json;
@@ -35,9 +35,23 @@ pub use operations::{
     set_workflow_default_profile,
 };
 
-pub const COMPATIBILITY_WORKFLOW_ID: &str = "compatibility";
+pub const BUILTIN_WORKFLOW_ID: &str = "knots_sdlc";
 const DEFAULT_BUNDLE_FILE: &str = "bundle.json";
 const TOML_BUNDLE_FILE: &str = "bundle.toml";
+
+pub fn canonical_workflow_id(workflow_id: &str) -> String {
+    let normalized = normalize_profile_id(workflow_id)
+        .unwrap_or_else(|| workflow_id.trim().to_ascii_lowercase());
+    if normalized == "compatibility" {
+        BUILTIN_WORKFLOW_ID.to_string()
+    } else {
+        normalized
+    }
+}
+
+pub fn is_builtin_workflow_id(workflow_id: &str) -> bool {
+    canonical_workflow_id(workflow_id) == BUILTIN_WORKFLOW_ID
+}
 
 // ── WorkflowRepoConfig ─────────────────────────────────
 
@@ -68,9 +82,9 @@ impl WorkflowRepoConfig {
     }
 
     pub(crate) fn current_profile_id(&self) -> Option<&str> {
-        self.current_workflow
-            .as_deref()
-            .and_then(|id| self.default_profiles.get(id).map(String::as_str))
+        let workflow_id = self.current_workflow.as_deref()?;
+        let workflow_id = canonical_workflow_id(workflow_id);
+        self.default_profile_id_for_workflow(&workflow_id)
     }
 
     pub(crate) fn set_default_profile(&mut self, workflow_id: &str, profile_id: String) {
@@ -79,7 +93,19 @@ impl WorkflowRepoConfig {
     }
 
     pub(crate) fn default_profile_id_for_workflow(&self, workflow_id: &str) -> Option<&str> {
-        self.default_profiles.get(workflow_id).map(String::as_str)
+        let workflow_id = canonical_workflow_id(workflow_id);
+        self.default_profiles
+            .get(workflow_id.as_str())
+            .map(String::as_str)
+            .or_else(|| {
+                if workflow_id == BUILTIN_WORKFLOW_ID {
+                    self.default_profiles
+                        .get("compatibility")
+                        .map(String::as_str)
+                } else {
+                    None
+                }
+            })
     }
 }
 
@@ -321,11 +347,11 @@ pub struct InstalledWorkflowRegistry {
 impl InstalledWorkflowRegistry {
     pub fn load(repo_root: &Path) -> Result<Self, ProfileError> {
         let mut workflows: BTreeMap<String, BTreeMap<u32, WorkflowDefinition>> = BTreeMap::new();
-        let compat = compatibility::compatibility_workflow()?;
+        let builtin = builtin::knots_sdlc_workflow()?;
         workflows
-            .entry(compat.id.clone())
+            .entry(builtin.id.clone())
             .or_default()
-            .insert(compat.version, compat);
+            .insert(builtin.version, builtin);
         let root = workflows_root(repo_root);
         if root.exists() {
             loader::load_disk_workflows(&root, &mut workflows)?;
@@ -341,7 +367,14 @@ impl InstalledWorkflowRegistry {
         self.current
             .as_ref()
             .and_then(|c| c.current_workflow.as_deref())
-            .unwrap_or(COMPATIBILITY_WORKFLOW_ID)
+            .map(|id| {
+                if canonical_workflow_id(id) == BUILTIN_WORKFLOW_ID {
+                    BUILTIN_WORKFLOW_ID
+                } else {
+                    id
+                }
+            })
+            .unwrap_or(BUILTIN_WORKFLOW_ID)
     }
 
     pub fn current_workflow_version(&self) -> Option<u32> {
@@ -353,14 +386,24 @@ impl InstalledWorkflowRegistry {
     }
 
     pub fn default_profile_id_for_workflow(&self, workflow_id: &str) -> Option<String> {
+        let workflow_id = canonical_workflow_id(workflow_id);
         if let Some(pid) = self
             .current
             .as_ref()
-            .and_then(|c| c.default_profile_id_for_workflow(workflow_id))
+            .and_then(|c| c.default_profile_id_for_workflow(&workflow_id))
         {
             return Some(pid.to_string());
         }
-        let wf = self.require_workflow(workflow_id).ok()?;
+        if workflow_id == BUILTIN_WORKFLOW_ID {
+            if let Some(pid) = self
+                .current
+                .as_ref()
+                .and_then(|c| c.default_profile_id_for_workflow("compatibility"))
+            {
+                return Some(pid.to_string());
+            }
+        }
+        let wf = self.require_workflow(&workflow_id).ok()?;
         let dp = wf
             .default_profile
             .as_deref()
@@ -368,7 +411,7 @@ impl InstalledWorkflowRegistry {
         if wf.builtin {
             Some(dp.to_string())
         } else {
-            Some(namespaced_profile_id(workflow_id, dp))
+            Some(namespaced_profile_id(&workflow_id, dp))
         }
     }
 
@@ -381,12 +424,11 @@ impl InstalledWorkflowRegistry {
                 return self.require_workflow(id);
             }
         }
-        self.require_workflow(COMPATIBILITY_WORKFLOW_ID)
+        self.require_workflow(BUILTIN_WORKFLOW_ID)
     }
 
     pub fn require_workflow(&self, workflow_id: &str) -> Result<&WorkflowDefinition, ProfileError> {
-        let id = normalize_profile_id(workflow_id)
-            .ok_or_else(|| ProfileError::UnknownWorkflow(workflow_id.to_string()))?;
+        let id = canonical_workflow_id(workflow_id);
         self.workflows
             .get(&id)
             .and_then(|v| v.iter().next_back().map(|(_, w)| w))
@@ -398,8 +440,7 @@ impl InstalledWorkflowRegistry {
         workflow_id: &str,
         version: u32,
     ) -> Result<&WorkflowDefinition, ProfileError> {
-        let id = normalize_profile_id(workflow_id)
-            .ok_or_else(|| ProfileError::UnknownWorkflow(workflow_id.to_string()))?;
+        let id = canonical_workflow_id(workflow_id);
         self.workflows
             .get(&id)
             .and_then(|v| v.get(&version))

@@ -1,4 +1,5 @@
-use super::{App, AppError};
+use super::{App, AppError, CreateKnotOptions};
+use crate::domain::knot_type::KnotType;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
@@ -13,14 +14,28 @@ fn open_app(root: &Path) -> App {
     App::open(db_path.to_str().expect("utf8"), root.to_path_buf()).expect("app should open")
 }
 
+fn create_explore_knot(app: &App, title: &str, body: Option<&str>) -> crate::app::KnotView {
+    app.create_knot_with_options(
+        title,
+        body,
+        None,
+        None,
+        None,
+        CreateKnotOptions {
+            knot_type: KnotType::Explore,
+            ..Default::default()
+        },
+    )
+    .expect("create should succeed")
+}
+
 #[test]
 fn create_exploration_knot_sets_ready_for_exploration() {
     let root = unique_workspace();
     let app = open_app(&root);
-    let knot = app
-        .create_knot("Investigate caching", None, None, Some("exploration"))
-        .expect("create should succeed");
+    let knot = create_explore_knot(&app, "Investigate caching", None);
     assert_eq!(knot.state, "ready_for_exploration");
+    assert_eq!(knot.knot_type, KnotType::Explore);
     assert_eq!(knot.profile_id, "exploration");
     let _ = std::fs::remove_dir_all(&root);
 }
@@ -29,9 +44,7 @@ fn create_exploration_knot_sets_ready_for_exploration() {
 fn exploration_transitions_to_exploration_state() {
     let root = unique_workspace();
     let app = open_app(&root);
-    let knot = app
-        .create_knot("Investigate caching", None, None, Some("exploration"))
-        .expect("create should succeed");
+    let knot = create_explore_knot(&app, "Investigate caching", None);
     assert_eq!(knot.state, "ready_for_exploration");
 
     let updated = app
@@ -45,9 +58,7 @@ fn exploration_transitions_to_exploration_state() {
 fn exploration_transitions_to_abandoned() {
     let root = unique_workspace();
     let app = open_app(&root);
-    let knot = app
-        .create_knot("Investigate caching", None, None, Some("exploration"))
-        .expect("create should succeed");
+    let knot = create_explore_knot(&app, "Investigate caching", None);
 
     let updated = app
         .set_state(&knot.id, "exploration", false, None)
@@ -65,9 +76,7 @@ fn exploration_transitions_to_abandoned() {
 fn exploration_shipped_rejected_without_edges() {
     let root = unique_workspace();
     let app = open_app(&root);
-    let knot = app
-        .create_knot("Investigate caching", None, None, Some("exploration"))
-        .expect("create should succeed");
+    let knot = create_explore_knot(&app, "Investigate caching", None);
     let knot = app
         .set_state(&knot.id, "exploration", false, None)
         .expect("transition should succeed");
@@ -91,15 +100,23 @@ fn exploration_shipped_rejected_without_edges() {
 fn exploration_shipped_succeeds_with_edge() {
     let root = unique_workspace();
     let app = open_app(&root);
-    let knot = app
-        .create_knot("Investigate caching", None, None, Some("exploration"))
-        .expect("create should succeed");
+    let knot = create_explore_knot(&app, "Investigate caching", None);
     let knot = app
         .set_state(&knot.id, "exploration", false, None)
         .expect("transition should succeed");
 
     let outcome = app
-        .create_knot("Cache design doc", None, None, Some("exploration"))
+        .create_knot_with_options(
+            "Cache design doc",
+            None,
+            None,
+            None,
+            None,
+            CreateKnotOptions {
+                knot_type: KnotType::Explore,
+                ..Default::default()
+            },
+        )
         .expect("create outcome should succeed");
     app.add_edge(&knot.id, "relates_to", &outcome.id)
         .expect("edge add should succeed");
@@ -115,9 +132,7 @@ fn exploration_shipped_succeeds_with_edge() {
 fn exploration_abandoned_from_ready_for_exploration() {
     let root = unique_workspace();
     let app = open_app(&root);
-    let knot = app
-        .create_knot("Investigate caching", None, None, Some("exploration"))
-        .expect("create should succeed");
+    let knot = create_explore_knot(&app, "Investigate caching", None);
     assert_eq!(knot.state, "ready_for_exploration");
 
     let abandoned = app
@@ -131,14 +146,11 @@ fn exploration_abandoned_from_ready_for_exploration() {
 fn exploration_knot_appears_in_list_and_show() {
     let root = unique_workspace();
     let app = open_app(&root);
-    let knot = app
-        .create_knot(
-            "Investigate caching",
-            Some("Evaluate Redis vs Memcached"),
-            None,
-            Some("exploration"),
-        )
-        .expect("create should succeed");
+    let knot = create_explore_knot(
+        &app,
+        "Investigate caching",
+        Some("Evaluate Redis vs Memcached"),
+    );
 
     let listed = app.list_knots().expect("list should succeed");
     assert_eq!(listed.len(), 1);
@@ -159,9 +171,7 @@ fn exploration_knot_appears_in_list_and_show() {
 fn exploration_invalid_transition_rejected() {
     let root = unique_workspace();
     let app = open_app(&root);
-    let knot = app
-        .create_knot("Investigate caching", None, None, Some("exploration"))
-        .expect("create should succeed");
+    let knot = create_explore_knot(&app, "Investigate caching", None);
 
     // Cannot skip directly from ready_for_exploration to shipped
     let err = app
@@ -179,15 +189,23 @@ fn exploration_invalid_transition_rejected() {
 fn exploration_shipped_succeeds_with_incoming_edge() {
     let root = unique_workspace();
     let app = open_app(&root);
-    let knot = app
-        .create_knot("Investigate caching", None, None, Some("exploration"))
-        .expect("create should succeed");
+    let knot = create_explore_knot(&app, "Investigate caching", None);
     let knot = app
         .set_state(&knot.id, "exploration", false, None)
         .expect("transition should succeed");
 
     let other = app
-        .create_knot("Parent task", None, None, Some("exploration"))
+        .create_knot_with_options(
+            "Parent task",
+            None,
+            None,
+            None,
+            None,
+            CreateKnotOptions {
+                knot_type: KnotType::Explore,
+                ..Default::default()
+            },
+        )
         .expect("create other should succeed");
     // Add incoming edge (other -> this knot)
     app.add_edge(&other.id, "relates_to", &knot.id)

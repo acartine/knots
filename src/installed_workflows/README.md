@@ -9,7 +9,7 @@ Workflow and profile loading, parsing, and validation.
 - **`operations.rs`** — `install_workflow()`, `uninstall_workflow()`
 - **`bundle_toml.rs`** / **`bundle_json.rs`** — TOML and JSON bundle parsing
 - **`profile_toml.rs`** / **`profile_json.rs`** — profile definition parsing
-- **`compatibility.rs`** — backward-compatible profile resolution
+- **`builtin.rs`** — built-in workflow bundle loading and prompt rendering
 
 ## Key Types
 

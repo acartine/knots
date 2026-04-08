@@ -215,7 +215,7 @@ fn load_for_repo_adds_namespaced_profiles_for_custom_workflow() {
     let via_alias = registry
         .require("autopilot")
         .expect("builtin autopilot should still exist");
-    assert_eq!(via_alias.workflow_id, "compatibility");
+    assert_eq!(via_alias.workflow_id, "knots_sdlc");
 
     let _ = std::fs::remove_dir_all(root);
 }

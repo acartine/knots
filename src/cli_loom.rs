@@ -1,7 +1,7 @@
 use clap::{Args, Subcommand, ValueEnum};
 
 #[derive(Debug, Args)]
-#[command(about = "Manage Loom compatibility checks.")]
+#[command(about = "Manage Loom workflows.")]
 pub struct LoomArgs {
     #[command(subcommand)]
     pub command: LoomSubcommands,
@@ -9,7 +9,7 @@ pub struct LoomArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum LoomSubcommands {
-    #[command(about = "Run the Loom workflow compatibility harness.")]
+    #[command(about = "Run the Loom workflow harness.")]
     CompatTest(LoomCompatTestArgs),
 }
 
@@ -20,7 +20,7 @@ pub enum LoomCompatModeArg {
 }
 
 #[derive(Debug, Args)]
-#[command(about = "Run the Loom compatibility harness.")]
+#[command(about = "Run the Loom workflow harness.")]
 pub struct LoomCompatTestArgs {
     #[arg(
         long,

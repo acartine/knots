@@ -165,7 +165,7 @@ pub(super) fn required_workflow_id(object: &Map<String, Value>, profile_id: &str
     profile_id
         .split_once('/')
         .map(|(wid, _)| wid.to_string())
-        .unwrap_or_else(|| installed_workflows::COMPATIBILITY_WORKFLOW_ID.to_string())
+        .unwrap_or_else(|| installed_workflows::BUILTIN_WORKFLOW_ID.to_string())
 }
 
 pub(super) fn optional_string(value: Option<&Value>) -> Option<String> {

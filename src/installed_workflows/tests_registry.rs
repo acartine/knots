@@ -115,7 +115,7 @@ fn install_bundle_writes_registry_without_switching() {
         .require_workflow("custom_flow")
         .expect("installed workflow should resolve");
     assert_eq!(workflow.id, "custom_flow");
-    assert_eq!(registry.current_workflow_id(), COMPATIBILITY_WORKFLOW_ID);
+    assert_eq!(registry.current_workflow_id(), BUILTIN_WORKFLOW_ID);
     assert_eq!(registry.current_profile_id(), Some("autopilot".to_string()));
     let _ = std::fs::remove_dir_all(root);
 }
@@ -123,11 +123,11 @@ fn install_bundle_writes_registry_without_switching() {
 #[test]
 fn set_selection_keeps_builtin_unscoped() {
     let root = unique_workspace("knots-installed-workflows-builtin");
-    let config = set_current_workflow_selection(&root, COMPATIBILITY_WORKFLOW_ID, Some(1), None)
+    let config = set_current_workflow_selection(&root, BUILTIN_WORKFLOW_ID, Some(1), None)
         .expect("builtin workflow should select");
     assert_eq!(
         config.current_workflow.as_deref(),
-        Some(COMPATIBILITY_WORKFLOW_ID)
+        Some(BUILTIN_WORKFLOW_ID)
     );
     assert_eq!(config.current_profile_id(), Some("autopilot"));
     let _ = std::fs::remove_dir_all(root);
@@ -136,16 +136,16 @@ fn set_selection_keeps_builtin_unscoped() {
 #[test]
 fn set_default_profile_keeps_builtin_unscoped() {
     let root = unique_workspace("knots-installed-workflows-builtin-default");
-    let config = set_workflow_default_profile(&root, COMPATIBILITY_WORKFLOW_ID, Some("semiauto"))
+    let config = set_workflow_default_profile(&root, BUILTIN_WORKFLOW_ID, Some("semiauto"))
         .expect("builtin default profile should persist");
     assert_eq!(
-        config.default_profile_id_for_workflow(COMPATIBILITY_WORKFLOW_ID),
+        config.default_profile_id_for_workflow(BUILTIN_WORKFLOW_ID),
         Some("semiauto")
     );
 
     let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
     assert_eq!(
-        registry.default_profile_id_for_workflow(COMPATIBILITY_WORKFLOW_ID),
+        registry.default_profile_id_for_workflow(BUILTIN_WORKFLOW_ID),
         Some("semiauto".to_string())
     );
     let _ = std::fs::remove_dir_all(root);
@@ -193,7 +193,7 @@ fn registry_helpers_cover_lookup_and_sorting() {
         InstalledWorkflowRegistry::load(&root)
             .expect("registry should load")
             .current_workflow_id(),
-        COMPATIBILITY_WORKFLOW_ID
+        BUILTIN_WORKFLOW_ID
     );
 
     let source = root.join("custom-flow.toml");
@@ -220,7 +220,7 @@ fn registry_helpers_cover_lookup_and_sorting() {
         .into_iter()
         .map(ToString::to_string)
         .collect::<Vec<_>>();
-    assert_eq!(listed, vec!["compatibility v1", "custom_flow v3"]);
+    assert_eq!(listed, vec!["custom_flow v3", "knots_sdlc v1"]);
 
     let workflow = registry
         .require_workflow_version("custom_flow", 3)
@@ -244,7 +244,7 @@ fn bundle_defaults_for_custom_workflows() {
         Some("custom_flow/autopilot".to_string())
     );
     assert_eq!(
-        registry.default_profile_id_for_workflow(COMPATIBILITY_WORKFLOW_ID),
+        registry.default_profile_id_for_workflow(BUILTIN_WORKFLOW_ID),
         Some("autopilot".to_string())
     );
     assert_eq!(registry.default_profile_id_for_workflow("missing"), None);

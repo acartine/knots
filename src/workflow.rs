@@ -15,7 +15,10 @@ mod tests {
     #[test]
     fn loads_embedded_default_workflow() {
         let registry = WorkflowRegistry::load().expect("embedded registry should load");
-        assert!(registry.require("autopilot").is_ok());
+        assert_eq!(
+            registry.require("autopilot").unwrap().workflow_id,
+            "knots_sdlc"
+        );
         assert!(registry.require("autopilot_with_pr").is_ok());
         assert!(registry.require("semiauto").is_ok());
     }

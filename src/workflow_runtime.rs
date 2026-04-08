@@ -14,6 +14,7 @@ pub fn initial_state(knot_type: KnotType, profile: &ProfileDefinition) -> String
         KnotType::Work => profile.initial_state.clone(),
         KnotType::Gate => READY_TO_EVALUATE.to_string(),
         KnotType::Lease => LEASE_READY.to_string(),
+        KnotType::Explore => "ready_for_exploration".to_string(),
     }
 }
 
@@ -37,7 +38,7 @@ pub fn is_queue_state_for_profile(
     state: &str,
 ) -> Result<bool, ProfileError> {
     Ok(match knot_type {
-        KnotType::Work => registry.require(profile_id)?.is_queue_state(state),
+        KnotType::Work | KnotType::Explore => registry.require(profile_id)?.is_queue_state(state),
         KnotType::Gate => is_queue_state(state),
         KnotType::Lease => state == LEASE_READY,
     })
@@ -51,7 +52,7 @@ pub fn is_action_state_for_profile(
     state: &str,
 ) -> Result<bool, ProfileError> {
     Ok(match knot_type {
-        KnotType::Work => registry.require(profile_id)?.is_action_state(state),
+        KnotType::Work | KnotType::Explore => registry.require(profile_id)?.is_action_state(state),
         KnotType::Gate => is_action_state(state),
         KnotType::Lease => state == LEASE_ACTIVE,
     })
@@ -78,7 +79,9 @@ pub fn is_terminal_state(
     state: &str,
 ) -> Result<bool, ProfileError> {
     match knot_type {
-        KnotType::Work => Ok(registry.require(profile_id)?.is_terminal_state(state)),
+        KnotType::Work | KnotType::Explore => {
+            Ok(registry.require(profile_id)?.is_terminal_state(state))
+        }
         KnotType::Gate => Ok(matches!(state, "shipped" | "abandoned")),
         KnotType::Lease => Ok(matches!(state, LEASE_TERMINATED)),
     }
@@ -92,7 +95,7 @@ pub fn is_escape_state(
     state: &str,
 ) -> Result<bool, ProfileError> {
     Ok(match knot_type {
-        KnotType::Work => registry.require(profile_id)?.is_escape_state(state),
+        KnotType::Work | KnotType::Explore => registry.require(profile_id)?.is_escape_state(state),
         KnotType::Gate | KnotType::Lease => false,
     })
 }
@@ -106,7 +109,7 @@ pub fn validate_transition(
     force: bool,
 ) -> Result<(), ProfileError> {
     match knot_type {
-        KnotType::Work => registry
+        KnotType::Work | KnotType::Explore => registry
             .require(profile_id)?
             .validate_transition(from, to, force),
         KnotType::Gate => validate_gate_transition(from, to, force),
@@ -121,7 +124,7 @@ pub fn next_happy_path_state(
     current: &str,
 ) -> Result<Option<String>, ProfileError> {
     match knot_type {
-        KnotType::Work => Ok(registry
+        KnotType::Work | KnotType::Explore => Ok(registry
             .require(profile_id)?
             .next_happy_path_state(current)
             .map(ToString::to_string)),
@@ -151,7 +154,7 @@ pub fn next_outcome_state(
     if normalized.is_empty() || matches!(normalized.as_str(), "success" | "happy_path") {
         return next_happy_path_state(registry, profile_id, knot_type, current);
     }
-    if knot_type != KnotType::Work {
+    if !matches!(knot_type, KnotType::Work | KnotType::Explore) {
         return Ok(None);
     }
 
@@ -176,7 +179,7 @@ pub fn owner_kind_for_state(
     state: &str,
 ) -> Result<Option<OwnerKind>, ProfileError> {
     match knot_type {
-        KnotType::Work => Ok(registry
+        KnotType::Work | KnotType::Explore => Ok(registry
             .require(profile_id)?
             .owners
             .owner_kind_for_state(state)
@@ -202,7 +205,7 @@ pub fn step_metadata_for_state(
     state: &str,
 ) -> Result<Option<StepMetadata>, ProfileError> {
     match knot_type {
-        KnotType::Work => {
+        KnotType::Work | KnotType::Explore => {
             let profile = registry.require(profile_id)?;
             let action = resolve_action_state(profile, state);
             Ok(action.map(|a| profile.step_metadata_for(a)))

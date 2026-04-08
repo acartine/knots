@@ -19,7 +19,9 @@ pub fn owner_kind_label(kind: &OwnerKind) -> &'static str {
 }
 
 pub fn profile_lookup_id(knot: &KnotView) -> String {
-    if knot.workflow_id != "compatibility" && !knot.profile_id.contains('/') {
+    if !crate::installed_workflows::is_builtin_workflow_id(&knot.workflow_id)
+        && !knot.profile_id.contains('/')
+    {
         format!("{}/{}", knot.workflow_id, knot.profile_id)
     } else {
         knot.profile_id.clone()
@@ -66,7 +68,7 @@ mod tests {
     }
 
     #[test]
-    fn profile_lookup_id_prefixes_non_compatibility_workflow() {
+    fn profile_lookup_id_prefixes_non_builtin_workflow() {
         let knot = KnotView {
             id: "knots-1".to_string(),
             alias: None,
@@ -103,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn profile_lookup_id_returns_as_is_for_compatibility() {
+    fn profile_lookup_id_returns_as_is_for_builtin() {
         let knot = KnotView {
             id: "knots-2".to_string(),
             alias: None,

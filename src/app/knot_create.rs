@@ -75,13 +75,19 @@ impl App {
     ) -> Result<(&crate::workflow::ProfileDefinition, String), AppError> {
         let resolved_wf = match workflow_id {
             Some(id) => Some(id.to_string()),
-            None if profile_id.is_none() => Some(self.default_workflow_id()?),
+            None if profile_id.is_none() => {
+                Some(self.default_workflow_id_for_knot_type(knot_type)?)
+            }
             None => None,
         };
         let default_profile = if profile_id.is_none() {
-            Some(match resolved_wf.as_deref() {
-                Some(wf) => self.default_profile_id_for_workflow(wf)?,
-                None => self.default_profile_id()?,
+            Some(if knot_type == KnotType::Explore {
+                self.default_profile_id_for_knot_type(knot_type)?
+            } else {
+                match resolved_wf.as_deref() {
+                    Some(wf) => self.default_profile_id_for_workflow(wf)?,
+                    None => self.default_profile_id_for_knot_type(knot_type)?,
+                }
             })
         } else {
             None

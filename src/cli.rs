@@ -89,7 +89,7 @@ pub enum Commands {
     Workflow(WorkflowArgs),
     #[command(about = "Manage named Knots projects.")]
     Project(ProjectArgs),
-    #[command(about = "Manage Loom compatibility checks.")]
+    #[command(about = "Manage Loom workflows.")]
     Loom(LoomArgs),
     #[command(about = "Pull knot updates from the remote knots branch.")]
     Pull(SyncArgs),
@@ -212,7 +212,11 @@ pub struct NewArgs {
     )]
     pub workflow: Option<String>,
 
-    #[arg(short = 'k', long = "type", help = "Knot type (work or gate).")]
+    #[arg(
+        short = 'k',
+        long = "type",
+        help = "Knot type (work, gate, lease, or explore)."
+    )]
     pub knot_type: Option<String>,
 
     #[arg(long = "gate-owner-kind", help = "Gate owner kind: human or agent.")]
@@ -234,7 +238,7 @@ pub struct NewArgs {
     #[arg(
         short = 'e',
         long = "exploration",
-        help = "Use the exploration workflow (lightweight investigation)."
+        help = "Use the explore knot type (lightweight investigation)."
     )]
     pub exploration: bool,
 
