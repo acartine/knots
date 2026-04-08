@@ -175,7 +175,7 @@ fn managed_skill_inventory_contains_only_knots_skills() {
         .iter()
         .map(|skill| skill.deploy_name)
         .collect::<Vec<_>>();
-    assert_eq!(names, vec!["knots", "knots-e2e"]);
+    assert_eq!(names, vec!["knots", "knots-e2e", "knots-create"]);
 }
 
 #[test]

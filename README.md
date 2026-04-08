@@ -312,8 +312,8 @@ agent.run(prompt=item["prompt"])
 
 ### Managed Skills
 
-Knots can install its managed `knots` and `knots-e2e` skills for supported
-agent tools:
+Knots can install its managed `knots`, `knots-e2e`, and `knots-create` skills
+for supported agent tools:
 
 ```bash
 kno skills install codex

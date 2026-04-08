@@ -189,7 +189,7 @@ fn profile_def_validates_missing_prompt() {
         "orphan".to_string(),
         BundleStateSection {
             kind: "action".to_string(),
-            executor: None,
+            executor: Some("human".to_string()),
             prompt: None,
             output: None,
             output_hint: None,

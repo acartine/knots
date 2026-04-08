@@ -135,14 +135,18 @@ fn skills_install_and_uninstall_round_trip_for_codex() {
     let stdout = String::from_utf8_lossy(&install.stdout);
     assert!(stdout.contains(".agents/skills/knots/SKILL.md"));
     assert!(stdout.contains(".agents/skills/knots-e2e/SKILL.md"));
+    assert!(stdout.contains(".agents/skills/knots-create/SKILL.md"));
     assert!(root.join(".agents/skills/knots/SKILL.md").exists());
+    assert!(root.join(".agents/skills/knots-create/SKILL.md").exists());
 
     let uninstall = run_knots(&root, &db, &home, &["skills", "uninstall", "codex"]);
     assert_success(&uninstall);
     let stdout = String::from_utf8_lossy(&uninstall.stdout);
     assert!(stdout.contains(".agents/skills/knots/SKILL.md"));
     assert!(stdout.contains(".agents/skills/knots-e2e/SKILL.md"));
+    assert!(stdout.contains(".agents/skills/knots-create/SKILL.md"));
     assert!(!root.join(".agents/skills/knots/SKILL.md").exists());
+    assert!(!root.join(".agents/skills/knots-create/SKILL.md").exists());
 }
 
 #[test]
@@ -281,6 +285,7 @@ fn doctor_fix_creates_missing_codex_root_and_installs_skills() {
     let doctor_fix = run_knots(&root, &db, &home, &["doctor", "--fix"]);
     assert_success(&doctor_fix);
     assert!(root.join(".agents/skills/knots/SKILL.md").exists());
+    assert!(root.join(".agents/skills/knots-create/SKILL.md").exists());
 
     let after = run_knots(&root, &db, &home, &["doctor", "--json"]);
     assert_success(&after);
