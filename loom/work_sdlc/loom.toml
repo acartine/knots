@@ -1,0 +1,5 @@
+[workflow]
+name = "work_sdlc"
+version = 1
+entry = "workflow.loom"
+default_profile = "autopilot"

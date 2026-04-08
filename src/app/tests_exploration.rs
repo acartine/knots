@@ -36,7 +36,7 @@ fn create_exploration_knot_sets_ready_for_exploration() {
     let knot = create_explore_knot(&app, "Investigate caching", None);
     assert_eq!(knot.state, "ready_for_exploration");
     assert_eq!(knot.knot_type, KnotType::Explore);
-    assert_eq!(knot.profile_id, "exploration");
+    assert_eq!(knot.profile_id, "explore");
     let _ = std::fs::remove_dir_all(&root);
 }
 
@@ -156,7 +156,7 @@ fn exploration_knot_appears_in_list_and_show() {
     assert_eq!(listed.len(), 1);
     assert_eq!(listed[0].id, knot.id);
     assert_eq!(listed[0].state, "ready_for_exploration");
-    assert_eq!(listed[0].profile_id, "exploration");
+    assert_eq!(listed[0].profile_id, "explore");
 
     let shown = app
         .show_knot(&knot.id)

@@ -285,8 +285,10 @@ fn install_custom_workflow(root: &std::path::Path, db: &std::path::Path) {
         .args([
             "workflow",
             "install",
-            bundle_path.to_str().expect("utf8 path"),
+            "--type",
+            "work",
             "--set-default=false",
+            bundle_path.to_str().expect("utf8 path"),
         ])
         .output()
         .expect("install should run");

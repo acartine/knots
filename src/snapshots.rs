@@ -317,7 +317,7 @@ mod tests {
                 gate_data: &crate::domain::gate::GateData::default(),
                 lease_data: &crate::domain::lease::LeaseData::default(),
                 lease_id: None,
-                workflow_id: crate::installed_workflows::BUILTIN_WORKFLOW_ID,
+                workflow_id: "work_sdlc",
                 profile_id: "default",
                 profile_etag: Some("evt-1"),
                 deferred_from_state: None,

@@ -100,6 +100,8 @@ changes = "ready_for_work"
 fn unique_workspace(prefix: &str) -> PathBuf {
     let path = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
     std::fs::create_dir_all(&path).expect("workspace should be creatable");
+    installed_workflows::ensure_builtin_workflows_registered(&path)
+        .expect("builtin workflows should register");
     path
 }
 
@@ -173,7 +175,6 @@ fn builtin_compat_all_action_states_have_loom_sourced_prompts() {
         ("implementation_review", "# Implementation Review"),
         ("shipment", "# Shipment"),
         ("shipment_review", "# Shipment Review"),
-        ("evaluating", "# Evaluating"),
     ];
 
     for (state, expected_heading) in loom_states {

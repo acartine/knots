@@ -178,6 +178,7 @@ fn resolve_skill_by_name_builtin_covers_all_loom_action_states() {
         ("shipment", "# Shipment"),
         ("shipment_review", "# Shipment Review"),
         ("evaluating", "# Evaluating"),
+        ("exploration", "# Exploration"),
     ];
     for (state, heading) in states_and_headings {
         let skill = resolve_skill_by_name(&app, state).unwrap_or_else(|e| panic!("{state}: {e}"));

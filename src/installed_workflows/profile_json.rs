@@ -60,6 +60,22 @@ fn assemble_json_profile(
     ctx: JsonProfileBuildContext,
 ) -> Result<(ProfileDefinition, BTreeMap<String, String>), ProfileError> {
     let action_prompts = ctx.action_prompts.clone();
+    let planning_mode = if has_phase_states(&ctx, "planning", "ready_for_planning")
+        || has_phase_states(&ctx, "plan_review", "ready_for_plan_review")
+    {
+        GateMode::Required
+    } else {
+        GateMode::Skipped
+    };
+    let implementation_review_mode = if has_phase_states(
+        &ctx,
+        "implementation_review",
+        "ready_for_implementation_review",
+    ) {
+        GateMode::Required
+    } else {
+        GateMode::Skipped
+    };
     let owners = ProfileOwners {
         planning: default_owner(OwnerKind::Agent),
         plan_review: default_owner(OwnerKind::Human),
@@ -77,8 +93,8 @@ fn assemble_json_profile(
             .description
             .clone()
             .or_else(|| profile.display_name.clone()),
-        planning_mode: GateMode::Required,
-        implementation_review_mode: GateMode::Required,
+        planning_mode,
+        implementation_review_mode,
         outputs: build_outputs_from_json_profile(
             &profile.outputs,
             &ctx.action_states,
@@ -101,6 +117,11 @@ fn assemble_json_profile(
         review_hints: ctx.review_hints,
     };
     Ok((built, action_prompts))
+}
+
+fn has_phase_states(ctx: &JsonProfileBuildContext, action_state: &str, queue_state: &str) -> bool {
+    ctx.action_states.iter().any(|state| state == action_state)
+        || ctx.queue_states.iter().any(|state| state == queue_state)
 }
 
 #[derive(Default)]

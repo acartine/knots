@@ -1,0 +1,4 @@
+profile lease "Lease" {
+    description "Lease lifecycle workflow"
+    phases [lease_phase]
+}

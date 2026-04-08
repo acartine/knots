@@ -52,7 +52,7 @@ pub fn terminate_lease(app: &App, lease_id: &str) -> Result<KnotView, AppError> 
     app.set_state_with_actor(
         lease_id,
         "lease_terminated",
-        false,
+        true,
         None,
         StateActorMetadata::default(),
     )

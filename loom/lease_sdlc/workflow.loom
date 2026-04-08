@@ -1,0 +1,14 @@
+workflow lease_sdlc v1 {
+
+    action lease_active {
+        produce agent
+    }
+
+    terminal lease_terminated
+
+    phase lease_phase {
+        produce lease_active
+    }
+
+    include "profiles/lease.loom"
+}

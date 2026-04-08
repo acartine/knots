@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), allow(dead_code))]
+
 pub const READY_FOR_PLANNING: &str = "ready_for_planning";
 pub const PLANNING: &str = "planning";
 pub const READY_FOR_PLAN_REVIEW: &str = "ready_for_plan_review";

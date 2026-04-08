@@ -10,12 +10,8 @@ pub const LEASE_ACTIVE: &str = "lease_active";
 pub const LEASE_TERMINATED: &str = "lease_terminated";
 
 pub fn initial_state(knot_type: KnotType, profile: &ProfileDefinition) -> String {
-    match knot_type {
-        KnotType::Work => profile.initial_state.clone(),
-        KnotType::Gate => READY_TO_EVALUATE.to_string(),
-        KnotType::Lease => LEASE_READY.to_string(),
-        KnotType::Explore => "ready_for_exploration".to_string(),
-    }
+    let _ = knot_type;
+    profile.initial_state.clone()
 }
 
 pub fn is_queue_state(state: &str) -> bool {
@@ -37,11 +33,8 @@ pub fn is_queue_state_for_profile(
     knot_type: KnotType,
     state: &str,
 ) -> Result<bool, ProfileError> {
-    Ok(match knot_type {
-        KnotType::Work | KnotType::Explore => registry.require(profile_id)?.is_queue_state(state),
-        KnotType::Gate => is_queue_state(state),
-        KnotType::Lease => state == LEASE_READY,
-    })
+    let _ = knot_type;
+    Ok(registry.require(profile_id)?.is_queue_state(state))
 }
 
 #[allow(dead_code)]
@@ -51,11 +44,8 @@ pub fn is_action_state_for_profile(
     knot_type: KnotType,
     state: &str,
 ) -> Result<bool, ProfileError> {
-    Ok(match knot_type {
-        KnotType::Work | KnotType::Explore => registry.require(profile_id)?.is_action_state(state),
-        KnotType::Gate => is_action_state(state),
-        KnotType::Lease => state == LEASE_ACTIVE,
-    })
+    let _ = knot_type;
+    Ok(registry.require(profile_id)?.is_action_state(state))
 }
 
 #[allow(dead_code)]
@@ -78,13 +68,8 @@ pub fn is_terminal_state(
     knot_type: KnotType,
     state: &str,
 ) -> Result<bool, ProfileError> {
-    match knot_type {
-        KnotType::Work | KnotType::Explore => {
-            Ok(registry.require(profile_id)?.is_terminal_state(state))
-        }
-        KnotType::Gate => Ok(matches!(state, "shipped" | "abandoned")),
-        KnotType::Lease => Ok(matches!(state, LEASE_TERMINATED)),
-    }
+    let _ = knot_type;
+    Ok(registry.require(profile_id)?.is_terminal_state(state))
 }
 
 #[allow(dead_code)]
@@ -94,10 +79,8 @@ pub fn is_escape_state(
     knot_type: KnotType,
     state: &str,
 ) -> Result<bool, ProfileError> {
-    Ok(match knot_type {
-        KnotType::Work | KnotType::Explore => registry.require(profile_id)?.is_escape_state(state),
-        KnotType::Gate | KnotType::Lease => false,
-    })
+    let _ = knot_type;
+    Ok(registry.require(profile_id)?.is_escape_state(state))
 }
 
 pub fn validate_transition(
@@ -108,13 +91,10 @@ pub fn validate_transition(
     to: &str,
     force: bool,
 ) -> Result<(), ProfileError> {
-    match knot_type {
-        KnotType::Work | KnotType::Explore => registry
-            .require(profile_id)?
-            .validate_transition(from, to, force),
-        KnotType::Gate => validate_gate_transition(from, to, force),
-        KnotType::Lease => validate_lease_transition(from, to, force),
-    }
+    let _ = knot_type;
+    registry
+        .require(profile_id)?
+        .validate_transition(from, to, force)
 }
 
 pub fn next_happy_path_state(
@@ -123,22 +103,11 @@ pub fn next_happy_path_state(
     knot_type: KnotType,
     current: &str,
 ) -> Result<Option<String>, ProfileError> {
-    match knot_type {
-        KnotType::Work | KnotType::Explore => Ok(registry
-            .require(profile_id)?
-            .next_happy_path_state(current)
-            .map(ToString::to_string)),
-        KnotType::Gate => Ok(match current {
-            READY_TO_EVALUATE => Some(EVALUATING.to_string()),
-            EVALUATING => Some("shipped".to_string()),
-            _ => None,
-        }),
-        KnotType::Lease => Ok(match current {
-            LEASE_READY => Some(LEASE_ACTIVE.to_string()),
-            LEASE_ACTIVE => Some(LEASE_TERMINATED.to_string()),
-            _ => None,
-        }),
-    }
+    let _ = knot_type;
+    Ok(registry
+        .require(profile_id)?
+        .next_happy_path_state(current)
+        .map(ToString::to_string))
 }
 
 pub fn next_outcome_state(
@@ -154,9 +123,7 @@ pub fn next_outcome_state(
     if normalized.is_empty() || matches!(normalized.as_str(), "success" | "happy_path") {
         return next_happy_path_state(registry, profile_id, knot_type, current);
     }
-    if !matches!(knot_type, KnotType::Work | KnotType::Explore) {
-        return Ok(None);
-    }
+    let _ = knot_type;
 
     let installed = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
     let workflow = installed.require_workflow(workflow_id)?;
@@ -178,21 +145,21 @@ pub fn owner_kind_for_state(
     gate: &GateData,
     state: &str,
 ) -> Result<Option<OwnerKind>, ProfileError> {
-    match knot_type {
-        KnotType::Work | KnotType::Explore => Ok(registry
-            .require(profile_id)?
-            .owners
-            .owner_kind_for_state(state)
-            .cloned()),
-        KnotType::Lease => Ok(None),
-        KnotType::Gate => Ok(match state {
-            READY_TO_EVALUATE | EVALUATING => Some(match gate.owner_kind {
-                crate::domain::gate::GateOwnerKind::Human => OwnerKind::Human,
-                crate::domain::gate::GateOwnerKind::Agent => OwnerKind::Agent,
-            }),
-            _ => None,
-        }),
+    let profile_owner = registry
+        .require(profile_id)?
+        .owners
+        .owner_kind_for_state(state)
+        .cloned();
+    if knot_type == KnotType::Lease {
+        return Ok(None);
     }
+    if knot_type == KnotType::Gate && profile_owner.is_some() {
+        return Ok(Some(match gate.owner_kind {
+            crate::domain::gate::GateOwnerKind::Human => OwnerKind::Human,
+            crate::domain::gate::GateOwnerKind::Agent => OwnerKind::Agent,
+        }));
+    }
+    Ok(profile_owner)
 }
 
 /// Resolve step metadata for any workflow state. Queue states resolve
@@ -204,15 +171,21 @@ pub fn step_metadata_for_state(
     gate: &GateData,
     state: &str,
 ) -> Result<Option<StepMetadata>, ProfileError> {
-    match knot_type {
-        KnotType::Work | KnotType::Explore => {
-            let profile = registry.require(profile_id)?;
-            let action = resolve_action_state(profile, state);
-            Ok(action.map(|a| profile.step_metadata_for(a)))
+    let profile = registry.require(profile_id)?;
+    let action = resolve_action_state(profile, state);
+    let mut metadata = action.map(|a| profile.step_metadata_for(a));
+    if knot_type == KnotType::Gate {
+        if let Some(step) = metadata.as_mut() {
+            step.action_kind = Some("gate".to_string());
+            if let Some(owner) = step.owner.as_mut() {
+                owner.kind = match gate.owner_kind {
+                    crate::domain::gate::GateOwnerKind::Human => OwnerKind::Human,
+                    crate::domain::gate::GateOwnerKind::Agent => OwnerKind::Agent,
+                };
+            }
         }
-        KnotType::Gate => Ok(gate_step_metadata(state, gate)),
-        KnotType::Lease => Ok(lease_step_metadata(state)),
     }
+    Ok(metadata)
 }
 
 fn resolve_action_state<'a>(profile: &'a ProfileDefinition, state: &'a str) -> Option<&'a str> {
@@ -222,43 +195,6 @@ fn resolve_action_state<'a>(profile: &'a ProfileDefinition, state: &'a str) -> O
         None
     } else {
         Some(state)
-    }
-}
-
-fn gate_step_metadata(state: &str, gate: &GateData) -> Option<StepMetadata> {
-    match state {
-        READY_TO_EVALUATE | EVALUATING => {
-            let kind = match gate.owner_kind {
-                crate::domain::gate::GateOwnerKind::Human => OwnerKind::Human,
-                crate::domain::gate::GateOwnerKind::Agent => OwnerKind::Agent,
-            };
-            Some(StepMetadata {
-                action_state: EVALUATING.to_string(),
-                action_kind: Some("gate".to_string()),
-                owner: Some(crate::workflow::StepOwner {
-                    kind,
-                    agent_name: None,
-                    agent_model: None,
-                    agent_version: None,
-                }),
-                output: None,
-                review_hint: None,
-            })
-        }
-        _ => None,
-    }
-}
-
-fn lease_step_metadata(state: &str) -> Option<StepMetadata> {
-    match state {
-        LEASE_READY | LEASE_ACTIVE => Some(StepMetadata {
-            action_state: LEASE_ACTIVE.to_string(),
-            action_kind: Some("produce".to_string()),
-            owner: None,
-            output: None,
-            review_hint: None,
-        }),
-        _ => None,
     }
 }
 
@@ -279,45 +215,6 @@ pub fn enrich_step_metadata(knot: &mut crate::app::KnotView, registry: &ProfileR
             .ok()
             .flatten()
     });
-}
-
-fn validate_gate_transition(from: &str, to: &str, force: bool) -> Result<(), ProfileError> {
-    if force || from == to {
-        return Ok(());
-    }
-    if matches!(to, "deferred" | "abandoned") {
-        return Ok(());
-    }
-    let allowed = matches!(
-        (from, to),
-        (READY_TO_EVALUATE, EVALUATING) | (EVALUATING, "shipped")
-    );
-    if allowed {
-        return Ok(());
-    }
-    Err(ProfileError::InvalidDefinition(format!(
-        "invalid gate transition: {} -> {}",
-        from, to
-    )))
-}
-
-fn validate_lease_transition(from: &str, to: &str, force: bool) -> Result<(), ProfileError> {
-    if force || from == to {
-        return Ok(());
-    }
-    let allowed = matches!(
-        (from, to),
-        (LEASE_READY, LEASE_ACTIVE)
-            | (LEASE_READY, LEASE_TERMINATED)
-            | (LEASE_ACTIVE, LEASE_TERMINATED)
-    );
-    if allowed {
-        return Ok(());
-    }
-    Err(ProfileError::InvalidDefinition(format!(
-        "invalid lease transition: {} -> {}",
-        from, to
-    )))
 }
 
 #[cfg(test)]

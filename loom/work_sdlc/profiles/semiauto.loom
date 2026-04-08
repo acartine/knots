@@ -1,0 +1,12 @@
+profile semiauto "Semi-automatic" {
+    description "Human-gated plan and implementation reviews"
+    phases [planning_phase, implementation_phase, shipment_phase]
+
+    override plan_review {
+        executor human
+    }
+
+    override implementation_review {
+        executor human
+    }
+}

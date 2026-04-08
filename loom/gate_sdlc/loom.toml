@@ -1,0 +1,5 @@
+[workflow]
+name = "gate_sdlc"
+version = 1
+entry = "workflow.loom"
+default_profile = "evaluate"

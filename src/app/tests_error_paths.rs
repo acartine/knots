@@ -300,8 +300,8 @@ fn rehydrate_from_events_reports_missing_workflow_and_invalid_json() {
         "2026-02-25T10:00:00Z".to_string(),
     );
     let missing = missing.expect("rehydrate should fall back to builtin workflow");
-    assert_eq!(missing.workflow_id, "knots_sdlc");
-    assert_eq!(missing.profile_id, "knots_sdlc");
+    assert_eq!(missing.workflow_id, "work_sdlc");
+    assert_eq!(missing.profile_id, "work_sdlc");
 
     let full_path = root
         .join(".knots")
@@ -479,10 +479,8 @@ fn open_returns_not_initialized_when_knots_dir_missing() {
 fn open_succeeds_when_knots_dir_exists() {
     let root = unique_workspace();
     std::fs::create_dir_all(root.join(".knots")).expect("create .knots");
-
     let result = App::open(".knots/cache/state.sqlite", root.clone());
     assert!(result.is_ok());
-
     let _ = std::fs::remove_dir_all(root);
 }
 
@@ -491,9 +489,11 @@ fn open_with_custom_db_path_skips_init_check() {
     let root = unique_workspace();
     let db_path = root.join("custom/state.sqlite");
     let db_str = db_path.to_str().expect("utf8 path");
-
-    let result = App::open(db_str, root.clone());
-    assert!(result.is_ok());
-
+    let result = match App::open(db_str, root.clone()) {
+        Ok(_) => panic!("custom path should fail later"),
+        Err(err) => err,
+    };
+    assert!(!matches!(result, AppError::NotInitialized));
+    assert!(matches!(result, AppError::Workflow(_)));
     let _ = std::fs::remove_dir_all(root);
 }

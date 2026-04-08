@@ -1,5 +1,6 @@
 use crate::app;
 use crate::cli;
+use crate::domain::knot_type::KnotType;
 use crate::installed_workflows;
 use std::io::{self, BufRead, IsTerminal, Write};
 
@@ -33,6 +34,12 @@ fn prompt_install_default(workflow_id: &str) -> Result<bool, app::AppError> {
     ))
 }
 
+fn parse_knot_type(raw: Option<&str>) -> Result<KnotType, app::AppError> {
+    raw.unwrap_or("work")
+        .parse::<KnotType>()
+        .map_err(|err| app::AppError::InvalidArgument(err.to_string()))
+}
+
 #[cfg(not(tarpaulin_include))]
 pub(crate) fn run_workflow_command(
     args: &cli::WorkflowArgs,
@@ -54,19 +61,37 @@ fn run_workflow_install(
     install_args: &cli::WorkflowInstallArgs,
     repo_root: &std::path::Path,
 ) -> Result<(), app::AppError> {
+    let knot_type = install_args
+        .knot_type
+        .parse::<KnotType>()
+        .map_err(|err| app::AppError::InvalidArgument(err.to_string()))?;
     let workflow_id = installed_workflows::install_bundle(repo_root, &install_args.source)?;
+    let config = installed_workflows::register_workflow_for_knot_type(
+        repo_root,
+        knot_type,
+        &workflow_id,
+        None,
+        false,
+    )?;
     let set_default = match install_args.set_default.as_deref() {
         Some(raw) => parse_bool_flag(raw)?,
         None => prompt_install_default(&workflow_id)?,
     };
-    if set_default {
-        let config = installed_workflows::set_current_workflow_selection(
+    let config = if set_default {
+        installed_workflows::set_current_workflow_selection_for_knot_type(
             repo_root,
+            knot_type,
             &workflow_id,
             None,
             None,
-        )?;
-        let profile = config.current_profile_id().unwrap_or_default();
+        )?
+    } else {
+        config
+    };
+    if set_default {
+        let profile = config
+            .default_profile_id_for_workflow(&workflow_id)
+            .unwrap_or_default();
         println!("installed workflow: {workflow_id} (default profile={profile})");
     } else {
         println!("installed workflow: {workflow_id}");
@@ -79,18 +104,23 @@ fn run_workflow_use(
     use_args: &cli::WorkflowUseArgs,
     repo_root: &std::path::Path,
 ) -> Result<(), app::AppError> {
-    let config = installed_workflows::set_current_workflow_selection(
+    let knot_type = parse_knot_type(use_args.knot_type.as_deref())?;
+    let config = installed_workflows::set_current_workflow_selection_for_knot_type(
         repo_root,
+        knot_type,
         &use_args.id,
         use_args.version,
         use_args.profile.as_deref(),
     )?;
     let workflow_id = config
-        .current_workflow
-        .clone()
+        .current_workflow_ref_for_knot_type(knot_type)
+        .map(|workflow| workflow.workflow_id)
         .unwrap_or_else(|| use_args.id.clone());
-    if let Some(version) = config.current_version {
-        if let Some(profile) = config.current_profile_id() {
+    let version = config
+        .current_workflow_ref_for_knot_type(knot_type)
+        .and_then(|workflow| workflow.version);
+    if let Some(version) = version {
+        if let Some(profile) = config.default_profile_id_for_workflow(&workflow_id) {
             let profile = profile.rsplit('/').next().unwrap_or(profile);
             println!("default workflow: {workflow_id} v{version} profile={profile}");
         } else {
@@ -107,18 +137,20 @@ fn run_workflow_current(
     current_args: &cli::WorkflowCurrentArgs,
     repo_root: &std::path::Path,
 ) -> Result<(), app::AppError> {
+    let knot_type = parse_knot_type(current_args.knot_type.as_deref())?;
     let registry = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
-    let workflow = registry.current_workflow()?;
+    let workflow = registry.current_workflow_for_knot_type(knot_type)?;
     if current_args.json {
         println!(
             "{}",
             serde_json::to_string_pretty(&serde_json::json!({
+                "knot_type": knot_type.as_str(),
                 "id": workflow.id,
                 "version": workflow.version,
                 "builtin": workflow.builtin,
                 "bundle_default_profile": workflow.default_profile,
                 "default_profile": registry
-                    .current_profile_id()
+                    .default_profile_id_for_knot_type(knot_type)
                     .map(|profile| {
                         profile
                             .rsplit('/')
@@ -129,7 +161,7 @@ fn run_workflow_current(
             }))
             .expect("json serialization should work")
         );
-    } else if let Some(profile) = registry.current_profile_id() {
+    } else if let Some(profile) = registry.default_profile_id_for_knot_type(knot_type) {
         let profile = profile
             .rsplit('/')
             .next()
@@ -150,14 +182,20 @@ fn run_workflow_list(
     list_args: &cli::WorkflowListArgs,
     repo_root: &std::path::Path,
 ) -> Result<(), app::AppError> {
+    let knot_type = parse_knot_type(list_args.knot_type.as_deref())?;
     let registry = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
-    let current_id = registry.current_workflow_id().to_string();
-    let current_version = registry.current_workflow_version();
+    let current_id = registry
+        .current_workflow_id_for_knot_type(knot_type)
+        .to_string();
+    let current_version = registry
+        .current_workflow_ref_for_knot_type(knot_type)
+        .version;
     let workflows = registry
-        .list()
+        .registered_workflows_for_knot_type(knot_type)
         .into_iter()
         .map(|workflow| {
             serde_json::json!({
+                "knot_type": knot_type.as_str(),
                 "id": workflow.id,
                 "version": workflow.version,
                 "builtin": workflow.builtin,

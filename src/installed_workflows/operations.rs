@@ -5,6 +5,7 @@ use std::process::Command;
 use crate::profile::ProfileError;
 
 use super::bundle_toml::render_json_bundle_from_toml;
+use super::knot_type_registry::WorkflowRef;
 use super::{
     parse_bundle, BundleFormat, InstalledWorkflowRegistry, WorkflowDefinition, WorkflowRepoConfig,
     DEFAULT_BUNDLE_FILE, TOML_BUNDLE_FILE,
@@ -43,6 +44,7 @@ pub fn write_repo_config(
 }
 
 pub fn install_bundle(repo_root: &Path, source: &Path) -> Result<String, ProfileError> {
+    ensure_builtin_workflows_registered(repo_root)?;
     let (raw, format) = read_bundle_source(source)?;
     let workflow = parse_bundle(&raw, format)?;
     let canonical_json = match format {
@@ -93,6 +95,23 @@ pub fn set_current_workflow_selection(
     version: Option<u32>,
     profile_id: Option<&str>,
 ) -> Result<WorkflowRepoConfig, ProfileError> {
+    set_current_workflow_selection_for_knot_type(
+        repo_root,
+        crate::domain::knot_type::KnotType::Work,
+        workflow_id,
+        version,
+        profile_id,
+    )
+}
+
+pub fn set_current_workflow_selection_for_knot_type(
+    repo_root: &Path,
+    knot_type: crate::domain::knot_type::KnotType,
+    workflow_id: &str,
+    version: Option<u32>,
+    profile_id: Option<&str>,
+) -> Result<WorkflowRepoConfig, ProfileError> {
+    ensure_builtin_workflows_registered(repo_root)?;
     let registry = InstalledWorkflowRegistry::load(repo_root)?;
     let workflow = match version {
         Some(v) => registry.require_workflow_version(workflow_id, v)?,
@@ -105,9 +124,55 @@ pub fn set_current_workflow_selection(
         namespaced_profile_id(&workflow.id, &selected)
     };
     let mut config = read_repo_config(repo_root)?;
-    config.current_workflow = Some(workflow.id.clone());
-    config.current_version = Some(workflow.version);
+    config.register_workflow_for_knot_type(
+        knot_type,
+        WorkflowRef::new(workflow.id.clone(), Some(workflow.version)),
+        true,
+    );
     config.set_default_profile(&workflow.id, selected);
+    let config = config.normalize();
+    write_repo_config(repo_root, &config)?;
+    Ok(config)
+}
+
+pub fn register_workflow_for_knot_type(
+    repo_root: &Path,
+    knot_type: crate::domain::knot_type::KnotType,
+    workflow_id: &str,
+    version: Option<u32>,
+    set_default: bool,
+) -> Result<WorkflowRepoConfig, ProfileError> {
+    ensure_builtin_workflows_registered(repo_root)?;
+    let registry = InstalledWorkflowRegistry::load(repo_root)?;
+    let workflow = match version {
+        Some(v) => registry.require_workflow_version(workflow_id, v)?,
+        None => registry.require_workflow(workflow_id)?,
+    };
+    let mut config = read_repo_config(repo_root)?;
+    config.register_workflow_for_knot_type(
+        knot_type,
+        WorkflowRef::new(workflow.id.clone(), Some(workflow.version)),
+        set_default,
+    );
+    let config = config.normalize();
+    write_repo_config(repo_root, &config)?;
+    Ok(config)
+}
+
+pub fn ensure_builtin_workflows_registered(
+    repo_root: &Path,
+) -> Result<WorkflowRepoConfig, ProfileError> {
+    let mut config = read_repo_config(repo_root)?;
+    for (knot_type, workflow) in super::builtin::builtin_workflows()? {
+        config.register_workflow_for_knot_type(
+            knot_type,
+            WorkflowRef::new(workflow.id, Some(workflow.version)),
+            config
+                .current_workflow_ref_for_knot_type(knot_type)
+                .is_none(),
+        );
+    }
+    let config = config.normalize();
     write_repo_config(repo_root, &config)?;
     Ok(config)
 }
@@ -139,6 +204,7 @@ pub fn set_workflow_default_profile(
     workflow_id: &str,
     profile_id: Option<&str>,
 ) -> Result<WorkflowRepoConfig, ProfileError> {
+    ensure_builtin_workflows_registered(repo_root)?;
     let registry = InstalledWorkflowRegistry::load(repo_root)?;
     let workflow = registry.require_workflow(workflow_id)?;
     let Some(profile_id) = profile_id else {
@@ -152,6 +218,7 @@ pub fn set_workflow_default_profile(
     };
     let mut config = read_repo_config(repo_root)?;
     config.set_default_profile(workflow_id, selected);
+    let config = config.normalize();
     write_repo_config(repo_root, &config)?;
     Ok(config)
 }

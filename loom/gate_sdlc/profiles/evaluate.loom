@@ -1,0 +1,4 @@
+profile evaluate "Evaluate" {
+    description "Binary gate evaluation workflow"
+    phases [evaluating_phase]
+}

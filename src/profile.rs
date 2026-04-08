@@ -7,9 +7,6 @@ use serde::{Deserialize, Serialize};
 use crate::installed_workflows;
 pub use crate::profile_consts::*;
 
-const PROFILES_TOML: &str = include_str!("profiles.toml");
-const WILDCARD_STATE: &str = "*";
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorkflowTransition {
     pub from: String,
@@ -44,6 +41,7 @@ pub struct StepMetadata {
     pub review_hint: Option<String>,
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum OutputMode {
@@ -146,12 +144,16 @@ impl Error for InvalidWorkflowTransition {}
 #[derive(Debug)]
 pub enum ProfileError {
     Toml(toml::de::Error),
+    #[cfg_attr(not(test), allow(dead_code))]
     InvalidDefinition(String),
     InvalidBundle(String),
     MissingProfileReference,
     UnknownProfile(String),
     UnknownWorkflow(String),
-    UnknownState { profile_id: String, state: String },
+    UnknownState {
+        profile_id: String,
+        state: String,
+    },
     InvalidTransition(InvalidWorkflowTransition),
 }
 
@@ -197,34 +199,22 @@ impl From<InvalidWorkflowTransition> for ProfileError {
 impl ProfileRegistry {
     #[cfg(test)]
     pub fn load() -> Result<Self, ProfileError> {
-        let mut registry = Self::from_toml(PROFILES_TOML)?;
-        let builtin = installed_workflows::builtin::knots_sdlc_workflow_for_test()?;
-        for profile in builtin.list_profiles() {
-            if !registry.profiles.contains_key(&profile.id) {
-                registry
-                    .aliases
-                    .insert(profile.id.clone(), profile.id.clone());
-                registry.profiles.insert(profile.id.clone(), profile);
+        let mut registry = Self::empty();
+        for (_knot_type, builtin) in installed_workflows::builtin::builtin_workflows()? {
+            for profile in builtin.list_profiles() {
+                registry.insert_builtin_profile(profile);
             }
         }
         Ok(registry)
     }
 
     pub fn load_for_repo(repo_root: &Path) -> Result<Self, ProfileError> {
-        let mut registry = Self::from_toml(PROFILES_TOML)?;
+        let mut registry = Self::empty();
         let installed = installed_workflows::InstalledWorkflowRegistry::load(repo_root)?;
         for workflow in installed.list() {
             if workflow.builtin {
                 for profile in workflow.list_profiles() {
-                    if let Some(existing) = registry.profiles.get_mut(&profile.id) {
-                        existing.action_prompts = profile.action_prompts.clone();
-                        existing.prompt_acceptance = profile.prompt_acceptance.clone();
-                    } else {
-                        registry
-                            .aliases
-                            .insert(profile.id.clone(), profile.id.clone());
-                        registry.profiles.insert(profile.id.clone(), profile);
-                    }
+                    registry.insert_builtin_profile(profile);
                 }
                 continue;
             }
@@ -242,6 +232,24 @@ impl ProfileRegistry {
         Ok(registry)
     }
 
+    fn empty() -> Self {
+        Self {
+            profiles: HashMap::new(),
+            aliases: HashMap::new(),
+        }
+    }
+
+    fn insert_builtin_profile(&mut self, profile: ProfileDefinition) {
+        let canonical_id = profile.id.clone();
+        self.aliases
+            .insert(canonical_id.clone(), canonical_id.clone());
+        for alias in builtin_profile_aliases(&canonical_id) {
+            self.aliases.insert(alias.to_string(), canonical_id.clone());
+        }
+        self.profiles.insert(canonical_id, profile);
+    }
+
+    #[cfg(test)]
     pub(crate) fn from_toml(raw: &str) -> Result<Self, ProfileError> {
         let file: crate::profile_normalize::RawProfileFile = toml::from_str(raw)?;
         if file.profiles.is_empty() {
@@ -300,162 +308,6 @@ impl ProfileRegistry {
     }
 }
 
-impl ProfileOwners {
-    pub fn for_action_state(&self, state: &str) -> Option<&StepOwner> {
-        match state {
-            PLANNING => Some(&self.planning),
-            PLAN_REVIEW => Some(&self.plan_review),
-            IMPLEMENTATION => Some(&self.implementation),
-            IMPLEMENTATION_REVIEW => Some(&self.implementation_review),
-            SHIPMENT => Some(&self.shipment),
-            SHIPMENT_REVIEW => Some(&self.shipment_review),
-            _ => None,
-        }
-    }
-
-    pub fn owner_kind_for_state(&self, state: &str) -> Option<&OwnerKind> {
-        if let Some(owner) = self.states.get(state) {
-            return Some(&owner.kind);
-        }
-        let action = match state {
-            READY_FOR_PLANNING | PLANNING => PLANNING,
-            READY_FOR_PLAN_REVIEW | PLAN_REVIEW => PLAN_REVIEW,
-            READY_FOR_IMPLEMENTATION | IMPLEMENTATION => IMPLEMENTATION,
-            READY_FOR_IMPLEMENTATION_REVIEW | IMPLEMENTATION_REVIEW => IMPLEMENTATION_REVIEW,
-            READY_FOR_SHIPMENT | SHIPMENT => SHIPMENT,
-            READY_FOR_SHIPMENT_REVIEW | SHIPMENT_REVIEW => SHIPMENT_REVIEW,
-            _ => return None,
-        };
-        self.for_action_state(action).map(|o| &o.kind)
-    }
-}
-
-impl ProfileDefinition {
-    pub fn is_queue_state(&self, state: &str) -> bool {
-        if !self.queue_states.is_empty() {
-            return self.queue_states.iter().any(|candidate| candidate == state);
-        }
-        state.starts_with("ready_for_") || state == "ready_to_evaluate"
-    }
-
-    #[allow(dead_code)]
-    pub fn is_action_state(&self, state: &str) -> bool {
-        if self.is_escape_state(state) {
-            return false;
-        }
-        if !self.action_states.is_empty() {
-            return self
-                .action_states
-                .iter()
-                .any(|candidate| candidate == state);
-        }
-        self.owners.for_action_state(state).is_some() || state == "evaluating"
-    }
-
-    pub fn action_for_queue_state(&self, state: &str) -> Option<&str> {
-        self.queue_actions.get(state).map(String::as_str)
-    }
-
-    pub fn is_gate_action_state(&self, state: &str) -> bool {
-        matches!(
-            self.action_kinds.get(state).map(String::as_str),
-            Some("gate") | Some("review")
-        )
-    }
-
-    pub fn is_escape_state(&self, state: &str) -> bool {
-        let s = normalize_state_alias(state);
-        self.escape_states.iter().any(|c| c == s)
-    }
-
-    pub fn prompt_for_action_state(&self, s: &str) -> Option<&str> {
-        self.action_prompts.get(s).map(String::as_str)
-    }
-
-    pub fn acceptance_for_action_state(&self, s: &str) -> &[String] {
-        self.prompt_acceptance
-            .get(s)
-            .map(Vec::as_slice)
-            .unwrap_or(&[])
-    }
-
-    pub fn step_metadata_for(&self, action_state: &str) -> StepMetadata {
-        let owner = self
-            .owners
-            .states
-            .get(action_state)
-            .or_else(|| self.owners.for_action_state(action_state))
-            .cloned();
-        StepMetadata {
-            action_state: action_state.to_string(),
-            action_kind: self.action_kinds.get(action_state).cloned(),
-            owner,
-            output: self.outputs.get(action_state).cloned(),
-            review_hint: self.review_hints.get(action_state).cloned(),
-        }
-    }
-
-    pub fn is_terminal_state(&self, state: &str) -> bool {
-        self.terminal_states.iter().any(|c| c == state)
-    }
-
-    pub fn require_state(&self, state: &str) -> Result<(), ProfileError> {
-        let normalized = normalize_state_alias(state);
-        if self.states.iter().any(|candidate| candidate == normalized) {
-            return Ok(());
-        }
-        Err(ProfileError::UnknownState {
-            profile_id: self.id.clone(),
-            state: normalized.to_string(),
-        })
-    }
-
-    pub fn validate_transition(
-        &self,
-        from: &str,
-        to: &str,
-        force: bool,
-    ) -> Result<(), ProfileError> {
-        let from = normalize_state_alias(from);
-        let to = normalize_state_alias(to);
-        self.require_state(from)?;
-        self.require_state(to)?;
-
-        if force || from == to {
-            return Ok(());
-        }
-
-        let allowed = self.transitions.iter().any(|transition| {
-            (transition.from == from || transition.from == WILDCARD_STATE) && transition.to == to
-        });
-        if allowed {
-            return Ok(());
-        }
-
-        Err(InvalidWorkflowTransition {
-            profile_id: self.id.clone(),
-            from: from.to_string(),
-            to: to.to_string(),
-        }
-        .into())
-    }
-
-    pub fn next_happy_path_state(&self, current: &str) -> Option<&str> {
-        let current = normalize_state_alias(current);
-        let pos = self.states.iter().position(|state| state == current)?;
-        for candidate in &self.states[pos + 1..] {
-            let valid = self
-                .transitions
-                .iter()
-                .any(|transition| transition.from == current && transition.to == *candidate);
-            if valid {
-                return Some(candidate.as_str());
-            }
-        }
-        None
-    }
-}
-
 pub fn normalize_profile_id(raw: &str) -> Option<String> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
@@ -466,19 +318,20 @@ pub fn normalize_profile_id(raw: &str) -> Option<String> {
 }
 
 fn builtin_workflow_id() -> String {
-    installed_workflows::BUILTIN_WORKFLOW_ID.to_string()
+    installed_workflows::builtin_workflow_id_for_knot_type(crate::domain::knot_type::KnotType::Work)
 }
 
-fn normalize_state_alias(raw: &str) -> &str {
-    match raw.trim() {
-        "idea" => READY_FOR_PLANNING,
-        "work_item" => READY_FOR_IMPLEMENTATION,
-        "implementing" => IMPLEMENTATION,
-        "implemented" => READY_FOR_IMPLEMENTATION_REVIEW,
-        "reviewing" => IMPLEMENTATION_REVIEW,
-        "rejected" | "refining" => READY_FOR_IMPLEMENTATION,
-        "approved" => READY_FOR_SHIPMENT,
-        other => other,
+fn builtin_profile_aliases(id: &str) -> &'static [&'static str] {
+    match id {
+        "autopilot" => &[
+            "automation_granular",
+            "default",
+            "delivery",
+            "automation",
+            "granular",
+        ],
+        "semiauto" => &["human_gate", "human", "coarse", "pr_human_gate"],
+        _ => &[],
     }
 }
 
@@ -488,3 +341,6 @@ mod tests;
 #[cfg(test)]
 #[path = "profile_tests_exploration.rs"]
 mod tests_exploration;
+#[cfg(test)]
+#[path = "profile_tests_installed_workflows.rs"]
+mod tests_installed_workflows;

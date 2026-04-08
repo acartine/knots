@@ -7,6 +7,8 @@ use uuid::Uuid;
 fn unique_workspace(prefix: &str) -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&path).expect("workspace should be creatable");
+    crate::installed_workflows::ensure_builtin_workflows_registered(&path)
+        .expect("builtin workflows should register");
     path
 }
 
@@ -99,11 +101,6 @@ fn per_action_outputs_resolve_independently() {
     let wf_root = workspace.join(".knots/workflows/multi_out/1");
     std::fs::create_dir_all(&wf_root).expect("dir");
     std::fs::write(wf_root.join("bundle.toml"), MULTI_OUTPUT_BUNDLE).expect("write bundle");
-    std::fs::write(
-        workspace.join(".knots/workflows/current"),
-        "current_workflow = \"multi_out\"\ncurrent_version = 1\n",
-    )
-    .expect("config");
 
     let registry = ProfileRegistry::load_for_repo(&workspace).expect("registry");
     let gate = GateData::default();

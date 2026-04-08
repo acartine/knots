@@ -23,6 +23,9 @@ pub enum WorkflowSubcommands {
 
 #[derive(Debug, Args)]
 pub struct WorkflowListArgs {
+    #[arg(short = 't', long = "type", help = "Knot type (defaults to work).")]
+    pub knot_type: Option<String>,
+
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
 }
@@ -45,6 +48,13 @@ pub struct WorkflowInstallArgs {
     pub source: std::path::PathBuf,
 
     #[arg(
+        short = 't',
+        long = "type",
+        help = "Knot type to register this workflow under."
+    )]
+    pub knot_type: String,
+
+    #[arg(
         long = "set-default",
         value_name = "BOOL",
         help = "Whether to switch to the installed workflow (yes|true|1|no|false|0)."
@@ -56,6 +66,9 @@ pub struct WorkflowInstallArgs {
 pub struct WorkflowUseArgs {
     #[arg(help = "Workflow id.")]
     pub id: String,
+
+    #[arg(short = 't', long = "type", help = "Knot type (defaults to work).")]
+    pub knot_type: Option<String>,
 
     #[arg(short = 'v', long, help = "Workflow version (defaults to latest).")]
     pub version: Option<u32>,
@@ -70,6 +83,9 @@ pub struct WorkflowUseArgs {
 
 #[derive(Debug, Args)]
 pub struct WorkflowCurrentArgs {
+    #[arg(short = 't', long = "type", help = "Knot type (defaults to work).")]
+    pub knot_type: Option<String>,
+
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
 }
@@ -88,12 +104,15 @@ mod tests {
             "workflow",
             "install",
             "/tmp/bundle.json",
+            "--type",
+            "work",
             "--set-default=true",
         ]);
         match cli.command {
             Commands::Workflow(args) => match args.command {
                 WorkflowSubcommands::Install(install) => {
                     assert_eq!(install.source, std::path::PathBuf::from("/tmp/bundle.json"));
+                    assert_eq!(install.knot_type, "work");
                     assert_eq!(install.set_default.as_deref(), Some("true"));
                 }
                 other => panic!("expected install, got {:?}", other),

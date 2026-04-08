@@ -84,6 +84,22 @@ fn assemble_profile(
     let outputs =
         build_outputs_from_toml_profile(&profile_section.outputs, &ctx.action_states, states);
     let review_hints = build_review_hints(&ctx.action_states, states);
+    let planning_mode = if has_phase_states(&ctx, "planning", "ready_for_planning")
+        || has_phase_states(&ctx, "plan_review", "ready_for_plan_review")
+    {
+        GateMode::Required
+    } else {
+        GateMode::Skipped
+    };
+    let implementation_review_mode = if has_phase_states(
+        &ctx,
+        "implementation_review",
+        "ready_for_implementation_review",
+    ) {
+        GateMode::Required
+    } else {
+        GateMode::Skipped
+    };
     let owners = ProfileOwners {
         planning: default_owner(OwnerKind::Agent),
         plan_review: default_owner(OwnerKind::Human),
@@ -101,8 +117,8 @@ fn assemble_profile(
         workflow_id: workflow_id.to_string(),
         aliases: Vec::new(),
         description: profile_section.description.clone(),
-        planning_mode: GateMode::Required,
-        implementation_review_mode: GateMode::Required,
+        planning_mode,
+        implementation_review_mode,
         outputs,
         owners,
         initial_state: ctx.first_queue.ok_or_else(|| {
@@ -124,6 +140,11 @@ fn assemble_profile(
         prompt_acceptance,
         review_hints,
     })
+}
+
+fn has_phase_states(ctx: &ProfileBuildContext, action_state: &str, queue_state: &str) -> bool {
+    ctx.action_states.iter().any(|state| state == action_state)
+        || ctx.queue_states.iter().any(|state| state == queue_state)
 }
 
 #[derive(Default)]

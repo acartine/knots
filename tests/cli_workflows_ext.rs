@@ -180,6 +180,8 @@ fn custom_workflow_supports_non_ready_queue_names() {
         &[
             "workflow",
             "install",
+            "--type",
+            "work",
             bundle_path.to_str().expect("utf8 path"),
         ],
     );

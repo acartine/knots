@@ -74,6 +74,23 @@ fn parse_created_id(output: &Output) -> String {
         .to_string()
 }
 
+fn bootstrap_builtin_workflows(root: &Path, db: &Path, home: &Path) {
+    for (knot_type, workflow_id) in [
+        ("work", "work_sdlc"),
+        ("gate", "gate_sdlc"),
+        ("lease", "lease_sdlc"),
+        ("explore", "explore_sdlc"),
+    ] {
+        let output = run_knots(
+            root,
+            db,
+            home,
+            &["workflow", "use", workflow_id, "--type", knot_type],
+        );
+        assert_success(&output);
+    }
+}
+
 const CUSTOM_BUNDLE: &str = r#"
 [workflow]
 name = "custom_flow"
@@ -170,6 +187,7 @@ fn custom_workflow_install_use_and_runtime_flow() {
     let home = unique_workspace("knots-cli-workflows-home");
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db, &home);
     let bundle_path = root.join("custom-flow.toml");
     std::fs::write(&bundle_path, CUSTOM_BUNDLE).expect("bundle should write");
 
@@ -180,6 +198,8 @@ fn custom_workflow_install_use_and_runtime_flow() {
         &[
             "workflow",
             "install",
+            "--type",
+            "work",
             bundle_path.to_str().expect("utf8 path"),
         ],
     );
@@ -194,7 +214,7 @@ fn custom_workflow_install_use_and_runtime_flow() {
     assert_success(&before_use);
     assert_eq!(
         String::from_utf8_lossy(&before_use.stdout).trim(),
-        "knots_sdlc v1 default_profile=autopilot"
+        "work_sdlc v1 default_profile=autopilot"
     );
 
     let list = run_knots(&root, &db, &home, &["workflow", "list", "--json"]);
@@ -206,7 +226,7 @@ fn custom_workflow_install_use_and_runtime_flow() {
         .iter()
         .filter_map(|item| item.get("id").and_then(Value::as_str))
         .collect::<Vec<_>>();
-    assert!(ids.contains(&"knots_sdlc"));
+    assert!(ids.contains(&"work_sdlc"));
     assert!(ids.contains(&"custom_flow"));
 
     let use_workflow = run_knots(&root, &db, &home, &["workflow", "use", "custom_flow"]);
@@ -259,6 +279,7 @@ fn workflow_commands_render_text_and_json_views() {
     let home = unique_workspace("knots-cli-workflow-views-home");
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db, &home);
     let bundle_path = root.join("custom-flow.toml");
     std::fs::write(&bundle_path, CUSTOM_BUNDLE).expect("bundle should write");
 
@@ -269,6 +290,8 @@ fn workflow_commands_render_text_and_json_views() {
         &[
             "workflow",
             "install",
+            "--type",
+            "work",
             bundle_path.to_str().expect("utf8 path"),
         ],
     );
@@ -278,7 +301,7 @@ fn workflow_commands_render_text_and_json_views() {
     let list_text = run_knots(&root, &db, &home, &["workflow", "list"]);
     assert_success(&list_text);
     let list_stdout = String::from_utf8_lossy(&list_text.stdout);
-    assert!(list_stdout.contains("knots_sdlc v1 default_profile=autopilot"));
+    assert!(list_stdout.contains("work_sdlc v1"));
     assert!(list_stdout.contains("custom_flow v1 default_profile=autopilot"));
 
     let show_text = run_knots(&root, &db, &home, &["workflow", "show", "custom_flow"]);
@@ -303,19 +326,19 @@ fn workflow_commands_render_text_and_json_views() {
     let current_json = run_knots(&root, &db, &home, &["workflow", "current", "--json"]);
     assert_success(&current_json);
     let current_json: Value = serde_json::from_slice(&current_json.stdout).expect("current json");
-    assert_eq!(current_json["id"], "knots_sdlc");
+    assert_eq!(current_json["id"], "work_sdlc");
     assert_eq!(current_json["version"], 1);
     assert_eq!(current_json["default_profile"], "autopilot");
 
-    let use_builtin = run_knots(&root, &db, &home, &["workflow", "use", "knots_sdlc"]);
+    let use_builtin = run_knots(&root, &db, &home, &["workflow", "use", "work_sdlc"]);
     assert_success(&use_builtin);
     let use_stdout = String::from_utf8_lossy(&use_builtin.stdout);
-    assert!(use_stdout.contains("default workflow: knots_sdlc v1"));
+    assert!(use_stdout.contains("default workflow: work_sdlc v1"));
 
     let current_text = run_knots(&root, &db, &home, &["workflow", "current"]);
     assert_success(&current_text);
     let current_stdout = String::from_utf8_lossy(&current_text.stdout);
-    assert!(current_stdout.contains("knots_sdlc v1 default_profile=autopilot"));
+    assert!(current_stdout.contains("work_sdlc v1 default_profile=autopilot"));
 }
 
 #[test]
@@ -324,6 +347,7 @@ fn workflow_install_warns_on_unknown_artifact_target() {
     let home = unique_workspace("knots-cli-unknown-artifact-home");
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir");
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db, &home);
     // Add an unknown artifact_type to the "work" state section.
     // The profile-level output= is not part of BundleProfileSection,
     // so we inject it on the state definition where the parser checks.
@@ -338,7 +362,13 @@ fn workflow_install_warns_on_unknown_artifact_target() {
         &root,
         &db,
         &home,
-        &["workflow", "install", bundle_path.to_str().unwrap()],
+        &[
+            "workflow",
+            "install",
+            "--type",
+            "work",
+            bundle_path.to_str().unwrap(),
+        ],
     );
     assert_success(&install);
 
@@ -382,6 +412,7 @@ fn workflow_install_does_not_switch_without_set_default() {
     let home = unique_workspace("knots-cli-workflows-install-defaults-home");
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
     let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db, &home);
     let bundle_path = root.join("custom-flow.toml");
     std::fs::write(&bundle_path, CUSTOM_BUNDLE).expect("bundle should write");
 
@@ -392,8 +423,10 @@ fn workflow_install_does_not_switch_without_set_default() {
         &[
             "workflow",
             "install",
-            bundle_path.to_str().expect("utf8 path"),
+            "--type",
+            "work",
             "--set-default=false",
+            bundle_path.to_str().expect("utf8 path"),
         ],
     );
     assert_success(&install);
@@ -401,7 +434,7 @@ fn workflow_install_does_not_switch_without_set_default() {
     let current = run_knots(&root, &db, &home, &["workflow", "current", "--json"]);
     assert_success(&current);
     let current_json: Value = serde_json::from_slice(&current.stdout).expect("current json");
-    assert_eq!(current_json["id"], "knots_sdlc");
+    assert_eq!(current_json["id"], "work_sdlc");
     assert_eq!(current_json["default_profile"], "autopilot");
 
     let created = run_knots(

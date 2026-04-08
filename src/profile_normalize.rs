@@ -232,7 +232,7 @@ fn norm_scalar(raw: &str) -> Option<String> {
     }
 }
 fn builtin_wf_id() -> String {
-    installed_workflows::BUILTIN_WORKFLOW_ID.into()
+    installed_workflows::builtin_workflow_id_for_knot_type(crate::domain::knot_type::KnotType::Work)
 }
 fn canonical_transitions() -> Vec<WorkflowTransition> {
     vec![

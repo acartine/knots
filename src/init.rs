@@ -69,11 +69,22 @@ pub(crate) fn init_local_store(repo_root: &Path, db_path: &str) -> Result<(), Ap
     }
     progress(&format!("opening cache database at {db_path}"))?;
     let _ = db::open_connection(db_path)?;
-    if crate::project::canonical_or_original(&store_root_for_db(db_path))
-        == crate::project::canonical_or_original(&repo_root.join(".knots"))
-    {
+    let store_root = crate::project::canonical_or_original(&store_root_for_db(db_path));
+    let repo_root = crate::project::canonical_or_original(repo_root);
+    let git_store_root = crate::project::canonical_or_original(&repo_root.join(".knots"));
+
+    if store_root == git_store_root || store_root == repo_root || store_root.exists() {
+        let workflow_root = if store_root == git_store_root {
+            repo_root.as_path()
+        } else {
+            store_root.as_path()
+        };
+        progress("registering builtin workflows by knot type")?;
+        crate::installed_workflows::ensure_builtin_workflows_registered(workflow_root)?;
+    }
+    if store_root == git_store_root {
         progress("ensuring gitignore includes .knots rule")?;
-        ensure_knots_gitignore(repo_root)?;
+        ensure_knots_gitignore(&repo_root)?;
     }
     progress_ok("local store ready")?;
     Ok(())

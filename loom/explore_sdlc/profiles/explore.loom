@@ -1,0 +1,4 @@
+profile explore "Explore" {
+    description "Lightweight investigation workflow"
+    phases [exploration_phase]
+}

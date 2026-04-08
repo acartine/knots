@@ -7,6 +7,11 @@ use super::{
     apply_fixes, has_non_pass_checks, set_version_fix_applied_for_tests, version_fix_applied,
 };
 use crate::doctor::{DoctorCheck, DoctorStatus};
+use crate::domain::knot_type::KnotType;
+use crate::installed_workflows::{
+    install_bundle, read_repo_config, write_repo_config, InstalledWorkflowRegistry,
+    KnotTypeWorkflowConfig, WorkflowRef, WorkflowRepoConfig,
+};
 use crate::sync::{GitAdapter, KnotsWorktree};
 
 fn unique_workspace() -> PathBuf {
@@ -67,6 +72,40 @@ fn sample_check(name: &str, status: DoctorStatus) -> DoctorCheck {
         status,
         detail: "detail".to_string(),
     }
+}
+
+fn copy_dir_all(src: &Path, dst: &Path) {
+    std::fs::create_dir_all(dst).expect("destination directory should be creatable");
+    for entry in std::fs::read_dir(src).expect("source directory should be readable") {
+        let entry = entry.expect("directory entry should be readable");
+        let file_type = entry.file_type().expect("entry type should be readable");
+        let target = dst.join(entry.file_name());
+        if file_type.is_dir() {
+            copy_dir_all(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), &target).expect("file should copy");
+        }
+    }
+}
+
+fn install_custom_workflow(root: &Path, workflow_id: &str) -> String {
+    let source = root.join("custom-flow-loom");
+    copy_dir_all(&PathBuf::from("loom/work_sdlc"), &source);
+
+    let loom_toml = source.join("loom.toml");
+    let mut toml = std::fs::read_to_string(&loom_toml).expect("loom.toml should read");
+    toml = toml.replace("name = \"work_sdlc\"", &format!("name = \"{workflow_id}\""));
+    std::fs::write(&loom_toml, toml).expect("loom.toml should write");
+
+    let workflow = source.join("workflow.loom");
+    let mut workflow_toml = std::fs::read_to_string(&workflow).expect("workflow.loom should read");
+    workflow_toml = workflow_toml.replace(
+        "workflow work_sdlc v1",
+        &format!("workflow {workflow_id} v1"),
+    );
+    std::fs::write(&workflow, workflow_toml).expect("workflow.loom should write");
+
+    install_bundle(root, &source).expect("custom workflow should install")
 }
 
 #[test]
@@ -274,6 +313,100 @@ fn apply_fixes_reconciles_terminal_parents() {
         .expect("parent should load")
         .expect("parent should exist");
     assert_eq!(updated.state, "shipped");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn apply_fixes_workflow_registry_repairs_missing_builtin_entries_without_clobbering_custom_work_selection(
+) {
+    let root = unique_workspace();
+    let custom_workflow_id = install_custom_workflow(&root, "custom_flow");
+    assert_eq!(custom_workflow_id, "custom_flow");
+
+    let config = WorkflowRepoConfig {
+        knot_type_workflows: std::collections::BTreeMap::from([
+            (
+                KnotType::Work.as_str().to_string(),
+                KnotTypeWorkflowConfig {
+                    default: WorkflowRef::new("custom_flow", Some(1)),
+                    registered: vec![WorkflowRef::new("custom_flow", Some(1))],
+                },
+            ),
+            (
+                KnotType::Gate.as_str().to_string(),
+                KnotTypeWorkflowConfig {
+                    default: WorkflowRef::new("custom_flow", Some(1)),
+                    registered: vec![WorkflowRef::new("custom_flow", Some(1))],
+                },
+            ),
+            (
+                KnotType::Lease.as_str().to_string(),
+                KnotTypeWorkflowConfig {
+                    default: WorkflowRef::new("custom_flow", Some(1)),
+                    registered: vec![WorkflowRef::new("custom_flow", Some(1))],
+                },
+            ),
+            (
+                KnotType::Explore.as_str().to_string(),
+                KnotTypeWorkflowConfig {
+                    default: WorkflowRef::new("custom_flow", Some(1)),
+                    registered: vec![WorkflowRef::new("custom_flow", Some(1))],
+                },
+            ),
+        ]),
+        current_workflow: None,
+        current_version: None,
+        legacy_current_profile: None,
+        default_profiles: std::collections::BTreeMap::new(),
+    };
+    write_repo_config(&root, &config).expect("config should write");
+
+    let checks = vec![sample_check("workflow_registry", DoctorStatus::Warn)];
+    apply_fixes(&root, &checks);
+
+    let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+    assert_eq!(
+        registry.current_workflow_id_for_knot_type(KnotType::Work),
+        "custom_flow"
+    );
+
+    let work_workflows = registry
+        .registered_workflows_for_knot_type(KnotType::Work)
+        .iter()
+        .map(|workflow| workflow.id.as_str())
+        .collect::<Vec<_>>();
+    assert!(work_workflows.contains(&"custom_flow"));
+    assert!(work_workflows.contains(&"work_sdlc"));
+
+    let gate_workflows = registry
+        .registered_workflows_for_knot_type(KnotType::Gate)
+        .iter()
+        .map(|workflow| workflow.id.as_str())
+        .collect::<Vec<_>>();
+    assert!(gate_workflows.contains(&"gate_sdlc"));
+
+    let lease_workflows = registry
+        .registered_workflows_for_knot_type(KnotType::Lease)
+        .iter()
+        .map(|workflow| workflow.id.as_str())
+        .collect::<Vec<_>>();
+    assert!(lease_workflows.contains(&"lease_sdlc"));
+
+    let explore_workflows = registry
+        .registered_workflows_for_knot_type(KnotType::Explore)
+        .iter()
+        .map(|workflow| workflow.id.as_str())
+        .collect::<Vec<_>>();
+    assert!(explore_workflows.contains(&"explore_sdlc"));
+
+    let repaired = read_repo_config(&root).expect("config should reload");
+    assert_eq!(
+        repaired
+            .current_workflow_ref_for_knot_type(KnotType::Work)
+            .map(|workflow| workflow.workflow_id),
+        Some("custom_flow".to_string())
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

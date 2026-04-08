@@ -1,0 +1,111 @@
+{
+  "format": "knots-bundle",
+  "format_version": 2,
+  "workflow": {
+    "name": "lease_sdlc",
+    "version": 1,
+    "default_profile": "lease"
+  },
+  "states": [
+    {
+      "id": "lease_active",
+      "display_name": "Lease Active",
+      "kind": "action",
+      "action_kind": "produce",
+      "gate_kind": null,
+      "executor": "agent",
+      "constraints": [],
+      "prompt": "lease_active",
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "lease_terminated",
+      "display_name": "Lease Terminated",
+      "kind": "terminal",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    },
+    {
+      "id": "lease_ready",
+      "display_name": "Lease Ready",
+      "kind": "queue",
+      "action_kind": null,
+      "gate_kind": null,
+      "executor": null,
+      "constraints": [],
+      "prompt": null,
+      "output": null,
+      "output_hint": null
+    }
+  ],
+  "steps": [
+    {
+      "id": "lease_active",
+      "queue": "lease_ready",
+      "action": "lease_active"
+    }
+  ],
+  "phases": [
+    {
+      "id": "lease_phase",
+      "produce_step": "lease_active",
+      "gate_step": null
+    }
+  ],
+  "profiles": [
+    {
+      "id": "lease",
+      "display_name": "Lease",
+      "description": "Lease lifecycle workflow",
+      "phases": [
+        "lease_phase"
+      ],
+      "outputs": {},
+      "executors": {
+        "lease_active": "agent"
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "lease_active",
+      "accept": [],
+      "params": [],
+      "outcomes": [
+        {
+          "name": "lease_complete",
+          "target": "lease_terminated",
+          "is_success": true
+        }
+      ],
+      "body": "# Lease Active\n\nMaintain an active lease until it is explicitly terminated.",
+      "body_params": []
+    }
+  ],
+  "transitions": {
+    "wildcard_targets": [],
+    "queue_to_action": [
+      {
+        "id": "lease_active",
+        "queue": "ready_for_lease_active",
+        "action": "lease_active"
+      }
+    ],
+    "outcome_tables": [
+      {
+        "action": "lease_active",
+        "prompt": "lease_active",
+        "success": {
+          "lease_complete": "lease_terminated"
+        },
+        "failure": {}
+      }
+    ]
+  }
+}

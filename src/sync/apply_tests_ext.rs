@@ -10,7 +10,7 @@ use crate::sync::{GitAdapter, SyncError};
 
 use super::{
     invalid_event, is_stale_precondition, optional_i64, optional_string, parse_metadata_entry,
-    IncrementalApplier,
+    required_workflow_id, IncrementalApplier,
 };
 
 fn unique_workspace() -> PathBuf {
@@ -120,6 +120,13 @@ fn parse_metadata_entry_requires_all_string_fields() {
     let err = parse_metadata_entry(&missing, Path::new("/tmp/entry.json"))
         .expect_err("missing field should fail");
     assert!(matches!(err, SyncError::InvalidEvent { .. }));
+}
+
+#[test]
+fn required_workflow_id_defaults_to_builtin_workflow_for_unnamespaced_profile() {
+    let object = Map::<String, Value>::new();
+
+    assert_eq!(required_workflow_id(&object, "autopilot"), "work_sdlc");
 }
 
 #[test]

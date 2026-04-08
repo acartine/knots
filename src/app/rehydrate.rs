@@ -175,7 +175,7 @@ fn apply_index_head(
         projection.knot_type = parse_knot_type(Some(raw_type));
     }
     if let Some(raw_wf) = data.get("workflow_id").and_then(Value::as_str) {
-        projection.workflow_id = installed_workflows::repair_legacy_builtin_workflow_id(raw_wf);
+        projection.workflow_id = installed_workflows::normalize_workflow_id(raw_wf);
     }
     let raw_profile = data
         .get("profile_id")
@@ -208,7 +208,8 @@ fn finalize_projection(
     knot_id: &str,
 ) -> Result<(), AppError> {
     if projection.workflow_id.trim().is_empty() {
-        projection.workflow_id = installed_workflows::BUILTIN_WORKFLOW_ID.to_string();
+        projection.workflow_id =
+            installed_workflows::builtin_workflow_id_for_knot_type(KnotType::Work);
     }
     if projection.profile_id.trim().is_empty() {
         if !projection.workflow_id.trim().is_empty() {

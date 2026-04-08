@@ -2,10 +2,12 @@ pub(crate) mod builtin;
 pub(crate) mod bundle_json;
 pub(crate) mod bundle_toml;
 mod ids;
+mod knot_type_registry;
 mod loader;
 mod operations;
 pub(crate) mod profile_json;
 pub(crate) mod profile_toml;
+mod registry;
 
 #[cfg(test)]
 mod tests_helpers;
@@ -13,6 +15,8 @@ mod tests_helpers;
 mod tests_output_sections;
 #[cfg(test)]
 mod tests_parsing;
+#[cfg(test)]
+mod tests_parsing_outputs;
 #[cfg(test)]
 mod tests_registry;
 #[cfg(test)]
@@ -30,26 +34,38 @@ use crate::profile::{normalize_profile_id, ProfileDefinition, ProfileError};
 
 use bundle_json::parse_bundle_json;
 use bundle_toml::parse_bundle_toml;
+pub use knot_type_registry::{KnotTypeWorkflowConfig, WorkflowRef};
+pub use registry::InstalledWorkflowRegistry;
 
 pub use ids::normalize_workflow_id;
-pub(crate) use ids::{repair_legacy_builtin_workflow_id, repair_profile_reference};
+#[cfg(test)]
+pub use operations::write_repo_config;
 pub use operations::{
-    install_bundle, namespaced_profile_id, read_repo_config, set_current_workflow_selection,
-    set_workflow_default_profile,
+    ensure_builtin_workflows_registered, install_bundle, namespaced_profile_id, read_repo_config,
+    register_workflow_for_knot_type, set_current_workflow_selection,
+    set_current_workflow_selection_for_knot_type, set_workflow_default_profile,
 };
 
-pub const BUILTIN_WORKFLOW_ID: &str = "knots_sdlc";
 const DEFAULT_BUNDLE_FILE: &str = "bundle.json";
 const TOML_BUNDLE_FILE: &str = "bundle.toml";
 
+pub fn builtin_workflow_id_for_knot_type(knot_type: crate::domain::knot_type::KnotType) -> String {
+    builtin::builtin_workflow_ref(knot_type).workflow_id
+}
+
 pub fn is_builtin_workflow_id(workflow_id: &str) -> bool {
-    normalize_workflow_id(workflow_id) == BUILTIN_WORKFLOW_ID
+    let workflow_id = normalize_workflow_id(workflow_id);
+    crate::domain::knot_type::KnotType::ALL
+        .into_iter()
+        .any(|knot_type| builtin_workflow_id_for_knot_type(knot_type) == workflow_id)
 }
 
 // ── WorkflowRepoConfig ─────────────────────────────────
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorkflowRepoConfig {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub knot_type_workflows: BTreeMap<String, KnotTypeWorkflowConfig>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current_workflow: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -72,12 +88,23 @@ impl WorkflowRepoConfig {
                 .or_insert(profile_id);
         }
         self.repair_builtin_workflow_references();
+        self.knot_type_workflows =
+            knot_type_registry::normalize_knot_type_workflows(self.knot_type_workflows);
+        self.migrate_legacy_current_workflow();
         self
     }
 
+    #[cfg(test)]
     pub(crate) fn current_profile_id(&self) -> Option<&str> {
-        let workflow_id = self.current_workflow.as_deref()?;
-        let workflow_id = normalize_workflow_id(workflow_id);
+        let workflow_id = self
+            .current_workflow
+            .as_deref()
+            .map(str::to_string)
+            .or_else(|| {
+                self.current_workflow_ref_for_knot_type(crate::domain::knot_type::KnotType::Work)
+                    .map(|workflow| workflow.workflow_id)
+            })?;
+        let workflow_id = normalize_workflow_id(&workflow_id);
         self.default_profile_id_for_workflow(&workflow_id)
     }
 
@@ -95,19 +122,17 @@ impl WorkflowRepoConfig {
 
     fn repair_builtin_workflow_references(&mut self) -> bool {
         let mut repaired = false;
-        if self
-            .current_workflow
-            .as_deref()
-            .is_some_and(|id| normalize_workflow_id(id) == "compatibility")
-        {
-            self.current_workflow = Some(BUILTIN_WORKFLOW_ID.to_string());
-            repaired = true;
+        if let Some(current_workflow) = self.current_workflow.as_deref() {
+            let repaired_workflow_id = repair_legacy_config_workflow_id(current_workflow);
+            repaired |= repaired_workflow_id != current_workflow;
+            self.current_workflow = Some(repaired_workflow_id);
         }
 
         let mut default_profiles = BTreeMap::new();
         for (workflow_id, profile_id) in std::mem::take(&mut self.default_profiles) {
-            let repaired_workflow_id = repair_legacy_builtin_workflow_id(&workflow_id);
-            let repaired_profile_id = repair_profile_reference(&repaired_workflow_id, &profile_id);
+            let repaired_workflow_id = repair_legacy_config_workflow_id(&workflow_id);
+            let repaired_profile_id =
+                repair_legacy_config_profile_reference(&repaired_workflow_id, &profile_id);
             repaired |= repaired_workflow_id != workflow_id || repaired_profile_id != profile_id;
             default_profiles
                 .entry(repaired_workflow_id)
@@ -115,6 +140,75 @@ impl WorkflowRepoConfig {
         }
         self.default_profiles = default_profiles;
         repaired
+    }
+
+    fn migrate_legacy_current_workflow(&mut self) {
+        if self.knot_type_workflows.contains_key("work") {
+            self.current_workflow = None;
+            self.current_version = None;
+            return;
+        }
+        let Some(current_workflow) = self.current_workflow.take() else {
+            return;
+        };
+        let entry = KnotTypeWorkflowConfig {
+            default: WorkflowRef::new(current_workflow, self.current_version.take()),
+            registered: Vec::new(),
+        }
+        .normalize();
+        self.knot_type_workflows.insert("work".to_string(), entry);
+    }
+
+    pub fn current_workflow_ref_for_knot_type(
+        &self,
+        knot_type: crate::domain::knot_type::KnotType,
+    ) -> Option<WorkflowRef> {
+        self.knot_type_workflows
+            .get(knot_type.as_str())
+            .map(|entry| entry.default.clone())
+    }
+
+    pub fn register_workflow_for_knot_type(
+        &mut self,
+        knot_type: crate::domain::knot_type::KnotType,
+        workflow: WorkflowRef,
+        set_default: bool,
+    ) {
+        let normalized = workflow.normalize();
+        let entry = self
+            .knot_type_workflows
+            .entry(knot_type.as_str().to_string())
+            .or_insert_with(|| KnotTypeWorkflowConfig {
+                default: normalized.clone(),
+                registered: Vec::new(),
+            });
+        entry.register(normalized.clone());
+        if set_default {
+            entry.default = normalized;
+        }
+    }
+}
+
+fn repair_legacy_config_workflow_id(workflow_id: &str) -> String {
+    let normalized = normalize_workflow_id(workflow_id);
+    if normalized == "compatibility" || normalized == "knots_sdlc" {
+        builtin_workflow_id_for_knot_type(crate::domain::knot_type::KnotType::Work)
+    } else {
+        normalized
+    }
+}
+
+fn repair_legacy_config_profile_reference(workflow_id: &str, profile_id: &str) -> String {
+    let trimmed = profile_id.trim();
+    if workflow_id == builtin_workflow_id_for_knot_type(crate::domain::knot_type::KnotType::Work) {
+        let suffix = trimmed.rsplit('/').next().unwrap_or(trimmed);
+        normalize_profile_id(suffix).unwrap_or_else(|| suffix.to_ascii_lowercase())
+    } else if let Some((prefix, suffix)) = trimmed.rsplit_once('/') {
+        let prefix = normalize_workflow_id(prefix);
+        let suffix = normalize_profile_id(suffix).unwrap_or_else(|| suffix.to_ascii_lowercase());
+        format!("{prefix}/{suffix}")
+    } else {
+        normalize_profile_id(trimmed).unwrap_or_else(|| trimmed.to_ascii_lowercase())
     }
 }
 
@@ -345,124 +439,20 @@ impl fmt::Display for WorkflowDefinition {
     }
 }
 
-// ── InstalledWorkflowRegistry ───────────────────────────
-
-#[derive(Debug, Clone)]
-pub struct InstalledWorkflowRegistry {
-    workflows: BTreeMap<String, BTreeMap<u32, WorkflowDefinition>>,
-    current: Option<WorkflowRepoConfig>,
-}
-
-impl InstalledWorkflowRegistry {
-    pub fn load(repo_root: &Path) -> Result<Self, ProfileError> {
-        let mut workflows: BTreeMap<String, BTreeMap<u32, WorkflowDefinition>> = BTreeMap::new();
-        let builtin = builtin::knots_sdlc_workflow()?;
-        workflows
-            .entry(builtin.id.clone())
-            .or_default()
-            .insert(builtin.version, builtin);
-        let root = workflows_root(repo_root);
-        if root.exists() {
-            loader::load_disk_workflows(&root, &mut workflows)?;
-        }
-        let current = read_repo_config(repo_root)?;
-        Ok(Self {
-            workflows,
-            current: Some(current),
-        })
-    }
-
-    pub fn current_workflow_id(&self) -> &str {
-        if let Some(id) = self
-            .current
-            .as_ref()
-            .and_then(|c| c.current_workflow.as_deref())
-        {
-            if normalize_workflow_id(id) == BUILTIN_WORKFLOW_ID {
-                BUILTIN_WORKFLOW_ID
-            } else {
-                id
-            }
-        } else {
-            BUILTIN_WORKFLOW_ID
-        }
-    }
-
-    pub fn current_workflow_version(&self) -> Option<u32> {
-        self.current.as_ref().and_then(|c| c.current_version)
-    }
-
-    pub fn current_profile_id(&self) -> Option<String> {
-        self.default_profile_id_for_workflow(self.current_workflow_id())
-    }
-
-    pub fn default_profile_id_for_workflow(&self, workflow_id: &str) -> Option<String> {
-        let workflow_id = normalize_workflow_id(workflow_id);
-        if let Some(pid) = self
-            .current
-            .as_ref()
-            .and_then(|c| c.default_profile_id_for_workflow(&workflow_id))
-        {
-            return Some(pid.to_string());
-        }
-        let wf = self.require_workflow(&workflow_id).ok()?;
-        let dp = wf
-            .default_profile
-            .as_deref()
-            .or_else(|| wf.profiles.keys().next().map(String::as_str))?;
-        if wf.builtin {
-            Some(dp.to_string())
-        } else {
-            Some(namespaced_profile_id(&workflow_id, dp))
-        }
-    }
-
-    pub fn current_workflow(&self) -> Result<&WorkflowDefinition, ProfileError> {
-        if let Some(cfg) = self.current.as_ref() {
-            if let Some(id) = cfg.current_workflow.as_deref() {
-                if let Some(v) = cfg.current_version {
-                    return self.require_workflow_version(id, v);
-                }
-                return self.require_workflow(id);
-            }
-        }
-        self.require_workflow(BUILTIN_WORKFLOW_ID)
-    }
-
-    pub fn require_workflow(&self, workflow_id: &str) -> Result<&WorkflowDefinition, ProfileError> {
-        let id = normalize_workflow_id(workflow_id);
-        self.workflows
-            .get(&id)
-            .and_then(|v| v.iter().next_back().map(|(_, w)| w))
-            .ok_or(ProfileError::UnknownWorkflow(id))
-    }
-
-    pub fn require_workflow_version(
-        &self,
-        workflow_id: &str,
-        version: u32,
-    ) -> Result<&WorkflowDefinition, ProfileError> {
-        let id = normalize_workflow_id(workflow_id);
-        self.workflows
-            .get(&id)
-            .and_then(|v| v.get(&version))
-            .ok_or(ProfileError::UnknownWorkflow(id))
-    }
-
-    pub fn list(&self) -> Vec<&WorkflowDefinition> {
-        let mut r = Vec::new();
-        for v in self.workflows.values() {
-            r.extend(v.values());
-        }
-        r.sort_by(|a, b| a.id.cmp(&b.id).then_with(|| a.version.cmp(&b.version)));
-        r
-    }
-}
-
 // ── Internal helpers ────────────────────────────────────
 
 pub fn workflows_root(repo_root: &Path) -> PathBuf {
-    repo_root.join(".knots").join("workflows")
+    if repo_root.join(".git").exists() {
+        repo_root.join(".knots").join("workflows")
+    } else if repo_root.join("cache").exists()
+        || repo_root.join("events").exists()
+        || repo_root.join("index").exists()
+        || repo_root.join("locks").exists()
+    {
+        repo_root.join("workflows")
+    } else {
+        repo_root.join(".knots").join("workflows")
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

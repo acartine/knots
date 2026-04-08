@@ -95,6 +95,7 @@ pub fn run_doctor_at(
         check_remote(repo_root, distribution)?,
         check_version(),
         check_hooks(repo_root, distribution),
+        crate::doctor_workflows::check_registered_workflows(repo_root),
         check_schema_version(&store_paths)?,
         check_stuck_leases(&store_paths)?,
         check_terminal_parents(repo_root, &store_paths)?,
@@ -202,6 +203,10 @@ fn check_worktree(
         },
     }
 }
+
+#[cfg(test)]
+#[path = "doctor_workflows_tests.rs"]
+mod doctor_workflows_tests;
 
 fn check_remote(
     repo_root: &Path,

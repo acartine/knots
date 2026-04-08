@@ -66,25 +66,8 @@ fn require_rollback_state(
     knot_type: KnotType,
     state: &str,
 ) -> Result<(), AppError> {
-    match knot_type {
-        KnotType::Work | KnotType::Explore | KnotType::Lease => Ok(profile.require_state(state)?),
-        KnotType::Gate => {
-            if matches!(
-                state,
-                workflow_runtime::READY_TO_EVALUATE
-                    | workflow_runtime::EVALUATING
-                    | "shipped"
-                    | "abandoned"
-            ) {
-                Ok(())
-            } else {
-                Err(AppError::InvalidArgument(format!(
-                    "state '{}' is not valid for gate knots",
-                    state
-                )))
-            }
-        }
-    }
+    let _ = knot_type;
+    Ok(profile.require_state(state)?)
 }
 
 fn reject_invalid_rollback_state(
@@ -92,9 +75,7 @@ fn reject_invalid_rollback_state(
     knot_type: KnotType,
     state: &str,
 ) -> Result<(), AppError> {
-    if (knot_type == KnotType::Gate && workflow_runtime::is_queue_state(state))
-        || (knot_type != KnotType::Gate && profile.is_queue_state(state))
-    {
+    if profile.is_queue_state(state) {
         return Err(AppError::InvalidArgument(format!(
             "rollback is only allowed from action states; '{}' is a queue state",
             state
@@ -120,10 +101,8 @@ fn is_terminal_rollback_state(
     knot_type: KnotType,
     state: &str,
 ) -> bool {
-    match knot_type {
-        KnotType::Work | KnotType::Explore | KnotType::Lease => profile.is_terminal_state(state),
-        KnotType::Gate => matches!(state, "shipped" | "abandoned"),
-    }
+    let _ = knot_type;
+    profile.is_terminal_state(state)
 }
 
 fn rollback_target<'a>(
@@ -131,20 +110,7 @@ fn rollback_target<'a>(
     knot_type: KnotType,
     current: &str,
 ) -> Option<RollbackTarget<'a>> {
-    if knot_type == KnotType::Gate {
-        return match current {
-            workflow_runtime::EVALUATING => Some(RollbackTarget {
-                target_state: workflow_runtime::READY_TO_EVALUATE,
-                reason: format!(
-                    "{current} is a gate action state, so rollback returns to its preceding ready \
-                     state {}",
-                    workflow_runtime::READY_TO_EVALUATE
-                ),
-            }),
-            _ => None,
-        };
-    }
-
+    let _ = knot_type;
     let current_idx = profile.states.iter().position(|state| state == current)?;
     if profile.is_gate_action_state(current) {
         let action_idx = profile.states[..current_idx]
@@ -214,7 +180,7 @@ mod tests {
 
     #[test]
     fn rollback_target_rewinds_explore_states() {
-        let profile = profile("exploration");
+        let profile = profile("explore");
         let target = rollback_target(&profile, KnotType::Explore, "exploration")
             .expect("exploration should roll back");
         assert_eq!(target.target_state, "ready_for_exploration");
@@ -289,7 +255,7 @@ mod tests {
 
     #[test]
     fn rollback_target_rewinds_gate_evaluating_to_ready_to_evaluate() {
-        let profile = profile("autopilot");
+        let profile = profile("evaluate");
         let target = rollback_target(&profile, KnotType::Gate, workflow_runtime::EVALUATING)
             .expect("evaluating should roll back");
         assert_eq!(target.target_state, workflow_runtime::READY_TO_EVALUATE);
@@ -298,22 +264,22 @@ mod tests {
 
     #[test]
     fn require_rollback_state_allows_gate_states() {
-        let profile = profile("autopilot");
+        let profile = profile("evaluate");
         require_rollback_state(&profile, KnotType::Gate, workflow_runtime::EVALUATING)
             .expect("gate evaluating should be valid");
     }
 
     #[test]
     fn require_rollback_state_rejects_unknown_gate_states() {
-        let profile = profile("autopilot");
+        let profile = profile("evaluate");
         let err = require_rollback_state(&profile, KnotType::Gate, "blocked")
             .expect_err("passive gate state should be rejected");
-        assert!(err.to_string().contains("not valid for gate knots"));
+        assert!(err.to_string().contains("unknown state"));
     }
 
     #[test]
     fn reject_invalid_rollback_state_rejects_gate_queue_states() {
-        let profile = profile("autopilot");
+        let profile = profile("evaluate");
         let err = reject_invalid_rollback_state(
             &profile,
             KnotType::Gate,
@@ -341,7 +307,7 @@ mod tests {
         let registry = ProfileRegistry::load().expect("registry should load");
         let owner_kind = workflow_runtime::owner_kind_for_state(
             &registry,
-            "autopilot",
+            "evaluate",
             KnotType::Gate,
             &crate::domain::gate::GateData::default(),
             workflow_runtime::READY_TO_EVALUATE,

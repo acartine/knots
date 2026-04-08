@@ -4,9 +4,9 @@ use super::ProfileRegistry;
 fn exploration_profile_is_present_in_registry() {
     let registry = ProfileRegistry::load().expect("registry should load");
     let profile = registry
-        .require("exploration")
-        .expect("exploration profile should exist");
-    assert_eq!(profile.id, "exploration");
+        .require("explore")
+        .expect("explore profile should exist");
+    assert_eq!(profile.id, "explore");
     assert_eq!(profile.initial_state, "ready_for_exploration");
     assert!(profile
         .states
@@ -19,7 +19,7 @@ fn exploration_profile_is_present_in_registry() {
 #[test]
 fn exploration_profile_transitions() {
     let registry = ProfileRegistry::load().expect("registry should load");
-    let profile = registry.require("exploration").expect("profile");
+    let profile = registry.require("explore").expect("profile");
     profile
         .validate_transition("ready_for_exploration", "exploration", false)
         .expect("queue to action should be valid");
@@ -37,7 +37,7 @@ fn exploration_profile_transitions() {
 #[test]
 fn exploration_profile_rejects_invalid_transitions() {
     let registry = ProfileRegistry::load().expect("registry should load");
-    let profile = registry.require("exploration").expect("profile");
+    let profile = registry.require("explore").expect("profile");
     let result = profile.validate_transition("ready_for_exploration", "shipped", false);
     assert!(
         result.is_err(),
@@ -48,7 +48,7 @@ fn exploration_profile_rejects_invalid_transitions() {
 #[test]
 fn exploration_profile_happy_path() {
     let registry = ProfileRegistry::load().expect("registry should load");
-    let profile = registry.require("exploration").expect("profile");
+    let profile = registry.require("explore").expect("profile");
     let next = profile.next_happy_path_state("ready_for_exploration");
     assert_eq!(next, Some("exploration"));
     let next = profile.next_happy_path_state("exploration");

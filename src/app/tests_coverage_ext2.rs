@@ -204,7 +204,9 @@ fn workflow_specific_defaults_and_create_knot_resolve_custom_workflows() {
         Some("default"),
         Some("custom_flow"),
     );
-    assert!(matches!(wrong_profile, Err(AppError::InvalidArgument(_))));
+    let wrong_profile = wrong_profile.expect("default should resolve within explicit workflow");
+    assert_eq!(wrong_profile.workflow_id, "custom_flow");
+    assert_eq!(wrong_profile.profile_id, "custom_flow/autopilot");
 
     let _ = std::fs::remove_dir_all(root);
 }

@@ -15,20 +15,15 @@ impl App {
         &self,
         knot_type: KnotType,
     ) -> Result<String, AppError> {
-        match knot_type {
-            KnotType::Explore => Ok(installed_workflows::BUILTIN_WORKFLOW_ID.to_string()),
-            _ => self.default_workflow_id(),
-        }
+        self.current_workflow_id_for_knot_type(knot_type)
     }
 
     pub fn default_profile_id_for_knot_type(
         &self,
         knot_type: KnotType,
     ) -> Result<String, AppError> {
-        match knot_type {
-            KnotType::Explore => Ok(self.profile_registry.require("exploration")?.id.clone()),
-            _ => self.default_profile_id(),
-        }
+        let workflow_id = self.default_workflow_id_for_knot_type(knot_type)?;
+        self.default_profile_id_for_workflow(&workflow_id)
     }
 
     pub fn set_default_profile_id(&self, profile_id: &str) -> Result<String, AppError> {
@@ -36,7 +31,7 @@ impl App {
         let resolved = self.resolve_profile_id(profile_id, Some(&wf))?;
         let profile = self.profile_registry.require(&resolved)?;
         installed_workflows::set_workflow_default_profile(
-            &self.repo_root,
+            self.workflow_root(),
             &wf,
             Some(profile.id.as_str()),
         )?;
@@ -158,7 +153,8 @@ fn default_profile_id_for_workflow_inner(app: &App, workflow_id: &str) -> Result
             return Ok(id);
         }
     }
-    if let Ok(registry) = installed_workflows::InstalledWorkflowRegistry::load(&app.repo_root) {
+    if let Ok(registry) = installed_workflows::InstalledWorkflowRegistry::load(app.workflow_root())
+    {
         if let Some(result) = try_registry_default(app, &registry, workflow_id)? {
             return Ok(result);
         }

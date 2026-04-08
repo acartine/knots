@@ -1,9 +1,12 @@
-use std::collections::BTreeMap;
-
 use super::bundle_toml::render_json_bundle_from_toml;
 use super::operations::{read_bundle_source, write_repo_config};
 use super::tests_helpers::{env_lock, unique_workspace, SAMPLE_BUNDLE};
 use super::*;
+use crate::domain::knot_type::KnotType;
+
+fn ensure_builtin_registry(root: &std::path::Path) -> WorkflowRepoConfig {
+    ensure_builtin_workflows_registered(root).expect("builtin workflows should register")
+}
 
 #[test]
 fn read_bundle_source_can_shell_out_to_loom() {
@@ -53,22 +56,19 @@ fn read_bundle_source_can_shell_out_to_loom() {
 #[test]
 fn registry_prefers_latest_version() {
     let root = unique_workspace("knots-installed-workflows-latest");
+    let mut config = ensure_builtin_registry(&root);
     let v3 = root.join("custom-v3.toml");
     let v4 = root.join("custom-v4.toml");
     std::fs::write(&v3, SAMPLE_BUNDLE).expect("v3 writes");
     std::fs::write(&v4, SAMPLE_BUNDLE.replace("version = 3", "version = 4")).expect("v4 writes");
     install_bundle(&root, &v3).expect("v3 installs");
     install_bundle(&root, &v4).expect("v4 installs");
-    write_repo_config(
-        &root,
-        &WorkflowRepoConfig {
-            current_workflow: Some("custom_flow".to_string()),
-            current_version: None,
-            legacy_current_profile: None,
-            default_profiles: BTreeMap::new(),
-        },
-    )
-    .expect("config writes");
+    config.register_workflow_for_knot_type(
+        crate::domain::knot_type::KnotType::Work,
+        WorkflowRef::new("custom_flow", None),
+        true,
+    );
+    write_repo_config(&root, &config).expect("config writes");
 
     let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
     let current = registry
@@ -87,7 +87,13 @@ fn set_selection_honors_explicit_profile() {
 
     let config = set_current_workflow_selection(&root, "custom_flow", Some(3), Some("autopilot"))
         .expect("selection should succeed");
-    assert_eq!(config.current_version, Some(3));
+    assert!(config.current_version.is_none());
+    assert_eq!(
+        config
+            .current_workflow_ref_for_knot_type(crate::domain::knot_type::KnotType::Work)
+            .and_then(|workflow| workflow.version),
+        Some(3)
+    );
     assert_eq!(config.current_profile_id(), Some("custom_flow/autopilot"));
     let _ = std::fs::remove_dir_all(root);
 }
@@ -143,6 +149,7 @@ fn set_default_profile_none_preserves_config() {
 #[test]
 fn load_skips_non_version_and_accepts_legacy_toml() {
     let root = unique_workspace("knots-installed-workflows-load-legacy");
+    ensure_builtin_registry(&root);
     let workflow_root = workflows_root(&root).join("legacy_flow");
     std::fs::create_dir_all(&workflow_root).expect("workflow root should exist");
     std::fs::write(workflow_root.join("README.txt"), "ignore me").expect("file should write");
@@ -201,7 +208,10 @@ fn falls_back_to_first_profile_without_default() {
 
     let config =
         set_current_workflow_selection(&root, "custom_flow", Some(3), None).expect("select");
-    assert_eq!(config.current_profile_id(), Some("custom_flow/alpha"));
+    assert_eq!(
+        config.default_profile_id_for_workflow("custom_flow"),
+        Some("custom_flow/alpha")
+    );
     let _ = std::fs::remove_dir_all(root);
 }
 
@@ -247,9 +257,12 @@ fn loom_failures_and_invalid_utf8_reported() {
 #[test]
 fn builtin_workflow_renders_builtin_prompt_variants_per_profile() {
     let root = unique_workspace("knots-installed-workflows-compat-prompts");
+    ensure_builtin_registry(&root);
     let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
     let workflow = registry
-        .require_workflow(BUILTIN_WORKFLOW_ID)
+        .require_workflow(&builtin_workflow_id_for_knot_type(
+            crate::domain::knot_type::KnotType::Work,
+        ))
         .expect("builtin workflow should exist");
     let branch_profile = workflow
         .require_profile("autopilot")
@@ -276,6 +289,7 @@ fn builtin_workflow_renders_builtin_prompt_variants_per_profile() {
 #[test]
 fn profile_registry_load_for_repo_merges_builtin_prompt_variants() {
     let root = unique_workspace("knots-installed-workflows-compat-registry");
+    ensure_builtin_registry(&root);
     let registry = crate::profile::ProfileRegistry::load_for_repo(&root)
         .expect("profile registry should load");
     let branch_profile = registry
@@ -296,6 +310,116 @@ fn profile_registry_load_for_repo_merges_builtin_prompt_variants() {
         .expect("pr shipment prompt should exist");
     assert!(pr_prompt.contains("merge the approved pull request"));
     assert!(!pr_prompt.contains("merge the feature branch to main"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn registry_rejects_knot_types_without_any_resolvable_workflows() {
+    let root = unique_workspace("knots-installed-workflows-empty-knot-type");
+    let mut config = ensure_builtin_registry(&root);
+    config.knot_type_workflows.insert(
+        "explore".to_string(),
+        KnotTypeWorkflowConfig {
+            default: WorkflowRef::new("", None),
+            registered: Vec::new(),
+        },
+    );
+    write_repo_config(&root, &config).expect("config writes");
+
+    let err = InstalledWorkflowRegistry::load(&root).expect_err("load should fail");
+    assert!(err
+        .to_string()
+        .contains("knot type 'explore' has no registered workflows"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn registry_rejects_missing_default_workflow_even_if_registered_entries_exist() {
+    let root = unique_workspace("knots-installed-workflows-missing-default");
+    let mut config = ensure_builtin_registry(&root);
+    config.knot_type_workflows.insert(
+        "explore".to_string(),
+        KnotTypeWorkflowConfig {
+            default: WorkflowRef::new("missing_flow", Some(7)),
+            registered: vec![WorkflowRef::new("explore_sdlc", Some(1))],
+        },
+    );
+    write_repo_config(&root, &config).expect("config writes");
+
+    let err = InstalledWorkflowRegistry::load(&root).expect_err("load should fail");
+    assert!(
+        matches!(err, crate::profile::ProfileError::UnknownWorkflow(id) if id == "missing_flow")
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn ensure_builtin_registration_adds_missing_entries_without_changing_defaults() {
+    let root = unique_workspace("knots-installed-workflows-register-builtins");
+    let source = root.join("custom-flow.toml");
+    std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
+    install_bundle(&root, &source).expect("bundle should install");
+
+    let mut config = ensure_builtin_registry(&root);
+    config.knot_type_workflows.insert(
+        KnotType::Work.as_str().to_string(),
+        KnotTypeWorkflowConfig {
+            default: WorkflowRef::new("custom_flow", Some(3)),
+            registered: vec![WorkflowRef::new("custom_flow", Some(3))],
+        },
+    );
+    config.knot_type_workflows.insert(
+        KnotType::Explore.as_str().to_string(),
+        KnotTypeWorkflowConfig {
+            default: WorkflowRef::new("custom_flow", Some(3)),
+            registered: vec![WorkflowRef::new("custom_flow", Some(3))],
+        },
+    );
+    write_repo_config(&root, &config).expect("config writes");
+
+    let config = ensure_builtin_workflows_registered(&root).expect("builtin registration");
+    assert_eq!(
+        config
+            .current_workflow_ref_for_knot_type(KnotType::Work)
+            .map(|workflow| workflow.workflow_id),
+        Some("custom_flow".to_string())
+    );
+    assert_eq!(
+        config
+            .current_workflow_ref_for_knot_type(KnotType::Explore)
+            .map(|workflow| workflow.workflow_id),
+        Some("custom_flow".to_string())
+    );
+    assert_eq!(
+        config
+            .current_workflow_ref_for_knot_type(KnotType::Gate)
+            .map(|workflow| workflow.workflow_id),
+        Some("gate_sdlc".to_string())
+    );
+    assert_eq!(
+        config
+            .current_workflow_ref_for_knot_type(KnotType::Lease)
+            .map(|workflow| workflow.workflow_id),
+        Some("lease_sdlc".to_string())
+    );
+
+    let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
+    let work_ids = registry
+        .registered_workflows_for_knot_type(KnotType::Work)
+        .iter()
+        .map(|workflow| workflow.id.as_str())
+        .collect::<Vec<_>>();
+    assert!(work_ids.contains(&"custom_flow"));
+    assert!(work_ids.contains(&"work_sdlc"));
+
+    let explore_ids = registry
+        .registered_workflows_for_knot_type(KnotType::Explore)
+        .iter()
+        .map(|workflow| workflow.id.as_str())
+        .collect::<Vec<_>>();
+    assert!(explore_ids.contains(&"custom_flow"));
+    assert!(explore_ids.contains(&"explore_sdlc"));
 
     let _ = std::fs::remove_dir_all(root);
 }
