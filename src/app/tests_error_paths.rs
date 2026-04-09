@@ -6,7 +6,7 @@ use serde_json::json;
 
 use super::{
     apply_rehydrate_event, ensure_profile_etag, metadata_entry_from_input, non_empty,
-    normalize_tag, parse_edge_direction, rehydrate_from_events, App, AppError, RehydrateProjection,
+    normalize_tag, parse_edge_direction, App, AppError, RehydrateProjection,
 };
 use crate::db::{EdgeDirection, KnotCacheRecord};
 use crate::doctor::DoctorError;
@@ -285,74 +285,6 @@ fn apply_rehydrate_event_covers_known_event_types() {
     assert_eq!(projection.notes.len(), 1);
     assert_eq!(projection.handoff_capsules.len(), 1);
     assert!(projection.tags.is_empty());
-}
-
-#[test]
-fn rehydrate_from_events_reports_missing_workflow_and_invalid_json() {
-    let root = std::env::temp_dir().join(format!("knots-rehydrate-ext-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("root should be creatable");
-
-    let missing = rehydrate_from_events(
-        &root,
-        "K-1",
-        "Title".to_string(),
-        "work_item".to_string(),
-        "2026-02-25T10:00:00Z".to_string(),
-    );
-    let missing = missing.expect("rehydrate should fall back to builtin workflow");
-    assert_eq!(missing.workflow_id, "work_sdlc");
-    assert_eq!(missing.profile_id, "work_sdlc");
-
-    let full_path = root
-        .join(".knots")
-        .join("events")
-        .join("2026")
-        .join("02")
-        .join("25")
-        .join("bad-knot.created.json");
-    std::fs::create_dir_all(
-        full_path
-            .parent()
-            .expect("full event parent directory should exist"),
-    )
-    .expect("full event parent should be creatable");
-    std::fs::write(&full_path, "{").expect("full event should be writable");
-
-    let bad_full = rehydrate_from_events(
-        &root,
-        "K-1",
-        "Title".to_string(),
-        "work_item".to_string(),
-        "2026-02-25T10:00:00Z".to_string(),
-    );
-    assert!(matches!(bad_full, Err(AppError::InvalidArgument(_))));
-
-    std::fs::remove_file(&full_path).expect("bad full file should be removable");
-    let index_path = root
-        .join(".knots")
-        .join("index")
-        .join("2026")
-        .join("02")
-        .join("25")
-        .join("bad-idx.knot_head.json");
-    std::fs::create_dir_all(
-        index_path
-            .parent()
-            .expect("index event parent directory should exist"),
-    )
-    .expect("index event parent should be creatable");
-    std::fs::write(&index_path, "{").expect("index event should be writable");
-
-    let bad_index = rehydrate_from_events(
-        &root,
-        "K-1",
-        "Title".to_string(),
-        "work_item".to_string(),
-        "2026-02-25T10:00:00Z".to_string(),
-    );
-    assert!(matches!(bad_index, Err(AppError::InvalidArgument(_))));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]

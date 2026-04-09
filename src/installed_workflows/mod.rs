@@ -37,7 +37,7 @@ use bundle_toml::parse_bundle_toml;
 pub use knot_type_registry::{KnotTypeWorkflowConfig, WorkflowRef};
 pub use registry::InstalledWorkflowRegistry;
 
-pub use ids::normalize_workflow_id;
+pub use ids::{canonicalize_persisted_workflow_id, normalize_workflow_id};
 #[cfg(test)]
 pub use operations::write_repo_config;
 pub use operations::{

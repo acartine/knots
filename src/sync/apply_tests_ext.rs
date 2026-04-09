@@ -130,6 +130,14 @@ fn required_workflow_id_defaults_to_builtin_workflow_for_unnamespaced_profile() 
 }
 
 #[test]
+fn required_workflow_id_canonicalizes_legacy_builtin_workflow_id() {
+    let mut object = Map::<String, Value>::new();
+    object.insert("workflow_id".to_string(), json!("knots_sdlc"));
+
+    assert_eq!(required_workflow_id(&object, "autopilot"), "work_sdlc");
+}
+
+#[test]
 fn precondition_checks_cover_none_match_and_mismatch() {
     let root = unique_workspace();
     let conn = open_conn(&root);

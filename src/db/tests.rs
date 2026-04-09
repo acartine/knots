@@ -184,7 +184,7 @@ fn initializes_required_tables_and_schema_version() {
     assert_eq!(drift_warn_threshold, "25");
     assert_eq!(
         column_default(&conn, "knot_hot", "workflow_id").as_deref(),
-        Some("'knots_sdlc'")
+        Some("'work_sdlc'")
     );
 
     cleanup_db_files(&path);
@@ -308,10 +308,10 @@ CREATE TABLE cold_catalog (
             |row| row.get(0),
         )
         .expect("legacy row should include workflow_id");
-    assert_eq!(workflow_id, "knots_sdlc");
+    assert_eq!(workflow_id, "work_sdlc");
     assert_eq!(
         column_default(&upgraded, "knot_hot", "workflow_id").as_deref(),
-        Some("'knots_sdlc'")
+        Some("'work_sdlc'")
     );
 
     cleanup_db_files(&path);

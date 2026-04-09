@@ -175,7 +175,7 @@ fn apply_index_head(
         projection.knot_type = parse_knot_type(Some(raw_type));
     }
     if let Some(raw_wf) = data.get("workflow_id").and_then(Value::as_str) {
-        projection.workflow_id = installed_workflows::normalize_workflow_id(raw_wf);
+        projection.workflow_id = installed_workflows::canonicalize_persisted_workflow_id(raw_wf);
     }
     let raw_profile = data
         .get("profile_id")

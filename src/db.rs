@@ -14,7 +14,7 @@ use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 15;
+pub const CURRENT_SCHEMA_VERSION: i64 = 16;
 
 mod catalog;
 mod migrations;
@@ -474,3 +474,6 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+#[path = "db/tests_legacy_workflow_ids.rs"]
+mod tests_legacy_workflow_ids;
