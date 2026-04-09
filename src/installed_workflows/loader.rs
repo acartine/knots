@@ -67,10 +67,5 @@ fn load_versions(
 
 pub(crate) fn installed_bundle_path(workflow_dir: &Path) -> Option<PathBuf> {
     let bundle = workflow_dir.join(DEFAULT_BUNDLE_FILE);
-    if bundle.exists() {
-        Some(bundle)
-    } else {
-        let legacy = workflow_dir.join("bundle.toml");
-        legacy.exists().then_some(legacy)
-    }
+    bundle.exists().then_some(bundle)
 }

@@ -1,10 +1,7 @@
 use std::path::PathBuf;
 
 use super::App;
-use crate::db;
-use crate::events::EventWriter;
 use crate::project::{DistributionMode, GlobalConfig, ProjectContext, StorePaths};
-use crate::workflow::ProfileRegistry;
 
 fn unique_workspace(prefix: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
@@ -24,25 +21,6 @@ fn local_only_app(root: &std::path::Path) -> App {
     let db_path = root.join("cache/state.sqlite");
     App::open_with_context(&context, db_path.to_str().expect("utf8 db path"))
         .expect("local-only app should open")
-}
-
-fn app_with_registry(root: &std::path::Path, profile_registry: ProfileRegistry) -> App {
-    let db_path = root.join("cache/state.sqlite");
-    if let Some(parent) = db_path.parent() {
-        std::fs::create_dir_all(parent).expect("db parent should be creatable");
-    }
-    App {
-        conn: db::open_connection(db_path.to_str().expect("utf8 db path")).expect("db should open"),
-        writer: EventWriter::new(root),
-        repo_root: root.to_path_buf(),
-        store_paths: StorePaths {
-            root: root.to_path_buf(),
-        },
-        distribution: DistributionMode::LocalOnly,
-        project_id: None,
-        profile_registry,
-        home_override: None,
-    }
 }
 
 #[test]
@@ -108,43 +86,6 @@ fn home_override_none_rejects_writes_and_unknown_profiles_do_not_resolve() {
     assert_eq!(
         app.resolve_config_profile(&Some("missing".to_string())),
         None
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
-fn fallback_profile_id_uses_first_available_profile_when_default_is_missing() {
-    let root = unique_workspace("knots-app-fallback-profile");
-    let registry = ProfileRegistry::from_toml(
-        r#"
-            [[profiles]]
-            id = "custom_profile"
-            planning_mode = "required"
-            implementation_review_mode = "required"
-            output = "local"
-
-            [profiles.owners.planning]
-            kind = "agent"
-            [profiles.owners.plan_review]
-            kind = "human"
-            [profiles.owners.implementation]
-            kind = "agent"
-            [profiles.owners.implementation_review]
-            kind = "human"
-            [profiles.owners.shipment]
-            kind = "agent"
-            [profiles.owners.shipment_review]
-            kind = "human"
-        "#,
-    )
-    .expect("profile registry should parse");
-    let app = app_with_registry(&root, registry);
-
-    assert_eq!(
-        app.fallback_profile_id()
-            .expect("first available profile should be returned"),
-        "custom_profile"
     );
 
     let _ = std::fs::remove_dir_all(root);

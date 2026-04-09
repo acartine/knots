@@ -10,13 +10,13 @@ use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::step_history::StepRecord;
 use crate::events::{FullEvent, IndexEvent, IndexEventKind};
-use crate::installed_workflows;
 use crate::workflow::normalize_profile_id;
 
 use super::error::AppError;
 
 pub(crate) mod apply_event;
 
+#[derive(Debug)]
 pub(crate) struct RehydrateProjection {
     pub title: String,
     pub state: String,
@@ -175,13 +175,9 @@ fn apply_index_head(
         projection.knot_type = parse_knot_type(Some(raw_type));
     }
     if let Some(raw_wf) = data.get("workflow_id").and_then(Value::as_str) {
-        projection.workflow_id = installed_workflows::canonicalize_persisted_workflow_id(raw_wf);
+        projection.workflow_id = raw_wf.trim().to_string();
     }
-    let raw_profile = data
-        .get("profile_id")
-        .and_then(Value::as_str)
-        .or_else(|| data.get("workflow_id").and_then(Value::as_str));
-    if let Some(raw) = raw_profile {
+    if let Some(raw) = data.get("profile_id").and_then(Value::as_str) {
         if let Some(pid) = normalize_profile_id(raw) {
             projection.profile_id = pid;
         }
@@ -208,18 +204,24 @@ fn finalize_projection(
     knot_id: &str,
 ) -> Result<(), AppError> {
     if projection.workflow_id.trim().is_empty() {
-        projection.workflow_id =
-            installed_workflows::builtin_workflow_id_for_knot_type(KnotType::Work);
+        return Err(AppError::InvalidArgument(format!(
+            "rehydrate events for '{}' are missing workflow_id",
+            knot_id
+        )));
     }
+    let workflow_id = crate::installed_workflows::normalize_workflow_id(&projection.workflow_id);
+    if matches!(workflow_id.as_str(), "compatibility" | "knots_sdlc") {
+        return Err(AppError::InvalidArgument(format!(
+            "rehydrate events for '{}' contain legacy workflow_id '{}'",
+            knot_id, projection.workflow_id
+        )));
+    }
+    projection.workflow_id = workflow_id;
     if projection.profile_id.trim().is_empty() {
-        if !projection.workflow_id.trim().is_empty() {
-            projection.profile_id = projection.workflow_id.clone();
-        } else {
-            return Err(AppError::InvalidArgument(format!(
-                "rehydrate events for '{}' are missing profile_id",
-                knot_id
-            )));
-        }
+        return Err(AppError::InvalidArgument(format!(
+            "rehydrate events for '{}' are missing profile_id",
+            knot_id
+        )));
     }
     Ok(())
 }

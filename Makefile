@@ -35,4 +35,4 @@ check-threshold:
 	bash scripts/repo/check-coverage-threshold.sh origin/main
 
 loom-bundle:
-	loom build loom/knots_sdlc --emit knots-bundle > loom/knots_sdlc/dist/bundle.json
+	loom build loom/work_sdlc --emit knots-bundle > loom/work_sdlc/dist/bundle.json

@@ -65,7 +65,8 @@ fn write_stale_index_event(root: &Path) {
             "    \"knot_id\": \"K-occ\",\n",
             "    \"title\": \"Original title\",\n",
             "    \"state\": \"work_item\",\n",
-            "    \"profile_id\": \"default\",\n",
+            "    \"workflow_id\": \"work_sdlc\",\n",
+            "    \"profile_id\": \"autopilot\",\n",
             "    \"updated_at\": \"2026-02-24T10:00:00Z\",\n",
             "    \"terminal\": false\n",
             "  }\n",
@@ -88,7 +89,8 @@ fn write_stale_precondition_events(root: &Path) {
             "    \"knot_id\": \"K-occ\",\n",
             "    \"title\": \"Stale title\",\n",
             "    \"state\": \"implementing\",\n",
-            "    \"profile_id\": \"default\",\n",
+            "    \"workflow_id\": \"work_sdlc\",\n",
+            "    \"profile_id\": \"autopilot\",\n",
             "    \"updated_at\": \"2026-02-24T10:00:01Z\",\n",
             "    \"terminal\": false\n",
             "  },\n",
@@ -142,7 +144,7 @@ fn sync_ignores_events_with_stale_preconditions() {
         .expect("knot should exist");
     assert_eq!(knot.title, "Original title");
     assert_eq!(knot.state, "work_item");
-    assert_eq!(knot.profile_id, "default");
+    assert_eq!(knot.profile_id, "autopilot");
     assert_eq!(knot.description, None);
     assert_eq!(knot.profile_etag.as_deref(), Some("0300"));
 

@@ -98,9 +98,9 @@ complete = "done"
 #[test]
 fn per_action_outputs_resolve_independently() {
     let workspace = unique_workspace("knots-stepmeta-multi");
-    let wf_root = workspace.join(".knots/workflows/multi_out/1");
-    std::fs::create_dir_all(&wf_root).expect("dir");
-    std::fs::write(wf_root.join("bundle.toml"), MULTI_OUTPUT_BUNDLE).expect("write bundle");
+    let bundle = workspace.join("multi_out.toml");
+    std::fs::write(&bundle, MULTI_OUTPUT_BUNDLE).expect("write bundle");
+    crate::installed_workflows::install_bundle(&workspace, &bundle).expect("install bundle");
 
     let registry = ProfileRegistry::load_for_repo(&workspace).expect("registry");
     let gate = GateData::default();
@@ -124,8 +124,8 @@ fn per_action_outputs_resolve_independently() {
         "remote_main",
     );
 
-    // "deploy" has no output declaration — fallback creates entry with
-    // empty artifact_type (the state exists but omits the output field).
+    // "deploy" has no output declaration, so the current projection leaves an
+    // empty artifact type rather than omitting the output field entirely.
     let deploy = step_metadata_for_state(&registry, pid, KnotType::Work, &gate, "deploy")
         .expect("resolve")
         .expect("metadata");

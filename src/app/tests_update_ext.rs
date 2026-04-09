@@ -272,7 +272,8 @@ fn rehydrate_builds_hot_record_from_warm_and_full_events() {
     let r = app.rehydrate("9").expect("r").expect("k");
     assert_eq!(r.id, "K-9");
     assert_eq!(r.description.as_deref(), Some("rehydrated details"));
-    assert_eq!(r.profile_id, "default");
+    assert_eq!(r.profile_id, "autopilot");
+    assert_eq!(r.workflow_id, "work_sdlc");
     assert_eq!(r.profile_etag.as_deref(), Some("1002"));
     let _ = std::fs::remove_dir_all(root);
 }
@@ -282,5 +283,5 @@ fn write_rehydrate_events(root: &Path) {
     std::fs::write(&fp, "{\"event_id\":\"1001\",\"occurred_at\":\"2026-02-24T10:00:00Z\",\"knot_id\":\"K-9\",\"type\":\"knot.description_set\",\"data\":{\"description\":\"rehydrated details\"}}").expect("w");
     let ip = root.join(".knots/index/2026/02/24/1002-idx.knot_head.json");
     std::fs::create_dir_all(ip.parent().expect("p")).expect("m");
-    std::fs::write(&ip, "{\"event_id\":\"1002\",\"occurred_at\":\"2026-02-24T10:00:01Z\",\"type\":\"idx.knot_head\",\"data\":{\"knot_id\":\"K-9\",\"title\":\"Warm title\",\"state\":\"work_item\",\"profile_id\":\"default\",\"updated_at\":\"2026-02-24T10:00:01Z\",\"terminal\":false}}").expect("w");
+    std::fs::write(&ip, "{\"event_id\":\"1002\",\"occurred_at\":\"2026-02-24T10:00:01Z\",\"type\":\"idx.knot_head\",\"data\":{\"knot_id\":\"K-9\",\"title\":\"Warm title\",\"state\":\"work_item\",\"workflow_id\":\"work_sdlc\",\"profile_id\":\"autopilot\",\"updated_at\":\"2026-02-24T10:00:01Z\",\"terminal\":false}}").expect("w");
 }

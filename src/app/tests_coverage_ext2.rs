@@ -14,6 +14,7 @@ use super::tests_coverage_ext::{
 fn set_state_actor_validation_and_deferred_resume_rules() {
     let root = unique_workspace();
     let (app, _) = open_app(&root);
+    let app = app.with_home_override(Some(root.clone()));
     let created = app
         .create_knot("Deferred rules", None, Some("idea"), Some("default"))
         .expect("knot should be created");
@@ -259,6 +260,45 @@ fn default_profile_for_workflow_falls_back_to_first_available_profile() {
         app.default_profile_id()
             .expect("default workflow profile should resolve"),
         "custom_flow/alpha"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn resolve_profile_id_and_default_quick_profile_cover_custom_workflow_paths() {
+    let root = unique_workspace();
+    let bundle = root.join("custom-flow.toml");
+    std::fs::write(&bundle, CUSTOM_WORKFLOW_BUNDLE).expect("bundle should write");
+    crate::installed_workflows::install_bundle(&root, &bundle).expect("bundle should install");
+    crate::installed_workflows::set_current_workflow_selection(&root, "custom_flow", None, None)
+        .expect("workflow selection should succeed");
+
+    let (app, _) = open_app(&root);
+    assert_eq!(
+        app.resolve_profile_id("autopilot", Some("custom_flow"))
+            .expect("workflow-scoped profile should resolve"),
+        "custom_flow/autopilot"
+    );
+    assert_eq!(
+        app.resolve_profile_id("custom_flow/autopilot", None)
+            .expect("namespaced profile should resolve"),
+        "custom_flow/autopilot"
+    );
+    assert!(matches!(
+        app.resolve_profile_id("custom_flow/autopilot", Some("work_sdlc")),
+        Err(AppError::InvalidArgument(message))
+            if message.contains("does not belong to workflow 'work_sdlc'")
+    ));
+    assert_eq!(
+        app.set_default_quick_profile_id("custom_flow/autopilot")
+            .expect("custom quick profile should persist"),
+        "custom_flow/autopilot"
+    );
+    assert_eq!(
+        app.default_quick_profile_id()
+            .expect("configured custom quick profile should resolve"),
+        "custom_flow/autopilot"
     );
 
     let _ = std::fs::remove_dir_all(root);

@@ -1,5 +1,5 @@
 use super::bundle_toml::render_json_bundle_from_toml;
-use super::operations::{read_bundle_source, write_repo_config};
+use super::operations::{read_bundle_source, repo_config_path, write_repo_config};
 use super::tests_helpers::{env_lock, unique_workspace, SAMPLE_BUNDLE};
 use super::*;
 use crate::domain::knot_type::KnotType;
@@ -87,7 +87,6 @@ fn set_selection_honors_explicit_profile() {
 
     let config = set_current_workflow_selection(&root, "custom_flow", Some(3), Some("autopilot"))
         .expect("selection should succeed");
-    assert!(config.current_version.is_none());
     assert_eq!(
         config
             .current_workflow_ref_for_knot_type(crate::domain::knot_type::KnotType::Work)
@@ -132,39 +131,76 @@ fn set_default_profile_updates_repo_mapping() {
 }
 
 #[test]
-fn set_default_profile_none_preserves_config() {
-    let root = unique_workspace("knots-installed-workflows-keep-default-profile");
-    let source = root.join("custom-flow.toml");
-    std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
-    install_bundle(&root, &source).expect("bundle should install");
+fn migrate_legacy_profiles_and_knot_type_map() {
+    let root = unique_workspace("knots-installed-workflows-repair-profiles");
+    let path = repo_config_path(&root);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).expect("config dir should exist");
+    }
+    std::fs::write(
+        &path,
+        r#"[knot_type_workflows.work.default]
+workflow_id = "compatibility"
+version = 1
 
-    let selected = set_current_workflow_selection(&root, "custom_flow", Some(3), Some("autopilot"))
-        .expect("selection should succeed");
-    let preserved = set_workflow_default_profile(&root, "custom_flow", None)
-        .expect("existing config should be preserved");
-    assert_eq!(preserved, selected);
+[[knot_type_workflows.work.registered]]
+workflow_id = "compatibility"
+version = 1
+
+[default_profiles]
+compatibility = "human_gate"
+custom_flow = "Reviewer"
+other_flow = "Custom_Flow/Reviewer"
+"#,
+    )
+    .expect("legacy config should write");
+
+    let loaded = ensure_builtin_registry(&root);
+    assert_eq!(
+        loaded
+            .current_workflow_ref_for_knot_type(KnotType::Work)
+            .map(|workflow| workflow.workflow_id),
+        Some("work_sdlc".to_string())
+    );
+    assert_eq!(
+        loaded.default_profile_id_for_workflow("work_sdlc"),
+        Some("semiauto")
+    );
+    assert_eq!(
+        loaded.default_profile_id_for_workflow("custom_flow"),
+        Some("reviewer")
+    );
+    assert_eq!(
+        loaded.default_profile_id_for_workflow("other_flow"),
+        Some("custom_flow/reviewer")
+    );
+
+    let repaired = std::fs::read_to_string(&path).expect("repaired config should read");
+    assert!(repaired.contains("work_sdlc"));
+    assert!(repaired.contains("semiauto"));
+    assert!(repaired.contains("custom_flow/reviewer"));
     let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
-fn load_skips_non_version_and_accepts_legacy_toml() {
-    let root = unique_workspace("knots-installed-workflows-load-legacy");
+fn load_skips_non_version_and_loads_json_bundle() {
+    let root = unique_workspace("knots-installed-workflows-load-json");
     ensure_builtin_registry(&root);
     let workflow_root = workflows_root(&root).join("legacy_flow");
     std::fs::create_dir_all(&workflow_root).expect("workflow root should exist");
     std::fs::write(workflow_root.join("README.txt"), "ignore me").expect("file should write");
     std::fs::create_dir_all(workflow_root.join("not-a-version")).expect("dir should exist");
     std::fs::create_dir_all(workflow_root.join("7")).expect("version dir should exist");
-    std::fs::write(
-        workflow_root.join("7/bundle.toml"),
-        SAMPLE_BUNDLE.replace("custom_flow", "legacy_flow"),
-    )
-    .expect("legacy bundle should write");
+    let json_bundle =
+        render_json_bundle_from_toml(&SAMPLE_BUNDLE.replace("custom_flow", "legacy_flow"))
+            .expect("json bundle should render");
+    std::fs::write(workflow_root.join("7/bundle.json"), json_bundle)
+        .expect("json bundle should write");
 
     let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
     let workflow = registry
         .require_workflow("legacy_flow")
-        .expect("should load from bundle.toml");
+        .expect("should load from bundle.json");
     assert_eq!(workflow.id, "legacy_flow");
     assert_eq!(workflow.version, 3);
     let _ = std::fs::remove_dir_all(root);

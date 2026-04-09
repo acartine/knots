@@ -1,21 +1,51 @@
 use super::{rehydrate_from_events, AppError};
+use crate::app::App;
+use crate::db::{self, UpsertKnotHot};
 
-fn write_legacy_rehydrate_event(root: &std::path::Path) {
-    let full_path = root
+fn unique_root(prefix: &str) -> std::path::PathBuf {
+    let root = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
+    std::fs::create_dir_all(&root).expect("root should be creatable");
+    root
+}
+
+fn write_event(root: &std::path::Path, filename: &str, body: &str) {
+    let path = root
         .join(".knots")
         .join("events")
         .join("2026")
         .join("02")
         .join("25")
-        .join("1000-knot.created.json");
-    std::fs::create_dir_all(
-        full_path
-            .parent()
-            .expect("legacy event parent directory should exist"),
+        .join(filename);
+    std::fs::create_dir_all(path.parent().expect("event parent should exist"))
+        .expect("event parent should be creatable");
+    std::fs::write(path, body).expect("event should be writable");
+}
+
+fn open_app(root: &std::path::Path) -> App {
+    let db_path = root.join(".knots").join("cache").join("state.sqlite");
+    std::fs::create_dir_all(db_path.parent().expect("db parent should exist"))
+        .expect("db parent should be creatable");
+    App::open(db_path.to_str().expect("utf8 db path"), root.to_path_buf()).expect("app should open")
+}
+
+#[test]
+fn rehydrate_from_events_rejects_missing_and_legacy_workflow_ids() {
+    let missing_root = unique_root("knots-rehydrate-missing-workflow");
+    let missing = rehydrate_from_events(
+        &missing_root,
+        "K-missing",
+        "Title".to_string(),
+        "work_item".to_string(),
+        "2026-02-25T10:00:00Z".to_string(),
     )
-    .expect("legacy event parent should be creatable");
-    std::fs::write(
-        &full_path,
+    .expect_err("missing workflow id should fail");
+    assert!(matches!(missing, AppError::InvalidArgument(message) if
+        message.contains("missing workflow_id")));
+
+    let legacy_root = unique_root("knots-rehydrate-legacy-workflow");
+    write_event(
+        &legacy_root,
+        "1000-knot.created.json",
         concat!(
             "{\n",
             "  \"event_id\": \"1000\",\n",
@@ -30,29 +60,7 @@ fn write_legacy_rehydrate_event(root: &std::path::Path) {
             "  }\n",
             "}\n"
         ),
-    )
-    .expect("legacy full event should be writable");
-}
-
-#[test]
-fn rehydrate_from_events_reports_missing_workflow_and_invalid_json() {
-    let root = std::env::temp_dir().join(format!("knots-rehydrate-ext-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("root should be creatable");
-
-    let missing = rehydrate_from_events(
-        &root,
-        "K-1",
-        "Title".to_string(),
-        "work_item".to_string(),
-        "2026-02-25T10:00:00Z".to_string(),
-    )
-    .expect("rehydrate should fall back to builtin workflow");
-    assert_eq!(missing.workflow_id, "work_sdlc");
-    assert_eq!(missing.profile_id, "work_sdlc");
-
-    let legacy_root =
-        std::env::temp_dir().join(format!("knots-rehydrate-legacy-{}", uuid::Uuid::now_v7()));
-    write_legacy_rehydrate_event(&legacy_root);
+    );
     let legacy = rehydrate_from_events(
         &legacy_root,
         "K-legacy",
@@ -60,24 +68,18 @@ fn rehydrate_from_events_reports_missing_workflow_and_invalid_json() {
         "ready_for_planning".to_string(),
         "2026-02-25T10:00:00Z".to_string(),
     )
-    .expect("legacy builtin workflow id should be canonicalized");
-    assert_eq!(legacy.workflow_id, "work_sdlc");
-    assert_eq!(legacy.profile_id, "autopilot");
+    .expect_err("legacy workflow id should fail");
+    assert!(matches!(legacy, AppError::InvalidArgument(message) if
+        message.contains("legacy workflow_id")));
 
-    let full_path = root
-        .join(".knots")
-        .join("events")
-        .join("2026")
-        .join("02")
-        .join("25")
-        .join("bad-knot.created.json");
-    std::fs::create_dir_all(
-        full_path
-            .parent()
-            .expect("full event parent directory should exist"),
-    )
-    .expect("full event parent should be creatable");
-    std::fs::write(&full_path, "{").expect("full event should be writable");
+    let _ = std::fs::remove_dir_all(missing_root);
+    let _ = std::fs::remove_dir_all(legacy_root);
+}
+
+#[test]
+fn rehydrate_from_events_reports_invalid_json() {
+    let root = unique_root("knots-rehydrate-invalid-json");
+    write_event(&root, "bad-knot.created.json", "{");
 
     let bad_full = rehydrate_from_events(
         &root,
@@ -88,7 +90,16 @@ fn rehydrate_from_events_reports_missing_workflow_and_invalid_json() {
     );
     assert!(matches!(bad_full, Err(AppError::InvalidArgument(_))));
 
-    std::fs::remove_file(&full_path).expect("bad full file should be removable");
+    std::fs::remove_file(
+        root.join(".knots")
+            .join("events")
+            .join("2026")
+            .join("02")
+            .join("25")
+            .join("bad-knot.created.json"),
+    )
+    .expect("bad full file should be removable");
+
     let index_path = root
         .join(".knots")
         .join("index")
@@ -99,7 +110,7 @@ fn rehydrate_from_events_reports_missing_workflow_and_invalid_json() {
     std::fs::create_dir_all(
         index_path
             .parent()
-            .expect("index event parent directory should exist"),
+            .expect("index event parent should exist"),
     )
     .expect("index event parent should be creatable");
     std::fs::write(&index_path, "{").expect("index event should be writable");
@@ -114,5 +125,46 @@ fn rehydrate_from_events_reports_missing_workflow_and_invalid_json() {
     assert!(matches!(bad_index, Err(AppError::InvalidArgument(_))));
 
     let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(legacy_root);
+}
+
+#[test]
+fn show_knot_fails_when_cache_contains_legacy_workflow_id() {
+    let root = unique_root("knots-show-legacy-workflow");
+    let app = open_app(&root);
+    db::upsert_knot_hot(
+        &app.conn,
+        &UpsertKnotHot {
+            id: "K-legacy-db",
+            title: "Legacy DB",
+            state: "ready_for_planning",
+            updated_at: "2026-02-25T10:00:00Z",
+            body: None,
+            description: None,
+            acceptance: None,
+            priority: None,
+            knot_type: Some("work"),
+            tags: &[],
+            notes: &[],
+            handoff_capsules: &[],
+            invariants: &[],
+            step_history: &[],
+            gate_data: &crate::domain::gate::GateData::default(),
+            lease_data: &crate::domain::lease::LeaseData::default(),
+            lease_id: None,
+            workflow_id: "knots_sdlc",
+            profile_id: "autopilot",
+            profile_etag: Some("etag-1"),
+            deferred_from_state: None,
+            blocked_from_state: None,
+            created_at: Some("2026-02-25T10:00:00Z"),
+        },
+    )
+    .expect("legacy row should upsert");
+
+    let err = app
+        .show_knot("K-legacy-db")
+        .expect_err("legacy workflow id in cache should fail");
+    assert!(matches!(err, AppError::Workflow(_)));
+
+    let _ = std::fs::remove_dir_all(root);
 }

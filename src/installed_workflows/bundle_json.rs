@@ -32,6 +32,8 @@ pub(crate) struct JsonStateSection {
     pub kind: String,
     pub prompt: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub executor: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output_hint: Option<String>,

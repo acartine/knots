@@ -139,7 +139,7 @@ fn run_compat_test_inner(
     Ok(TestResult {
         success: true,
         mode: config.mode,
-        source: PathBuf::from("<builtin:knots_sdlc>"),
+        source: PathBuf::from("<builtin:work_sdlc>"),
         workflow_id,
         workspace_path: Some(workspace.to_path_buf()),
         steps,
@@ -153,7 +153,7 @@ fn run_loom_build_steps(
     package_dir: &Path,
     reporter: &mut dyn FnMut(ProgressUpdate),
 ) -> Result<Vec<StepResult>, AppError> {
-    let package_name = "knots_sdlc";
+    let package_name = "work_sdlc";
     let mut steps = Vec::new();
 
     steps.push(run_step("check_loom", reporter, || {
@@ -167,7 +167,7 @@ fn run_loom_build_steps(
             &["init", package_name],
         )?;
         crate::loom_compat_bundle::write_builtin_loom_package(package_dir)?;
-        Ok("embedded knots_sdlc".to_string())
+        Ok("embedded work_sdlc".to_string())
     })?);
 
     steps.push(run_step("validate", reporter, || {

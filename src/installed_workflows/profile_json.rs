@@ -77,24 +77,6 @@ fn assemble_json_profile(
         GateMode::Skipped
     };
     let owners = ProfileOwners {
-        planning: action_owner_or_default(&ctx.owner_states, "planning", OwnerKind::Agent),
-        plan_review: action_owner_or_default(&ctx.owner_states, "plan_review", OwnerKind::Human),
-        implementation: action_owner_or_default(
-            &ctx.owner_states,
-            "implementation",
-            OwnerKind::Agent,
-        ),
-        implementation_review: action_owner_or_default(
-            &ctx.owner_states,
-            "implementation_review",
-            OwnerKind::Human,
-        ),
-        shipment: action_owner_or_default(&ctx.owner_states, "shipment", OwnerKind::Agent),
-        shipment_review: action_owner_or_default(
-            &ctx.owner_states,
-            "shipment_review",
-            OwnerKind::Human,
-        ),
         states: ctx.owner_states,
     };
     let built = ProfileDefinition {
@@ -129,17 +111,6 @@ fn assemble_json_profile(
         review_hints: ctx.review_hints,
     };
     Ok((built, action_prompts))
-}
-
-fn action_owner_or_default(
-    owners: &BTreeMap<String, crate::profile::StepOwner>,
-    action: &str,
-    default_kind: OwnerKind,
-) -> crate::profile::StepOwner {
-    owners
-        .get(action)
-        .cloned()
-        .unwrap_or_else(|| default_owner(default_kind))
 }
 
 fn has_phase_states(ctx: &JsonProfileBuildContext, action_state: &str, queue_state: &str) -> bool {
@@ -196,19 +167,22 @@ fn process_json_step(
         .steps_by_id
         .get(step_name)
         .ok_or_else(|| ProfileError::InvalidBundle(format!("unknown step '{}'", step_name)))?;
-    apply_json_step(step, is_gate, profile, ctx);
-    if let Some(state) = indexes.states_by_id.get(step.action.as_str()) {
-        collect_step_prompt(&step.action, state, indexes, ctx);
-    }
+    let state = indexes
+        .states_by_id
+        .get(step.action.as_str())
+        .ok_or_else(|| ProfileError::InvalidBundle(format!("unknown state '{}'", step.action)))?;
+    apply_json_step(step, state, is_gate, profile, ctx)?;
+    collect_step_prompt(&step.action, state, indexes, ctx);
     Ok(())
 }
 
 fn apply_json_step(
     step: &JsonStepSection,
+    state: &JsonStateSection,
     is_gate: bool,
     profile: &JsonProfileSection,
     ctx: &mut JsonProfileBuildContext,
-) {
+) -> Result<(), ProfileError> {
     let queue = step.queue.as_str();
     let action = step.action.as_str();
     super::push_unique(&mut ctx.ordered_states, queue.to_string());
@@ -224,23 +198,32 @@ fn apply_json_step(
         from: queue.to_string(),
         to: action.to_string(),
     });
-    let owner = default_owner(
-        match profile
-            .executors
-            .get(action)
-            .map(|v| v.as_str())
-            .unwrap_or("agent")
-            .trim()
-            .to_ascii_lowercase()
-            .as_str()
-        {
-            "human" => OwnerKind::Human,
-            _ => OwnerKind::Agent,
-        },
-    );
+    let raw_executor = profile
+        .executors
+        .get(action)
+        .map(|value| value.as_str())
+        .or(state.executor.as_deref())
+        .map(|value| value.trim().to_ascii_lowercase())
+        .ok_or_else(|| {
+            ProfileError::InvalidBundle(format!(
+                "profile '{}' action '{}' is missing executor",
+                profile.id, action
+            ))
+        })?;
+    let owner = default_owner(match raw_executor.as_str() {
+        "human" => OwnerKind::Human,
+        "agent" => OwnerKind::Agent,
+        other => {
+            return Err(ProfileError::InvalidBundle(format!(
+                "profile '{}' action '{}' has invalid executor '{}'",
+                profile.id, action, other
+            )));
+        }
+    });
     ctx.owner_states.insert(queue.to_string(), owner.clone());
     ctx.owner_states.insert(action.to_string(), owner);
     ctx.first_queue.get_or_insert_with(|| queue.to_string());
+    Ok(())
 }
 
 fn collect_step_prompt(

@@ -2,21 +2,21 @@ use std::io;
 use std::path::Path;
 
 #[cfg(test)]
-pub const BUNDLE_JSON: &str = include_str!("../loom/knots_sdlc/dist/bundle.json");
+pub const BUNDLE_JSON: &str = include_str!("../loom/work_sdlc/dist/bundle.json");
 
-const LOOM_TOML: &str = include_str!("../loom/knots_sdlc/loom.toml");
-const WORKFLOW_LOOM: &str = include_str!("../loom/knots_sdlc/workflow.loom");
+const LOOM_TOML: &str = include_str!("../loom/work_sdlc/loom.toml");
+const WORKFLOW_LOOM: &str = include_str!("../loom/work_sdlc/workflow.loom");
 
-const PROFILE_AUTOPILOT: &str = include_str!("../loom/knots_sdlc/profiles/autopilot.loom");
+const PROFILE_AUTOPILOT: &str = include_str!("../loom/work_sdlc/profiles/autopilot.loom");
 const PROFILE_AUTOPILOT_WITH_PR: &str =
-    include_str!("../loom/knots_sdlc/profiles/autopilot_with_pr.loom");
+    include_str!("../loom/work_sdlc/profiles/autopilot_with_pr.loom");
 const PROFILE_AUTOPILOT_NO_PLANNING: &str =
-    include_str!("../loom/knots_sdlc/profiles/autopilot_no_planning.loom");
+    include_str!("../loom/work_sdlc/profiles/autopilot_no_planning.loom");
 const PROFILE_AUTOPILOT_WITH_PR_NO_PLANNING: &str =
-    include_str!("../loom/knots_sdlc/profiles/autopilot_with_pr_no_planning.loom");
-const PROFILE_SEMIAUTO: &str = include_str!("../loom/knots_sdlc/profiles/semiauto.loom");
+    include_str!("../loom/work_sdlc/profiles/autopilot_with_pr_no_planning.loom");
+const PROFILE_SEMIAUTO: &str = include_str!("../loom/work_sdlc/profiles/semiauto.loom");
 const PROFILE_SEMIAUTO_NO_PLANNING: &str =
-    include_str!("../loom/knots_sdlc/profiles/semiauto_no_planning.loom");
+    include_str!("../loom/work_sdlc/profiles/semiauto_no_planning.loom");
 
 const FILES: &[(&str, &str)] = &[
     ("loom.toml", LOOM_TOML),
@@ -39,7 +39,7 @@ const FILES: &[(&str, &str)] = &[
 ];
 
 /// Return the raw prompt body for the given action state from the embedded bundle.
-/// State names correspond directly to prompt names in the knots_sdlc bundle.
+/// State names correspond directly to prompt names in the work_sdlc bundle.
 #[cfg(test)]
 pub fn prompt_body_for_state(state: &str) -> Option<String> {
     let workflow = crate::installed_workflows::parse_bundle(
@@ -72,7 +72,7 @@ mod tests {
             crate::installed_workflows::BundleFormat::Json,
         )
         .expect("embedded bundle JSON should parse");
-        assert_eq!(workflow.id, "knots_sdlc");
+        assert_eq!(workflow.id, "work_sdlc");
         assert_eq!(workflow.version, 1);
         assert_eq!(workflow.default_profile.as_deref(), Some("autopilot"));
         assert!(workflow.profiles.contains_key("autopilot"));

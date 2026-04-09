@@ -133,6 +133,7 @@ fn build_json_bundle(parsed: BundleToml) -> JsonKnotsBundle {
                 id,
                 kind: state.kind,
                 prompt: state.prompt,
+                executor: state.executor,
                 output: state.output,
                 output_hint: state.output_hint,
                 review_hint: state.review_hint,

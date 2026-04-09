@@ -56,8 +56,6 @@ mod profile;
 mod profile_behavior;
 mod profile_commands;
 mod profile_consts;
-#[cfg(test)]
-mod profile_normalize;
 mod progress;
 mod project;
 mod project_commands;

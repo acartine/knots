@@ -2,7 +2,7 @@
 
 pub use crate::profile::{
     normalize_profile_id, normalize_profile_id as normalize_workflow_id, ActionOutputDef, GateMode,
-    InvalidWorkflowTransition, OutputMode, OwnerKind, ProfileDefinition,
+    InvalidWorkflowTransition, OwnerKind, ProfileDefinition,
     ProfileDefinition as WorkflowDefinition, ProfileError, ProfileError as WorkflowError,
     ProfileOwners, ProfileRegistry, ProfileRegistry as WorkflowRegistry, StepMetadata, StepOwner,
     WorkflowTransition,

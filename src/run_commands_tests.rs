@@ -274,7 +274,7 @@ fn show_json_value_hides_lease_id_and_keeps_lease_agent_metadata() {
             model: "opus".to_string(),
             model_version: "4.6".to_string(),
         }),
-        workflow_id: "knots_sdlc".to_string(),
+        workflow_id: "lease_sdlc".to_string(),
         profile_id: "autopilot".to_string(),
         profile_etag: None,
         deferred_from_state: None,

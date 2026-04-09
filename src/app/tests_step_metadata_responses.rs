@@ -114,9 +114,9 @@ fn latest_knot_head_payload(root: &Path, knot_id: &str) -> Value {
 }
 
 fn install_review_flow(root: &Path) {
-    let wf_root = root.join(".knots/workflows/review_flow/1");
-    std::fs::create_dir_all(&wf_root).expect("workflow dir should create");
-    std::fs::write(wf_root.join("bundle.toml"), RESPONSE_REVIEW_FLOW).expect("bundle should write");
+    let bundle = root.join("review_flow.toml");
+    std::fs::write(&bundle, RESPONSE_REVIEW_FLOW).expect("bundle should write");
+    crate::installed_workflows::install_bundle(root, &bundle).expect("workflow should install");
 }
 
 #[test]

@@ -2,7 +2,6 @@ use serde_json::Value;
 
 use crate::domain::knot_type::parse_knot_type;
 use crate::events::FullEvent;
-use crate::installed_workflows;
 use crate::workflow::normalize_profile_id;
 
 use super::{
@@ -59,7 +58,7 @@ fn apply_created(
         p.state = state.to_string();
     }
     if let Some(raw) = data.get("workflow_id").and_then(Value::as_str) {
-        p.workflow_id = installed_workflows::canonicalize_persisted_workflow_id(raw);
+        p.workflow_id = raw.trim().to_string();
     }
     if let Some(raw) = data.get("profile_id").and_then(Value::as_str) {
         if let Some(pid) = normalize_profile_id(raw) {
@@ -122,12 +121,9 @@ fn apply_profile_set(
     data: &serde_json::Map<String, Value>,
     event: &FullEvent,
 ) {
-    let raw_wf = data
-        .get("workflow_id")
-        .and_then(Value::as_str)
-        .or_else(|| data.get("profile_id").and_then(Value::as_str));
+    let raw_wf = data.get("workflow_id").and_then(Value::as_str);
     if let Some(raw) = raw_wf {
-        p.workflow_id = installed_workflows::canonicalize_persisted_workflow_id(raw);
+        p.workflow_id = raw.trim().to_string();
     }
     let raw_pid = data
         .get("to_profile_id")

@@ -42,8 +42,8 @@ fn sample_record() -> KnotCacheRecord {
         lease_data: crate::domain::lease::LeaseData::default(),
         lease_id: None,
         lease_expiry_ts: 0,
-        workflow_id: "knots_sdlc".to_string(),
-        profile_id: "default".to_string(),
+        workflow_id: "work_sdlc".to_string(),
+        profile_id: "autopilot".to_string(),
         profile_etag: Some("etag-1".to_string()),
         deferred_from_state: None,
         blocked_from_state: None,
@@ -381,7 +381,7 @@ fn open_app(root: &Path) -> App {
 #[test]
 fn default_quick_profile_id_falls_back_to_skipped_planning_profile() {
     let root = unique_workspace();
-    let app = open_app(&root);
+    let app = open_app(&root).with_home_override(Some(root.clone()));
 
     // No quick profile configured; should fall back to first profile
     // with planning_mode == Skipped (autopilot_no_planning).

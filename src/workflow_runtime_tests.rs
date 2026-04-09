@@ -27,10 +27,9 @@ fn gate_states_have_explicit_queue_and_action_classification() {
 #[test]
 fn profile_escape_states_are_non_actionable_and_non_terminal() {
     let workspace = unique_workspace("knots-workflow-escape");
-    let workflow_root = workspace.join(".knots/workflows/custom_flow/1");
-    std::fs::create_dir_all(&workflow_root).expect("workflow dir should exist");
+    let bundle = workspace.join("custom_flow.toml");
     std::fs::write(
-        workflow_root.join("bundle.toml"),
+        &bundle,
         r#"
 [workflow]
 name = "custom_flow"
@@ -100,6 +99,7 @@ changes = "ready_for_work"
 "#,
     )
     .expect("bundle should write");
+    crate::installed_workflows::install_bundle(&workspace, &bundle).expect("install bundle");
 
     let registry = ProfileRegistry::load_for_repo(&workspace).expect("registry should load");
     assert!(is_escape_state(

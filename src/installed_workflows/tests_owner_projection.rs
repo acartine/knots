@@ -72,7 +72,6 @@ fn work_sdlc_like_review_owner_stays_agent_in_toml_and_json() {
     let profile = workflow
         .require_profile("autopilot")
         .expect("profile should exist");
-    assert_eq!(profile.owners.plan_review.kind, OwnerKind::Agent);
     assert_eq!(
         profile.owners.owner_kind_for_state("ready_for_plan_review"),
         Some(&OwnerKind::Agent)
@@ -84,7 +83,6 @@ fn work_sdlc_like_review_owner_stays_agent_in_toml_and_json() {
     let json_profile = json_workflow
         .require_profile("autopilot")
         .expect("profile should exist");
-    assert_eq!(json_profile.owners.plan_review.kind, OwnerKind::Agent);
     assert_eq!(
         json_profile
             .owners

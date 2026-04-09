@@ -139,6 +139,7 @@ fn output_builders_cover_override_fallback_and_missing_state_paths() {
         id: "review".to_string(),
         kind: "action".to_string(),
         prompt: None,
+        executor: None,
         output: Some("note".to_string()),
         output_hint: Some("inspect".to_string()),
         review_hint: None,
@@ -195,7 +196,7 @@ fn output_builders_cover_override_fallback_and_missing_state_paths() {
 
 #[test]
 fn builtin_workflow_has_prompts_and_profiles() {
-    let workflow = builtin::knots_sdlc_workflow().expect("builtin workflow should build");
+    let workflow = builtin::work_sdlc_workflow_for_test().expect("builtin workflow should build");
     assert!(workflow.builtin);
     assert_eq!(workflow.default_profile.as_deref(), Some("autopilot"));
     assert!(workflow.prompts.contains_key("planning"));
@@ -246,9 +247,9 @@ fn builtin_workflow_refs_cover_all_builtin_knot_types() {
 
 #[test]
 fn builtin_non_work_workflows_expose_expected_profiles_and_prompts() {
-    let legacy = builtin::knots_sdlc_workflow_for_test().expect("legacy workflow should build");
-    assert_eq!(legacy.id, "work_sdlc");
-    assert!(legacy.require_profile("autopilot").is_ok());
+    let work = builtin::work_sdlc_workflow_for_test().expect("work workflow should build");
+    assert_eq!(work.id, "work_sdlc");
+    assert!(work.require_profile("autopilot").is_ok());
 
     let gate = builtin::gate_sdlc_workflow_for_test().expect("gate workflow should build");
     assert!(gate.builtin);

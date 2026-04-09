@@ -3,13 +3,6 @@ use crate::profile::ProfileError;
 
 use super::{render_prompt_body, BundleFormat, WorkflowDefinition, WorkflowRef};
 
-/// Test-visible wrapper to build the legacy bundled Knots workflow.
-#[cfg(test)]
-#[allow(dead_code)]
-pub fn knots_sdlc_workflow_for_test() -> Result<WorkflowDefinition, ProfileError> {
-    knots_sdlc_workflow()
-}
-
 /// Test-visible wrapper to build the bundled work workflow.
 #[cfg(test)]
 pub fn work_sdlc_workflow_for_test() -> Result<WorkflowDefinition, ProfileError> {
@@ -47,11 +40,6 @@ pub fn builtin_workflows() -> Result<Vec<(KnotType, WorkflowDefinition)>, Profil
 pub fn builtin_workflow_ref(knot_type: KnotType) -> WorkflowRef {
     let workflow = builtin_workflow(knot_type).expect("embedded builtin workflow should parse");
     WorkflowRef::new(workflow.id, Some(workflow.version))
-}
-
-#[cfg(test)]
-pub(super) fn knots_sdlc_workflow() -> Result<WorkflowDefinition, ProfileError> {
-    work_sdlc_workflow()
 }
 
 pub(super) fn work_sdlc_workflow() -> Result<WorkflowDefinition, ProfileError> {

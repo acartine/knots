@@ -24,7 +24,7 @@ impl App {
                 .map(KnotView::from)
                 .collect();
         for knot in &mut knots {
-            workflow_runtime::enrich_step_metadata(knot, &self.profile_registry);
+            workflow_runtime::enrich_step_metadata(knot, &self.profile_registry)?;
         }
         self.apply_aliases_to_knots(knots)
     }
@@ -38,7 +38,7 @@ impl App {
         })?;
         let mut knots: Vec<KnotView> = records.into_iter().map(KnotView::from).collect();
         for knot in &mut knots {
-            workflow_runtime::enrich_step_metadata(knot, &self.profile_registry);
+            workflow_runtime::enrich_step_metadata(knot, &self.profile_registry)?;
         }
         let knots = self.apply_aliases_to_knots(knots)?;
         Ok((knots, total))
@@ -70,7 +70,7 @@ impl App {
                         })
                 })
                 .collect();
-            workflow_runtime::enrich_step_metadata(&mut view, &self.profile_registry);
+            workflow_runtime::enrich_step_metadata(&mut view, &self.profile_registry)?;
             return Ok(Some(view));
         }
         Ok(None)

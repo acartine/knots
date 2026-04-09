@@ -140,36 +140,30 @@ pub(super) fn required_profile_id(
             return Ok(trimmed.to_string());
         }
     }
-
-    if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
-        let trimmed = value.trim();
-        if !trimmed.is_empty() {
-            return Ok(trimmed.to_string());
-        }
-    }
-
-    Err(invalid_event(
-        path,
-        "missing 'profile_id' string field (or legacy 'workflow_id')",
-    ))
+    Err(invalid_event(path, "missing 'profile_id' string field"))
 }
 
-pub(super) fn required_workflow_id(object: &Map<String, Value>, profile_id: &str) -> String {
+pub(super) fn required_workflow_id(
+    object: &Map<String, Value>,
+    path: &Path,
+) -> Result<String, SyncError> {
     if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
         let trimmed = value.trim();
         if !trimmed.is_empty() {
-            return installed_workflows::canonicalize_persisted_workflow_id(trimmed);
+            let workflow_id = installed_workflows::normalize_workflow_id(trimmed);
+            if matches!(workflow_id.as_str(), "compatibility" | "knots_sdlc") {
+                return Err(invalid_event(
+                    path,
+                    &format!(
+                        "legacy workflow_id '{}' requires install-time migration",
+                        trimmed
+                    ),
+                ));
+            }
+            return Ok(workflow_id);
         }
     }
-
-    profile_id
-        .split_once('/')
-        .map(|(wid, _)| wid.to_string())
-        .unwrap_or_else(|| {
-            installed_workflows::builtin_workflow_id_for_knot_type(
-                crate::domain::knot_type::KnotType::Work,
-            )
-        })
+    Err(invalid_event(path, "missing 'workflow_id' string field"))
 }
 
 pub(super) fn optional_string(value: Option<&Value>) -> Option<String> {

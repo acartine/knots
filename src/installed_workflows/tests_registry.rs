@@ -13,23 +13,117 @@ fn builtin_workflow_id() -> String {
     builtin_workflow_id_for_knot_type(KnotType::Work)
 }
 
-fn ensure_builtin_registry(root: &std::path::Path) {
-    ensure_builtin_workflows_registered(root).expect("builtin workflows should register");
+fn ensure_builtin_registry(root: &std::path::Path) -> WorkflowRepoConfig {
+    ensure_builtin_workflows_registered(root).expect("builtin workflows should register")
+}
+
+fn seed_legacy_cache_db(root: &std::path::Path) {
+    let db_path = workflows_root(root)
+        .parent()
+        .expect("workflow root parent")
+        .join("cache")
+        .join("state.sqlite");
+    std::fs::create_dir_all(db_path.parent().expect("db parent should exist"))
+        .expect("db parent should be creatable");
+    let conn = rusqlite::Connection::open(&db_path).expect("legacy db should open");
+    conn.execute_batch(
+        r#"
+CREATE TABLE schema_migrations (
+    version INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    applied_at TEXT NOT NULL
+);
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (1, 'baseline_cache_schema_v1', '2026-02-23T00:00:00Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (2, 'reserved_v2', '2026-02-23T00:00:01Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (3, 'knot_field_parity_v1', '2026-02-23T00:00:02Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (4, 'knot_workflow_identity_v1', '2026-02-23T00:00:03Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (5, 'workflow_id_canonicalize_v1', '2026-02-23T00:00:04Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (6, 'workflow_to_profile_v1', '2026-02-23T00:00:05Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (7, 'knot_invariants_v1', '2026-02-23T00:00:06Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (8, 'knot_step_history_v1', '2026-02-23T00:00:07Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (9, 'knot_gate_data_v1', '2026-02-23T00:00:08Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (10, 'knot_lease_data_v1', '2026-02-23T00:00:09Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (11, 'knot_workflow_id_v2', '2026-02-23T00:00:10Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (12, 'knot_acceptance_v1', '2026-02-23T00:00:11Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (13, 'knot_blocked_provenance_v1', '2026-02-23T00:00:12Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (14, 'lease_expiry_v1', '2026-02-23T00:00:13Z');
+INSERT INTO schema_migrations (version, name, applied_at)
+VALUES (15, 'builtin_workflow_id_knots_sdlc_v1', '2026-02-23T00:00:14Z');
+
+CREATE TABLE meta (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+INSERT INTO meta (key, value) VALUES ('schema_version', '15');
+INSERT INTO meta (key, value) VALUES ('hot_window_days', '7');
+INSERT INTO meta (key, value) VALUES ('sync_policy', 'auto');
+INSERT INTO meta (key, value) VALUES ('sync_auto_budget_ms', '750');
+INSERT INTO meta (key, value) VALUES ('sync_try_lock_ms', '0');
+INSERT INTO meta (key, value) VALUES ('push_retry_budget_ms', '800');
+INSERT INTO meta (key, value) VALUES ('sync_fetch_blob_limit_kb', '0');
+INSERT INTO meta (key, value) VALUES ('pull_drift_warn_threshold', '25');
+
+CREATE TABLE knot_hot (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    state TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    body TEXT,
+    description TEXT,
+    priority INTEGER,
+    knot_type TEXT,
+    tags_json TEXT NOT NULL DEFAULT '[]',
+    notes_json TEXT NOT NULL DEFAULT '[]',
+    handoff_capsules_json TEXT NOT NULL DEFAULT '[]',
+    invariants_json TEXT NOT NULL DEFAULT '[]',
+    step_history_json TEXT NOT NULL DEFAULT '[]',
+    gate_data_json TEXT NOT NULL DEFAULT '{}',
+    lease_data_json TEXT NOT NULL DEFAULT '{}',
+    lease_id TEXT,
+    workflow_id TEXT NOT NULL DEFAULT 'knots_sdlc',
+    profile_id TEXT NOT NULL DEFAULT 'autopilot',
+    profile_etag TEXT,
+    deferred_from_state TEXT,
+    acceptance TEXT,
+    blocked_from_state TEXT,
+    lease_expiry_ts INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT
+);
+INSERT INTO knot_hot (
+    id, title, state, updated_at, workflow_id, profile_id
+) VALUES (
+    'K-legacy', 'Legacy', 'ready_for_planning', '2026-02-23T00:00:15Z',
+    'knots_sdlc', 'autopilot'
+);
+"#,
+    )
+    .expect("legacy schema fixture should write");
 }
 
 #[test]
 fn repo_config_round_trips_through_disk() {
     let root = unique_workspace("knots-installed-workflows-config");
-    let config = WorkflowRepoConfig {
-        knot_type_workflows: BTreeMap::new(),
-        current_workflow: Some("custom_flow".to_string()),
-        current_version: Some(3),
-        legacy_current_profile: None,
-        default_profiles: BTreeMap::from([(
-            "custom_flow".to_string(),
-            "custom_flow/autopilot".to_string(),
-        )]),
-    };
+    let mut config = WorkflowRepoConfig::default();
+    config.register_workflow_for_knot_type(
+        KnotType::Work,
+        WorkflowRef::new("custom_flow", Some(3)),
+        true,
+    );
+    config.set_default_profile("custom_flow", "custom_flow/autopilot".to_string());
     write_repo_config(&root, &config).expect("config should write");
     let loaded = read_repo_config(&root).expect("config should load");
     assert_eq!(loaded, config.normalize());
@@ -38,18 +132,14 @@ fn repo_config_round_trips_through_disk() {
 
 #[test]
 fn normalize_preserves_explicit_profile_mappings() {
-    let config = WorkflowRepoConfig {
-        knot_type_workflows: BTreeMap::new(),
-        current_workflow: Some("custom_flow".to_string()),
-        current_version: Some(3),
-        legacy_current_profile: Some("custom_flow/legacy".to_string()),
-        default_profiles: BTreeMap::from([(
-            "custom_flow".to_string(),
-            "custom_flow/explicit".to_string(),
-        )]),
-    };
+    let mut config = WorkflowRepoConfig::default();
+    config.register_workflow_for_knot_type(
+        KnotType::Work,
+        WorkflowRef::new("custom_flow", Some(3)),
+        true,
+    );
+    config.set_default_profile("custom_flow", "custom_flow/explicit".to_string());
     let normalized = config.normalize();
-    assert_eq!(normalized.legacy_current_profile, None);
     assert_eq!(
         normalized.current_profile_id(),
         Some("custom_flow/explicit")
@@ -64,9 +154,6 @@ fn normalize_preserves_explicit_profile_mappings() {
 fn current_profile_is_none_without_workflow() {
     let config = WorkflowRepoConfig {
         knot_type_workflows: BTreeMap::new(),
-        current_workflow: None,
-        current_version: None,
-        legacy_current_profile: None,
         default_profiles: BTreeMap::from([(
             "custom_flow".to_string(),
             "custom_flow/autopilot".to_string(),
@@ -77,7 +164,7 @@ fn current_profile_is_none_without_workflow() {
 }
 
 #[test]
-fn read_repo_config_migrates_legacy_current_profile() {
+fn read_repo_config_rejects_legacy_current_profile() {
     let root = unique_workspace("knots-installed-workflows-legacy-config");
     let path = repo_config_path(&root);
     if let Some(parent) = path.parent() {
@@ -91,24 +178,13 @@ fn read_repo_config_migrates_legacy_current_profile() {
     )
     .expect("legacy config should write");
 
-    let loaded = read_repo_config(&root).expect("config should load");
-    assert!(loaded.current_workflow.is_none());
-    assert_eq!(
-        loaded
-            .current_workflow_ref_for_knot_type(crate::domain::knot_type::KnotType::Work)
-            .map(|workflow| workflow.workflow_id),
-        Some("custom_flow".to_string())
-    );
-    assert_eq!(loaded.current_profile_id(), Some("custom_flow/autopilot"));
-    assert_eq!(
-        loaded.default_profile_id_for_workflow("custom_flow"),
-        Some("custom_flow/autopilot")
-    );
+    let err = read_repo_config(&root).expect_err("legacy config should fail");
+    assert!(err.to_string().contains("requires migration"));
     let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
-fn read_repo_config_repairs_legacy_builtin_workflow_id_and_writes_back() {
+fn ensure_builtin_workflows_registered_migrates_legacy_workflow_id_and_writes_back() {
     let root = unique_workspace("knots-installed-workflows-repair-builtin");
     let path = repo_config_path(&root);
     if let Some(parent) = path.parent() {
@@ -123,8 +199,13 @@ fn read_repo_config_repairs_legacy_builtin_workflow_id_and_writes_back() {
     )
     .expect("legacy config should write");
 
-    let loaded = read_repo_config(&root).expect("config should load");
-    assert!(loaded.current_workflow.is_none());
+    let loaded = ensure_builtin_registry(&root);
+    assert_eq!(
+        loaded
+            .current_workflow_ref_for_knot_type(crate::domain::knot_type::KnotType::Work)
+            .map(|workflow| workflow.workflow_id),
+        Some(builtin_workflow_id())
+    );
     assert_eq!(loaded.current_profile_id(), Some("autopilot"));
     assert_eq!(
         loaded.default_profile_id_for_workflow(&builtin_workflow_id()),
@@ -134,6 +215,28 @@ fn read_repo_config_repairs_legacy_builtin_workflow_id_and_writes_back() {
     let repaired = std::fs::read_to_string(&path).expect("repaired config should read");
     assert!(repaired.contains("work_sdlc"));
     assert!(!repaired.contains("compatibility"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn ensure_builtin_workflows_registered_migrates_legacy_cache_db() {
+    let root = unique_workspace("knots-installed-workflows-repair-cache-db");
+    seed_legacy_cache_db(&root);
+
+    ensure_builtin_registry(&root);
+
+    let db_path = root.join(".knots").join("cache").join("state.sqlite");
+    let conn = crate::db::open_connection(db_path.to_str().expect("utf8 db path"))
+        .expect("upgraded db should open");
+    let workflow_id: String = conn
+        .query_row(
+            "SELECT workflow_id FROM knot_hot WHERE id = 'K-legacy'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("legacy row should be present");
+    assert_eq!(workflow_id, "work_sdlc");
+
     let _ = std::fs::remove_dir_all(root);
 }
 
@@ -154,9 +257,14 @@ fn install_bundle_writes_registry_without_switching() {
         .exists());
 
     let current = read_repo_config(&root).expect("current config should load");
-    assert_eq!(current.current_workflow, None);
-    assert_eq!(current.current_version, None);
-    assert!(current.default_profiles.is_empty());
+    assert_eq!(
+        current
+            .current_workflow_ref_for_knot_type(KnotType::Work)
+            .map(|workflow| workflow.workflow_id),
+        Some(builtin_workflow_id())
+    );
+    assert_eq!(current.current_profile_id(), None);
+    assert_eq!(current.default_profile_id_for_workflow("custom_flow"), None);
 
     let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
     let workflow = registry
@@ -173,7 +281,6 @@ fn set_selection_keeps_builtin_unscoped() {
     let root = unique_workspace("knots-installed-workflows-builtin");
     let config = set_current_workflow_selection(&root, &builtin_workflow_id(), Some(1), None)
         .expect("builtin workflow should select");
-    assert!(config.current_workflow.is_none());
     assert_eq!(
         config
             .current_workflow_ref_for_knot_type(crate::domain::knot_type::KnotType::Work)
@@ -203,6 +310,22 @@ fn set_default_profile_keeps_builtin_unscoped() {
 }
 
 #[test]
+fn set_default_profile_none_returns_existing_config() {
+    let root = unique_workspace("knots-installed-workflows-default-profile-none");
+    ensure_builtin_registry(&root);
+    set_workflow_default_profile(&root, &builtin_workflow_id(), Some("semiauto"))
+        .expect("builtin default profile should persist");
+
+    let config = set_workflow_default_profile(&root, &builtin_workflow_id(), None)
+        .expect("reading existing default profile should succeed");
+    assert_eq!(
+        config.default_profile_id_for_workflow(&builtin_workflow_id()),
+        Some("semiauto")
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn resolve_source_path_finds_candidates_and_errors() {
     let root = unique_workspace("knots-installed-workflows-resolve");
     let candidate_dir = root.join("bundle-dir");
@@ -224,11 +347,7 @@ fn installed_bundle_path_prefers_json() {
     let root = unique_workspace("knots-installed-workflows-installed-path");
     let wf_dir = root.join("custom_flow/3");
     std::fs::create_dir_all(&wf_dir).expect("workflow dir should exist");
-    std::fs::write(wf_dir.join("bundle.toml"), SAMPLE_BUNDLE).expect("toml bundle should write");
-    assert_eq!(
-        installed_bundle_path(&wf_dir),
-        Some(wf_dir.join("bundle.toml"))
-    );
+    assert_eq!(installed_bundle_path(&wf_dir), None);
     std::fs::write(wf_dir.join("bundle.json"), "{}").expect("json bundle should write");
     assert_eq!(
         installed_bundle_path(&wf_dir),

@@ -2,27 +2,6 @@ use std::error::Error;
 
 use super::{InvalidWorkflowTransition, WorkflowError, WorkflowRegistry};
 
-fn valid_profile_toml(id: &str) -> String {
-    format!(
-        concat!(
-            "[[profiles]]\n",
-            "id = \"{id}\"\n",
-            "planning_mode = \"required\"\n",
-            "implementation_review_mode = \"required\"\n",
-            "output = \"local\"\n",
-            "owners = {{ ",
-            "planning = {{ kind = \"human\" }}, ",
-            "plan_review = {{ kind = \"human\" }}, ",
-            "implementation = {{ kind = \"human\" }}, ",
-            "implementation_review = {{ kind = \"human\" }}, ",
-            "shipment = {{ kind = \"human\" }}, ",
-            "shipment_review = {{ kind = \"human\" }} ",
-            "}}\n",
-        ),
-        id = id
-    )
-}
-
 #[test]
 fn error_display_and_source_paths_cover_variants() {
     let transition = InvalidWorkflowTransition {
@@ -66,8 +45,7 @@ fn error_display_and_source_paths_cover_variants() {
 
 #[test]
 fn registry_resolve_and_require_failures_are_reported() {
-    let registry = WorkflowRegistry::from_toml(&valid_profile_toml("autopilot"))
-        .expect("registry should load");
+    let registry = WorkflowRegistry::load().expect("registry should load");
     assert!(matches!(
         registry.resolve(None),
         Err(WorkflowError::MissingProfileReference)
@@ -99,21 +77,4 @@ fn profile_definition_reports_unknown_state_and_invalid_transition() {
     assert!(profile
         .validate_transition("ready_for_planning", "shipped", false)
         .is_err());
-}
-
-#[test]
-fn load_rejects_empty_and_duplicate_definitions() {
-    assert!(matches!(
-        WorkflowRegistry::from_toml(""),
-        Err(WorkflowError::InvalidDefinition(_))
-    ));
-
-    assert!(matches!(
-        WorkflowRegistry::from_toml(&format!(
-            "{}\n{}",
-            valid_profile_toml("autopilot"),
-            valid_profile_toml("autopilot")
-        )),
-        Err(WorkflowError::InvalidDefinition(_))
-    ));
 }

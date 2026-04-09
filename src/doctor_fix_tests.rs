@@ -355,9 +355,6 @@ fn apply_fixes_workflow_registry_repairs_missing_builtin_entries_without_clobber
                 },
             ),
         ]),
-        current_workflow: None,
-        current_version: None,
-        legacy_current_profile: None,
         default_profiles: std::collections::BTreeMap::new(),
     };
     write_repo_config(&root, &config).expect("config should write");

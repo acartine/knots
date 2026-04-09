@@ -42,9 +42,6 @@ fn workflow_registry_check_fails_when_a_knot_type_has_no_registered_workflows() 
                 registered: vec![WorkflowRef::new("work_sdlc", Some(1))],
             },
         )]),
-        current_workflow: None,
-        current_version: None,
-        legacy_current_profile: None,
         default_profiles: BTreeMap::new(),
     };
     write_repo_config(&root, &config).expect("config should write");

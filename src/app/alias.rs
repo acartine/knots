@@ -77,7 +77,7 @@ impl App {
     pub(super) fn apply_alias_and_enrich_knot(&self, knot: KnotView) -> Result<KnotView, AppError> {
         let maps = self.alias_maps()?;
         let mut knot = Self::with_alias_maps(knot, &maps);
-        workflow_runtime::enrich_step_metadata(&mut knot, &self.profile_registry);
+        workflow_runtime::enrich_step_metadata(&mut knot, &self.profile_registry)?;
         Ok(knot)
     }
 

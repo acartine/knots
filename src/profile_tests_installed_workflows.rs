@@ -57,11 +57,12 @@ fn load_includes_builtin_profiles_from_all_workflow_bundles() {
 
     assert_eq!(autopilot.workflow_id, "work_sdlc");
     assert_eq!(
-        autopilot.owners.plan_review.kind,
-        crate::profile::OwnerKind::Agent
-    );
-    assert_eq!(
-        autopilot.owners.states["ready_for_plan_review"].kind,
+        autopilot
+            .owners
+            .states
+            .get("ready_for_plan_review")
+            .expect("plan review owner")
+            .kind,
         crate::profile::OwnerKind::Agent
     );
     assert_eq!(

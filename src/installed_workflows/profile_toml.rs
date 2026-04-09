@@ -101,24 +101,6 @@ fn assemble_profile(
         GateMode::Skipped
     };
     let owners = ProfileOwners {
-        planning: action_owner_or_default(&ctx.owner_states, "planning", OwnerKind::Agent),
-        plan_review: action_owner_or_default(&ctx.owner_states, "plan_review", OwnerKind::Human),
-        implementation: action_owner_or_default(
-            &ctx.owner_states,
-            "implementation",
-            OwnerKind::Agent,
-        ),
-        implementation_review: action_owner_or_default(
-            &ctx.owner_states,
-            "implementation_review",
-            OwnerKind::Human,
-        ),
-        shipment: action_owner_or_default(&ctx.owner_states, "shipment", OwnerKind::Agent),
-        shipment_review: action_owner_or_default(
-            &ctx.owner_states,
-            "shipment_review",
-            OwnerKind::Human,
-        ),
         states: ctx.owner_states,
     };
     let action_prompts = build_action_prompt_bodies(&ctx.action_states, states, prompts);
@@ -152,17 +134,6 @@ fn assemble_profile(
         prompt_acceptance,
         review_hints,
     })
-}
-
-fn action_owner_or_default(
-    owners: &BTreeMap<String, StepOwner>,
-    action: &str,
-    default_kind: OwnerKind,
-) -> StepOwner {
-    owners
-        .get(action)
-        .cloned()
-        .unwrap_or_else(|| default_owner(default_kind))
 }
 
 fn has_phase_states(ctx: &ProfileBuildContext, action_state: &str, queue_state: &str) -> bool {
@@ -233,7 +204,7 @@ fn process_toml_step(
         ))
     })?;
     validate_step_states(step_name, step, states)?;
-    apply_step_to_context(step, is_gate, profile_section, states, ctx);
+    apply_step_to_context(step, is_gate, profile_name, profile_section, states, ctx)?;
     Ok(())
 }
 
@@ -272,10 +243,11 @@ fn validate_step_states(
 fn apply_step_to_context(
     step: &BundleStepSection,
     is_gate: bool,
+    profile_name: &str,
     profile_section: &BundleProfileSection,
     states: &BTreeMap<String, BundleStateSection>,
     ctx: &mut ProfileBuildContext,
-) {
+) -> Result<(), ProfileError> {
     super::push_unique(&mut ctx.ordered_states, step.queue.clone());
     super::push_unique(&mut ctx.ordered_states, step.action.clone());
     super::push_unique(&mut ctx.queue_states, step.queue.clone());
@@ -289,13 +261,16 @@ fn apply_step_to_context(
         from: step.queue.clone(),
         to: step.action.clone(),
     });
-    let action_state = states.get(&step.action).unwrap();
-    let owner = owner_for_action_state(action_state, profile_section, &step.action);
+    let action_state = states.get(&step.action).ok_or_else(|| {
+        ProfileError::InvalidBundle(format!("missing action state '{}'", step.action))
+    })?;
+    let owner = owner_for_action_state(action_state, profile_section, profile_name, &step.action)?;
     ctx.owner_states.insert(step.queue.clone(), owner.clone());
     ctx.owner_states.insert(step.action.clone(), owner);
     if ctx.first_queue.is_none() {
         ctx.first_queue = Some(step.queue.clone());
     }
+    Ok(())
 }
 
 fn collect_terminal_and_escape_states(
@@ -375,18 +350,31 @@ fn add_prompt_transitions_for_action(
 fn owner_for_action_state(
     state: &BundleStateSection,
     profile: &BundleProfileSection,
+    profile_name: &str,
     action_state: &str,
-) -> StepOwner {
+) -> Result<StepOwner, ProfileError> {
     let raw_executor = profile
         .overrides
         .get(action_state)
         .or(state.executor.as_ref())
-        .map(|value| value.trim().to_ascii_lowercase());
-    let kind = match raw_executor.as_deref() {
-        Some("human") => OwnerKind::Human,
-        _ => OwnerKind::Agent,
+        .map(|value| value.trim().to_ascii_lowercase())
+        .ok_or_else(|| {
+            ProfileError::InvalidBundle(format!(
+                "profile '{}' action '{}' is missing executor",
+                profile_name, action_state
+            ))
+        })?;
+    let kind = match raw_executor.as_str() {
+        "human" => OwnerKind::Human,
+        "agent" => OwnerKind::Agent,
+        other => {
+            return Err(ProfileError::InvalidBundle(format!(
+                "profile '{}' action '{}' has invalid executor '{}'",
+                profile_name, action_state, other
+            )));
+        }
     };
-    default_owner(kind)
+    Ok(default_owner(kind))
 }
 
 pub(crate) fn build_outputs_from_toml_profile(

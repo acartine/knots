@@ -368,7 +368,7 @@ fn compat_harness_reports_builtin_source_in_result() {
         loom_bin: Some(loom_bin(&bin_dir)),
     })
     .expect("compat run should succeed");
-    assert_eq!(result.source, PathBuf::from("<builtin:knots_sdlc>"));
+    assert_eq!(result.source, PathBuf::from("<builtin:work_sdlc>"));
 
     let _ = std::fs::remove_dir_all(root);
 }

@@ -171,7 +171,7 @@ impl<'a> IncrementalApplier<'a> {
         let state = required_string(data, "state", &absolute_path)?;
         let updated_at = required_string(data, "updated_at", &absolute_path)?;
         let profile_id = required_profile_id(data, &absolute_path)?.to_ascii_lowercase();
-        let workflow_id = required_workflow_id(data, &profile_id);
+        let workflow_id = required_workflow_id(data, &absolute_path)?;
 
         if is_stale_precondition(self.conn, &knot_id, event.precondition.as_ref())? {
             return Ok(false);

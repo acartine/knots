@@ -35,7 +35,7 @@ fn sample_knot() -> KnotView {
         lease_id: None,
         lease_expiry_ts: 0,
         lease_agent: None,
-        workflow_id: "knots_sdlc".to_string(),
+        workflow_id: "work_sdlc".to_string(),
         profile_id: "autopilot".to_string(),
         profile_etag: None,
         deferred_from_state: None,

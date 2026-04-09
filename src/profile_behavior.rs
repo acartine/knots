@@ -1,40 +1,22 @@
 use crate::profile::{
     InvalidWorkflowTransition, OwnerKind, ProfileDefinition, ProfileError, ProfileOwners,
-    StepMetadata, StepOwner, IMPLEMENTATION, IMPLEMENTATION_REVIEW, PLANNING, PLAN_REVIEW,
-    READY_FOR_IMPLEMENTATION, READY_FOR_IMPLEMENTATION_REVIEW, READY_FOR_PLANNING,
-    READY_FOR_PLAN_REVIEW, READY_FOR_SHIPMENT, READY_FOR_SHIPMENT_REVIEW, SHIPMENT,
-    SHIPMENT_REVIEW,
+    StepMetadata, StepOwner,
+};
+use crate::profile_consts::{
+    IMPLEMENTATION, IMPLEMENTATION_REVIEW, READY_FOR_IMPLEMENTATION,
+    READY_FOR_IMPLEMENTATION_REVIEW, READY_FOR_PLANNING, READY_FOR_SHIPMENT,
 };
 
 const WILDCARD_STATE: &str = "*";
 
 impl ProfileOwners {
+    #[cfg_attr(not(test), allow(dead_code))]
     pub fn for_action_state(&self, state: &str) -> Option<&StepOwner> {
-        match state {
-            PLANNING => Some(&self.planning),
-            PLAN_REVIEW => Some(&self.plan_review),
-            IMPLEMENTATION => Some(&self.implementation),
-            IMPLEMENTATION_REVIEW => Some(&self.implementation_review),
-            SHIPMENT => Some(&self.shipment),
-            SHIPMENT_REVIEW => Some(&self.shipment_review),
-            _ => None,
-        }
+        self.states.get(state)
     }
 
     pub fn owner_kind_for_state(&self, state: &str) -> Option<&OwnerKind> {
-        if let Some(owner) = self.states.get(state) {
-            return Some(&owner.kind);
-        }
-        let action = match state {
-            READY_FOR_PLANNING | PLANNING => PLANNING,
-            READY_FOR_PLAN_REVIEW | PLAN_REVIEW => PLAN_REVIEW,
-            READY_FOR_IMPLEMENTATION | IMPLEMENTATION => IMPLEMENTATION,
-            READY_FOR_IMPLEMENTATION_REVIEW | IMPLEMENTATION_REVIEW => IMPLEMENTATION_REVIEW,
-            READY_FOR_SHIPMENT | SHIPMENT => SHIPMENT,
-            READY_FOR_SHIPMENT_REVIEW | SHIPMENT_REVIEW => SHIPMENT_REVIEW,
-            _ => return None,
-        };
-        self.for_action_state(action).map(|o| &o.kind)
+        self.states.get(state).map(|owner| &owner.kind)
     }
 }
 
@@ -57,7 +39,7 @@ impl ProfileDefinition {
                 .iter()
                 .any(|candidate| candidate == state);
         }
-        self.owners.for_action_state(state).is_some() || state == "evaluating"
+        state == "evaluating"
     }
 
     pub fn action_for_queue_state(&self, state: &str) -> Option<&str> {
@@ -88,12 +70,7 @@ impl ProfileDefinition {
     }
 
     pub fn step_metadata_for(&self, action_state: &str) -> StepMetadata {
-        let owner = self
-            .owners
-            .states
-            .get(action_state)
-            .or_else(|| self.owners.for_action_state(action_state))
-            .cloned();
+        let owner = self.owners.states.get(action_state).cloned();
         StepMetadata {
             action_state: action_state.to_string(),
             action_kind: self.action_kinds.get(action_state).cloned(),

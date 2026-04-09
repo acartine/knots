@@ -148,6 +148,7 @@ fn apply_index_event_with_invariants_persists_them() {
             "knot_id": "K-idx-inv",
             "title": "Index with invariants",
             "state": "implementation",
+            "workflow_id": "work_sdlc",
             "profile_id": "autopilot",
             "updated_at": ts,
             "terminal": false,

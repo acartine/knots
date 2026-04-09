@@ -161,14 +161,6 @@ mod tests {
             .clone()
     }
 
-    fn profile_from_toml(raw: &str, id: &str) -> ProfileDefinition {
-        ProfileRegistry::from_toml(raw)
-            .expect("registry should load from toml")
-            .require(id)
-            .expect("profile should exist")
-            .clone()
-    }
-
     #[test]
     fn rollback_target_rewinds_non_review_action_states() {
         let profile = profile("autopilot");
@@ -216,33 +208,6 @@ mod tests {
             implementation_review.target_state,
             "ready_for_implementation"
         );
-
-        let no_impl_review = profile_from_toml(
-            r#"
-                [[profiles]]
-                id = "test_skipped_impl_review"
-                planning_mode = "required"
-                implementation_review_mode = "skipped"
-                output = "local"
-
-                [profiles.owners.planning]
-                kind = "agent"
-                [profiles.owners.plan_review]
-                kind = "agent"
-                [profiles.owners.implementation]
-                kind = "agent"
-                [profiles.owners.implementation_review]
-                kind = "agent"
-                [profiles.owners.shipment]
-                kind = "agent"
-                [profiles.owners.shipment_review]
-                kind = "agent"
-            "#,
-            "test_skipped_impl_review",
-        );
-        let shipment = rollback_target(&no_impl_review, KnotType::Work, "shipment")
-            .expect("shipment should roll back");
-        assert_eq!(shipment.target_state, "ready_for_shipment");
     }
 
     #[test]

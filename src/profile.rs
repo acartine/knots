@@ -5,7 +5,6 @@ use std::{error::Error, fmt};
 use serde::{Deserialize, Serialize};
 
 use crate::installed_workflows;
-pub use crate::profile_consts::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorkflowTransition {
@@ -41,16 +40,6 @@ pub struct StepMetadata {
     pub review_hint: Option<String>,
 }
 
-#[cfg_attr(not(test), allow(dead_code))]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum OutputMode {
-    Local,
-    Remote,
-    Pr,
-    RemoteMain,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum OwnerKind {
@@ -71,13 +60,6 @@ pub struct StepOwner {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProfileOwners {
-    pub planning: StepOwner,
-    pub plan_review: StepOwner,
-    pub implementation: StepOwner,
-    pub implementation_review: StepOwner,
-    pub shipment: StepOwner,
-    pub shipment_review: StepOwner,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub states: BTreeMap<String, StepOwner>,
 }
 
@@ -243,40 +225,7 @@ impl ProfileRegistry {
         let canonical_id = profile.id.clone();
         self.aliases
             .insert(canonical_id.clone(), canonical_id.clone());
-        for alias in builtin_profile_aliases(&canonical_id) {
-            self.aliases.insert(alias.to_string(), canonical_id.clone());
-        }
         self.profiles.insert(canonical_id, profile);
-    }
-
-    #[cfg(test)]
-    pub(crate) fn from_toml(raw: &str) -> Result<Self, ProfileError> {
-        let file: crate::profile_normalize::RawProfileFile = toml::from_str(raw)?;
-        if file.profiles.is_empty() {
-            return Err(ProfileError::InvalidDefinition(
-                "at least one profile must be defined".to_string(),
-            ));
-        }
-
-        let mut profiles = HashMap::new();
-        let mut aliases = HashMap::new();
-
-        for raw_profile in file.profiles {
-            let profile = crate::profile_normalize::normalize(raw_profile)?;
-            if profiles
-                .insert(profile.id.clone(), profile.clone())
-                .is_some()
-            {
-                return Err(ProfileError::InvalidDefinition(
-                    "duplicate profile id in profile file".to_string(),
-                ));
-            }
-            for alias in &profile.aliases {
-                aliases.insert(alias.clone(), profile.id.clone());
-            }
-        }
-
-        Ok(Self { profiles, aliases })
     }
 
     pub fn list(&self) -> Vec<ProfileDefinition> {
@@ -319,20 +268,6 @@ pub fn normalize_profile_id(raw: &str) -> Option<String> {
 
 fn builtin_workflow_id() -> String {
     installed_workflows::builtin_workflow_id_for_knot_type(crate::domain::knot_type::KnotType::Work)
-}
-
-fn builtin_profile_aliases(id: &str) -> &'static [&'static str] {
-    match id {
-        "autopilot" => &[
-            "automation_granular",
-            "default",
-            "delivery",
-            "automation",
-            "granular",
-        ],
-        "semiauto" => &["human_gate", "human", "coarse", "pr_human_gate"],
-        _ => &[],
-    }
 }
 
 #[cfg(test)]

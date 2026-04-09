@@ -21,13 +21,18 @@ pub fn read_repo_config(repo_root: &Path) -> Result<WorkflowRepoConfig, ProfileE
         return Ok(WorkflowRepoConfig::default());
     }
     let raw = fs::read_to_string(&path).map_err(|e| ProfileError::InvalidBundle(e.to_string()))?;
-    let config: WorkflowRepoConfig =
+    let input: RepoConfigMigrationInput =
         toml::from_str(&raw).map_err(|e| ProfileError::InvalidBundle(e.to_string()))?;
-    let normalized = config.clone().normalize();
-    if normalized != config {
-        write_repo_config(repo_root, &normalized)?;
+    if repo_config_requires_migration(&input) {
+        return Err(ProfileError::InvalidBundle(
+            "workflow config requires migration; run workflow install/doctor fix".to_string(),
+        ));
     }
-    Ok(normalized)
+    Ok(WorkflowRepoConfig {
+        knot_type_workflows: input.knot_type_workflows,
+        default_profiles: input.default_profiles,
+    }
+    .normalize())
 }
 
 pub fn write_repo_config(
@@ -162,6 +167,8 @@ pub fn register_workflow_for_knot_type(
 pub fn ensure_builtin_workflows_registered(
     repo_root: &Path,
 ) -> Result<WorkflowRepoConfig, ProfileError> {
+    migrate_legacy_repo_config(repo_root)?;
+    migrate_legacy_cache_db(repo_root)?;
     let mut config = read_repo_config(repo_root)?;
     for (knot_type, workflow) in super::builtin::builtin_workflows()? {
         config.register_workflow_for_knot_type(
@@ -175,6 +182,187 @@ pub fn ensure_builtin_workflows_registered(
     let config = config.normalize();
     write_repo_config(repo_root, &config)?;
     Ok(config)
+}
+
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+struct RepoConfigMigrationInput {
+    #[serde(default)]
+    knot_type_workflows: std::collections::BTreeMap<String, super::KnotTypeWorkflowConfig>,
+    #[serde(default)]
+    current_workflow: Option<String>,
+    #[serde(default)]
+    current_version: Option<u32>,
+    #[serde(default, alias = "current_profile")]
+    current_profile: Option<String>,
+    #[serde(default)]
+    default_profiles: std::collections::BTreeMap<String, String>,
+}
+
+fn repo_config_requires_migration(input: &RepoConfigMigrationInput) -> bool {
+    input.current_workflow.is_some()
+        || input.current_version.is_some()
+        || input.current_profile.is_some()
+        || input
+            .default_profiles
+            .iter()
+            .any(|(workflow_id, profile_id)| {
+                workflow_id_requires_migration(workflow_id)
+                    || profile_id_requires_migration(profile_id)
+            })
+        || input
+            .knot_type_workflows
+            .values()
+            .any(knot_type_workflow_requires_migration)
+}
+
+fn knot_type_workflow_requires_migration(config: &super::KnotTypeWorkflowConfig) -> bool {
+    workflow_id_requires_migration(&config.default.workflow_id)
+        || config
+            .registered
+            .iter()
+            .any(|workflow| workflow_id_requires_migration(&workflow.workflow_id))
+}
+
+fn workflow_id_requires_migration(workflow_id: &str) -> bool {
+    matches!(
+        super::normalize_workflow_id(workflow_id).as_str(),
+        "compatibility" | "knots_sdlc"
+    )
+}
+
+fn profile_id_requires_migration(profile_id: &str) -> bool {
+    let trimmed = profile_id.trim().to_ascii_lowercase();
+    matches!(
+        trimmed.as_str(),
+        "automation_granular"
+            | "default"
+            | "delivery"
+            | "automation"
+            | "granular"
+            | "human_gate"
+            | "human"
+            | "coarse"
+            | "pr_human_gate"
+    ) || trimmed.starts_with("compatibility/")
+        || trimmed.starts_with("knots_sdlc/")
+}
+
+fn migrate_legacy_repo_config(repo_root: &Path) -> Result<(), ProfileError> {
+    let path = repo_config_path(repo_root);
+    if !path.exists() {
+        return Ok(());
+    }
+    let raw = fs::read_to_string(&path).map_err(|e| ProfileError::InvalidBundle(e.to_string()))?;
+    let input: RepoConfigMigrationInput =
+        toml::from_str(&raw).map_err(|e| ProfileError::InvalidBundle(e.to_string()))?;
+    if !repo_config_requires_migration(&input) {
+        return Ok(());
+    }
+
+    let mut config = WorkflowRepoConfig {
+        knot_type_workflows: migrate_knot_type_workflows(input.knot_type_workflows),
+        default_profiles: std::collections::BTreeMap::new(),
+    };
+    if let Some(current_workflow) = input.current_workflow {
+        let workflow_id = migrate_workflow_id(&current_workflow);
+        config.register_workflow_for_knot_type(
+            crate::domain::knot_type::KnotType::Work,
+            WorkflowRef::new(workflow_id.clone(), input.current_version),
+            true,
+        );
+        if let Some(current_profile) = input.current_profile {
+            config.set_default_profile(
+                &workflow_id,
+                migrate_profile_reference(&workflow_id, &current_profile),
+            );
+        }
+    }
+    for (workflow_id, profile_id) in input.default_profiles {
+        let workflow_id = migrate_workflow_id(&workflow_id);
+        config.set_default_profile(
+            &workflow_id,
+            migrate_profile_reference(&workflow_id, &profile_id),
+        );
+    }
+    write_repo_config(repo_root, &config.normalize())
+}
+
+fn migrate_knot_type_workflows(
+    workflows: std::collections::BTreeMap<String, super::KnotTypeWorkflowConfig>,
+) -> std::collections::BTreeMap<String, super::KnotTypeWorkflowConfig> {
+    workflows
+        .into_iter()
+        .map(|(knot_type, config)| {
+            let default = WorkflowRef::new(
+                migrate_workflow_id(&config.default.workflow_id),
+                config.default.version,
+            );
+            let registered = config
+                .registered
+                .into_iter()
+                .map(|workflow| {
+                    WorkflowRef::new(migrate_workflow_id(&workflow.workflow_id), workflow.version)
+                })
+                .collect();
+            (
+                knot_type,
+                super::KnotTypeWorkflowConfig {
+                    default,
+                    registered,
+                }
+                .normalize(),
+            )
+        })
+        .collect()
+}
+
+fn migrate_workflow_id(workflow_id: &str) -> String {
+    let normalized = super::normalize_workflow_id(workflow_id);
+    if matches!(normalized.as_str(), "compatibility" | "knots_sdlc") {
+        super::builtin_workflow_id_for_knot_type(crate::domain::knot_type::KnotType::Work)
+    } else {
+        normalized
+    }
+}
+
+fn migrate_profile_reference(workflow_id: &str, profile_id: &str) -> String {
+    let trimmed = profile_id.trim();
+    if workflow_id
+        == super::builtin_workflow_id_for_knot_type(crate::domain::knot_type::KnotType::Work)
+    {
+        let suffix = trimmed.rsplit('/').next().unwrap_or(trimmed);
+        match suffix.trim().to_ascii_lowercase().as_str() {
+            "automation_granular" | "default" | "delivery" | "automation" | "granular" => {
+                "autopilot".to_string()
+            }
+            "human_gate" | "human" | "coarse" | "pr_human_gate" => "semiauto".to_string(),
+            other => other.to_string(),
+        }
+    } else if let Some((prefix, suffix)) = trimmed.rsplit_once('/') {
+        format!(
+            "{}/{}",
+            super::normalize_workflow_id(prefix),
+            crate::profile::normalize_profile_id(suffix)
+                .unwrap_or_else(|| suffix.trim().to_ascii_lowercase())
+        )
+    } else {
+        crate::profile::normalize_profile_id(trimmed)
+            .unwrap_or_else(|| trimmed.to_ascii_lowercase())
+    }
+}
+
+fn migrate_legacy_cache_db(repo_root: &Path) -> Result<(), ProfileError> {
+    let db_path = repo_root.join(".knots").join("cache").join("state.sqlite");
+    if !db_path.exists() {
+        return Ok(());
+    }
+    crate::db::open_connection(
+        db_path
+            .to_str()
+            .ok_or_else(|| ProfileError::InvalidBundle("invalid db path".to_string()))?,
+    )
+    .map(|_| ())
+    .map_err(|e| ProfileError::InvalidBundle(e.to_string()))
 }
 
 fn resolve_profile_for_selection(

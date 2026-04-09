@@ -200,21 +200,20 @@ fn resolve_action_state<'a>(profile: &'a ProfileDefinition, state: &'a str) -> O
 
 /// Populate `step_metadata` and `next_step_metadata` on a KnotView
 /// by resolving against the profile registry at read time.
-pub fn enrich_step_metadata(knot: &mut crate::app::KnotView, registry: &ProfileRegistry) {
+pub fn enrich_step_metadata(
+    knot: &mut crate::app::KnotView,
+    registry: &ProfileRegistry,
+) -> Result<(), ProfileError> {
     let gate = knot.gate.clone().unwrap_or_default();
     let profile_id = crate::dispatch::profile_lookup_id(knot);
     knot.step_metadata =
-        step_metadata_for_state(registry, &profile_id, knot.knot_type, &gate, &knot.state)
-            .ok()
-            .flatten();
-    let next_state = next_happy_path_state(registry, &profile_id, knot.knot_type, &knot.state)
-        .ok()
+        step_metadata_for_state(registry, &profile_id, knot.knot_type, &gate, &knot.state)?;
+    let next_state = next_happy_path_state(registry, &profile_id, knot.knot_type, &knot.state)?;
+    knot.next_step_metadata = next_state
+        .map(|ns| step_metadata_for_state(registry, &profile_id, knot.knot_type, &gate, &ns))
+        .transpose()?
         .flatten();
-    knot.next_step_metadata = next_state.and_then(|ns| {
-        step_metadata_for_state(registry, &profile_id, knot.knot_type, &gate, &ns)
-            .ok()
-            .flatten()
-    });
+    Ok(())
 }
 
 #[cfg(test)]

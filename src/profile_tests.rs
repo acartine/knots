@@ -100,11 +100,11 @@ complete = "done"
 "#;
 
 #[test]
-fn loads_builtin_profiles_and_legacy_aliases() {
+fn loads_builtin_profiles_without_legacy_aliases() {
     let registry = ProfileRegistry::load().expect("registry should load");
     assert!(registry.require("autopilot").is_ok());
-    assert!(registry.require("default").is_ok());
-    assert!(registry.require("human_gate").is_ok());
+    assert!(registry.require("default").is_err());
+    assert!(registry.require("human_gate").is_err());
 }
 
 #[test]
@@ -161,11 +161,12 @@ fn owner_for_action_state_returns_correct_owner() {
     let owner = semiauto.owners.for_action_state("implementation").unwrap();
     assert_eq!(owner.kind, super::OwnerKind::Agent);
 
-    // non-action state returns None
-    assert!(autopilot
+    // queue states carry the same owner as their action state
+    let owner = autopilot
         .owners
         .for_action_state("ready_for_planning")
-        .is_none());
+        .unwrap();
+    assert_eq!(owner.kind, super::OwnerKind::Agent);
     assert!(autopilot.owners.for_action_state("shipped").is_none());
 }
 
@@ -230,30 +231,55 @@ fn load_for_repo_preserves_human_gated_profile_owners() {
     ensure_builtin_registry(&root);
     let registry = ProfileRegistry::load_for_repo(&root).expect("repo registry should load");
 
-    for profile_id in ["semiauto", "semiauto_no_planning"] {
-        let profile = registry.require(profile_id).expect("profile should exist");
-        assert_eq!(
-            profile
-                .owners
-                .for_action_state("plan_review")
-                .map(|owner| &owner.kind),
-            Some(&super::OwnerKind::Human)
-        );
-        assert_eq!(
-            profile
-                .owners
-                .for_action_state("implementation_review")
-                .map(|owner| &owner.kind),
-            Some(&super::OwnerKind::Human)
-        );
-        assert_eq!(
-            profile
-                .owners
-                .for_action_state("implementation")
-                .map(|owner| &owner.kind),
-            Some(&super::OwnerKind::Agent)
-        );
-    }
+    let semiauto = registry.require("semiauto").expect("profile should exist");
+    assert_eq!(
+        semiauto
+            .owners
+            .states
+            .get("ready_for_plan_review")
+            .map(|owner| &owner.kind),
+        Some(&super::OwnerKind::Human)
+    );
+    assert_eq!(
+        semiauto
+            .owners
+            .states
+            .get("ready_for_implementation_review")
+            .map(|owner| &owner.kind),
+        Some(&super::OwnerKind::Human)
+    );
+    assert_eq!(
+        semiauto
+            .owners
+            .states
+            .get("implementation")
+            .map(|owner| &owner.kind),
+        Some(&super::OwnerKind::Agent)
+    );
+
+    let semiauto_no_planning = registry
+        .require("semiauto_no_planning")
+        .expect("profile should exist");
+    assert!(!semiauto_no_planning
+        .owners
+        .states
+        .contains_key("ready_for_plan_review"));
+    assert_eq!(
+        semiauto_no_planning
+            .owners
+            .states
+            .get("ready_for_implementation_review")
+            .map(|owner| &owner.kind),
+        Some(&super::OwnerKind::Human)
+    );
+    assert_eq!(
+        semiauto_no_planning
+            .owners
+            .states
+            .get("implementation")
+            .map(|owner| &owner.kind),
+        Some(&super::OwnerKind::Agent)
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -313,56 +339,6 @@ fn profile_error_display_covers_passive_workflow_variants() {
 }
 
 #[test]
-fn from_toml_rejects_empty_and_duplicate_profile_definitions() {
-    let empty = ProfileRegistry::from_toml("profiles = []").expect_err("empty profile file fails");
-    assert!(empty.to_string().contains("at least one profile"));
-
-    let duplicate = ProfileRegistry::from_toml(
-        r#"
-            [[profiles]]
-            id = "dup"
-            planning_mode = "required"
-            implementation_review_mode = "required"
-            output = "local"
-
-            [profiles.owners.planning]
-            kind = "agent"
-            [profiles.owners.plan_review]
-            kind = "human"
-            [profiles.owners.implementation]
-            kind = "agent"
-            [profiles.owners.implementation_review]
-            kind = "human"
-            [profiles.owners.shipment]
-            kind = "agent"
-            [profiles.owners.shipment_review]
-            kind = "human"
-
-            [[profiles]]
-            id = "dup"
-            planning_mode = "required"
-            implementation_review_mode = "required"
-            output = "local"
-
-            [profiles.owners.planning]
-            kind = "agent"
-            [profiles.owners.plan_review]
-            kind = "human"
-            [profiles.owners.implementation]
-            kind = "agent"
-            [profiles.owners.implementation_review]
-            kind = "human"
-            [profiles.owners.shipment]
-            kind = "agent"
-            [profiles.owners.shipment_review]
-            kind = "human"
-        "#,
-    )
-    .expect_err("duplicate profiles fail");
-    assert!(duplicate.to_string().contains("duplicate profile id"));
-}
-
-#[test]
 fn resolve_requires_a_profile_reference() {
     let registry = ProfileRegistry::load().expect("registry should load");
     let err = registry
@@ -381,71 +357,6 @@ fn profile_error_source_covers_remaining_none_variants() {
 }
 
 #[test]
-fn owner_kind_for_state_falls_back_to_canonical_queue_mapping_when_state_map_is_empty() {
-    let registry = ProfileRegistry::load().expect("registry should load");
-    let profile = registry.require("autopilot").expect("profile should exist");
-    let mut owners = profile.owners.clone();
-    owners.states.clear();
-
-    assert_eq!(
-        owners.owner_kind_for_state("ready_for_shipment"),
-        Some(&super::OwnerKind::Agent)
-    );
-}
-
-#[test]
-fn queue_and_action_state_fallbacks_work_without_explicit_lists() {
-    let registry = ProfileRegistry::load().expect("registry should load");
-    let mut profile = registry
-        .require("autopilot")
-        .expect("profile should exist")
-        .clone();
-    profile.queue_states.clear();
-    profile.action_states.clear();
-
-    assert!(profile.is_queue_state("ready_to_evaluate"));
-    assert!(profile.is_action_state("evaluating"));
-}
-
-#[test]
-fn from_toml_supports_remote_legacy_output_mode() {
-    let registry = ProfileRegistry::from_toml(
-        r#"
-            [[profiles]]
-            id = "remote_profile"
-            planning_mode = "required"
-            implementation_review_mode = "required"
-            output = "remote"
-
-            [profiles.owners.planning]
-            kind = "agent"
-            [profiles.owners.plan_review]
-            kind = "human"
-            [profiles.owners.implementation]
-            kind = "agent"
-            [profiles.owners.implementation_review]
-            kind = "human"
-            [profiles.owners.shipment]
-            kind = "agent"
-            [profiles.owners.shipment_review]
-            kind = "human"
-        "#,
-    )
-    .expect("registry should parse");
-    let profile = registry
-        .require("remote_profile")
-        .expect("profile should exist");
-    assert_eq!(
-        profile
-            .outputs
-            .get("implementation")
-            .expect("output should exist")
-            .artifact_type,
-        "remote"
-    );
-}
-
-#[test]
 fn queue_state_and_optional_planning_transitions_are_profile_aware() {
     let registry = ProfileRegistry::load().expect("registry should load");
     let autopilot = registry.require("autopilot").expect("profile should exist");
@@ -454,34 +365,4 @@ fn queue_state_and_optional_planning_transitions_are_profile_aware() {
         autopilot.action_for_queue_state("ready_for_plan_review"),
         Some("plan_review")
     );
-
-    let optional = ProfileRegistry::from_toml(
-        r#"
-            [[profiles]]
-            id = "test_optional_planning"
-            planning_mode = "optional"
-            implementation_review_mode = "required"
-            output = "local"
-
-            [profiles.owners.planning]
-            kind = "agent"
-            [profiles.owners.plan_review]
-            kind = "human"
-            [profiles.owners.implementation]
-            kind = "agent"
-            [profiles.owners.implementation_review]
-            kind = "human"
-            [profiles.owners.shipment]
-            kind = "agent"
-            [profiles.owners.shipment_review]
-            kind = "human"
-        "#,
-    )
-    .expect("registry should parse");
-    let profile = optional
-        .require("test_optional_planning")
-        .expect("profile should exist");
-    profile
-        .validate_transition("ready_for_planning", "ready_for_implementation", false)
-        .expect("optional planning should allow direct transition");
 }

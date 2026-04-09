@@ -158,10 +158,9 @@ fn custom_bundle_review_hint_attached_to_review_state() {
 #[test]
 fn custom_bundle_step_metadata_includes_review_hint() {
     let workspace = unique_workspace("knots-stepmeta-review");
-    let wf_root = workspace.join(".knots/workflows/review_flow/1");
-    std::fs::create_dir_all(&wf_root).expect("dir should create");
-    std::fs::write(wf_root.join("bundle.toml"), BUNDLE_WITH_REVIEW_HINT)
-        .expect("bundle should write");
+    let bundle = workspace.join("review_flow.toml");
+    std::fs::write(&bundle, BUNDLE_WITH_REVIEW_HINT).expect("bundle should write");
+    crate::installed_workflows::install_bundle(&workspace, &bundle).expect("install bundle");
 
     let registry = ProfileRegistry::load_for_repo(&workspace).expect("registry should load");
     let gate = GateData::default();

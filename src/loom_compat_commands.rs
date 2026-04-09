@@ -105,7 +105,7 @@ mod tests {
         let rendered = render_text(&TestResult {
             success: true,
             mode: CompatTestMode::Matrix,
-            source: PathBuf::from("<builtin:knots_sdlc>"),
+            source: PathBuf::from("<builtin:work_sdlc>"),
             workflow_id: "custom_flow".to_string(),
             workspace_path: Some(PathBuf::from("/tmp/workspace")),
             steps: vec![StepResult {
@@ -129,7 +129,7 @@ mod tests {
         let rendered = render_text(&TestResult {
             success: true,
             mode: CompatTestMode::Smoke,
-            source: PathBuf::from("<builtin:knots_sdlc>"),
+            source: PathBuf::from("<builtin:work_sdlc>"),
             workflow_id: "custom_flow".to_string(),
             workspace_path: None,
             steps: Vec::new(),

@@ -123,18 +123,18 @@ fn parse_metadata_entry_requires_all_string_fields() {
 }
 
 #[test]
-fn required_workflow_id_defaults_to_builtin_workflow_for_unnamespaced_profile() {
+fn required_workflow_id_rejects_missing_workflow_id_for_unnamespaced_profile() {
     let object = Map::<String, Value>::new();
 
-    assert_eq!(required_workflow_id(&object, "autopilot"), "work_sdlc");
+    assert!(required_workflow_id(&object, Path::new("/tmp/event.json")).is_err());
 }
 
 #[test]
-fn required_workflow_id_canonicalizes_legacy_builtin_workflow_id() {
+fn required_workflow_id_rejects_legacy_builtin_workflow_id() {
     let mut object = Map::<String, Value>::new();
     object.insert("workflow_id".to_string(), json!("knots_sdlc"));
 
-    assert_eq!(required_workflow_id(&object, "autopilot"), "work_sdlc");
+    assert!(required_workflow_id(&object, Path::new("/tmp/event.json")).is_err());
 }
 
 #[test]
@@ -273,7 +273,8 @@ fn changed_files_falls_back_to_scan_when_base_revision_is_unknown() {
             "    \"knot_id\": \"K-1\",\n",
             "    \"title\": \"One\",\n",
             "    \"state\": \"work_item\",\n",
-            "    \"profile_id\": \"automation_granular\",\n",
+            "    \"workflow_id\": \"work_sdlc\",\n",
+            "    \"profile_id\": \"autopilot\",\n",
             "    \"updated_at\": \"2026-02-25T10:00:00Z\",\n",
             "    \"terminal\": false\n",
             "  }\n",
@@ -331,7 +332,8 @@ fn apply_index_event_moves_old_non_terminal_knots_to_warm_cache() {
             "    \"knot_id\": \"K-warm\",\n",
             "    \"title\": \"Warm candidate\",\n",
             "    \"state\": \"work_item\",\n",
-            "    \"profile_id\": \"automation_granular\",\n",
+            "    \"workflow_id\": \"work_sdlc\",\n",
+            "    \"profile_id\": \"autopilot\",\n",
             "    \"updated_at\": \"2020-01-01T00:00:00Z\",\n",
             "    \"terminal\": false\n",
             "  }\n",
