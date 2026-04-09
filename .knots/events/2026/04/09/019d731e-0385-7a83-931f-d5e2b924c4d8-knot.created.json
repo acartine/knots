@@ -1,0 +1,17 @@
+{
+  "event_id": "019d731e-0385-7a83-931f-d5e2b924c4d8",
+  "occurred_at": "2026-04-09T16:40:40.069415Z",
+  "knot_id": "knots-3e19",
+  "type": "knot.created",
+  "data": {
+    "body": "When users sync knots across builds, workflow mismatches can cause failures. Design a system where workflows are bound to a repo so that pulling updates also installs/upgrades the required workflows automatically. Key questions: (1) Where should workflow definitions live in the repo? (2) How should version conflicts be resolved? (3) What happens when a user has local customizations to a workflow? (4) Should workflows be tied to the knots branch or the main branch?",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Design repo-bound workflow distribution",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}
