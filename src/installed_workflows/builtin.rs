@@ -138,7 +138,7 @@ mod tests {
   "workflow": {"name": "sample_builtin", "version": 1, "default_profile": null},
   "states": [
     {"id": "ready", "kind": "queue", "prompt": null},
-    {"id": "work", "kind": "action", "prompt": "work_prompt", "output": "branch"},
+    {"id": "work", "kind": "action", "prompt": "work_prompt", "executor": "agent", "output": "branch"},
     {"id": "done", "kind": "terminal", "prompt": null}
   ],
   "steps": [{"id": "work_step", "queue": "ready", "action": "work"}],
