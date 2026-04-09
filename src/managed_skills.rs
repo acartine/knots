@@ -91,14 +91,6 @@ impl SkillTool {
                     repo_root.join(".agents"),
                     "skills",
                 );
-                if let Some(home) = home {
-                    push_location(
-                        &mut locations,
-                        LocationScope::User,
-                        home.join(".codex"),
-                        "skills",
-                    );
-                }
             }
             SkillTool::Claude => {
                 push_location(
@@ -445,7 +437,7 @@ fn push_location(
 
 fn expected_root_hint(tool: SkillTool) -> &'static str {
     match tool {
-        SkillTool::Codex => ".agents or ~/.codex",
+        SkillTool::Codex => ".agents",
         SkillTool::Claude => "./.claude",
         SkillTool::OpenCode => ".opencode or ~/.config/opencode",
     }
