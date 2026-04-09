@@ -77,12 +77,24 @@ fn assemble_json_profile(
         GateMode::Skipped
     };
     let owners = ProfileOwners {
-        planning: default_owner(OwnerKind::Agent),
-        plan_review: default_owner(OwnerKind::Human),
-        implementation: default_owner(OwnerKind::Agent),
-        implementation_review: default_owner(OwnerKind::Human),
-        shipment: default_owner(OwnerKind::Agent),
-        shipment_review: default_owner(OwnerKind::Human),
+        planning: action_owner_or_default(&ctx.owner_states, "planning", OwnerKind::Agent),
+        plan_review: action_owner_or_default(&ctx.owner_states, "plan_review", OwnerKind::Human),
+        implementation: action_owner_or_default(
+            &ctx.owner_states,
+            "implementation",
+            OwnerKind::Agent,
+        ),
+        implementation_review: action_owner_or_default(
+            &ctx.owner_states,
+            "implementation_review",
+            OwnerKind::Human,
+        ),
+        shipment: action_owner_or_default(&ctx.owner_states, "shipment", OwnerKind::Agent),
+        shipment_review: action_owner_or_default(
+            &ctx.owner_states,
+            "shipment_review",
+            OwnerKind::Human,
+        ),
         states: ctx.owner_states,
     };
     let built = ProfileDefinition {
@@ -117,6 +129,17 @@ fn assemble_json_profile(
         review_hints: ctx.review_hints,
     };
     Ok((built, action_prompts))
+}
+
+fn action_owner_or_default(
+    owners: &BTreeMap<String, crate::profile::StepOwner>,
+    action: &str,
+    default_kind: OwnerKind,
+) -> crate::profile::StepOwner {
+    owners
+        .get(action)
+        .cloned()
+        .unwrap_or_else(|| default_owner(default_kind))
 }
 
 fn has_phase_states(ctx: &JsonProfileBuildContext, action_state: &str, queue_state: &str) -> bool {

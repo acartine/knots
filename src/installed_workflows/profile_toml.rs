@@ -101,12 +101,24 @@ fn assemble_profile(
         GateMode::Skipped
     };
     let owners = ProfileOwners {
-        planning: default_owner(OwnerKind::Agent),
-        plan_review: default_owner(OwnerKind::Human),
-        implementation: default_owner(OwnerKind::Agent),
-        implementation_review: default_owner(OwnerKind::Human),
-        shipment: default_owner(OwnerKind::Agent),
-        shipment_review: default_owner(OwnerKind::Human),
+        planning: action_owner_or_default(&ctx.owner_states, "planning", OwnerKind::Agent),
+        plan_review: action_owner_or_default(&ctx.owner_states, "plan_review", OwnerKind::Human),
+        implementation: action_owner_or_default(
+            &ctx.owner_states,
+            "implementation",
+            OwnerKind::Agent,
+        ),
+        implementation_review: action_owner_or_default(
+            &ctx.owner_states,
+            "implementation_review",
+            OwnerKind::Human,
+        ),
+        shipment: action_owner_or_default(&ctx.owner_states, "shipment", OwnerKind::Agent),
+        shipment_review: action_owner_or_default(
+            &ctx.owner_states,
+            "shipment_review",
+            OwnerKind::Human,
+        ),
         states: ctx.owner_states,
     };
     let action_prompts = build_action_prompt_bodies(&ctx.action_states, states, prompts);
@@ -140,6 +152,17 @@ fn assemble_profile(
         prompt_acceptance,
         review_hints,
     })
+}
+
+fn action_owner_or_default(
+    owners: &BTreeMap<String, StepOwner>,
+    action: &str,
+    default_kind: OwnerKind,
+) -> StepOwner {
+    owners
+        .get(action)
+        .cloned()
+        .unwrap_or_else(|| default_owner(default_kind))
 }
 
 fn has_phase_states(ctx: &ProfileBuildContext, action_state: &str, queue_state: &str) -> bool {

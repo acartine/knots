@@ -53,13 +53,16 @@ complete = "done"
 #[test]
 fn load_includes_builtin_profiles_from_all_workflow_bundles() {
     let registry = ProfileRegistry::load().expect("registry should load");
+    let autopilot = registry.require("autopilot").expect("autopilot");
 
+    assert_eq!(autopilot.workflow_id, "work_sdlc");
     assert_eq!(
-        registry
-            .require("autopilot")
-            .expect("autopilot")
-            .workflow_id,
-        "work_sdlc"
+        autopilot.owners.plan_review.kind,
+        crate::profile::OwnerKind::Agent
+    );
+    assert_eq!(
+        autopilot.owners.states["ready_for_plan_review"].kind,
+        crate::profile::OwnerKind::Agent
     );
     assert_eq!(
         registry.require("evaluate").expect("evaluate").workflow_id,

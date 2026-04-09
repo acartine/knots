@@ -14,6 +14,8 @@ mod tests_helpers;
 #[cfg(test)]
 mod tests_output_sections;
 #[cfg(test)]
+mod tests_owner_projection;
+#[cfg(test)]
 mod tests_parsing;
 #[cfg(test)]
 mod tests_parsing_outputs;
