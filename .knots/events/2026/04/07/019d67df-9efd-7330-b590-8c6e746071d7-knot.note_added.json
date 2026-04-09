@@ -1,0 +1,15 @@
+{
+  "event_id": "019d67df-9efd-7330-b590-8c6e746071d7",
+  "occurred_at": "2026-04-07T12:16:41.725887Z",
+  "knot_id": "knots-3918",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Branch: feat/codex-project-skills pushed to origin. Adds .agents as project-level Codex skill location (preferred when present), with ~/.codex as user-level fallback. All 931 tests pass, 95.03% coverage, make sanity green.",
+    "datetime": "2026-04-07T12:16:41.725887Z",
+    "entry_id": "019d67df-9efd-7330-b590-8c56b312c1c6",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

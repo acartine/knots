@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d31-196b-7bf3-ba92-a00bb8b09dcb",
+  "occurred_at": "2026-04-08T13:03:47.563776Z",
+  "knot_id": "knots-7884",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan summary: rename the builtin workflow at the Loom/bundle source, remove Rust-side `compatibility` identity assumptions, update persistence fallbacks and tests, and keep any backward-compatibility handling narrowly scoped if old ids must still read cleanly during transition.",
+    "datetime": "2026-04-08T13:03:47.563776Z",
+    "entry_id": "019d6d31-196b-7bf3-ba92-9ff5a51a4ad7",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

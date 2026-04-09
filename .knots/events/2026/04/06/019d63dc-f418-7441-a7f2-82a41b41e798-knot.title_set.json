@@ -1,0 +1,10 @@
+{
+  "event_id": "019d63dc-f418-7441-a7f2-82a41b41e798",
+  "occurred_at": "2026-04-06T17:35:18.040911Z",
+  "knot_id": "knots-b962",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Add managed skills support for Gemini CLI",
+    "to": "Support Gemini CLI in managed skills"
+  }
+}

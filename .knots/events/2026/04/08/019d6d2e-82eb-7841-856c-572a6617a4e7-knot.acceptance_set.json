@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6d2e-82eb-7841-856c-572a6617a4e7",
+  "occurred_at": "2026-04-08T13:00:57.963385Z",
+  "knot_id": "knots-e827",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. `explore` exists as a first-class knot type, and Knots resolves workflow selection by knot type through its own registry rather than through workflow metadata embedded in Loom.\n2. Builtin workflows ship with the binary as Loom-defined assets, are installed/registered for their knot types during setup, and Knots enforces that every builtin knot type has at least one registered workflow.\n3. `work`, `gate`, `lease`, and `explore` lifecycles run through registered workflow definitions, eliminating misleading cases where stored workflow/profile ids do not match the actual runtime state machine.\n4. Installing or refreshing builtin workflows does not delete or overwrite user-installed workflows except where an exact builtin-managed workflow update is intentionally applied and scoped."
+  }
+}

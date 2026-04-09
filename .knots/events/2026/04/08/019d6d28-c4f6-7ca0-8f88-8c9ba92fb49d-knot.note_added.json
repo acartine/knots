@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d28-c4f6-7ca0-8f88-8c9ba92fb49d",
+  "occurred_at": "2026-04-08T12:54:41.654155Z",
+  "knot_id": "knots-7884",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Related design follow-up: knot `e827` covers the broader architecture change where knot type determines workflow selection and workflows declare supported knot types. Keep `7884` focused on the builtin workflow rename/source-of-truth cleanup, but evaluate its implementation against the larger direction:\n- builtin workflow id should become something like `work_sdlc`\n- builtin workflow identity should come from Loom/bundle-generated definitions\n- the separate `explore` lifecycle likely wants first-class type/workflow treatment rather than profile-only routing",
+    "datetime": "2026-04-08T12:54:41.654155Z",
+    "entry_id": "019d6d28-c4f6-7ca0-8f88-8c85c02b8ccd",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

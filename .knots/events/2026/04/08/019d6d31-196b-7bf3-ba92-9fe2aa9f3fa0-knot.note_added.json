@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d31-196b-7bf3-ba92-9fe2aa9f3fa0",
+  "occurred_at": "2026-04-08T13:03:47.563776Z",
+  "knot_id": "knots-7884",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan:\n\n1. Rename the builtin workflow id at the source and stop overwriting it at load time.\n- Update the embedded Loom workflow/bundle identity so the builtin bundle carries the final id (`work_sdlc`) instead of relying on Rust to rename `knots_sdlc` to `compatibility`.\n- Replace the `compatibility` builder naming and description in `src/installed_workflows/compatibility.rs` with builtin-workflow naming that reflects its actual role.\n\n2. Remove hardcoded builtin-id assumptions from workflow registry and profile helpers.\n- Replace `COMPATIBILITY_WORKFLOW_ID` checks in `src/installed_workflows/mod.rs`, `src/app/profile_config.rs`, `src/app/helpers.rs`, `src/profile_normalize.rs`, `src/db.rs`, `src/dispatch.rs`, `src/app/rehydrate.rs`, and related helpers with builtin-workflow resolution derived from the embedded bundle/registry.\n- Preserve namespacing behavior for non-builtin workflows while making builtin workflow identity data-driven.\n\n3. Align persistence defaults and migration behavior.\n- Update DB defaults and fallback paths that currently write `compatibility` into `workflow_id` or `profile_id`.\n- Decide whether to migrate existing persisted rows/config values or preserve backward-compatibility aliases during a transition window.\n\n4. Update CLI and registry tests to the new builtin id.\n- Adjust workflow current/list/use tests, registry tests, prompt/dispatch tests, DB default tests, and any fixture knot records that currently hardcode `compatibility`.\n- Add focused coverage proving the builtin workflow id comes from the embedded Loom bundle and that the old name is only tolerated in explicitly scoped migration code, if any.\n\n5. Validate end to end.\n- Run targeted installed-workflow/profile/dispatch tests, then `make sanity`.\n\nKey risks:\n- There are many fallback/default paths that quietly inject `compatibility`; missing one will create mixed ids in fixtures or persisted data.\n- User repo config and existing knot rows may need aliasing or migration if old ids must still load cleanly.",
+    "datetime": "2026-04-08T13:03:47.563776Z",
+    "entry_id": "019d6d31-196b-7bf3-ba92-9fdb56d1a31f",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

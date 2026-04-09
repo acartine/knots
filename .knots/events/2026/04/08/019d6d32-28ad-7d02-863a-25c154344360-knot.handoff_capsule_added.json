@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d32-28ad-7d02-863a-25c154344360",
+  "occurred_at": "2026-04-08T13:04:57.005824Z",
+  "knot_id": "knots-7884",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Planning handoff:\nImplement 7884 by renaming the builtin workflow id to work_sdlc, making all new runtime and user-facing surfaces emit the new id, and constraining any compatibility handling to compatibility reads only. Validate via workflow registry and profile tests, exploration profile resolution checks, and make sanity.",
+    "datetime": "2026-04-08T13:04:57.005824Z",
+    "entry_id": "019d6d32-28ad-7d02-863a-25b0ee6dcbd5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

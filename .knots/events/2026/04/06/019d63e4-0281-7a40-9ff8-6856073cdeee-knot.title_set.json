@@ -1,0 +1,10 @@
+{
+  "event_id": "019d63e4-0281-7a40-9ff8-6856073cdeee",
+  "occurred_at": "2026-04-06T17:43:00.481288Z",
+  "knot_id": "knots-f0ae",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Design event subscription model for knots API",
+    "to": "Design event subscription API for knot lifecycle events"
+  }
+}

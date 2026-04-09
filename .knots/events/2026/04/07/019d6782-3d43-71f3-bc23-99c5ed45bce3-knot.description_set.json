@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6782-3d43-71f3-bc23-99c5ed45bce3",
+  "occurred_at": "2026-04-07T10:34:41.859569Z",
+  "knot_id": "knots-3918",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Update the skills installation, doctor command, and doctor --fix to recognize and work with Codex project-level skills located in ./.agents/skills directory, alongside user-level skills. This enables projects to define their own custom skills that are version-controlled and shareable with team members."
+  }
+}

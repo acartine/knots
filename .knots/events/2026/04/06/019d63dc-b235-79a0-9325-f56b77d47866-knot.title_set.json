@@ -1,0 +1,10 @@
+{
+  "event_id": "019d63dc-b235-79a0-9325-f56b77d47866",
+  "occurred_at": "2026-04-06T17:35:01.173891Z",
+  "knot_id": "knots-773d",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Add refine-knot-scope managed skill",
+    "to": "Create refine-knot-scope managed skill"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63dc-b235-79a0-9325-f58e2861ccf9",
+  "occurred_at": "2026-04-06T17:35:01.173891Z",
+  "knot_id": "knots-773d",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Skill is registered and callable via the Skill tool with name 'refine-knot-scope'\n2. Skill accepts {{title}}, {{description}}, and optional {{scope}} template variables\n3. Skill output is valid JSON with exactly three fields: title, description, acceptance\n4. Skill refines title: produces concise (≤72 char), clear titles\n5. Skill rewrites description: improves clarity, removes ambiguity, adds specificity\n6. Skill defines acceptance criteria: produces 3-5 testable, verifiable criteria; includes explicit emphasis on acceptance criteria importance\n7. Skill preserves scope: does not broaden or add speculative requirements\n8. Skill successfully processes a test input (e.g., an unfocused work item) and produces output that meets criteria 3-7"
+  }
+}

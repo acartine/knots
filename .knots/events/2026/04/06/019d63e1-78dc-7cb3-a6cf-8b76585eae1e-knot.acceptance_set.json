@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63e1-78dc-7cb3-a6cf-8b76585eae1e",
+  "occurred_at": "2026-04-06T17:40:14.172789Z",
+  "knot_id": "knots-ec83",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Schema file(s) created in chosen format (protobuf/flatbuffers/etc) with all 8 core operations defined\n2. Event subscription RPC defined in schema\n3. Code generation runs without errors for at least 2 target languages\n4. Generated code is usable (compiles/imports/no obvious issues)\n5. Schema design does not require awkward workarounds to express knots concepts (operations, state transitions, events)\n6. Schema passes format-specific validation (e.g., protoc --lint_fatal or equivalent)"
+  }
+}

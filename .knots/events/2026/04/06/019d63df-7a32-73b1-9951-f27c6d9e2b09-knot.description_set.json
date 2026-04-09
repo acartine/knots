@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63df-7a32-73b1-9951-f27c6d9e2b09",
+  "occurred_at": "2026-04-06T17:38:03.442262Z",
+  "knot_id": "knots-44cf",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Extend managed skills support to GitHub Copilot CLI by adding it to the managed skills framework. Implement install, update, uninstall, and doctor check operations following the existing pattern established by Codex, Claude, and OpenCode in managed_skills.rs, cli_skills.rs, and doctor.rs. Determine and document the correct skills directory location for Copilot CLI that aligns with Copilot's conventions."
+  }
+}

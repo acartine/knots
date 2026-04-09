@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6783-0666-78c0-b211-0b4cd4b94a3b",
+  "occurred_at": "2026-04-07T10:35:33.350364Z",
+  "knot_id": "knots-3918",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. `kno skills install` successfully installs skills to ./.agents/skills directory\n2. `kno doctor` correctly detects and reports Codex project-level skills in ./.agents/skills\n3. `kno doctor --fix` can initialize or repair the ./.agents/skills directory structure\n4. New tests verify Codex project-level skill detection and installation\n5. `make sanity` passes with coverage maintained above threshold"
+  }
+}

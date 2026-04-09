@@ -1,0 +1,9 @@
+{
+  "event_id": "019d67bc-b955-7f72-bb79-2859a850a8cc",
+  "occurred_at": "2026-04-07T11:38:34.709595Z",
+  "knot_id": "knots-cf36",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:exploration-workflow"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6629-16ae-7fc1-ae8d-5c76e241dce0",
+  "occurred_at": "2026-04-07T04:17:42.062378Z",
+  "knot_id": "knots-d340",
+  "type": "knot.created",
+  "data": {
+    "body": "Add kno ls --external-links to decorate local knots with raw external ids and include linked external knots in text and JSON output, with clear styling that distinguishes external rows without changing their ids.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Extend ls with external link decoration and remote knot rows",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

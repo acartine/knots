@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63e1-78dc-7cb3-a6cf-8b62a3b14a36",
+  "occurred_at": "2026-04-06T17:40:14.172789Z",
+  "knot_id": "knots-ec83",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Create a schema definition (protobuf, flatbuffers, or equivalent) for knots core operations: create, update, list, show, sync, claim, next, and rollback. Include event subscription RPC. The schema must cleanly express knots semantics and produce usable multi-language code generation output. Deliverable is the schema file(s) plus demonstration that code generation works."
+  }
+}

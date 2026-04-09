@@ -1,0 +1,17 @@
+{
+  "event_id": "019d66e7-d49f-7412-93ba-385151fef7b7",
+  "occurred_at": "2026-04-07T07:46:02.527876Z",
+  "knot_id": "knots-3918",
+  "type": "knot.created",
+  "data": {
+    "body": "move the codex skill installation to project level instead of user level, using the ./.agents/skills path",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "fix skills install, doctor, and doctor --fix to know that codex now supports skills in ./.agents/skills",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

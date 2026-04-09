@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d2e-8332-7bc1-881f-142adb669989",
+  "occurred_at": "2026-04-08T13:00:58.034095Z",
+  "knot_id": "knots-7884",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Scope refinement from follow-up design discussion:\n- the builtin rename work should fit a model where Knots owns the knot-type-to-workflow registry\n- Loom workflows remain independent and should not declare supported knot types\n- builtin workflows ship as Loom assets and are installed/registered for their knot types without deleting user-installed workflows\n- `explore` is expected to become a first-class knot type, so avoid baking future assumptions that exploration is just a profile inside the renamed work workflow",
+    "datetime": "2026-04-08T13:00:58.034095Z",
+    "entry_id": "019d6d2e-8332-7bc1-881f-141a1ae36eac",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

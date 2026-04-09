@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6629-1662-7930-9a1b-157f0705bedc",
+  "occurred_at": "2026-04-07T04:17:41.986114Z",
+  "knot_id": "knots-618f",
+  "type": "knot.created",
+  "data": {
+    "body": "Add a local cache of known Knots projects discovered from CLI usage, verify cached paths before selection, and integrate cleanup into doctor/doctor --fix. Support both git-backed repos and named local projects.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Build verified known-project cache and selector flows",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

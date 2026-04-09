@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6788-fdc5-7de3-89a3-ef191223d05e",
+  "occurred_at": "2026-04-07T10:42:04.357521Z",
+  "knot_id": "knots-3918",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning complete for Codex project-level managed skills. Implement by adding `./.agents` as the preferred Codex root in `src/managed_skills.rs`, keeping `~/.codex` as fallback, then extend `src/managed_skills_tests.rs` to cover project-preferred install, user fallback, doctor detection, doctor --fix reconciliation, updated root counts, and updated hint text. No child knots were created because the scope is small and localized. Validate with focused managed-skills tests and `make sanity` during the implementation step.",
+    "datetime": "2026-04-07T10:41:34Z",
+    "entry_id": "019d6788-fdc5-7de3-89a3-ef0fc4e7275f",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

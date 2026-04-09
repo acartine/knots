@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d32-4cd9-7272-95d4-76aee6b3686d",
+  "occurred_at": "2026-04-08T13:05:06.265484Z",
+  "knot_id": "knots-e827",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Planning handoff:\nImplement e827 in phases: add explore as a real knot type, build a Knots-owned type-to-workflow registry, register builtin Loom workflows per type during install, then move gate, lease, and explore lifecycles onto workflow-driven runtime resolution while preserving user-installed workflows. Validate with focused routing and registration tests and make sanity.",
+    "datetime": "2026-04-08T13:05:06.265484Z",
+    "entry_id": "019d6d32-4cd9-7272-95d4-769bce068fd6",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

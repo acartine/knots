@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6d1c-954f-7f93-af8b-0de15ea31da2",
+  "occurred_at": "2026-04-08T12:41:23.010841Z",
+  "knot_id": "knots-7884",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. The builtin workflow id reported by Knots interfaces such as `kno workflow current` is `work_sdlc` (or the final agreed replacement), and the old id `compatibility` is not presented as the active builtin workflow.\n2. The builtin workflow and its profiles are loaded from the Loom/bundle-generated workflow definition by default, without a separate hardcoded legacy workflow identity in Rust acting as the source of truth.\n3. Exploration profile selection still resolves to the builtin exploration profile with its shorter exploration states, and standard work knots still resolve to the builtin work profiles after the rename.\n4. Automated tests cover the builtin workflow id, builtin workflow loading, and profile-resolution paths affected by the rename, and the project sanity checks pass."
+  }
+}

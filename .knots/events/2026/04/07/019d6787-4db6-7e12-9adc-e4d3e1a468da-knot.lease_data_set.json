@@ -1,0 +1,20 @@
+{
+  "event_id": "019d6787-4db6-7e12-9adc-e4d3e1a468da",
+  "occurred_at": "2026-04-07T10:40:13.750918Z",
+  "knot_id": "knots-6c4a",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "Gemini",
+        "agent_type": "",
+        "model": "pro-preview/gemini",
+        "model_version": "3.1",
+        "provider": "Gemini"
+      },
+      "lease_type": "agent",
+      "nickname": "foolery:terminal_manager_take:term-1775558265675-vpto6y",
+      "timeout_seconds": 600
+    }
+  }
+}

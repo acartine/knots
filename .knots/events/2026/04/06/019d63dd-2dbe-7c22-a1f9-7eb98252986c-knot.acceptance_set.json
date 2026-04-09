@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63dd-2dbe-7c22-a1f9-7eb98252986c",
+  "occurred_at": "2026-04-06T17:35:32.798112Z",
+  "knot_id": "knots-cf36",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. CLI accepts 'kno new -e' and creates a knot with exploration workflow\n2. Newly created exploration knots have status 'ready_for_exploration'\n3. Knot can transition from ready_for_exploration → exploration → shipped\n4. Knot can transition from any state → abandoned\n5. Transition to shipped is rejected if the knot has zero related knots (with clear error message)\n6. Transition to shipped succeeds when at least one related knot exists\n7. `kno ls` and `kno show` accurately display exploration workflow knots and their states\n8. All workflow state transitions are tested with 100% coverage of the validation logic"
+  }
+}

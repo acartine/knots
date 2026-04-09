@@ -1,0 +1,10 @@
+{
+  "event_id": "019d63e1-78dc-7cb3-a6cf-8b52721c3fe4",
+  "occurred_at": "2026-04-06T17:40:14.172789Z",
+  "knot_id": "knots-ec83",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Prototype schema-first API definition for knots core operations",
+    "to": "Define schema-first API specification for knots core operations"
+  }
+}

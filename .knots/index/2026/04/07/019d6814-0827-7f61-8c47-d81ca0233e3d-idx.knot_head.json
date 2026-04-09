@@ -1,0 +1,21 @@
+{
+  "event_id": "019d6814-0827-7f61-8c47-d81ca0233e3d",
+  "occurred_at": "2026-04-07T13:13:56.519072Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-3918",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Support Codex project-level skills in ./.agents/skills",
+    "type": "work",
+    "updated_at": "2026-04-07T13:13:56.519072Z",
+    "workflow_id": "compatibility"
+  }
+}

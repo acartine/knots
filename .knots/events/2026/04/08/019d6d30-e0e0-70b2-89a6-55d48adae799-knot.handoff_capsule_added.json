@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d30-e0e0-70b2-89a6-55d48adae799",
+  "occurred_at": "2026-04-08T13:03:33.08859Z",
+  "knot_id": "knots-e827",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: add `explore` as a first-class knot type, introduce a Knots-owned knot-type-to-workflow registry, move gate/lease lifecycle logic behind registered workflows, and make builtin install register default workflows per type without touching user-installed workflows. Expect migration work for persisted gate/lease knots and broad test coverage across runtime, registry, and CLI paths.",
+    "datetime": "2026-04-08T13:03:33.08859Z",
+    "entry_id": "019d6d30-e0e0-70b2-89a6-55cd4a33db80",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

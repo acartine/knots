@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d30-e0e0-70b2-89a6-55bc29ae8cc9",
+  "occurred_at": "2026-04-08T13:03:33.08859Z",
+  "knot_id": "knots-e827",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan for knot-type-driven workflow routing:\n\n1. Introduce `explore` as a first-class knot type\n- Extend `src/domain/knot_type.rs` parsing/serialization/tests to include `explore`.\n- Audit CLI parsing, listing/filtering, DB round-trips, snapshots, and sync paths that enumerate or normalize knot types.\n\n2. Add a Knots-owned registry from knot type to installed workflows\n- Keep workflow definitions in Loom untouched.\n- Add registration/config structures in Knots that map each knot type to one or more installed workflows and determine the default workflow for that type.\n- Installation/setup must register builtin workflows for every builtin knot type and enforce the invariant that each builtin type has at least one workflow.\n\n3. Replace hardcoded gate/lease runtime branches with workflow-backed resolution\n- Refactor `src/workflow_runtime.rs`, `src/app/helpers.rs`, `src/app/knot_create.rs`, `src/app/knot_profile.rs`, `src/rollback.rs`, `src/poll_claim.rs`, and gate/lease-specific state/metadata paths so lifecycle, next-state, owner, and step-metadata decisions come from the workflow registered for the knot type.\n- Eliminate the current mixed model where gate/lease knots carry workflow/profile ids but run separate Rust-only state machines.\n\n4. Route creation/profile selection by knot type first\n- `kno new` and related write-dispatch code should resolve the workflow family from knot type before profile selection.\n- Revisit the `--exploration` flag and likely converge it onto `--type explore` or an equivalent shorthand that still lands on the registered explore workflow.\n- Ensure invalid type/workflow/profile combinations fail early.\n\n5. Preserve user-installed workflows during builtin install/refresh\n- Builtin workflow installation should be scoped to builtin-managed entries only.\n- Avoid deleting or overwriting user-installed workflows when refreshing builtin registrations or generated artifacts.\n- Add explicit tests for coexistence of builtin and user-installed workflows for the same or different knot types.\n\n6. Test strategy\n- Knot type/unit tests in `src/domain/knot_type.rs`, listing/filtering tests, DB/snapshot/sync round-trips.\n- Installed-workflow registry/config tests for per-type registration and invariants.\n- Creation/claim/next/rollback/step-metadata tests for `work`, `gate`, `lease`, and `explore`.\n- Full validation with targeted tests first, then `make sanity`.\n\nRisks / open decisions\n- This is a larger migration than `7884` because persisted knots of type `gate` and `lease` currently rely on hardcoded semantics.\n- Need an explicit migration story for existing knots so stored workflow/profile ids and runtime behavior do not drift during rollout.",
+    "datetime": "2026-04-08T13:03:33.08859Z",
+    "entry_id": "019d6d30-e0e0-70b2-89a6-55ac961d595f",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

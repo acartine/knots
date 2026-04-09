@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63e1-4249-79a0-839e-018c1c2b7a1f",
+  "occurred_at": "2026-04-06T17:40:00.20183Z",
+  "knot_id": "knots-b6bf",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "✓ Comparison table or document evaluating all 5 frameworks across the 5 dimensions\n✓ Code generation samples (generated stubs for at least Rust and TypeScript from each framework)\n✓ Streaming capability assessment (examples or proofs of subscription patterns)\n✓ Explicit recommendation or ranked shortlist (1st/2nd/3rd choice with trade-off summary)\n✓ Decision rationale addressing local-first constraints and ecosystem gaps\n✓ Document stored in repo (e.g., ADR or EVALUATIONS.md) for future reference"
+  }
+}

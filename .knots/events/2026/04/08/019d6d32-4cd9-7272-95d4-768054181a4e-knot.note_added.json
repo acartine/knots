@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d32-4cd9-7272-95d4-768054181a4e",
+  "occurred_at": "2026-04-08T13:05:06.265484Z",
+  "knot_id": "knots-e827",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan:\n1. Introduce explore as a first-class KnotType and audit every type switch, parser, serializer, DB default or fixture path, CLI surface, and tests that currently assume only work, gate, and lease. Primary surfaces include src/domain/knot_type.rs, command parsing, DB and query serialization, and tests.\n2. Add a Knots-managed registry that maps knot type to installed workflows and default workflow, separate from Loom workflow definitions. Keep workflows themselves unaware of knot types; the association lives in Knots install and config state.\n3. Ship builtin Loom assets for every builtin knot type: work, gate, lease, explore. Make installation and refresh compile, render, and register those workflows while preserving user-installed workflows. The install path should enforce the invariant that each builtin knot type has at least one registered workflow.\n4. Remove the parallel hardcoded gate and lease runtime branches by routing initial state, transition validation, happy-path resolution, step metadata, and prompt lookup through the workflow registered for the knot type. Existing gate and lease behavior should be preserved by expressing it through builtin workflows rather than Rust-only branches.\n5. Replace the current exploration profile shortcut with explore-type-aware workflow selection and creation semantics. The user-facing path should no longer hide an exploration lifecycle inside a normal work profile.\n6. Add migration and read-compatible handling for existing stored knots that carry misleading workflow and profile ids, and add focused tests for type-to-workflow routing, invalid combinations, builtin registration invariants, and preservation of user-installed workflows. Finish with make sanity.\n\nRisks and sequencing:\n- This is a cross-cutting refactor touching creation, state runtime, install config, and tests; stage it behind registry plumbing first, then migrate type runtimes, then tighten CLI and user surfaces.\n- Existing repos and events must remain readable during migration.\n- 7884 is related but narrower; keep rename work coordinated without blocking the larger type-routing model.",
+    "datetime": "2026-04-08T13:05:06.265484Z",
+    "entry_id": "019d6d32-4cd9-7272-95d4-76793b9dd076",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

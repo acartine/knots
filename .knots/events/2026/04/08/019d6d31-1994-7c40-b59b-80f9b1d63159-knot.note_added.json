@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d31-1994-7c40-b59b-80f9b1d63159",
+  "occurred_at": "2026-04-08T13:03:47.604942Z",
+  "knot_id": "knots-e827",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan:\n\n1. Promote `explore` to a first-class knot type.\n- Extend `src/domain/knot_type.rs`, CLI parsing, serialization, filters, and tests so `explore` is a real knot type rather than a profile shortcut.\n\n2. Introduce a Knots-managed registry from knot type to installed workflows/default workflow.\n- Extend installed-workflow config/registry code in `src/installed_workflows/mod.rs` and `src/installed_workflows/operations.rs` so Knots can register builtin and user-installed workflows to knot types without requiring Loom metadata to declare those associations.\n- Enforce an invariant that each builtin knot type has at least one registered workflow after installation.\n\n3. Replace hardcoded gate/lease runtime branches with workflow-driven resolution.\n- Refactor `src/workflow_runtime.rs`, `src/app/helpers.rs`, `src/app/knot_create.rs`, `src/app/knot_profile.rs`, rollback helpers, and any step-metadata/state helpers so `work`, `gate`, `lease`, and `explore` all resolve lifecycle behavior from the registered workflow for their knot type.\n\n4. Split builtin workflow installation from user workflow preservation.\n- Add builtin workflow install/refresh paths that register bundled Loom workflows for their knot types without deleting or overwriting unrelated user-installed workflows on disk.\n- Define exact ownership rules for builtin-managed workflow ids versus user-installed ids.\n\n5. Add migration and validation coverage.\n- Cover knot creation, profile/workflow selection, invalid type/workflow combinations, builtin install invariants, and preservation of user-installed workflows.\n- Decide how existing gate/lease knots with misleading workflow/profile ids are normalized or aliased during transition.\n\nSuggested execution order:\n- first land the builtin workflow rename/source-of-truth cleanup from 7884\n- then add `explore` knot type and type registry\n- then move gate/lease onto workflow-driven runtime\n- finally tighten install invariants and migration behavior\n\nKey risks:\n- This cuts across persistence, runtime, CLI, and install semantics, so partial conversion will leave mixed models in place.\n- Preserving user-installed workflows while introducing builtin-managed registration needs exact ownership semantics to avoid destructive refresh behavior.",
+    "datetime": "2026-04-08T13:03:47.604942Z",
+    "entry_id": "019d6d31-1994-7c40-b59b-80e8c65b3646",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6629-1695-7db1-ae05-786fae54de3a",
+  "occurred_at": "2026-04-07T04:17:42.037874Z",
+  "knot_id": "knots-64a2",
+  "type": "knot.created",
+  "data": {
+    "body": "Extend edge add/remove to resolve external raw knot ids through owned portfolios, write reciprocal external-edge records across both stores, and fail the whole operation if either side cannot be written. Do not feed external links into workflow semantics.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Support reciprocal visibility-only external edge persistence",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

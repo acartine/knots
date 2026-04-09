@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d28-c4c7-7cd2-a57c-28a2407d6b86",
+  "occurred_at": "2026-04-08T12:54:41.607733Z",
+  "knot_id": "knots-e827",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Organized context from investigation:\n\n1. Current mixed routing model\n- `work` knots use the selected workflow/profile state machine.\n- `gate` knots carry workflow/profile ids on the record, but their runtime states are hardcoded as `ready_to_evaluate -> evaluating -> shipped|abandoned`.\n- `lease` knots follow the same pattern with hardcoded lease states.\n\n2. Concrete example that exposed the problem\n- Quilt knot `2987` is `type=gate`, `workflow_id=compatibility`, `profile_id=autopilot`, `state=ready_to_evaluate`.\n- That is possible because gate knots do not consult the profile state machine for their lifecycle.\n\n3. Why this is misleading\n- The stored workflow/profile metadata suggests the knot is governed by `autopilot`, but the actual lifecycle comes from separate Rust branches.\n- This makes workflow ids and profile ids partially descriptive metadata instead of the source of truth.\n\n4. Proposed direction\n- Knot type should select workflow family first.\n- Workflows should declare supported knot types.\n- Builtin defaults should ship with the binary as workflow definitions, not as parallel hardcoded identities.\n- If the exploration lifecycle stays distinct, prefer a first-class `explore` type over an `exploration` profile hidden under normal work routing.\n\n5. Relationship to knot 7884\n- Knot `7884` covers renaming the builtin workflow id away from `compatibility` and making the builtin workflow identity come from Loom-generated definitions.\n- This knot covers the broader type-to-workflow routing model and removal of hardcoded alternate runtimes as the real source of truth.",
+    "datetime": "2026-04-08T12:54:41.607733Z",
+    "entry_id": "019d6d28-c4c7-7cd2-a57c-2897235211a1",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

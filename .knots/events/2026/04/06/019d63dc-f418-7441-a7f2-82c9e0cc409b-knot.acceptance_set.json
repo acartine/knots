@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63dc-f418-7441-a7f2-82c9e0cc409b",
+  "occurred_at": "2026-04-06T17:35:18.040911Z",
+  "knot_id": "knots-b962",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Gemini CLI is recognized and configurable in the managed skills system\n2. Install, update, and uninstall operations work correctly for Gemini CLI (verified via unit/integration tests)\n3. Doctor checks include Gemini CLI validation\n4. Skills directory convention for Gemini CLI is determined and documented in code comments or docs\n5. All new code follows project style limits (file < 500 lines, line width < 100 chars, functions < 100 lines)\n6. Test suite passes with coverage ≥ 95%"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63dc-b235-79a0-9325-f571676cf39c",
+  "occurred_at": "2026-04-06T17:35:01.173891Z",
+  "knot_id": "knots-773d",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Implement a new managed skill that refines work item scope. The skill takes title, description, and scope variables as input and performs three focused refinements: (1) tightens the title to be concise and clear, (2) rewrites the description for clarity and specificity, (3) defines or tightens acceptance criteria with emphasis on clear, testable enumeration. The skill must stress that well-defined acceptance criteria is the most critical output. It outputs structured JSON with title, description, and acceptance fields. Implementation should mirror the scope-refinement logic from ~/foolery/src/lib/scope-refinement-defaults.ts and be registered as a usable Skill in Claude Code."
+  }
+}

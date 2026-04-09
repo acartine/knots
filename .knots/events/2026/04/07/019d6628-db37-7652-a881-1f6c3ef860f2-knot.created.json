@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6628-db37-7652-a881-1f6c3ef860f2",
+  "occurred_at": "2026-04-07T04:17:26.839282Z",
+  "knot_id": "knots-6a50",
+  "type": "knot.created",
+  "data": {
+    "body": "Implement the phase-1 portfolio model described in docs/portfolio-plan.md: synced owner-scoped portfolio definitions, verified local project discovery, visibility-only cross-project links, portfolio CLI, and ls external link views. Keep workflow semantics unchanged; cross-project links must not affect claim/state behavior.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Introduce portfolios and external links in Knots",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

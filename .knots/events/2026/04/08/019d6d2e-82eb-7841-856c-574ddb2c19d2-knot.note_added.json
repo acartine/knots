@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d2e-82eb-7841-856c-574ddb2c19d2",
+  "occurred_at": "2026-04-08T13:00:57.963385Z",
+  "knot_id": "knots-e827",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Architecture decisions clarified by user:\n- `explore` becomes a first-class knot type.\n- Loom workflows should stay independent and should NOT declare supported knot types.\n- Knot-type association belongs to Knots, via a registry from knot type to installed workflows/default workflow.\n- Builtin Loom workflows ship with Knots and are compiled/rendered/registered during installation.\n- Installation should enforce an invariant that every builtin knot type has at least one registered workflow.\n- Builtin workflow installation/refresh must preserve user-installed workflows.",
+    "datetime": "2026-04-08T13:00:57.963385Z",
+    "entry_id": "019d6d2e-82eb-7841-856c-5735ea649e37",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

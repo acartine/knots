@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6780-b4b0-7152-b8e9-f7619f3a2c6e",
+  "occurred_at": "2026-04-07T10:33:01.359854Z",
+  "knot_id": "knots-3918",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Update the skills installation, doctor command, and doctor --fix to recognize and work with project-level skills located in ./.agents/skills directory, alongside user-level skills. This enables projects to define their own custom skills that are version-controlled and shareable with team members."
+  }
+}

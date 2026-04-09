@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6d2e-82eb-7ad1-b62c-4c07739d6709",
+  "occurred_at": "2026-04-08T13:00:57.963256Z",
+  "knot_id": "knots-e827",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Goal:\nMake knot type determine workflow selection through a Knots-managed registry rather than by mixing workflow/profile metadata with separate hardcoded runtimes. `explore` becomes a first-class knot type alongside `work`, `gate`, and `lease`. Loom workflows remain clean and independent; the association between a knot type and its available/default workflows is a Knots abstraction, not workflow metadata embedded in Loom.\n\nVerification:\n1. Confirm Knots maintains a registry mapping each knot type to one or more installed workflows, with at least one registered workflow required for every builtin knot type after installation.\n2. Confirm builtin Loom workflows ship with Knots, are compiled/rendered/registered during installation, and become the default available workflows for their respective knot types without requiring hardcoded parallel runtimes.\n3. Confirm `work`, `gate`, `lease`, and `explore` all resolve creation, state transitions, and step metadata through registered workflows rather than hidden Rust-only lifecycle branches.\n4. Confirm user-installed workflows remain intact across install/upgrade flows and are not deleted or overwritten when builtin workflows are installed or refreshed.\n\nConstraints:\n- Keep separation of concerns clean: workflows are defined in Loom; knot-type-to-workflow association lives in Knots.\n- Do not require Loom workflow definitions to declare supported knot types.\n- `explore` is a first-class knot type, not just a profile variant.\n- Installation should enforce the invariant that at least one workflow is registered for each builtin knot type.\n- Preserve user-installed workflows while installing or refreshing builtin ones."
+  }
+}

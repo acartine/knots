@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63e4-0281-7a40-9ff8-68608b44819c",
+  "occurred_at": "2026-04-06T17:43:00.481288Z",
+  "knot_id": "knots-f0ae",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Design a subscription mechanism for knots API that allows clients to receive notifications on knot state changes and updates. Evaluate transport patterns (server-streaming gRPC, bidirectional streams, Server-Sent Events, pub/sub) with consideration for local-first architecture—the API serves both local UI clients (single process) and networked clients (remote). Produce a design document that specifies the chosen pattern, event schema, delivery semantics, and how local vs. networked clients are handled differently."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63e4-0281-7a40-9ff8-687316d5df43",
+  "occurred_at": "2026-04-06T17:43:00.481288Z",
+  "knot_id": "knots-f0ae",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "✓ Event schema defined (list knot lifecycle events, message structure, fields)\n✓ Transport pattern selected with documented rationale (explain why chosen pattern best fits constraints)\n✓ Delivery guarantees specified (ordering, at-least-once vs exactly-once, idempotency)\n✓ Local-first strategy clarified (how in-process and network clients differ; whether separate code paths or unified API)\n✓ Design document written (RFC or architecture note linked in knot description)"
+  }
+}

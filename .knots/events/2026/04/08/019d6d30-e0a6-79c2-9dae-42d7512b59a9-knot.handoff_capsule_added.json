@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d30-e0a6-79c2-9dae-42d7512b59a9",
+  "occurred_at": "2026-04-08T13:03:33.030134Z",
+  "knot_id": "knots-7884",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: rename the builtin workflow id at the Loom/builtin-workflow source, remove Rust string-literal special cases for the old builtin id, add migration/alias coverage for persisted `compatibility` data, and validate via installed-workflow/profile/CLI tests plus `make sanity`. Defer the larger type-to-workflow architecture change to `e827`.",
+    "datetime": "2026-04-08T13:03:33.030134Z",
+    "entry_id": "019d6d30-e0a6-79c2-9dae-42c00a34e570",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

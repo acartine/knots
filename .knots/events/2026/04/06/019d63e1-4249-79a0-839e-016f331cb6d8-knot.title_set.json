@@ -1,0 +1,10 @@
+{
+  "event_id": "019d63e1-4249-79a0-839e-016f331cb6d8",
+  "occurred_at": "2026-04-06T17:40:00.20183Z",
+  "knot_id": "knots-b6bf",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Evaluate RPC frameworks for multi-language knots API",
+    "to": "Select RPC framework for multi-language knots API"
+  }
+}

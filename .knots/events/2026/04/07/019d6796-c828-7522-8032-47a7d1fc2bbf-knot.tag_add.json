@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6796-c828-7522-8032-47a7d1fc2bbf",
+  "occurred_at": "2026-04-07T10:57:08.136664Z",
+  "knot_id": "knots-3918",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-3918-codex-project-skills"
+  }
+}

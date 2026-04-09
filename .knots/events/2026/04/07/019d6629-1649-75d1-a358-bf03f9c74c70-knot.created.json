@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6629-1649-75d1-a358-bf03f9c74c70",
+  "occurred_at": "2026-04-07T04:17:41.961689Z",
+  "knot_id": "knots-e972",
+  "type": "knot.created",
+  "data": {
+    "body": "Add portfolio and external-link domain types, new full/index event kinds, SQLite migrations/projections, and sync/fsck/apply support. Keep same-store knot and edge semantics intact while introducing separate portfolio and external-edge storage paths.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Add portfolio domain model, events, and cache tables",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

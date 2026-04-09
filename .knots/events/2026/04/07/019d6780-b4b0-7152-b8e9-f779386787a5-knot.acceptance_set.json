@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6780-b4b0-7152-b8e9-f779386787a5",
+  "occurred_at": "2026-04-07T10:33:01.359854Z",
+  "knot_id": "knots-3918",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. `kno skills install` successfully installs skills from ./.agents/skills directory\n2. `kno doctor` correctly detects and reports project-level skills in ./.agents/skills\n3. `kno doctor --fix` can initialize or repair the ./.agents/skills directory structure\n4. All three commands work correctly when both user-level and project-level skills exist\n5. New tests verify project-level skill detection and installation\n6. `make sanity` passes with coverage maintained above threshold"
+  }
+}

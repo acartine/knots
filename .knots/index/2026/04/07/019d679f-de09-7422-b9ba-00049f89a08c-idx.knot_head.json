@@ -1,0 +1,21 @@
+{
+  "event_id": "019d679f-de09-7422-b9ba-00049f89a08c",
+  "occurred_at": "2026-04-07T11:07:03.561473Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-773d",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Create refine-knot-scope managed skill",
+    "type": "work",
+    "updated_at": "2026-04-07T11:07:03.561473Z",
+    "workflow_id": "compatibility"
+  }
+}

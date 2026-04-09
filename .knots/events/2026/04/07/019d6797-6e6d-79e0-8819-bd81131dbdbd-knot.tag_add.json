@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6797-6e6d-79e0-8819-bd81131dbdbd",
+  "occurred_at": "2026-04-07T10:57:50.701977Z",
+  "knot_id": "knots-773d",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:knots-773d-refine-knot-scope"
+  }
+}

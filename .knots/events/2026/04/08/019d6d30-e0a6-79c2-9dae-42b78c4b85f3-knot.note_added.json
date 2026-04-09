@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d30-e0a6-79c2-9dae-42b78c4b85f3",
+  "occurred_at": "2026-04-08T13:03:33.030134Z",
+  "knot_id": "knots-7884",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan for builtin workflow rename / source-of-truth cleanup:\n\n1. Rename the builtin workflow identity at the workflow-definition layer\n- Inspect `loom/knots_sdlc` and the generated builtin bundle path used by Knots.\n- Replace the persisted builtin workflow id `compatibility` with `work_sdlc` at the source that defines the builtin workflow identity, not just in CLI rendering.\n- Rename/refactor Rust wrappers that currently encode legacy naming, especially `src/installed_workflows/compatibility.rs` and any helpers/tests that assume a compatibility-only builtin.\n\n2. Remove hardcoded builtin-id assumptions from runtime helpers\n- Replace `COMPATIBILITY_WORKFLOW_ID` checks in profile/workflow helpers with builtin-workflow-aware logic that derives behavior from the loaded builtin workflow/registry instead of a string literal.\n- Audit `src/profile.rs`, `src/app/helpers.rs`, `src/sync/apply_helpers.rs`, `src/profile_normalize.rs`, `src/dispatch.rs`, and related helpers that branch on the current builtin id.\n\n3. Preserve loading from the Loom-generated builtin definition\n- Keep the builtin workflow loaded from the bundled/generated Loom artifact, with Rust only marking it builtin and attaching any derived prompt rendering data.\n- Ensure profile ids and prompt bodies continue to come from that generated workflow after the rename.\n\n4. Add migration/compatibility handling for existing repos and knots\n- Existing repo config may still store `current_workflow = \"compatibility\"` and default profile mappings under that id.\n- Existing knots and snapshots may also persist `workflow_id = compatibility`.\n- Decide whether to migrate on read/write, alias the old id during load, or run an explicit repair/update path; cover both repo config and knot record/event-derived data.\n\n5. Test strategy\n- Builtin workflow parsing/registry tests in `src/installed_workflows/tests_parsing.rs`, `src/installed_workflows/tests_registry*.rs`, and `src/profile_tests_exploration.rs`.\n- CLI/current workflow and prompt-resolution tests in `tests/cli_workflows*.rs`, `tests/cli_loom_*`, and `src/run_commands_tests.rs`.\n- Runtime helper coverage for helper branches currently gated by `COMPATIBILITY_WORKFLOW_ID`.\n- Full validation with targeted tests first, then `make sanity`.\n\nRisks / open decisions\n- The rename surface is broad because the builtin id is persisted in repo config, knot cache/index snapshots, and tests.\n- This knot should stay focused on naming/source-of-truth; broader knot-type routing cleanup belongs in `e827`.",
+    "datetime": "2026-04-08T13:03:33.030134Z",
+    "entry_id": "019d6d30-e0a6-79c2-9dae-42aafb129424",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

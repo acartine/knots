@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6d1c-9542-7410-9930-b1743d92d8cf",
+  "occurred_at": "2026-04-08T12:41:23.010841Z",
+  "knot_id": "knots-7884",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\nRename the builtin workflow currently exposed as `compatibility` to a name that reflects what it is: the default Loom-defined workflow for normal work knots, likely `work_sdlc`. Remove the misleading legacy framing so the builtin workflow and its profiles come from the Loom/bundle-generated definition as the source of truth, rather than from parallel hardcoded workflow identity in Rust.\n\nVerification:\n1. Run `kno workflow current` in a repo using the builtin workflow and confirm the workflow id is `work_sdlc` (or the final agreed replacement), not `compatibility`.\n2. Run `rg -n \"compatibility|COMPATIBILITY_WORKFLOW_ID\" src tests loom` and confirm there are no remaining runtime code paths or test assertions that treat `compatibility` as the builtin workflow id; any intentionally retained migration-only references must be explicitly justified in code or tests.\n3. Run targeted tests covering builtin workflow loading, profile resolution, and exploration profile selection, then run the project sanity gate so the rename is validated end to end.\n\nConstraints:\n- Do not introduce a second builtin workflow alongside the renamed one.\n- Preserve the existing builtin workflow behavior and profile semantics unless a behavior change is explicitly required by the rename.\n- Treat the Loom definition and generated bundle/code as the source of truth for the builtin workflow identity and available profiles.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Rename builtin workflow id to work_sdlc",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

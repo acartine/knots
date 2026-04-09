@@ -1,0 +1,37 @@
+{
+  "event_id": "019d679b-cfe5-7f71-add5-cd581fee1db7",
+  "occurred_at": "2026-04-07T11:02:37.797965Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-773d",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "step_metadata": {
+      "action_kind": "gate",
+      "action_state": "shipment_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Create refine-knot-scope managed skill",
+    "type": "work",
+    "updated_at": "2026-04-07T11:02:37.797965Z",
+    "workflow_id": "compatibility"
+  },
+  "precondition": {
+    "profile_etag": "019d679b-8971-7232-8ee5-d7c6f93c2c6c"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d32-28ad-7d02-863a-25a5a14e3597",
+  "occurred_at": "2026-04-08T13:04:57.005824Z",
+  "knot_id": "knots-7884",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan:\n1. Rename the builtin workflow identity from compatibility to work_sdlc across the builtin workflow loader, registry fallbacks, persistence defaults, CLI current-workflow output, and fixtures. Primary code surfaces: src/installed_workflows/mod.rs, src/installed_workflows/compatibility.rs or its replacement, src/profile_normalize.rs, src/db.rs, src/app.rs, src/workflow.rs, and workflow CLI tests.\n2. Replace legacy naming in the builtin workflow construction path so the Loom-generated bundle remains the source of truth and Rust only marks it as builtin and wires prompt rendering. Avoid leaving a parallel hardcoded workflow identity beyond narrowly scoped migration aliases at read boundaries.\n3. Add backward-compatible reads where needed for existing repos and persisted data that still reference compatibility, but make all new writes and user-facing output emit work_sdlc. Candidate read boundaries: workflow repo config loading, DB default workflow fallback, snapshot or sync event parsing, and tests that seed old workflow ids.\n4. Re-run workflow and profile resolution checks to ensure the builtin exploration profile still resolves and that standard builtin work profiles still load and render prompts after the rename.\n5. Update tests and docs together, then run targeted workflow and profile tests followed by make sanity.\n\nRisks and checks:\n- Existing repos may have .knots/workflows/current or persisted rows and events naming compatibility; migration must remain read-compatible.\n- Many tests seed compatibility literals directly; update fixtures systematically to avoid partial renames.\n- Keep this knot scoped to builtin workflow identity and source-of-truth cleanup; broader knot-type routing changes belong to e827.",
+    "datetime": "2026-04-08T13:04:57.005824Z",
+    "entry_id": "019d6d32-28ad-7d02-863a-259da7e5cbbf",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6d28-9b8b-72e2-a40b-9934ac3b097f",
+  "occurred_at": "2026-04-08T12:54:31.051218Z",
+  "knot_id": "knots-e827",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\nMake knot type determine workflow selection so Knots stops mixing workflow/profile metadata with separate hardcoded runtimes. A knot's type should choose the workflow family first, then profiles are selected only within that workflow. This should cover the builtin defaults shipped with Knots and installed workflows added later.\n\nVerification:\n1. Confirm builtins and installed workflows expose an explicit mapping from workflow to supported knot types, and Knots rejects invalid combinations such as assigning a gate knot to a work-only workflow.\n2. Confirm `work`, `gate`, `lease`, and the shorter `explore` concept each resolve through workflow definitions rather than hidden hardcoded state machines carrying misleading profile metadata.\n3. Confirm profile resolution happens within the workflow selected for the knot type, and representative tests cover knot creation, state resolution, and step metadata for each supported type.\n\nConstraints:\n- Preserve existing behavior where possible while removing misleading mixed-mode routing.\n- Do not leave gate or lease knots carrying workflow/profile ids whose states are actually driven by separate Rust-only logic.\n- If exploration remains a distinct lifecycle, model it as `explore` rather than overloading generic work profiles.\n- Builtin defaults should still ship with the binary, but as workflow definitions that are the source of truth for their supported knot types and profiles.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Route workflows by knot type",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "event_id": "019d6782-4e23-7f11-bb5d-630cd9262022",
+  "occurred_at": "2026-04-07T10:34:46.179098Z",
+  "knot_id": "knots-3918",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Support project-level skills in ./.agents/skills",
+    "to": "Support Codex project-level skills in ./.agents/skills"
+  }
+}

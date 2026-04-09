@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6d31-1994-7c40-b59b-811eb0385dd7",
+  "occurred_at": "2026-04-08T13:03:47.604942Z",
+  "knot_id": "knots-e827",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan summary: make `explore` first-class, add a Knots-owned knot-type-to-workflow registry, move gate/lease off hardcoded runtimes onto registered workflows, and preserve user-installed workflows while enforcing per-type builtin coverage invariants.",
+    "datetime": "2026-04-08T13:03:47.604942Z",
+    "entry_id": "019d6d31-1994-7c40-b59b-810690a8ece3",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

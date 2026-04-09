@@ -1,0 +1,21 @@
+{
+  "event_id": "019d67cd-afc1-7cf0-8701-1a3d0fa0bfe4",
+  "occurred_at": "2026-04-07T11:57:06.369492Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-cf36",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Add exploration workflow for lightweight investigations",
+    "type": "work",
+    "updated_at": "2026-04-07T11:57:06.369492Z",
+    "workflow_id": "compatibility"
+  }
+}

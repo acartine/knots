@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63df-7a32-73b1-9951-f28bd6756cf4",
+  "occurred_at": "2026-04-06T17:38:03.442262Z",
+  "knot_id": "knots-44cf",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- Copilot CLI is registered as a supported tool in managed_skills.rs, cli_skills.rs, and doctor.rs with correct platform/architecture detection\n- Skills can be successfully installed for Copilot CLI (skill is placed in correct directory, verified via file system)\n- Skills can be successfully updated for Copilot CLI (existing skill is replaced, verified via file system)\n- Skills can be successfully uninstalled for Copilot CLI (skill is removed from directory, verified via file system)\n- Doctor checks correctly identify Copilot CLI installation status and skills directory validity\n- The implementation follows the existing code patterns from Codex/Claude/OpenCode (no divergent approach)\n- Copilot CLI skills directory convention is documented in code or commit message\n- All changes pass `make sanity` (lint, format, tests, coverage ≥95%)"
+  }
+}

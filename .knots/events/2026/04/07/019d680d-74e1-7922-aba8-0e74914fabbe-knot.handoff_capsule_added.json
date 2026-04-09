@@ -1,0 +1,15 @@
+{
+  "event_id": "019d680d-74e1-7922-aba8-0e74914fabbe",
+  "occurred_at": "2026-04-07T13:06:45.601578Z",
+  "knot_id": "knots-3918",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Approved in implementation_review. Reviewed branch knots-3918-codex-project-skills (commit 1d83d29) against the knot description and acceptance criteria. Verified Codex now prefers project .agents/skills with ~/.codex fallback in src/managed_skills.rs, and the managed-skills tests cover project install preference, user fallback, doctor detection, doctor --fix reconciliation, updated root hints, and updated location counts. Validation passed with cargo test managed_skills, direct target/debug/knots smoke checks for project-level Codex install/doctor, and make sanity; coverage finished at 95.03% (11804/12421). No invariant, security, or regression issues found.",
+    "datetime": "2026-04-07T13:06:36Z",
+    "entry_id": "019d680d-74e1-7922-aba8-0e6035b761a7",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6629-167b-7d12-b055-f240d40d2c0a",
+  "occurred_at": "2026-04-07T04:17:42.011437Z",
+  "knot_id": "knots-3400",
+  "type": "knot.created",
+  "data": {
+    "body": "Add kno portfolio create/list/show/add/remove/alias with text and JSON output. Bind portfolio ownership to the current repo or active named project, persist member keys and aliases, and surface missing members with locator hints.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Implement portfolio CLI and owner-scoped membership management",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

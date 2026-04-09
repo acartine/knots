@@ -1,0 +1,17 @@
+{
+  "event_id": "019d6629-16c7-7883-86ff-c81e072d00c6",
+  "occurred_at": "2026-04-07T04:17:42.087359Z",
+  "knot_id": "knots-aeaa",
+  "type": "knot.created",
+  "data": {
+    "body": "Update user-facing docs and add end-to-end coverage for portfolio sync, missing members, alias disambiguation, verified project cache behavior, reciprocal external-edge failure handling, and ls external-link output.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Document portfolio behavior and harden with sync and doctor tests",
+    "type": "work",
+    "workflow_id": "compatibility"
+  }
+}

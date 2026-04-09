@@ -1,0 +1,9 @@
+{
+  "event_id": "019d63e1-4249-79a0-839e-0176352d7e74",
+  "occurred_at": "2026-04-06T17:40:00.20183Z",
+  "knot_id": "knots-b6bf",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Research and evaluate RPC frameworks for knots' multi-language API: gRPC, Connect (Buf), Cap'n Proto, Tarpc, and comparable alternatives. Assess each on: (1) code generation quality for TypeScript, Rust, and Swift, (2) streaming support for event subscriptions, (3) local-first deployment capability, (4) binary/bundle size, (5) ecosystem maturity and tooling. Produce a decision document with comparative analysis and a clear recommendation or ranked shortlist with reasoning."
+  }
+}

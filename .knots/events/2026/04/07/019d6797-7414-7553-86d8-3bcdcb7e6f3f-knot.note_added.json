@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6797-7414-7553-86d8-3bcdcb7e6f3f",
+  "occurred_at": "2026-04-07T10:57:52.148381Z",
+  "knot_id": "knots-3918",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Branch: worktree-knots-3918-codex-project-skills (commit 5c052a8). Implementation adds .agents/skills as the preferred project-level managed-skill location for Codex, with ~/.codex/skills as user-level fallback. Two changes in src/managed_skills.rs (location_candidates and expected_root_hint), plus test updates and a new lifecycle test in src/managed_skills_tests.rs. make sanity passes at 95.03% coverage.",
+    "datetime": "2026-04-07T10:57:52.148381Z",
+    "entry_id": "019d6797-7414-7553-86d8-3bb3b25a3e50",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

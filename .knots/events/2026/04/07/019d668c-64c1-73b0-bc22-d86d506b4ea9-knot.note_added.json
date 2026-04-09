@@ -1,0 +1,15 @@
+{
+  "event_id": "019d668c-64c1-73b0-bc22-d86d506b4ea9",
+  "occurred_at": "2026-04-07T06:06:10.113918Z",
+  "knot_id": "knots-773d",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "foolery",
+    "content": "here is the skill as used by foolery:\n\nYou are refining a newly created engineering work item.\nTighten the title, rewrite the description for clarity, and define or tighten acceptance criteria.  The acceptance criteria is most critical - do not leave it empty.  If the change is web/browser based, suggest chrome-devtools and/or playwright mcp usage as a way to validate acceptance criteria.\n\nKeep the scope unchanged. Do not broaden the request or add speculative work.\n\nCurrent beat:\nTitle: {{title}}\nDescription:\n{{description}}\n\nAcceptance criteria:\n{{acceptance}}",
+    "datetime": "2026-04-07T06:06:10.113918Z",
+    "entry_id": "019d668c-64c1-73b0-bc22-d852225cc8d7",
+    "model": "unknown",
+    "username": "foolery",
+    "version": "unknown"
+  }
+}

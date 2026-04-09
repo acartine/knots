@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6787-b834-72a1-a38c-cb086605cbaf",
+  "occurred_at": "2026-04-07T10:40:41.012973Z",
+  "knot_id": "knots-cf36",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planned exploration support as a cohesive built-in workflow/profile change. The key implementation constraint is that the current built-in compatibility profiles are split between the Loom bundle and the legacy static profile normalizer; exploration requires updating or consolidating that path before the new states can work reliably. No child knots were created. Main execution steps: add `kno new -e`, add the exploration action/profile to the built-in workflow bundle, make built-in profile loading accept the new state graph, add the shipped-with-related-knot guard, then cover CLI/runtime/app transitions with tests and finish with `make sanity`.",
+    "datetime": "2026-04-07T10:39:33Z",
+    "entry_id": "019d6787-b834-72a1-a38c-caf6aec8745d",
+    "model": "gpt",
+    "username": "cartine",
+    "version": "5.4"
+  }
+}

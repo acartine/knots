@@ -1,0 +1,15 @@
+{
+  "event_id": "019d6797-f782-7dc1-ab0e-1d9d76451e92",
+  "occurred_at": "2026-04-07T10:58:25.794008Z",
+  "knot_id": "knots-773d",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Branch: knots-773d-refine-knot-scope — implements refine-knot-scope managed skill in .claude/skills/refine-knot-scope/SKILL.md. Commit: 00dd1c4",
+    "datetime": "2026-04-07T10:58:25.794008Z",
+    "entry_id": "019d6797-f782-7dc1-ab0e-1d86d0a41f55",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

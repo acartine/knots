@@ -1,0 +1,9 @@
+{
+  "event_id": "019d6d28-9b92-7522-855e-bf65a35afb44",
+  "occurred_at": "2026-04-08T12:54:31.051218Z",
+  "knot_id": "knots-e827",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Knots resolves workflow selection from knot type first, with explicit workflow metadata declaring supported knot types for builtin and installed workflows.\n2. `work`, `gate`, `lease`, and any retained exploration-style lifecycle use workflow-defined state machines and metadata as the source of truth instead of parallel hardcoded runtime branches.\n3. Invalid type/workflow combinations are rejected through exact interfaces such as `kno new`, workflow installation, or profile selection, with automated tests covering those rejection paths.\n4. The exploration-style lifecycle is either promoted to a first-class `explore` type with its own workflow or deliberately folded into another type with that decision made explicit in workflow definitions and tests."
+  }
+}
