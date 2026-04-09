@@ -299,8 +299,7 @@ fn update_rewrites_existing_skills_when_install_is_complete() {
     let knots = agents_root.join("skills/knots/SKILL.md");
     fs::write(&knots, "stale").expect("knots skill should be writable");
 
-    let output =
-        update_managed(&repo_root, Some(&home), false, SkillTool::Codex).expect("update");
+    let output = update_managed(&repo_root, Some(&home), false, SkillTool::Codex).expect("update");
 
     assert!(output.contains("updated"));
     assert!(output.contains(".agents/skills/knots/SKILL.md"));
@@ -409,11 +408,8 @@ fn helper_functions_cover_empty_and_missing_paths() {
         skills_root: repo_root.join(".agents/skills"),
     };
     write_skills(&empty_location, &[]).expect("empty writes should succeed");
-    remove_dir_if_empty(&empty_location.skills_root)
-        .expect("missing dirs should be ignored");
-    assert!(
-        installed_locations(&repo_root, Some(&home), SkillTool::Codex).is_empty()
-    );
+    remove_dir_if_empty(&empty_location.skills_root).expect("missing dirs should be ignored");
+    assert!(installed_locations(&repo_root, Some(&home), SkillTool::Codex).is_empty());
 }
 
 #[test]
@@ -459,8 +455,7 @@ fn codex_install_uses_project_agents_only() {
     // Creates .agents/skills when .agents is absent
     let repo2 = unique_root("managed-skills-codex-create");
     let home2 = unique_root("managed-skills-home");
-    let out =
-        install_missing(&repo2, Some(&home2), SkillTool::Codex).expect("install");
+    let out = install_missing(&repo2, Some(&home2), SkillTool::Codex).expect("install");
     assert!(out.contains("installed"));
     assert!(repo2.join(".agents/skills/knots/SKILL.md").exists());
 }
