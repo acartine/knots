@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use rusqlite::Connection;
@@ -14,24 +15,43 @@ use super::{GitAdapter, SyncError, SyncSummary};
 #[path = "apply_helpers.rs"]
 mod apply_helpers;
 use apply_helpers::{
-    current_unix_ms_string, invalid_event, is_stale_precondition, optional_i64, optional_string,
-    parse_gate_data, parse_invariants, parse_lease_data, parse_metadata_entry, read_json_file,
-    required_profile_id, required_string, required_workflow_id, MetadataProjection,
+    build_index_upsert, current_unix_ms_string, invalid_event, is_stale_precondition, optional_i64,
+    optional_string, parse_gate_data, parse_invariants, parse_lease_data, parse_metadata_entry,
+    read_json_file, required_profile_id, required_string, required_workflow_id, IndexUpsertParams,
+    MetadataProjection,
 };
 
 pub struct IncrementalApplier<'a> {
     conn: &'a Connection,
     worktree: PathBuf,
     git: GitAdapter,
+    known_workflows: HashSet<String>,
+    warned_legacy: HashSet<String>,
 }
 
 impl<'a> IncrementalApplier<'a> {
-    pub fn new(conn: &'a Connection, worktree: PathBuf, git: GitAdapter) -> Self {
+    pub fn new(
+        conn: &'a Connection,
+        worktree: PathBuf,
+        git: GitAdapter,
+        known_workflows: HashSet<String>,
+    ) -> Self {
         Self {
             conn,
             worktree,
             git,
+            known_workflows,
+            warned_legacy: HashSet::new(),
         }
+    }
+
+    #[cfg(test)]
+    pub fn new_with_builtins(conn: &'a Connection, worktree: PathBuf, git: GitAdapter) -> Self {
+        let known_workflows = crate::domain::knot_type::KnotType::ALL
+            .into_iter()
+            .map(crate::installed_workflows::builtin_workflow_id_for_knot_type)
+            .collect();
+        Self::new(conn, worktree, git, known_workflows)
     }
 
     pub fn apply_to_head(&mut self, target_head: &str) -> Result<SyncSummary, SyncError> {
@@ -150,7 +170,7 @@ impl<'a> IncrementalApplier<'a> {
         Ok(files)
     }
 
-    fn apply_index_event(&self, relative_path: &Path) -> Result<bool, SyncError> {
+    fn apply_index_event(&mut self, relative_path: &Path) -> Result<bool, SyncError> {
         let absolute_path = self.worktree.join(relative_path);
         if !absolute_path.exists() {
             return Ok(false);
@@ -171,7 +191,27 @@ impl<'a> IncrementalApplier<'a> {
         let state = required_string(data, "state", &absolute_path)?;
         let updated_at = required_string(data, "updated_at", &absolute_path)?;
         let profile_id = required_profile_id(data, &absolute_path)?.to_ascii_lowercase();
-        let workflow_id = required_workflow_id(data, &absolute_path)?;
+        let resolved = required_workflow_id(data, &absolute_path)?;
+        if let Some(ref legacy_id) = resolved.converted_from {
+            if self.warned_legacy.insert(legacy_id.clone()) {
+                eprintln!(
+                    "warning: converted legacy workflow '{}' to '{}'; \
+                     this is probably fine but you should know",
+                    legacy_id, resolved.id
+                );
+            }
+        }
+        if !self.known_workflows.contains(&resolved.id) {
+            return Err(invalid_event(
+                &absolute_path,
+                &format!(
+                    "unrecognized workflow '{}'; \
+                     upgrade knots with `kno upgrade`",
+                    resolved.id
+                ),
+            ));
+        }
+        let workflow_id = resolved.id;
 
         if is_stale_precondition(self.conn, &knot_id, event.precondition.as_ref())? {
             return Ok(false);
@@ -387,100 +427,6 @@ fn resolve_tier(
     } else {
         Ok(classify_knot_tier(state, updated_at, hot_window_days, now))
     }
-}
-
-struct IndexUpsertParams<'a> {
-    conn: &'a Connection,
-    data: &'a serde_json::Map<String, Value>,
-    absolute_path: &'a Path,
-    knot_id: &'a str,
-    title: &'a str,
-    state: &'a str,
-    updated_at: &'a str,
-    profile_id: &'a str,
-    workflow_id: &'a str,
-    event_id: &'a str,
-}
-
-fn build_index_upsert(params: &IndexUpsertParams<'_>) -> Result<MetadataProjection, SyncError> {
-    let existing = db::get_knot_hot(params.conn, params.knot_id)?;
-    let body = existing.as_ref().and_then(|r| r.body.clone());
-    let description = existing.as_ref().and_then(|r| r.description.clone());
-    let acceptance = existing.as_ref().and_then(|r| r.acceptance.clone());
-    let priority = existing.as_ref().and_then(|r| r.priority);
-    let knot_type = existing.as_ref().and_then(|r| r.knot_type.clone());
-    let tags = existing
-        .as_ref()
-        .map(|r| r.tags.clone())
-        .unwrap_or_default();
-    let notes = existing
-        .as_ref()
-        .map(|r| r.notes.clone())
-        .unwrap_or_default();
-    let handoff_capsules = existing
-        .as_ref()
-        .map(|r| r.handoff_capsules.clone())
-        .unwrap_or_default();
-    let mut invariants = existing
-        .as_ref()
-        .map(|r| r.invariants.clone())
-        .unwrap_or_default();
-    if params.data.contains_key("invariants") {
-        invariants = parse_invariants(params.data, params.absolute_path)?;
-    }
-    let step_history = existing
-        .as_ref()
-        .map(|r| r.step_history.clone())
-        .unwrap_or_default();
-    let mut gate_data = existing
-        .as_ref()
-        .map(|r| r.gate_data.clone())
-        .unwrap_or_default();
-    if params.data.contains_key("gate") {
-        gate_data = parse_gate_data(params.data, params.absolute_path)?;
-    }
-    let lease_data = existing
-        .as_ref()
-        .map(|r| r.lease_data.clone())
-        .unwrap_or_default();
-    let lease_id = existing.as_ref().and_then(|r| r.lease_id.clone());
-    let deferred_from_state =
-        optional_string(params.data.get("deferred_from_state")).or_else(|| {
-            existing
-                .as_ref()
-                .and_then(|r| r.deferred_from_state.clone())
-        });
-    let blocked_from_state = optional_string(params.data.get("blocked_from_state"))
-        .or_else(|| existing.as_ref().and_then(|r| r.blocked_from_state.clone()));
-    let created_at = existing
-        .as_ref()
-        .and_then(|r| r.created_at.clone())
-        .unwrap_or_else(|| params.updated_at.to_string());
-
-    Ok(MetadataProjection {
-        title: params.title.to_string(),
-        state: params.state.to_string(),
-        updated_at: params.updated_at.to_string(),
-        body,
-        description,
-        acceptance,
-        priority,
-        knot_type,
-        tags,
-        notes,
-        handoff_capsules,
-        invariants,
-        step_history,
-        gate_data,
-        lease_data,
-        lease_id,
-        workflow_id: params.workflow_id.to_string(),
-        profile_id: params.profile_id.to_string(),
-        profile_etag: Some(params.event_id.to_string()),
-        deferred_from_state,
-        blocked_from_state,
-        created_at: Some(created_at),
-    })
 }
 
 #[cfg(test)]

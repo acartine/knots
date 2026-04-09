@@ -86,7 +86,7 @@ fn apply_full_event_invariants_set_updates_hot_knot() {
     let root = setup_repo();
     let conn = open_conn(&root);
     seed_hot_knot(&conn, "K-inv");
-    let applier = IncrementalApplier::new(&conn, root.clone(), GitAdapter::new());
+    let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
 
     let events_dir = root.join(".knots/events/2026/03/05");
     std::fs::create_dir_all(&events_dir).expect("events directory should be creatable");
@@ -130,7 +130,7 @@ fn apply_index_event_with_invariants_persists_them() {
     let root = setup_repo();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
-    let applier = IncrementalApplier::new(&conn, root.clone(), GitAdapter::new());
+    let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
 
     let idx_dir = root.join(".knots/index/2026/03/05");
     std::fs::create_dir_all(&idx_dir).expect("index directory should be creatable");
@@ -184,7 +184,7 @@ fn apply_index_event_with_invariants_persists_them() {
 fn apply_invariants_set_on_missing_hot_knot_is_noop() {
     let root = setup_repo();
     let conn = open_conn(&root);
-    let applier = IncrementalApplier::new(&conn, root.clone(), GitAdapter::new());
+    let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
 
     let events_dir = root.join(".knots/events/2026/03/05");
     std::fs::create_dir_all(&events_dir).expect("events directory should be creatable");

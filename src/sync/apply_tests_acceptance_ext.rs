@@ -108,7 +108,7 @@ fn apply_full_event_updates_acceptance_metadata() {
     )
     .expect("event should write");
 
-    let applier = IncrementalApplier::new(&conn, root.clone(), GitAdapter::new());
+    let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
     applier
         .apply_full_event(Path::new(
             ".knots/events/2026/03/22/0100-knot.acceptance_set.json",

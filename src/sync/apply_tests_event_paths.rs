@@ -245,7 +245,7 @@ fn apply_full_event_covers_priority_type_tag_remove_note_and_handoff() {
     let root = setup_repo();
     let conn = open_conn(&root);
     seed_hot_knot(&conn, "K-1");
-    let applier = IncrementalApplier::new(&conn, root.clone(), GitAdapter::new());
+    let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
 
     let events_dir = root.join(".knots/events/2026/02/25");
     std::fs::create_dir_all(&events_dir).expect("events directory should be creatable");

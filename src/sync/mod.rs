@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::error::Error;
 use std::fmt;
 use std::path::PathBuf;
@@ -5,6 +6,7 @@ use std::path::PathBuf;
 use rusqlite::Connection;
 use serde::Serialize;
 
+use crate::installed_workflows;
 use crate::progress::{emit_progress, ProgressKind, ProgressReporter};
 use crate::project::StorePaths;
 
@@ -40,6 +42,18 @@ impl<'a> SyncService<'a> {
             root: repo_root.join(".knots"),
         };
         Self::with_store_paths(conn, repo_root, store_paths)
+    }
+
+    fn known_workflow_ids(&self) -> HashSet<String> {
+        if let Ok(registry) = installed_workflows::InstalledWorkflowRegistry::load(&self.repo_root)
+        {
+            registry.list().iter().map(|w| w.id.clone()).collect()
+        } else {
+            crate::domain::knot_type::KnotType::ALL
+                .into_iter()
+                .map(installed_workflows::builtin_workflow_id_for_knot_type)
+                .collect()
+        }
     }
 
     pub fn with_store_paths(
@@ -105,8 +119,13 @@ impl<'a> SyncService<'a> {
             "applying knots events to the local cache",
         )?;
 
-        let mut applier =
-            IncrementalApplier::new(self.conn, worktree.path().to_path_buf(), self.git.clone());
+        let known = self.known_workflow_ids();
+        let mut applier = IncrementalApplier::new(
+            self.conn,
+            worktree.path().to_path_buf(),
+            self.git.clone(),
+            known,
+        );
         let summary = applier.apply_to_head(&target_head)?;
         emit_progress(
             reporter,

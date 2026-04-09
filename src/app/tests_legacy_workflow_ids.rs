@@ -29,7 +29,7 @@ fn open_app(root: &std::path::Path) -> App {
 }
 
 #[test]
-fn rehydrate_from_events_rejects_missing_and_legacy_workflow_ids() {
+fn rehydrate_from_events_rejects_missing_workflow_id() {
     let missing_root = unique_root("knots-rehydrate-missing-workflow");
     let missing = rehydrate_from_events(
         &missing_root,
@@ -42,6 +42,11 @@ fn rehydrate_from_events_rejects_missing_and_legacy_workflow_ids() {
     assert!(matches!(missing, AppError::InvalidArgument(message) if
         message.contains("missing workflow_id")));
 
+    let _ = std::fs::remove_dir_all(missing_root);
+}
+
+#[test]
+fn rehydrate_from_events_converts_legacy_workflow_id() {
     let legacy_root = unique_root("knots-rehydrate-legacy-workflow");
     write_event(
         &legacy_root,
@@ -61,18 +66,16 @@ fn rehydrate_from_events_rejects_missing_and_legacy_workflow_ids() {
             "}\n"
         ),
     );
-    let legacy = rehydrate_from_events(
+    let projection = rehydrate_from_events(
         &legacy_root,
         "K-legacy",
         "Legacy".to_string(),
         "ready_for_planning".to_string(),
         "2026-02-25T10:00:00Z".to_string(),
     )
-    .expect_err("legacy workflow id should fail");
-    assert!(matches!(legacy, AppError::InvalidArgument(message) if
-        message.contains("legacy workflow_id")));
+    .expect("legacy workflow id should be converted, not rejected");
+    assert_eq!(projection.workflow_id, "work_sdlc");
 
-    let _ = std::fs::remove_dir_all(missing_root);
     let _ = std::fs::remove_dir_all(legacy_root);
 }
 

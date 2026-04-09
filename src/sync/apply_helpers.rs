@@ -143,24 +143,29 @@ pub(super) fn required_profile_id(
     Err(invalid_event(path, "missing 'profile_id' string field"))
 }
 
+pub(super) struct ResolvedWorkflowId {
+    pub id: String,
+    pub converted_from: Option<String>,
+}
+
 pub(super) fn required_workflow_id(
     object: &Map<String, Value>,
     path: &Path,
-) -> Result<String, SyncError> {
+) -> Result<ResolvedWorkflowId, SyncError> {
     if let Some(value) = object.get("workflow_id").and_then(Value::as_str) {
         let trimmed = value.trim();
         if !trimmed.is_empty() {
-            let workflow_id = installed_workflows::normalize_workflow_id(trimmed);
-            if matches!(workflow_id.as_str(), "compatibility" | "knots_sdlc") {
-                return Err(invalid_event(
-                    path,
-                    &format!(
-                        "legacy workflow_id '{}' requires install-time migration",
-                        trimmed
-                    ),
-                ));
-            }
-            return Ok(workflow_id);
+            let normalized = installed_workflows::normalize_workflow_id(trimmed);
+            return Ok(match normalized.as_str() {
+                "compatibility" | "knots_sdlc" => ResolvedWorkflowId {
+                    id: "work_sdlc".to_string(),
+                    converted_from: Some(normalized),
+                },
+                _ => ResolvedWorkflowId {
+                    id: normalized,
+                    converted_from: None,
+                },
+            });
         }
     }
     Err(invalid_event(path, "missing 'workflow_id' string field"))
@@ -257,4 +262,100 @@ pub(super) fn is_stale_precondition(
         .and_then(|record| record.profile_etag)
         .unwrap_or_default();
     Ok(current != precondition.profile_etag)
+}
+
+pub(super) struct IndexUpsertParams<'a> {
+    pub conn: &'a Connection,
+    pub data: &'a serde_json::Map<String, serde_json::Value>,
+    pub absolute_path: &'a std::path::Path,
+    pub knot_id: &'a str,
+    pub title: &'a str,
+    pub state: &'a str,
+    pub updated_at: &'a str,
+    pub profile_id: &'a str,
+    pub workflow_id: &'a str,
+    pub event_id: &'a str,
+}
+
+pub(super) fn build_index_upsert(
+    params: &IndexUpsertParams<'_>,
+) -> Result<MetadataProjection, SyncError> {
+    let existing = db::get_knot_hot(params.conn, params.knot_id)?;
+    let body = existing.as_ref().and_then(|r| r.body.clone());
+    let description = existing.as_ref().and_then(|r| r.description.clone());
+    let acceptance = existing.as_ref().and_then(|r| r.acceptance.clone());
+    let priority = existing.as_ref().and_then(|r| r.priority);
+    let knot_type = existing.as_ref().and_then(|r| r.knot_type.clone());
+    let tags = existing
+        .as_ref()
+        .map(|r| r.tags.clone())
+        .unwrap_or_default();
+    let notes = existing
+        .as_ref()
+        .map(|r| r.notes.clone())
+        .unwrap_or_default();
+    let handoff_capsules = existing
+        .as_ref()
+        .map(|r| r.handoff_capsules.clone())
+        .unwrap_or_default();
+    let mut invariants = existing
+        .as_ref()
+        .map(|r| r.invariants.clone())
+        .unwrap_or_default();
+    if params.data.contains_key("invariants") {
+        invariants = parse_invariants(params.data, params.absolute_path)?;
+    }
+    let step_history = existing
+        .as_ref()
+        .map(|r| r.step_history.clone())
+        .unwrap_or_default();
+    let mut gate_data = existing
+        .as_ref()
+        .map(|r| r.gate_data.clone())
+        .unwrap_or_default();
+    if params.data.contains_key("gate") {
+        gate_data = parse_gate_data(params.data, params.absolute_path)?;
+    }
+    let lease_data = existing
+        .as_ref()
+        .map(|r| r.lease_data.clone())
+        .unwrap_or_default();
+    let lease_id = existing.as_ref().and_then(|r| r.lease_id.clone());
+    let deferred_from_state =
+        optional_string(params.data.get("deferred_from_state")).or_else(|| {
+            existing
+                .as_ref()
+                .and_then(|r| r.deferred_from_state.clone())
+        });
+    let blocked_from_state = optional_string(params.data.get("blocked_from_state"))
+        .or_else(|| existing.as_ref().and_then(|r| r.blocked_from_state.clone()));
+    let created_at = existing
+        .as_ref()
+        .and_then(|r| r.created_at.clone())
+        .unwrap_or_else(|| params.updated_at.to_string());
+
+    Ok(MetadataProjection {
+        title: params.title.to_string(),
+        state: params.state.to_string(),
+        updated_at: params.updated_at.to_string(),
+        body,
+        description,
+        acceptance,
+        priority,
+        knot_type,
+        tags,
+        notes,
+        handoff_capsules,
+        invariants,
+        step_history,
+        gate_data,
+        lease_data,
+        lease_id,
+        workflow_id: params.workflow_id.to_string(),
+        profile_id: params.profile_id.to_string(),
+        profile_etag: Some(params.event_id.to_string()),
+        deferred_from_state,
+        blocked_from_state,
+        created_at: Some(created_at),
+    })
 }

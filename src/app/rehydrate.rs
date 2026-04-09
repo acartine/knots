@@ -211,12 +211,15 @@ fn finalize_projection(
     }
     let workflow_id = crate::installed_workflows::normalize_workflow_id(&projection.workflow_id);
     if matches!(workflow_id.as_str(), "compatibility" | "knots_sdlc") {
-        return Err(AppError::InvalidArgument(format!(
-            "rehydrate events for '{}' contain legacy workflow_id '{}'",
-            knot_id, projection.workflow_id
-        )));
+        eprintln!(
+            "warning: converted legacy workflow '{}' to 'work_sdlc' \
+             for knot '{}'; this is probably fine but you should know",
+            workflow_id, knot_id
+        );
+        projection.workflow_id = "work_sdlc".to_string();
+    } else {
+        projection.workflow_id = workflow_id;
     }
-    projection.workflow_id = workflow_id;
     if projection.profile_id.trim().is_empty() {
         return Err(AppError::InvalidArgument(format!(
             "rehydrate events for '{}' are missing profile_id",
