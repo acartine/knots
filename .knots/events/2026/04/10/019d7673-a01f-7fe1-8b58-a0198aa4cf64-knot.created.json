@@ -1,0 +1,17 @@
+{
+  "event_id": "019d7673-a01f-7fe1-8b58-a0198aa4cf64",
+  "occurred_at": "2026-04-10T08:13:02.367016Z",
+  "knot_id": "knots-14ed",
+  "type": "knot.created",
+  "data": {
+    "body": "Once foolery has migrated to use owners.states (see knot a0de), remove the individual fields (planning, plan_review, implementation, implementation_review, shipment, shipment_review) and the from_states() projection from ProfileOwners in src/profile.rs. Blocked on a0de.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Remove deprecated individual owner fields from ProfileOwners",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

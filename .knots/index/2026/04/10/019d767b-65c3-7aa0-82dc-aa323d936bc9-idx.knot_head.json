@@ -1,0 +1,21 @@
+{
+  "event_id": "019d767b-65c3-7aa0-82dc-aa323d936bc9",
+  "occurred_at": "2026-04-10T08:21:31.706486Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-14ed",
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "Remove deprecated individual owner fields from ProfileOwners",
+    "type": "work",
+    "updated_at": "2026-04-10T08:21:31.706486Z",
+    "workflow_id": "work_sdlc"
+  }
+}

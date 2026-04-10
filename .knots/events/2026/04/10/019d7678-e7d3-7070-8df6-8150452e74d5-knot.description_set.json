@@ -1,0 +1,9 @@
+{
+  "event_id": "019d7678-e7d3-7070-8df6-8150452e74d5",
+  "occurred_at": "2026-04-10T08:18:48.403141Z",
+  "knot_id": "knots-a0de",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Update foolery's normalizeOwners() in knots-backend-helpers.ts to read owner data from profile.owners.states (the BTreeMap keyed by state name) instead of the old individual top-level fields (planning, plan_review, etc.). Must handle profiles that lack certain phases (e.g. explore has no planning state) — return a sensible default kind when a state key is absent."
+  }
+}

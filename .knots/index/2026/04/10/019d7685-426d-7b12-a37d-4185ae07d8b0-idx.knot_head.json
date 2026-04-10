@@ -1,0 +1,21 @@
+{
+  "event_id": "019d7685-426d-7b12-a37d-4185ae07d8b0",
+  "occurred_at": "2026-04-10T08:32:18.019648Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a0de",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Migrate foolery to use owners.states map instead of individual owner fields",
+    "type": "work",
+    "updated_at": "2026-04-10T08:32:18.019648Z",
+    "workflow_id": "work_sdlc"
+  }
+}

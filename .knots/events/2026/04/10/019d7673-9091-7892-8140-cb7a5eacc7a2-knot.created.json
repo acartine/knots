@@ -1,0 +1,17 @@
+{
+  "event_id": "019d7673-9091-7892-8140-cb7a5eacc7a2",
+  "occurred_at": "2026-04-10T08:12:58.385384Z",
+  "knot_id": "knots-a0de",
+  "type": "knot.created",
+  "data": {
+    "body": "Update foolery's knots-backend-helpers.ts normalizeOwners() to read owner data from profile.owners.states (the BTreeMap) instead of the individual top-level fields (planning, plan_review, etc.). The individual fields were restored in knots as a compatibility shim and should not be relied on long-term.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Migrate foolery to use owners.states map instead of individual owner fields",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}
