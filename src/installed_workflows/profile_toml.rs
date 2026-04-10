@@ -100,7 +100,9 @@ fn assemble_profile(
     } else {
         GateMode::Skipped
     };
-    let owners = ProfileOwners::from_states(ctx.owner_states);
+    let owners = ProfileOwners {
+        states: ctx.owner_states,
+    };
     let action_prompts = build_action_prompt_bodies(&ctx.action_states, states, prompts);
     let prompt_acceptance = build_prompt_acceptance(&ctx.action_states, states, prompts);
 
