@@ -421,11 +421,10 @@ fn open_with_custom_db_path_skips_init_check() {
     let root = unique_workspace();
     let db_path = root.join("custom/state.sqlite");
     let db_str = db_path.to_str().expect("utf8 path");
-    let result = match App::open(db_str, root.clone()) {
-        Ok(_) => panic!("custom path should fail later"),
-        Err(err) => err,
-    };
-    assert!(!matches!(result, AppError::NotInitialized));
-    assert!(matches!(result, AppError::Workflow(_)));
+    let result = App::open(db_str, root.clone());
+    assert!(
+        result.is_ok(),
+        "custom db path should auto-register builtins and succeed"
+    );
     let _ = std::fs::remove_dir_all(root);
 }

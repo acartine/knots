@@ -31,6 +31,11 @@ impl InstalledWorkflowRegistry {
             loader::load_disk_workflows(&root, &mut workflows)?;
         }
         let current = read_repo_config(repo_root)?;
+        let current = if current.knot_type_workflows.is_empty() {
+            super::operations::ensure_builtin_workflows_registered(repo_root)?
+        } else {
+            current
+        };
         let registry = Self {
             workflows,
             current: Some(current),
