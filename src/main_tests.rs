@@ -44,6 +44,24 @@ fn managed_hook_path(root: &std::path::Path) -> PathBuf {
         .join(crate::git_hooks::MANAGED_HOOKS[0])
 }
 
+fn strip_ansi_codes(text: &str) -> String {
+    let mut stripped = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if ch == '\u{1b}' && matches!(chars.peek(), Some('[')) {
+            let _ = chars.next();
+            for next in chars.by_ref() {
+                if next.is_ascii_alphabetic() {
+                    break;
+                }
+            }
+            continue;
+        }
+        stripped.push(ch);
+    }
+    stripped
+}
+
 #[test]
 fn knot_ref_prefers_alias_when_available() {
     let with_alias = crate::app::KnotView {
@@ -93,6 +111,20 @@ fn maybe_run_self_command_returns_none_for_non_self_commands() {
 }
 
 #[test]
+fn strip_ansi_codes_preserves_plain_text() {
+    assert_eq!(
+        strip_ansi_codes("Upgrade\nstatus: ok"),
+        "Upgrade\nstatus: ok"
+    );
+}
+
+#[test]
+fn strip_ansi_codes_removes_escape_sequences() {
+    let colored = "\u{1b}[1;36mUpgrade\u{1b}[0m\n\u{1b}[36mstatus:\u{1b}[0m  ok";
+    assert_eq!(strip_ansi_codes(colored), "Upgrade\nstatus:  ok");
+}
+
+#[test]
 fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     let dir = unique_dir("knots-main-self-test");
     let script = dir.join("install.sh");
@@ -110,6 +142,7 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     )
     .expect("upgrade command should succeed")
     .expect("upgrade should emit summary");
+    let upgrade_outcome = strip_ansi_codes(&upgrade_outcome);
     assert!(upgrade_outcome.starts_with("Upgrade"));
     assert!(upgrade_outcome.contains("status:  updated kno binary"));
     assert!(upgrade_outcome.contains("version:  v1.2.3"));
@@ -127,6 +160,7 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     )
     .expect("second upgrade command should succeed")
     .expect("second upgrade should emit summary");
+    let second_upgrade_outcome = strip_ansi_codes(&second_upgrade_outcome);
     assert!(second_upgrade_outcome.starts_with("Upgrade"));
     assert!(second_upgrade_outcome.contains("status:  updated kno binary"));
     assert!(second_upgrade_outcome.contains("version:  v1.2.4"));
