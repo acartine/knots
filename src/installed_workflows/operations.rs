@@ -1,11 +1,11 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use crate::profile::ProfileError;
 
 use super::bundle_toml::render_json_bundle_from_toml;
 use super::knot_type_registry::WorkflowRef;
+use super::loom::{CommandLoomBundleBuilder, LoomBundleBuilder};
 use super::{
     parse_bundle, BundleFormat, InstalledWorkflowRegistry, WorkflowDefinition, WorkflowRepoConfig,
     DEFAULT_BUNDLE_FILE, TOML_BUNDLE_FILE,
@@ -49,8 +49,16 @@ pub fn write_repo_config(
 }
 
 pub fn install_bundle(repo_root: &Path, source: &Path) -> Result<String, ProfileError> {
+    install_bundle_with_builder(repo_root, source, &CommandLoomBundleBuilder)
+}
+
+pub(crate) fn install_bundle_with_builder(
+    repo_root: &Path,
+    source: &Path,
+    loom_builder: &dyn LoomBundleBuilder,
+) -> Result<String, ProfileError> {
     ensure_builtin_workflows_registered(repo_root)?;
-    let (raw, format) = read_bundle_source(source)?;
+    let (raw, format) = read_bundle_source_with_builder(source, loom_builder)?;
     let workflow = parse_bundle(&raw, format)?;
     let canonical_json = match format {
         BundleFormat::Json => raw.clone(),
@@ -411,9 +419,17 @@ pub fn set_workflow_default_profile(
     Ok(config)
 }
 
+#[cfg(test)]
 pub(crate) fn read_bundle_source(source: &Path) -> Result<(String, BundleFormat), ProfileError> {
+    read_bundle_source_with_builder(source, &CommandLoomBundleBuilder)
+}
+
+pub(crate) fn read_bundle_source_with_builder(
+    source: &Path,
+    loom_builder: &dyn LoomBundleBuilder,
+) -> Result<(String, BundleFormat), ProfileError> {
     if source.is_dir() && source.join("loom.toml").exists() {
-        return read_loom_bundle(source);
+        return read_loom_bundle(source, loom_builder);
     }
     let source_path = resolve_bundle_source_path(source)?;
     let raw =
@@ -425,24 +441,11 @@ pub(crate) fn read_bundle_source(source: &Path) -> Result<(String, BundleFormat)
     Ok((raw, format))
 }
 
-fn read_loom_bundle(source: &Path) -> Result<(String, BundleFormat), ProfileError> {
-    let loom_bin = std::env::var("KNOTS_LOOM_BIN").unwrap_or_else(|_| "loom".to_string());
-    let output = Command::new(loom_bin)
-        .arg("build")
-        .arg(source)
-        .arg("--emit")
-        .arg("knots-bundle")
-        .output()
-        .map_err(|err| ProfileError::InvalidBundle(format!("failed to execute loom: {err}")))?;
-    if !output.status.success() {
-        return Err(ProfileError::InvalidBundle(format!(
-            "loom build --emit knots-bundle failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        )));
-    }
-    let raw = String::from_utf8(output.stdout).map_err(|err| {
-        ProfileError::InvalidBundle(format!("invalid UTF-8 bundle output: {err}"))
-    })?;
+fn read_loom_bundle(
+    source: &Path,
+    loom_builder: &dyn LoomBundleBuilder,
+) -> Result<(String, BundleFormat), ProfileError> {
+    let raw = loom_builder.build_knots_bundle(source)?;
     Ok((raw, BundleFormat::Json))
 }
 

@@ -4,6 +4,7 @@ pub(crate) mod bundle_toml;
 mod ids;
 mod knot_type_registry;
 mod loader;
+mod loom;
 mod operations;
 pub(crate) mod profile_json;
 pub(crate) mod profile_toml;
@@ -40,6 +41,10 @@ pub use knot_type_registry::{KnotTypeWorkflowConfig, WorkflowRef};
 pub use registry::InstalledWorkflowRegistry;
 
 pub use ids::normalize_workflow_id;
+#[cfg(test)]
+pub(crate) use loom::LoomBundleBuilder;
+#[cfg(test)]
+pub(crate) use operations::install_bundle_with_builder;
 #[cfg(test)]
 pub use operations::write_repo_config;
 pub use operations::{

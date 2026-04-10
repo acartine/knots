@@ -9,8 +9,8 @@ use super::{
 use crate::doctor::{DoctorCheck, DoctorStatus};
 use crate::domain::knot_type::KnotType;
 use crate::installed_workflows::{
-    install_bundle, read_repo_config, write_repo_config, InstalledWorkflowRegistry,
-    KnotTypeWorkflowConfig, WorkflowRef, WorkflowRepoConfig,
+    install_bundle_with_builder, read_repo_config, write_repo_config, InstalledWorkflowRegistry,
+    KnotTypeWorkflowConfig, LoomBundleBuilder, WorkflowRef, WorkflowRepoConfig,
 };
 use crate::sync::{GitAdapter, KnotsWorktree};
 
@@ -74,38 +74,38 @@ fn sample_check(name: &str, status: DoctorStatus) -> DoctorCheck {
     }
 }
 
-fn copy_dir_all(src: &Path, dst: &Path) {
-    std::fs::create_dir_all(dst).expect("destination directory should be creatable");
-    for entry in std::fs::read_dir(src).expect("source directory should be readable") {
-        let entry = entry.expect("directory entry should be readable");
-        let file_type = entry.file_type().expect("entry type should be readable");
-        let target = dst.join(entry.file_name());
-        if file_type.is_dir() {
-            copy_dir_all(&entry.path(), &target);
-        } else {
-            std::fs::copy(entry.path(), &target).expect("file should copy");
-        }
+struct StubLoomBundleBuilder {
+    bundle_json: String,
+}
+
+impl LoomBundleBuilder for StubLoomBundleBuilder {
+    fn build_knots_bundle(&self, source: &Path) -> Result<String, crate::profile::ProfileError> {
+        assert!(source.join("loom.toml").exists());
+        Ok(self.bundle_json.clone())
     }
+}
+
+fn custom_bundle_json(workflow_id: &str) -> String {
+    let mut bundle: serde_json::Value =
+        serde_json::from_str(crate::loom_work_bundle::BUNDLE_JSON).expect("bundle should parse");
+    bundle["workflow"]["name"] = serde_json::Value::String(workflow_id.to_string());
+    serde_json::to_string_pretty(&bundle).expect("bundle should render")
 }
 
 fn install_custom_workflow(root: &Path, workflow_id: &str) -> String {
     let source = root.join("custom-flow-loom");
-    copy_dir_all(&PathBuf::from("loom/work_sdlc"), &source);
+    std::fs::create_dir_all(&source).expect("source directory should be creatable");
+    std::fs::write(
+        source.join("loom.toml"),
+        format!("name = \"{workflow_id}\"\n"),
+    )
+    .expect("loom.toml should write");
 
-    let loom_toml = source.join("loom.toml");
-    let mut toml = std::fs::read_to_string(&loom_toml).expect("loom.toml should read");
-    toml = toml.replace("name = \"work_sdlc\"", &format!("name = \"{workflow_id}\""));
-    std::fs::write(&loom_toml, toml).expect("loom.toml should write");
-
-    let workflow = source.join("workflow.loom");
-    let mut workflow_toml = std::fs::read_to_string(&workflow).expect("workflow.loom should read");
-    workflow_toml = workflow_toml.replace(
-        "workflow work_sdlc v1",
-        &format!("workflow {workflow_id} v1"),
-    );
-    std::fs::write(&workflow, workflow_toml).expect("workflow.loom should write");
-
-    install_bundle(root, &source).expect("custom workflow should install")
+    let loom_builder = StubLoomBundleBuilder {
+        bundle_json: custom_bundle_json(workflow_id),
+    };
+    install_bundle_with_builder(root, &source, &loom_builder)
+        .expect("custom workflow should install")
 }
 
 #[test]
