@@ -164,10 +164,14 @@ fn show_knot_fails_when_cache_contains_legacy_workflow_id() {
     )
     .expect("legacy row should upsert");
 
-    let err = app
+    let view = app
         .show_knot("K-legacy-db")
-        .expect_err("legacy workflow id in cache should fail");
-    assert!(matches!(err, AppError::Workflow(_)));
+        .expect("show should succeed for legacy profile")
+        .expect("knot should exist");
+    assert!(
+        view.step_metadata.is_none(),
+        "no metadata for unknown profile"
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

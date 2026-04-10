@@ -206,6 +206,9 @@ pub fn enrich_step_metadata(
 ) -> Result<(), ProfileError> {
     let gate = knot.gate.clone().unwrap_or_default();
     let profile_id = crate::dispatch::profile_lookup_id(knot);
+    if registry.require(&profile_id).is_err() {
+        return Ok(());
+    }
     knot.step_metadata =
         step_metadata_for_state(registry, &profile_id, knot.knot_type, &gate, &knot.state)?;
     let next_state = next_happy_path_state(registry, &profile_id, knot.knot_type, &knot.state)?;
