@@ -76,9 +76,7 @@ fn assemble_json_profile(
     } else {
         GateMode::Skipped
     };
-    let owners = ProfileOwners {
-        states: ctx.owner_states,
-    };
+    let owners = ProfileOwners::from_states(ctx.owner_states);
     let built = ProfileDefinition {
         id: profile_id,
         workflow_id: workflow_id.to_string(),

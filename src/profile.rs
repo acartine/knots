@@ -60,7 +60,44 @@ pub struct StepOwner {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProfileOwners {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub planning: Option<StepOwner>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan_review: Option<StepOwner>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub implementation: Option<StepOwner>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub implementation_review: Option<StepOwner>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shipment: Option<StepOwner>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shipment_review: Option<StepOwner>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub states: BTreeMap<String, StepOwner>,
+}
+
+const ACTION_OWNER_KEYS: [&str; 6] = [
+    "planning",
+    "plan_review",
+    "implementation",
+    "implementation_review",
+    "shipment",
+    "shipment_review",
+];
+
+impl ProfileOwners {
+    pub fn from_states(states: BTreeMap<String, StepOwner>) -> Self {
+        let get = |key: &str| states.get(key).cloned();
+        Self {
+            planning: get(ACTION_OWNER_KEYS[0]),
+            plan_review: get(ACTION_OWNER_KEYS[1]),
+            implementation: get(ACTION_OWNER_KEYS[2]),
+            implementation_review: get(ACTION_OWNER_KEYS[3]),
+            shipment: get(ACTION_OWNER_KEYS[4]),
+            shipment_review: get(ACTION_OWNER_KEYS[5]),
+            states,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
