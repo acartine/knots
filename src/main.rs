@@ -72,8 +72,6 @@ mod replication;
 mod rollback;
 mod run_commands;
 mod self_manage;
-#[cfg(test)]
-mod skills;
 mod snapshots;
 mod state_hierarchy;
 mod stream_output;

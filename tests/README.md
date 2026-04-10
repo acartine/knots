@@ -12,7 +12,7 @@ Integration tests exercising the CLI and full application stack.
 - **`cli_dispatch_sync.rs`** — push/pull/sync progress and JSON output
 - **`cli_workflows.rs`** — custom workflow install and runtime
 - **`cli_state_hierarchy.rs`** — parent/child state cascading
-- **`cli_skills.rs`** — skill prompt generation
+- **`cli_skills.rs`** — managed `knots*` skill installation and doctor coverage
 - **`repo_guardrails.rs`** — CLAUDE.md/AGENTS.md consistency, hook installation
 
 ## Running
