@@ -396,6 +396,34 @@ fn completions_command_generates_bash_output() {
 }
 
 #[test]
+fn new_with_tags_creates_knot_with_tags() {
+    let root = unique_workspace("knots-cli-new-tags");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+
+    let created = run_knots(
+        &root,
+        &db,
+        &["new", "Tagged knot", "--tag", "Alpha", "-t", "beta"],
+    );
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    let show = run_knots(&root, &db, &["show", &knot_id, "--json"]);
+    assert_success(&show);
+    let shown: Value = serde_json::from_slice(&show.stdout).expect("show json");
+    let tags = shown
+        .get("tags")
+        .and_then(Value::as_array)
+        .expect("tags should be an array");
+    let tag_strs: Vec<&str> = tags.iter().filter_map(Value::as_str).collect();
+    assert!(tag_strs.contains(&"alpha"), "tags: {tag_strs:?}");
+    assert!(tag_strs.contains(&"beta"), "tags: {tag_strs:?}");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn new_fast_flag_and_q_command_use_quick_profile() {
     let root = unique_workspace("knots-cli-new-fast");
     setup_repo(&root);

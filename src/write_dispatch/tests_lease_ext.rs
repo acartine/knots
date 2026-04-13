@@ -309,6 +309,7 @@ fn new_with_lease_flag_rejects() {
         knot_type: None,
         gate_owner_kind: None,
         gate_failure_modes: vec![],
+        tags: vec![],
         lease_id: Some(lease_id.clone()),
     });
     let err = execute_operation(&app, &op).expect_err("new should reject lease binding");

@@ -63,6 +63,7 @@ fn execute_queued_request_returns_failure_when_app_open_fails() {
             knot_type: None,
             gate_owner_kind: None,
             gate_failure_modes: vec![],
+            tags: vec![],
             lease_id: None,
         }),
     };
@@ -345,6 +346,7 @@ fn exploration_op() -> NewOperation {
         knot_type: None,
         gate_owner_kind: None,
         gate_failure_modes: vec![],
+        tags: vec![],
         lease_id: None,
     }
 }

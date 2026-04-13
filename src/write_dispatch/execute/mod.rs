@@ -95,6 +95,7 @@ fn execute_new(app: &App, args: &crate::write_queue::NewOperation) -> Result<Str
             acceptance: args.acceptance.clone(),
             knot_type,
             gate_data,
+            tags: args.tags.clone(),
             ..CreateKnotOptions::default()
         },
     )?;

@@ -25,6 +25,7 @@ pub struct NewOperation {
     pub knot_type: Option<String>,
     pub gate_owner_kind: Option<String>,
     pub gate_failure_modes: Vec<String>,
+    pub tags: Vec<String>,
     pub lease_id: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -487,7 +488,6 @@ fn read_response_file(path: &Path) -> Result<Option<QueuedWriteResponse>, QueueE
     let response = serde_json::from_slice(&bytes)?;
     Ok(Some(response))
 }
-
 fn now_nanos() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)

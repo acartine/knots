@@ -242,6 +242,9 @@ pub struct NewArgs {
     )]
     pub exploration: bool,
 
+    #[arg(short = 't', long = "tag", help = "Add tag (repeatable).")]
+    pub tags: Vec<String>,
+
     #[arg(long, help = "Bind a lease to this knot.")]
     pub lease: Option<String>,
 }

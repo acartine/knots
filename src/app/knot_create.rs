@@ -13,8 +13,8 @@ use crate::workflow_runtime;
 
 use super::error::AppError;
 use super::helpers::{
-    build_knot_head_data, non_empty, normalize_state_input, require_state_for_knot_type,
-    resolve_step_metadata, KnotHeadData,
+    build_knot_head_data, non_empty, normalize_state_input, normalize_tag,
+    require_state_for_knot_type, resolve_step_metadata, KnotHeadData,
 };
 use super::types::{CreateKnotOptions, KnotView};
 use super::App;
@@ -173,7 +173,14 @@ impl App {
             }),
         );
         self.writer.write(&EventRecord::full(full_event))?;
-        self.write_optional_create_events(&knot_id, &occurred_at, acceptance.as_deref(), options)?;
+        let mut tags = Vec::new();
+        self.write_optional_create_events(
+            &knot_id,
+            &occurred_at,
+            acceptance.as_deref(),
+            options,
+            &mut tags,
+        )?;
         self.writer.write(&EventRecord::index(idx_event))?;
         db::upsert_knot_hot(
             &self.conn,
@@ -187,7 +194,7 @@ impl App {
                 acceptance: acceptance.as_deref(),
                 priority: None,
                 knot_type: Some(options.knot_type.as_str()),
-                tags: &[],
+                tags: &tags,
                 notes: &[],
                 handoff_capsules: &[],
                 invariants: &[],
@@ -214,6 +221,7 @@ impl App {
         occurred_at: &str,
         acceptance: Option<&str>,
         options: &CreateKnotOptions,
+        tags: &mut Vec<String>,
     ) -> Result<(), AppError> {
         if let Some(acceptance) = acceptance {
             let event = FullEvent::with_identity(
@@ -224,6 +232,23 @@ impl App {
                 json!({ "acceptance": acceptance }),
             );
             self.writer.write(&EventRecord::full(event))?;
+        }
+        for raw_tag in &options.tags {
+            let normalized = normalize_tag(raw_tag);
+            if normalized.is_empty() {
+                continue;
+            }
+            if !tags.iter().any(|t| t == &normalized) {
+                tags.push(normalized.clone());
+                self.writer
+                    .write(&EventRecord::full(FullEvent::with_identity(
+                        new_event_id(),
+                        occurred_at.to_string(),
+                        knot_id.to_string(),
+                        FullEventKind::KnotTagAdd.as_str(),
+                        json!({"tag": normalized}),
+                    )))?;
+            }
         }
         if options.knot_type == KnotType::Lease {
             let event = FullEvent::new(

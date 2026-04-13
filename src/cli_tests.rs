@@ -173,6 +173,39 @@ fn new_workflow_flag_parses() {
 }
 
 #[test]
+fn new_tag_long_flag_parses() {
+    let cli = parse(&["kno", "new", "Title", "--tag", "foo", "--tag", "bar"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert_eq!(args.tags, vec!["foo", "bar"]);
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}
+
+#[test]
+fn new_tag_short_flag_parses() {
+    let cli = parse(&["kno", "new", "Title", "-t", "foo", "-t", "bar"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert_eq!(args.tags, vec!["foo", "bar"]);
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}
+
+#[test]
+fn new_tag_defaults_empty() {
+    let cli = parse(&["kno", "new", "Title"]);
+    match cli.command {
+        Commands::New(args) => {
+            assert!(args.tags.is_empty());
+        }
+        other => panic!("expected New, got {:?}", other),
+    }
+}
+
+#[test]
 fn update_parses_invariant_flags() {
     let cli = parse(&[
         "kno",

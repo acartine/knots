@@ -41,6 +41,7 @@ fn map_new(args: &crate::cli::NewArgs) -> WriteOperation {
         knot_type: args.knot_type.clone(),
         gate_owner_kind: args.gate_owner_kind.clone(),
         gate_failure_modes: args.gate_failure_modes.clone(),
+        tags: args.tags.clone(),
         lease_id: args.lease.clone(),
     })
 }

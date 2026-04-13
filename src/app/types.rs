@@ -157,6 +157,7 @@ pub struct CreateKnotOptions {
     pub gate_data: GateData,
     pub lease_data: LeaseData,
     pub acceptance: Option<String>,
+    pub tags: Vec<String>,
 }
 
 impl From<KnotCacheRecord> for KnotView {
