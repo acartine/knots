@@ -6,15 +6,11 @@ use rusqlite::params;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
 pub(super) fn unique_db_path() -> String {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("system clock before UNIX_EPOCH")
-        .as_nanos();
     std::env::temp_dir()
-        .join(format!("knots-pragmas-{}.sqlite", nanos))
+        .join(format!("knots-pragmas-{}.sqlite", Uuid::now_v7()))
         .display()
         .to_string()
 }
