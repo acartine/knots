@@ -92,6 +92,14 @@ mod tests;
 mod tests_execution_plan;
 
 #[cfg(test)]
+#[path = "write_dispatch/tests_plan.rs"]
+mod tests_plan;
+
+#[cfg(test)]
+#[path = "write_dispatch/tests_plan_prompt.rs"]
+mod tests_plan_prompt;
+
+#[cfg(test)]
 #[path = "write_dispatch/tests_rollback_ext.rs"]
 mod tests_rollback_ext;
 

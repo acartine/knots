@@ -7,6 +7,15 @@ use serde::{Deserialize, Serialize};
 use crate::locks::{FileLock, LockError};
 use crate::project::{DistributionMode, StorePaths};
 
+mod lease_ops;
+mod plan_ops;
+
+pub use lease_ops::{LeaseCreateOperation, LeaseExtendOperation, LeaseTerminateOperation};
+pub use plan_ops::{
+    PlanStepAddOperation, PlanStepMoveOperation, PlanStepRemoveOperation, PlanWaveAddOperation,
+    PlanWaveMoveOperation, PlanWaveRemoveOperation,
+};
+
 const REQUESTS_DIR: &str = "writes";
 const RESPONSES_DIR: &str = "responses";
 const WAIT_TIMEOUT: Duration = Duration::from_secs(120);
@@ -157,29 +166,6 @@ pub struct StepAnnotateOperation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct LeaseCreateOperation {
-    pub nickname: String,
-    pub lease_type: String,
-    pub agent_type: Option<String>,
-    pub provider: Option<String>,
-    pub agent_name: Option<String>,
-    pub model: Option<String>,
-    pub model_version: Option<String>,
-    pub json: bool,
-    pub timeout_seconds: Option<u64>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct LeaseTerminateOperation {
-    pub id: String,
-}
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct LeaseExtendOperation {
-    pub lease_id: String,
-    pub timeout_seconds: Option<u64>,
-    pub json: bool,
-}
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[allow(clippy::large_enum_variant)]
 pub enum WriteOperation {
     New(NewOperation),
@@ -191,6 +177,12 @@ pub enum WriteOperation {
     Claim(ClaimOperation),
     PollClaim(PollClaimOperation),
     GateEvaluate(GateEvaluateOperation),
+    PlanWaveAdd(PlanWaveAddOperation),
+    PlanWaveRemove(PlanWaveRemoveOperation),
+    PlanWaveMove(PlanWaveMoveOperation),
+    PlanStepAdd(PlanStepAddOperation),
+    PlanStepRemove(PlanStepRemoveOperation),
+    PlanStepMove(PlanStepMoveOperation),
     EdgeAdd(EdgeOperation),
     EdgeRemove(EdgeOperation),
     StepAnnotate(StepAnnotateOperation),

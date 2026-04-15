@@ -8,6 +8,7 @@ use clap::CommandFactory;
 pub use crate::cli_agent::*;
 pub use crate::cli_loom::*;
 pub use crate::cli_ops::*;
+pub use crate::cli_plan::*;
 pub use crate::cli_skills::*;
 pub use crate::cli_workflow::*;
 
@@ -119,6 +120,8 @@ pub enum Commands {
     Edge(EdgeArgs),
     #[command(about = "Manage gate decisions and metadata.")]
     Gate(GateArgs),
+    #[command(about = "Manage execution plan structure.")]
+    Plan(PlanArgs),
     #[command(about = "Advance a knot to its next happy-path state.")]
     Next(NextArgs),
     #[command(

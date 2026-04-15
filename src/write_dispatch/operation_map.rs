@@ -1,9 +1,13 @@
-use crate::cli::{Commands, EdgeSubcommands, GateSubcommands, LeaseSubcommands, StepSubcommands};
+use crate::cli::{
+    Commands, EdgeSubcommands, GateSubcommands, LeaseSubcommands, PlanStepSubcommands,
+    PlanSubcommands, PlanWaveSubcommands, StepSubcommands,
+};
 use crate::write_queue::{
     ClaimOperation, EdgeOperation, GateEvaluateOperation, LeaseCreateOperation,
-    LeaseExtendOperation, LeaseTerminateOperation, NewOperation, NextOperation, PollClaimOperation,
-    QuickNewOperation, RollbackOperation, StateOperation, StepAnnotateOperation, UpdateOperation,
-    WriteOperation,
+    LeaseExtendOperation, LeaseTerminateOperation, NewOperation, NextOperation,
+    PlanStepAddOperation, PlanStepMoveOperation, PlanStepRemoveOperation, PlanWaveAddOperation,
+    PlanWaveMoveOperation, PlanWaveRemoveOperation, PollClaimOperation, QuickNewOperation,
+    RollbackOperation, StateOperation, StepAnnotateOperation, UpdateOperation, WriteOperation,
 };
 
 pub(crate) fn operation_from_command(command: &Commands) -> Option<WriteOperation> {
@@ -19,6 +23,7 @@ pub(crate) fn operation_from_command(command: &Commands) -> Option<WriteOperatio
         Commands::Gate(args) => match &args.command {
             GateSubcommands::Evaluate(gate) => Some(map_gate_evaluate(gate)),
         },
+        Commands::Plan(args) => map_plan(args),
         Commands::Edge(args) => map_edge(args),
         Commands::Step(args) => match &args.command {
             StepSubcommands::Annotate(a) => Some(map_step_annotate(a)),
@@ -186,6 +191,62 @@ fn map_gate_evaluate(gate: &crate::cli::GateEvaluateArgs) -> WriteOperation {
         agent_model: gate.agent_model.clone(),
         agent_version: gate.agent_version.clone(),
     })
+}
+
+fn map_plan(args: &crate::cli::PlanArgs) -> Option<WriteOperation> {
+    match &args.command {
+        PlanSubcommands::Wave(wave) => match &wave.command {
+            PlanWaveSubcommands::Add(add) => {
+                Some(WriteOperation::PlanWaveAdd(PlanWaveAddOperation {
+                    id: add.id.clone(),
+                    name: add.name.clone(),
+                    objective: add.objective.clone(),
+                    at: add.at,
+                }))
+            }
+            PlanWaveSubcommands::Remove(remove) => {
+                Some(WriteOperation::PlanWaveRemove(PlanWaveRemoveOperation {
+                    id: remove.id.clone(),
+                    wave: remove.wave,
+                    force: remove.force,
+                }))
+            }
+            PlanWaveSubcommands::Move(mv) => {
+                Some(WriteOperation::PlanWaveMove(PlanWaveMoveOperation {
+                    id: mv.id.clone(),
+                    from_index: mv.from_index,
+                    to_index: mv.to_index,
+                }))
+            }
+        },
+        PlanSubcommands::Step(step) => match &step.command {
+            PlanStepSubcommands::Add(add) => {
+                Some(WriteOperation::PlanStepAdd(PlanStepAddOperation {
+                    id: add.id.clone(),
+                    wave: add.wave,
+                    knot_ids: add.knot_ids.clone(),
+                    notes: add.notes.clone(),
+                    at: add.at,
+                }))
+            }
+            PlanStepSubcommands::Remove(remove) => {
+                Some(WriteOperation::PlanStepRemove(PlanStepRemoveOperation {
+                    id: remove.id.clone(),
+                    wave: remove.wave,
+                    step: remove.step,
+                    force: remove.force,
+                }))
+            }
+            PlanStepSubcommands::Move(mv) => {
+                Some(WriteOperation::PlanStepMove(PlanStepMoveOperation {
+                    id: mv.id.clone(),
+                    wave: mv.wave,
+                    from_index: mv.from_index,
+                    to_index: mv.to_index,
+                }))
+            }
+        },
+    }
 }
 
 fn map_edge(args: &crate::cli::EdgeArgs) -> Option<WriteOperation> {

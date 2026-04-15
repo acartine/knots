@@ -104,7 +104,7 @@ impl ExecutionPlanData {
     }
 }
 
-fn resolve_id_vec<F, E>(ids: &mut Vec<String>, resolver: &F) -> Result<(), E>
+fn resolve_id_vec<F, E>(ids: &mut [String], resolver: &F) -> Result<(), E>
 where
     F: Fn(&str) -> Result<String, E>,
 {

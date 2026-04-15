@@ -3,6 +3,7 @@ use std::{io, io::BufRead, io::IsTerminal, io::Write};
 
 use crate::app::{App, AppError, GateDecision};
 use crate::dispatch::knot_ref;
+use crate::domain::execution_plan_edit::CascadeInfo;
 use crate::domain::gate::{parse_failure_mode_spec, GateData, GateOwnerKind};
 use crate::domain::knot_type::KnotType;
 use crate::domain::state::KnotState;
@@ -113,6 +114,29 @@ pub(super) fn terminal_cascade_prompt<W: Write, R: BufRead>(
         "  {}",
         crate::state_hierarchy::format_hierarchy_knots(descendants)
     )?;
+    write!(writer, "continue? [y/N]: ")?;
+    writer.flush()?;
+
+    let mut input = String::new();
+    reader.read_line(&mut input)?;
+    Ok(is_terminal_cascade_approval(&input))
+}
+
+pub(crate) fn plan_cascade_prompt<W: Write, R: BufRead>(
+    writer: &mut W,
+    reader: &mut R,
+    summary: &str,
+    cascade: &CascadeInfo,
+) -> Result<bool, AppError> {
+    writeln!(
+        writer,
+        "{summary} will cascade delete {} step(s) and affect {} knot id(s):",
+        cascade.step_count,
+        cascade.affected_knot_ids.len()
+    )?;
+    if !cascade.affected_knot_ids.is_empty() {
+        writeln!(writer, "  {}", cascade.affected_knot_ids.join(", "))?;
+    }
     write!(writer, "continue? [y/N]: ")?;
     writer.flush()?;
 

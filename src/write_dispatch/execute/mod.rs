@@ -13,6 +13,7 @@ use super::helpers::{
     reject_non_claim_lease_binding,
 };
 
+pub(crate) mod execute_plan_ops;
 mod execute_write_ops;
 
 pub(crate) fn execute_operation(app: &App, operation: &WriteOperation) -> Result<String, AppError> {
@@ -26,6 +27,12 @@ pub(crate) fn execute_operation(app: &App, operation: &WriteOperation) -> Result
         WriteOperation::Claim(args) => execute_claim(app, args),
         WriteOperation::PollClaim(args) => execute_poll_claim(app, args),
         WriteOperation::GateEvaluate(args) => execute_gate_evaluate(app, args),
+        WriteOperation::PlanWaveAdd(args) => execute_plan_ops::execute_wave_add(app, args),
+        WriteOperation::PlanWaveRemove(args) => execute_plan_ops::execute_wave_remove(app, args),
+        WriteOperation::PlanWaveMove(args) => execute_plan_ops::execute_wave_move(app, args),
+        WriteOperation::PlanStepAdd(args) => execute_plan_ops::execute_step_add(app, args),
+        WriteOperation::PlanStepRemove(args) => execute_plan_ops::execute_step_remove(app, args),
+        WriteOperation::PlanStepMove(args) => execute_plan_ops::execute_step_move(app, args),
         WriteOperation::EdgeAdd(args) => {
             let edge = app.add_edge(&args.src, &args.kind, &args.dst)?;
             Ok(format!(

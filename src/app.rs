@@ -11,9 +11,9 @@ use crate::sync::SyncSummary;
 use crate::workflow::{ProfileDefinition, ProfileRegistry};
 
 mod alias;
-mod execution_plan_edit;
 mod edges;
 pub mod error;
+mod execution_plan_edit;
 mod gate;
 mod gate_metadata;
 pub mod helpers;

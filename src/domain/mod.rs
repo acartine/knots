@@ -1,4 +1,5 @@
 pub mod execution_plan;
+pub mod execution_plan_edit;
 pub mod gate;
 pub mod invariant;
 pub mod knot_type;

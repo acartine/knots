@@ -8,6 +8,7 @@ mod cli_agent;
 mod cli_help;
 mod cli_loom;
 mod cli_ops;
+mod cli_plan;
 mod cli_skills;
 mod cli_workflow;
 mod completions;
@@ -265,6 +266,7 @@ fn command_name(command: &cli::Commands) -> &'static str {
         Commands::Rehydrate(_) => "rehydrate",
         Commands::Edge(_) => "edge",
         Commands::Gate(_) => "gate",
+        Commands::Plan(_) => "plan",
         Commands::Next(_) => "next",
         Commands::Rollback(_) => "rollback",
         Commands::Skill(_) => "skill",
