@@ -279,6 +279,18 @@ lazily terminated on the next interaction and unblock sync.
 For full lifecycle details, timeout configuration, extension, and manual
 management commands see [docs/leases.md](docs/leases.md).
 
+## Execution Plans
+
+Use the `execution_plan` knot type when the knot itself is coordinating other
+knots. Its structure is intentionally simple:
+
+- waves run in sequence
+- steps within a wave run in sequence
+- knots attached to the same step are intended to be executable concurrently
+
+For the full taxonomy, examples, and a CLI walkthrough that builds a plan from
+scratch, see [docs/execution-plans.md](docs/execution-plans.md).
+
 ## JSON output
 
 Both commands support `--json` for programmatic consumption:
