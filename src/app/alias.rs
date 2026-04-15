@@ -51,6 +51,29 @@ impl App {
         resolve_knot_suffix(token, &maps)
     }
 
+    /// Like `resolve_knot_token`, but returns an error when the
+    /// token does not match any known knot.
+    pub(super) fn resolve_knot_token_strict(&self, token: &str) -> Result<String, AppError> {
+        if token.trim().is_empty() {
+            return Err(AppError::InvalidArgument(
+                "knot id cannot be empty".to_string(),
+            ));
+        }
+        let maps = self.alias_maps()?;
+        if let Some(id) = maps.alias_to_id.get(token) {
+            return Ok(id.clone());
+        }
+        let resolved = resolve_knot_suffix(token, &maps)?;
+        if maps.id_to_alias.contains_key(&resolved) {
+            Ok(resolved)
+        } else {
+            Err(AppError::NotFound(format!(
+                "knot id '{}' does not match any known knot",
+                token
+            )))
+        }
+    }
+
     pub(super) fn with_alias_maps(knot: KnotView, maps: &AliasMaps) -> KnotView {
         let mut knot = knot;
         let alias = maps.id_to_alias.get(&knot.id).cloned();
@@ -63,20 +86,27 @@ impl App {
         knots: Vec<KnotView>,
     ) -> Result<Vec<KnotView>, AppError> {
         let maps = self.alias_maps()?;
-        Ok(knots
+        let mut knots: Vec<KnotView> = knots
             .into_iter()
             .map(|k| Self::with_alias_maps(k, &maps))
-            .collect())
+            .collect();
+        for knot in &mut knots {
+            self.normalize_execution_plan_for_display(knot, &maps)?;
+        }
+        Ok(knots)
     }
 
     pub(super) fn apply_alias_to_knot(&self, knot: KnotView) -> Result<KnotView, AppError> {
         let maps = self.alias_maps()?;
-        Ok(Self::with_alias_maps(knot, &maps))
+        let mut knot = Self::with_alias_maps(knot, &maps);
+        self.normalize_execution_plan_for_display(&mut knot, &maps)?;
+        Ok(knot)
     }
 
     pub(super) fn apply_alias_and_enrich_knot(&self, knot: KnotView) -> Result<KnotView, AppError> {
         let maps = self.alias_maps()?;
         let mut knot = Self::with_alias_maps(knot, &maps);
+        self.normalize_execution_plan_for_display(&mut knot, &maps)?;
         workflow_runtime::enrich_step_metadata(&mut knot, &self.profile_registry)?;
         Ok(knot)
     }
@@ -87,6 +117,22 @@ impl App {
             Some(pid) => generate_knot_id_from_slug(pid, |c| existing.contains(c)),
             None => generate_knot_id(&self.repo_root, |c| existing.contains(c)),
         })
+    }
+
+    fn normalize_execution_plan_for_display(
+        &self,
+        knot: &mut KnotView,
+        maps: &AliasMaps,
+    ) -> Result<(), AppError> {
+        if let Some(plan) = knot.execution_plan.as_mut() {
+            plan.normalize_knot_ids(|token| {
+                if let Some(id) = maps.alias_to_id.get(token) {
+                    return Ok(id.clone());
+                }
+                resolve_knot_suffix(token, maps)
+            })?;
+        }
+        Ok(())
     }
 }
 

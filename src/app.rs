@@ -11,6 +11,7 @@ use crate::sync::SyncSummary;
 use crate::workflow::{ProfileDefinition, ProfileRegistry};
 
 mod alias;
+mod execution_plan_edit;
 mod edges;
 pub mod error;
 mod gate;
@@ -284,6 +285,9 @@ mod tests_terminal_deferred;
 #[cfg(test)]
 #[path = "app/tests_update_ext.rs"]
 mod tests_update_ext;
+#[cfg(test)]
+#[path = "app/tests_update_normalize_ids.rs"]
+mod tests_update_normalize_ids;
 #[cfg(test)]
 #[path = "app/tests_workflow_roots.rs"]
 mod tests_workflow_roots;

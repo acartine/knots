@@ -55,11 +55,16 @@ impl App {
         initial_state: Option<&str>,
         profile_id: Option<&str>,
         workflow_id: Option<&str>,
-        options: CreateKnotOptions,
+        mut options: CreateKnotOptions,
     ) -> Result<KnotView, AppError> {
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        if !options.execution_plan_data.is_empty() {
+            options
+                .execution_plan_data
+                .normalize_knot_ids(|token| self.resolve_knot_token_strict(token))?;
+        }
         let (profile, state) =
             self.resolve_create_params(profile_id, workflow_id, initial_state, options.knot_type)?;
         require_state_for_knot_type(options.knot_type, profile, &state)?;

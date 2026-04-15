@@ -11,21 +11,32 @@ use crate::app::types::UpdateKnotPatch;
 
 use super::UpdateState;
 
-pub(crate) fn collect_field_events(
+pub(crate) fn collect_field_events<F>(
     patch: &UpdateKnotPatch,
     events: &mut Vec<FullEvent>,
     id: &str,
     at: &str,
     us: &mut UpdateState,
     current: &KnotCacheRecord,
-) -> Result<(), AppError> {
+    resolve_knot_id: F,
+) -> Result<(), AppError>
+where
+    F: Fn(&str) -> Result<String, AppError>,
+{
     collect_title(patch, events, id, at, &mut us.title)?;
     collect_description(patch, events, id, at, &mut us.description, &mut us.body);
     collect_acceptance(patch, events, id, at, &mut us.acceptance);
     collect_priority(patch, events, id, at, &mut us.priority)?;
     collect_type(patch, events, id, at, &mut us.knot_type);
     collect_gate(patch, events, id, at, &mut us.gate_data, us.knot_type)?;
-    collect_execution_plan(patch, events, id, at, &mut us.execution_plan_data);
+    collect_execution_plan(
+        patch,
+        events,
+        id,
+        at,
+        &mut us.execution_plan_data,
+        &resolve_knot_id,
+    )?;
     collect_tags(patch, events, id, at, &mut us.tags);
     collect_invariants(patch, events, id, at, &mut us.invariants, current);
     collect_note(patch, events, id, at, &mut us.notes)?;
@@ -235,8 +246,10 @@ fn collect_execution_plan(
     id: &str,
     at: &str,
     execution_plan_data: &mut crate::domain::execution_plan::ExecutionPlanData,
-) {
-    if let Some(next) = patch.execution_plan_data.clone() {
+    resolve_knot_id: &dyn Fn(&str) -> Result<String, AppError>,
+) -> Result<(), AppError> {
+    if let Some(mut next) = patch.execution_plan_data.clone() {
+        next.normalize_knot_ids(resolve_knot_id)?;
         if next != *execution_plan_data {
             *execution_plan_data = next;
             events.push(FullEvent::with_identity(
@@ -248,6 +261,7 @@ fn collect_execution_plan(
             ));
         }
     }
+    Ok(())
 }
 
 fn collect_invariants(

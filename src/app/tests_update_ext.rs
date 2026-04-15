@@ -230,6 +230,12 @@ fn update_knot_persists_execution_plan_and_rehydrates_it() {
     let created = app
         .create_knot("Plan", None, Some("idea"), Some("default"))
         .expect("created");
+    let ref1 = app
+        .create_knot("Ref 1", None, Some("idea"), Some("default"))
+        .expect("ref1");
+    let ref2 = app
+        .create_knot("Ref 2", None, Some("idea"), Some("default"))
+        .expect("ref2");
 
     let execution_plan_data = ExecutionPlanData {
         repo_path: Some("/repo".to_string()),
@@ -238,8 +244,8 @@ fn update_knot_persists_execution_plan_and_rehydrates_it() {
         mode: Some("autopilot".to_string()),
         model: Some("gpt-5".to_string()),
         assumptions: vec!["assume current knots are correct".to_string()],
-        knot_ids: vec!["knot-1".to_string()],
-        unassigned_knot_ids: vec!["knot-2".to_string()],
+        knot_ids: vec![ref1.id.clone()],
+        unassigned_knot_ids: vec![ref2.id.clone()],
         waves: vec![ExecutionPlanWave {
             wave_index: 1,
             name: "Persist".to_string(),
@@ -250,12 +256,12 @@ fn update_knot_persists_execution_plan_and_rehydrates_it() {
                 specialty: Some("storage".to_string()),
             }],
             knots: vec![ExecutionPlanKnot {
-                id: "knot-1".to_string(),
+                id: ref1.id.clone(),
                 title: "Persist plan payload".to_string(),
             }],
             steps: vec![ExecutionPlanStep {
                 step_index: 1,
-                knot_ids: vec!["knot-1".to_string()],
+                knot_ids: vec![ref1.id.clone()],
                 notes: Some("Persist JSON".to_string()),
             }],
             notes: Some("First wave".to_string()),
@@ -271,10 +277,10 @@ fn update_knot_persists_execution_plan_and_rehydrates_it() {
             },
         )
         .expect("update should succeed");
-    assert_eq!(updated.execution_plan.as_ref(), Some(&execution_plan_data));
+    assert_eq!(updated.execution_plan.as_ref(), Some(&execution_plan_data),);
 
     let shown = app.show_knot(&created.id).expect("show").expect("exists");
-    assert_eq!(shown.execution_plan.as_ref(), Some(&execution_plan_data));
+    assert_eq!(shown.execution_plan.as_ref(), Some(&execution_plan_data),);
 
     let conn = crate::db::open_connection(db.to_str().expect("u")).expect("db");
     crate::db::delete_knot_hot(&conn, &created.id).expect("delete hot");
@@ -294,7 +300,7 @@ fn update_knot_persists_execution_plan_and_rehydrates_it() {
         .expect("exists");
     assert_eq!(
         rehydrated.execution_plan.as_ref(),
-        Some(&execution_plan_data)
+        Some(&execution_plan_data),
     );
 
     let _ = std::fs::remove_dir_all(root);
@@ -362,8 +368,27 @@ fn rehydrate_builds_hot_record_from_warm_and_full_events() {
 fn write_rehydrate_events(root: &Path) {
     let fp = root.join(".knots/events/2026/02/24/1001-knot.description_set.json");
     std::fs::create_dir_all(fp.parent().expect("p")).expect("m");
-    std::fs::write(&fp, "{\"event_id\":\"1001\",\"occurred_at\":\"2026-02-24T10:00:00Z\",\"knot_id\":\"K-9\",\"type\":\"knot.description_set\",\"data\":{\"description\":\"rehydrated details\"}}").expect("w");
+    let description_event = concat!(
+        "{\"event_id\":\"1001\",",
+        "\"occurred_at\":\"2026-02-24T10:00:00Z\",",
+        "\"knot_id\":\"K-9\",",
+        "\"type\":\"knot.description_set\",",
+        "\"data\":{\"description\":\"rehydrated details\"}}",
+    );
+    std::fs::write(&fp, description_event).expect("w");
     let ip = root.join(".knots/index/2026/02/24/1002-idx.knot_head.json");
     std::fs::create_dir_all(ip.parent().expect("p")).expect("m");
-    std::fs::write(&ip, "{\"event_id\":\"1002\",\"occurred_at\":\"2026-02-24T10:00:01Z\",\"type\":\"idx.knot_head\",\"data\":{\"knot_id\":\"K-9\",\"title\":\"Warm title\",\"state\":\"work_item\",\"workflow_id\":\"work_sdlc\",\"profile_id\":\"autopilot\",\"updated_at\":\"2026-02-24T10:00:01Z\",\"terminal\":false}}").expect("w");
+    let head_event = concat!(
+        "{\"event_id\":\"1002\",",
+        "\"occurred_at\":\"2026-02-24T10:00:01Z\",",
+        "\"type\":\"idx.knot_head\",",
+        "\"data\":{\"knot_id\":\"K-9\",",
+        "\"title\":\"Warm title\",",
+        "\"state\":\"work_item\",",
+        "\"workflow_id\":\"work_sdlc\",",
+        "\"profile_id\":\"autopilot\",",
+        "\"updated_at\":\"2026-02-24T10:00:01Z\",",
+        "\"terminal\":false}}",
+    );
+    std::fs::write(&ip, head_event).expect("w");
 }

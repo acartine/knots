@@ -144,6 +144,7 @@ fn update_knot_locked(
         &occurred_at,
         &mut us,
         &current,
+        |token| app.resolve_knot_token_strict(token),
     )?;
 
     if full_events.is_empty() {
