@@ -1,5 +1,12 @@
 # kno
 
+## 0.15.1
+
+### Patch Changes
+
+- 8bd262d: Fix builtin workflow profile lookup so execution plan knots advance through the
+  correct workflow family.
+
 ## 0.15.0
 
 ### Minor Changes
