@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use serde_json::json;
+
 use crate::db::{self, KnotCacheRecord, UpsertKnotHot};
 use crate::domain::knot_type::parse_knot_type;
 use crate::events::{
@@ -111,20 +113,37 @@ impl UpdateState {
 fn update_knot_locked(
     app: &App,
     id: &str,
-    mut current: KnotCacheRecord,
+    current: KnotCacheRecord,
     patch: UpdateKnotPatch,
     approve_terminal_cascade: bool,
 ) -> Result<KnotView, AppError> {
     let profile = app.resolve_profile_for_record(&current)?;
-    let profile_id = profile.id.clone();
+    let mut workflow_id = profile.workflow_id.clone();
+    let mut profile_id = profile.id.clone();
     let occurred_at = now_utc_rfc3339();
     let mut us = UpdateState::from_record(&current, patch.expected_profile_etag.clone());
+    let mut transition_current = current.clone();
     let mut full_events = Vec::new();
 
+    if let Some(next_type) = patch.knot_type.filter(|next| *next != us.knot_type) {
+        apply_type_change(
+            app,
+            &mut transition_current,
+            &mut us,
+            &mut full_events,
+            next_type,
+            &occurred_at,
+            id,
+            &mut workflow_id,
+            &mut profile_id,
+        )?;
+    }
+
     if let Some(next_raw) = patch.status.as_deref() {
+        let profile = app.profile_registry.require(&profile_id)?;
         apply_status_change(
             app,
-            &mut current,
+            &mut transition_current,
             &mut us,
             &mut full_events,
             next_raw,
@@ -137,18 +156,20 @@ fn update_knot_locked(
         )?;
     }
 
+    let mut field_patch = patch.clone();
+    field_patch.knot_type = None;
     fields::collect_field_events(
-        &patch,
+        &field_patch,
         &mut full_events,
         id,
         &occurred_at,
         &mut us,
-        &current,
+        &transition_current,
         |token| app.resolve_knot_token_strict(token),
     )?;
 
     if full_events.is_empty() {
-        return app.apply_alias_and_enrich_knot(KnotView::from(current));
+        return app.apply_alias_and_enrich_knot(KnotView::from(transition_current));
     }
 
     write_update_events_and_cache(
@@ -157,7 +178,7 @@ fn update_knot_locked(
         &current,
         &us,
         full_events,
-        &profile.workflow_id,
+        &workflow_id,
         &profile_id,
         &occurred_at,
         &patch,
@@ -169,6 +190,76 @@ fn update_knot_locked(
         app.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
     }
     app.apply_alias_and_enrich_knot(KnotView::from(updated))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn apply_type_change(
+    app: &App,
+    current: &mut KnotCacheRecord,
+    us: &mut UpdateState,
+    full_events: &mut Vec<FullEvent>,
+    next_type: crate::domain::knot_type::KnotType,
+    occurred_at: &str,
+    id: &str,
+    workflow_id: &mut String,
+    profile_id: &mut String,
+) -> Result<(), AppError> {
+    let next_profile_id = app.default_profile_id_for_knot_type(next_type)?;
+    let next_profile = app.profile_registry.require(&next_profile_id)?;
+    let from_profile_id = profile_id.clone();
+    let from_workflow_id = workflow_id.clone();
+    let from_state = us.state.clone();
+
+    let (next_state, next_deferred, next_blocked) = if next_profile.require_state(&us.state).is_ok()
+    {
+        (us.state.clone(), us.deferred.clone(), us.blocked.clone())
+    } else {
+        (
+            workflow_runtime::initial_state(next_type, next_profile),
+            None,
+            None,
+        )
+    };
+
+    full_events.push(FullEvent::with_identity(
+        new_event_id(),
+        occurred_at.to_string(),
+        id.to_string(),
+        FullEventKind::KnotTypeSet.as_str(),
+        json!({ "type": next_type.as_str() }),
+    ));
+    full_events.push(FullEvent::with_identity(
+        new_event_id(),
+        occurred_at.to_string(),
+        id.to_string(),
+        FullEventKind::KnotProfileSet.as_str(),
+        json!({
+            "from_workflow_id": from_workflow_id,
+            "workflow_id": next_profile.workflow_id,
+            "from_profile_id": from_profile_id,
+            "to_profile_id": next_profile.id,
+            "from_state": from_state,
+            "to_state": next_state,
+            "deferred_from_state": next_deferred,
+            "blocked_from_state": next_blocked,
+        }),
+    ));
+
+    us.knot_type = next_type;
+    us.state = next_state.clone();
+    us.deferred = next_deferred.clone();
+    us.blocked = next_blocked.clone();
+
+    current.state = next_state;
+    current.knot_type = Some(next_type.as_str().to_string());
+    current.workflow_id = next_profile.workflow_id.clone();
+    current.profile_id = next_profile.id.clone();
+    current.deferred_from_state = next_deferred;
+    current.blocked_from_state = next_blocked;
+
+    *workflow_id = next_profile.workflow_id.clone();
+    *profile_id = next_profile.id.clone();
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

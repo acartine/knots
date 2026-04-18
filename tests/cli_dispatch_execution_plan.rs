@@ -193,3 +193,32 @@ fn execution_plan_file_survives_rehydrate_after_hot_eviction() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn updating_work_knot_to_execution_plan_re_roots_workflow() {
+    let root = unique_workspace("knots-cli-exec-plan-type-update");
+    setup_repo(&root);
+    let db = root.join(".knots/cache/state.sqlite");
+    bootstrap_builtin_workflows(&root, &db);
+
+    let created = run_knots(&root, &db, &["new", "Needs orchestration"]);
+    assert_success(&created);
+    let knot_id = parse_created_id(&created);
+
+    let updated = run_knots(
+        &root,
+        &db,
+        &["update", &knot_id, "--type", "execution_plan"],
+    );
+    assert_success(&updated);
+
+    let shown = run_knots(&root, &db, &["show", &knot_id, "--json"]);
+    assert_success(&shown);
+    let view: Value = serde_json::from_slice(&shown.stdout).expect("show json should parse");
+    assert_eq!(view["type"], "execution_plan");
+    assert_eq!(view["workflow_id"], "execution_plan_sdlc");
+    assert_eq!(view["profile_id"], "autopilot");
+    assert_eq!(view["state"], "ready_for_design");
+
+    let _ = std::fs::remove_dir_all(root);
+}
