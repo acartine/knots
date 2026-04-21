@@ -1,5 +1,64 @@
 # kno
 
+## 0.15.3
+
+### Patch Changes
+
+- 9861dcd: Fix `kno doctor --fix` leaving `workflow_id_parity` (and other event-log
+  repairs) perpetually warning after a fix run. Repair events are emitted
+  into the local `.knots/index/` store, but the check scans the shared
+  `_worktree`, so the post-fix recheck never saw them. `apply_fixes` now
+  reports whether the event log was touched, and `run_doctor_with_fix_at`
+  publishes the repair events via a best-effort sync before the recheck.
+  Also prevents each subsequent `kno doctor --fix` from stacking duplicate
+  repair events for the same stale knots while waiting for a sync.
+- 33cbe7d: Fix `kno ls --type <type>` silently missing knots first materialized by
+  a `kno sync` pull. The sync-apply path never read `type` from
+  `idx.knot_head` event data when upserting a new cache row, so every
+  knot authored on another machine landed in the local `knot_hot` table
+  with `knot_type` NULL or empty — `kno ls --type execution_plan` (for
+  example) filtered them out.
+
+  Two changes:
+
+  - `build_index_upsert` now reads `data.type` from the index event and
+    falls back to the existing cached value only when the event omits
+    it. Future pulls populate `knot_type` correctly on first apply.
+  - New `knot_type_backfill` doctor check + `--fix` path backfills
+    already-corrupted caches by scanning the worktree's latest
+    `idx.knot_head` event per affected knot and writing the type back to
+    `knot_hot`. No event emission — purely a local cache repair.
+
+- ff4e566: Fix `kno rehydrate` and `kno doctor --fix`'s cold-tier sweep silently
+  failing for knots pulled from origin. `rehydrate_from_events` only
+  scanned the local `.knots/events/` and `.knots/index/` directories, but
+  events arriving via `kno sync` pull land in `.knots/_worktree/.knots/`
+  and are never copied into the local store. Rehydrating such a knot
+  failed with `missing workflow_id`, and `fix_cold_tier_imbalance`
+  swallowed the per-knot error — so the doctor warning persisted with
+  zero rehydrations even when there were plenty of cold candidates.
+
+  `rehydrate_from_events` now accepts multiple store roots and callers
+  pass both the local and worktree roots, deduped by relative filename
+  so locally-mirrored events aren't replayed twice.
+
+- b61cd69: Fix `kno sync` hard-failing on legacy events that predate the
+  2026-04-09 strictness change ("Remove legacy workflow runtime
+  fallbacks"). Two tolerant fallbacks are restored at apply time so a
+  bootstrap pull of a pre-cutoff repo no longer errors out with
+  `missing 'profile_id' string field`:
+
+  - `required_profile_id` defaults to `"autopilot"` when the field is
+    missing or empty, instead of erroring. Silent; the event log stays
+    intact and the cache row carries the modern default.
+  - `required_workflow_id` now recognizes the pre-registry name
+    `"default"` as a legacy value alongside `"compatibility"` and
+    `"knots_sdlc"`, translating it to `"work_sdlc"` at apply time with
+    the same one-time warning pattern.
+
+  Event files on disk are not rewritten — this is read-time translation,
+  consistent with the existing legacy-value handling.
+
 ## 0.15.2
 
 ### Patch Changes
