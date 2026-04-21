@@ -1,5 +1,26 @@
 # kno
 
+## 0.15.2
+
+### Patch Changes
+
+- fb9e855: Deprecate `--agent-name`, `--agent-model`, and `--agent-version` on `kno claim`.
+  The flags still work and continue to stamp metadata on the auto-created lease,
+  but the canonical pattern is now `kno lease create` followed by `kno claim
+--lease <id>`. Using the deprecated flags emits a warning to stderr and they
+  will be removed in a future release.
+- 65c23c0: Add a `workflow_id_parity` doctor check and `--fix` path. The check scans the
+  pulled worktree for knots whose latest `idx.knot_head` event lacks
+  `workflow_id`. `kno doctor --fix` publishes a minimal repair event per stale
+  knot so the shared event log eventually reaches parity with modern events —
+  active knots use the local DB state, archived knots use the cold catalog plus
+  the workflow inferred from the stale event's knot type.
+- 65c23c0: Fix `kno sync` failing on legacy `idx.knot_head` events written before
+  `workflow_id` became a required field. When `workflow_id` is missing, sync now
+  infers it from the event's knot type (defaulting to `work_sdlc` for `work`
+  knots), matching the existing `parse_knot_type` fallback convention. A
+  one-shot warning reports the inference.
+
 ## 0.15.1
 
 ### Patch Changes
