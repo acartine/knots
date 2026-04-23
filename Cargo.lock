@@ -363,7 +363,7 @@ dependencies = [
 
 [[package]]
 name = "knots"
-version = "0.15.3"
+version = "0.15.4"
 dependencies = [
  "clap",
  "clap_complete",
