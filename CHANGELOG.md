@@ -1,5 +1,28 @@
 # kno
 
+## 0.15.5
+
+### Patch Changes
+
+- 564671a: Execution plan knots now require an objective at creation and on update. `kno
+new` and `kno update` reject execution-plan knots that lack an objective, and
+  the execution-plan docs describe the field. Existing non-execution-plan knots
+  are unaffected.
+- 564671a: Gate evaluation prompts now carry the knot's acceptance criteria, so the
+  evaluator sees the same contract the author wrote. Prompt resolution threads
+  acceptance through `gate_sdlc/prompts/evaluating.md` and the knots prompt
+  pipeline; no flag changes, but evaluations gain context automatically on the
+  next claim.
+- 564671a: Agent identity is now stamped from the bound lease across every write sink
+  (next, rollback, claim, poll-claim, gate evaluate, step annotate, state, note,
+  handoff). The per-command `--agent-name`, `--agent-model`, `--agent-version`,
+  `--note-agent-*`, and `--handoff-agent-*` flags are still accepted for
+  compatibility but are runtime-ignored and emit a deprecation warning on stderr;
+  their help text is prefixed `[DEPRECATED — IGNORED]`. The deprecation warning
+  uses singular or plural wording depending on how many flags were supplied. `kno
+lease create` is unchanged — the lease remains the single declared source of
+  agent identity.
+
 ## 0.15.4
 
 ### Patch Changes
