@@ -1,5 +1,25 @@
 # kno
 
+## 0.15.6
+
+### Patch Changes
+
+- ce81baa: `kno doctor` no longer warns forever about `cold_tier_imbalance`. The check
+  now measures three real tier invariants — disjointness (no id in both hot and
+  cold), cold-is-terminal-only, and no stale-terminal hot rows — instead of
+  treating "fewer than 100 hot knots and a non-empty cold catalog" as a problem.
+  A repo whose cold tier holds only legitimately-old shipped/abandoned knots is
+  healthy. `kno doctor --fix` restores each invariant idempotently and the next
+  sync, sweep, and snapshot bootstrap all uphold them, so doctor stays `pass`.
+  See `docs/tier-balance.md`.
+- de08eac: Fix `kno sync` dropping descriptions for knots created with `kno new -d`. Create
+  now emits a separate `knot.description_set` event so the standard apply path
+  populates description on the receiving host. The sync-apply and rehydrate paths
+  also gained a backward-compat read of the inline `body` field on `knot.created`
+  events so descriptions on knots created before this fix are recovered on the
+  next pull. The compat reads will be removed once the pre-fix event cohort ages
+  out (tracked by knot `83b1`).
+
 ## 0.15.5
 
 ### Patch Changes
