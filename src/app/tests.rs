@@ -71,9 +71,60 @@ fn create_knot_updates_cache_and_writes_events() {
         .expect("knot should exist");
     assert_eq!(shown.title, created.title);
 
-    assert_eq!(count_json_files(&root.join(".knots/events")), 1);
+    // 2 full events: knot.created plus knot.description_set (because the
+    // create call provided a body).
+    assert_eq!(count_json_files(&root.join(".knots/events")), 2);
     assert_eq!(count_json_files(&root.join(".knots/index")), 1);
 
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn create_with_description_emits_knot_description_set_event() {
+    // Regression: creating a knot with `-d` used to embed the description
+    // only in `knot.created` as `body`, which sync apply on a new host
+    // dropped. We now additionally emit `knot.description_set` so the
+    // standard apply path picks it up like any other field update.
+    let root = unique_workspace();
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let app =
+        App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
+    app.create_knot(
+        "Title",
+        Some("body-style description"),
+        Some("idea"),
+        Some("default"),
+    )
+    .expect("create should succeed");
+    let events_root = root.join(".knots/events");
+    let mut found = false;
+    let mut stack = vec![events_root.clone()];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).expect("events dir readable") {
+            let path = entry.expect("entry readable").path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.ends_with("knot.description_set.json"))
+            {
+                let body = std::fs::read_to_string(&path).expect("read event");
+                assert!(
+                    body.contains("body-style description"),
+                    "description_set should carry the description text: {}",
+                    body
+                );
+                found = true;
+            }
+        }
+    }
+    assert!(
+        found,
+        "create with description must emit knot.description_set event"
+    );
     let _ = std::fs::remove_dir_all(root);
 }
 

@@ -88,6 +88,20 @@ fn apply_created(
     if data.contains_key("execution_plan") {
         p.execution_plan_data = parse_execution_plan_data_value(data.get("execution_plan"));
     }
+    // Compat: pre-fix `knot.created` events carried the description inline as
+    // `body`. Newer creates emit a separate `knot.description_set` that will
+    // overwrite this, but pre-fix events need it filled here so rehydrate
+    // doesn't drop the description. Tracked by knot `83b1`.
+    let body = data
+        .get("body")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string);
+    if body.is_some() && p.description.is_none() {
+        p.description = body.clone();
+        p.body = body;
+    }
     p.created_at = Some(event.occurred_at.clone());
     p.updated_at = event.occurred_at.clone();
 }

@@ -311,6 +311,20 @@ impl<'a> IncrementalApplier<'a> {
         path: &Path,
     ) -> Result<(), SyncError> {
         match event_type {
+            // Compat: pre-fix `knot.created` events carried the description
+            // inline as `body`. Newer creates emit a separate
+            // `knot.description_set`, but old events still need to populate
+            // description on first apply. Tracked by knot `83b1` for removal
+            // once that cohort ages out.
+            "knot.created" => {
+                let body = optional_string(data.get("body"));
+                self.apply_metadata_update(knot_id, |r| {
+                    if r.description.is_none() {
+                        r.description = body.clone();
+                        r.body = body.clone();
+                    }
+                })
+            }
             "knot.description_set" => self.apply_metadata_update(knot_id, |r| {
                 r.description = optional_string(data.get("description"));
                 r.body = r.description.clone();

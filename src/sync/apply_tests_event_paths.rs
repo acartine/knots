@@ -242,6 +242,130 @@ fn apply_missing_hot_note_event(applier: &IncrementalApplier<'_>, events_dir: &P
 }
 
 #[test]
+fn apply_full_event_legacy_knot_created_populates_description_from_body() {
+    // Regression: pre-fix `knot.created` events embedded the description
+    // inline as `body` and emitted no separate `knot.description_set`.
+    // Sync apply on a host that didn't yet have the knot used to drop the
+    // description entirely. This test pins the backward-compat read.
+    let root = setup_repo();
+    let conn = open_conn(&root);
+    seed_hot_knot(&conn, "K-LEGACY");
+    let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
+
+    let events_dir = root.join(".knots/events/2026/02/25");
+    std::fs::create_dir_all(&events_dir).expect("events directory should be creatable");
+    write_event_file(
+        &events_dir,
+        "6000-knot.created.json",
+        concat!(
+            "{\n",
+            "  \"event_id\": \"6000\",\n",
+            "  \"occurred_at\": \"2026-02-25T10:00:00Z\",\n",
+            "  \"knot_id\": \"K-LEGACY\",\n",
+            "  \"type\": \"knot.created\",\n",
+            "  \"data\": {\n",
+            "    \"title\": \"Seed\",\n",
+            "    \"state\": \"work_item\",\n",
+            "    \"workflow_id\": \"knots_sdlc\",\n",
+            "    \"profile_id\": \"automation_granular\",\n",
+            "    \"body\": \"Pre-fix description in body\",\n",
+            "    \"type\": \"work\"\n",
+            "  }\n",
+            "}\n"
+        ),
+    );
+    applier
+        .apply_full_event(Path::new(".knots/events/2026/02/25/6000-knot.created.json"))
+        .expect("legacy knot.created should apply");
+
+    let updated = db::get_knot_hot(&conn, "K-LEGACY")
+        .expect("hot lookup should succeed")
+        .expect("hot knot should remain present");
+    assert_eq!(
+        updated.description.as_deref(),
+        Some("Pre-fix description in body"),
+    );
+    assert_eq!(updated.body.as_deref(), Some("Pre-fix description in body"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn apply_full_event_knot_created_does_not_overwrite_existing_description() {
+    // If a `knot.description_set` has already populated the description,
+    // re-applying `knot.created` (e.g. in a repair pass) must not clobber it.
+    let root = setup_repo();
+    let conn = open_conn(&root);
+    db::upsert_knot_hot(
+        &conn,
+        &UpsertKnotHot {
+            id: "K-EXISTING",
+            title: "Seed",
+            state: "work_item",
+            updated_at: "2026-02-25T10:00:00Z",
+            body: Some("Authoritative description"),
+            description: Some("Authoritative description"),
+            acceptance: None,
+            priority: None,
+            knot_type: None,
+            tags: &[],
+            notes: &[],
+            handoff_capsules: &[],
+            invariants: &[],
+            step_history: &[],
+            gate_data: &crate::domain::gate::GateData::default(),
+            lease_data: &crate::domain::lease::LeaseData::default(),
+            execution_plan_data: &crate::domain::execution_plan::ExecutionPlanData::default(),
+            lease_id: None,
+            workflow_id: "knots_sdlc",
+            profile_id: "automation_granular",
+            profile_etag: Some("etag-1"),
+            deferred_from_state: None,
+            blocked_from_state: None,
+            created_at: Some("2026-02-25T10:00:00Z"),
+        },
+    )
+    .expect("hot knot should upsert");
+    let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
+
+    let events_dir = root.join(".knots/events/2026/02/25");
+    std::fs::create_dir_all(&events_dir).expect("events directory should be creatable");
+    write_event_file(
+        &events_dir,
+        "6001-knot.created.json",
+        concat!(
+            "{\n",
+            "  \"event_id\": \"6001\",\n",
+            "  \"occurred_at\": \"2026-02-25T10:00:00Z\",\n",
+            "  \"knot_id\": \"K-EXISTING\",\n",
+            "  \"type\": \"knot.created\",\n",
+            "  \"data\": {\n",
+            "    \"title\": \"Seed\",\n",
+            "    \"state\": \"work_item\",\n",
+            "    \"workflow_id\": \"knots_sdlc\",\n",
+            "    \"profile_id\": \"automation_granular\",\n",
+            "    \"body\": \"Stale body from pre-fix create\",\n",
+            "    \"type\": \"work\"\n",
+            "  }\n",
+            "}\n"
+        ),
+    );
+    applier
+        .apply_full_event(Path::new(".knots/events/2026/02/25/6001-knot.created.json"))
+        .expect("knot.created should apply");
+
+    let updated = db::get_knot_hot(&conn, "K-EXISTING")
+        .expect("hot lookup should succeed")
+        .expect("hot knot should remain present");
+    assert_eq!(
+        updated.description.as_deref(),
+        Some("Authoritative description")
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn apply_full_event_covers_priority_type_tag_remove_note_and_handoff() {
     let root = setup_repo();
     let conn = open_conn(&root);

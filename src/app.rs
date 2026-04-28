@@ -295,6 +295,9 @@ mod tests_hierarchy_auto_resolve;
 #[path = "app/tests_hierarchy_ext.rs"]
 mod tests_hierarchy_ext;
 #[cfg(test)]
+#[path = "app/tests_legacy_create_compat.rs"]
+mod tests_legacy_create_compat;
+#[cfg(test)]
 #[path = "app/tests_legacy_workflow_ids.rs"]
 mod tests_legacy_workflow_ids;
 #[cfg(test)]

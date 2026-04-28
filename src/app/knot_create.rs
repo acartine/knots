@@ -137,6 +137,7 @@ impl App {
             state,
         )?;
         let acceptance = options.acceptance.as_deref().and_then(non_empty);
+        let description = body.and_then(non_empty);
         let (step_metadata, next_step_metadata) = resolve_step_metadata(
             &self.profile_registry,
             profile.workflow_id.as_str(),
@@ -189,6 +190,7 @@ impl App {
             &knot_id,
             &occurred_at,
             acceptance.as_deref(),
+            description.as_deref(),
             options,
             &mut tags,
         )?;
@@ -232,9 +234,20 @@ impl App {
         knot_id: &str,
         occurred_at: &str,
         acceptance: Option<&str>,
+        description: Option<&str>,
         options: &CreateKnotOptions,
         tags: &mut Vec<String>,
     ) -> Result<(), AppError> {
+        if let Some(description) = description {
+            let event = FullEvent::with_identity(
+                new_event_id(),
+                occurred_at.to_string(),
+                knot_id.to_string(),
+                FullEventKind::KnotDescriptionSet.as_str(),
+                json!({ "description": description }),
+            );
+            self.writer.write(&EventRecord::full(event))?;
+        }
         if let Some(acceptance) = acceptance {
             let event = FullEvent::with_identity(
                 new_event_id(),
