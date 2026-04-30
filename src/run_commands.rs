@@ -2,8 +2,7 @@ use crate::action_prompt;
 use crate::cli::{
     ColdSubcommands, CompactArgs, DoctorArgs, FsckArgs, LeaseSubcommands, PerfArgs, SkillArgs,
 };
-use crate::db::ListHotParams;
-use crate::{app, dispatch, domain, lease, list_layout, listing, stream_output};
+use crate::{app, dispatch, domain, lease, list_layout, listing, pagination, stream_output};
 use crate::{print_json, progress, progress_reporter, ui};
 
 pub fn run_ls(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::AppError> {
@@ -60,30 +59,22 @@ fn print_cold_sweep_summary(app: &app::App, json: bool) {
 fn run_ls_paginated(app: &app::App, args: crate::cli::ListArgs) -> Result<(), app::AppError> {
     let limit = args.limit.unwrap_or(50);
     let offset = args.offset.unwrap_or(0);
-    let db_params = ListHotParams {
-        state: args.state.clone(),
-        knot_type: args.knot_type.clone(),
-        limit: Some(limit),
-        offset: Some(offset),
-    };
-    let (knots, total) = app.list_knots_paginated(&db_params)?;
     let filter = listing::KnotListFilter {
         include_all: args.all,
-        state: None,
-        knot_type: None,
+        state: args.state.clone(),
+        knot_type: args.knot_type.clone(),
         profile_id: args.profile_id.clone(),
         tags: args.tags.clone(),
         query: args.query.clone(),
     };
-    let knots = listing::apply_filters(knots, &filter);
+    let page = pagination::compute_paginated_list(app.list_knots()?, &filter, offset, limit);
     print_cold_sweep_summary(app, args.json);
     if args.json {
-        let page = app::PaginatedList::new(knots, total, offset, limit);
         print_json(&page);
     } else {
         let layout_edges = crate::trace::measure("list_layout_edges", || app.list_layout_edges())?;
         let rows = crate::trace::measure("layout_knots", || {
-            list_layout::layout_knots(knots, &layout_edges)
+            list_layout::layout_knots(page.data, &layout_edges)
         });
         ui::print_knot_list(&rows, &filter);
     }
