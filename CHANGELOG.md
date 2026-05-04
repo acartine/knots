@@ -1,5 +1,26 @@
 # kno
 
+## 0.15.8
+
+### Patch Changes
+
+- 8af7518: Tag, query, profile, and `--all` filters now apply before pagination on
+  `kno ls --json`. Previously, only `--state` and `--type` were pushed into
+  SQL, while tag/query filters ran after `LIMIT`/`OFFSET` was applied. As a
+  result, `kno ls --tag <tag> --json --limit 1` could return an empty data
+  array even when matches existed, and `total` reported the unfiltered hot
+  count instead of the filtered match count. The paginated path now
+  materializes the full hot tier, applies the same filter pipeline as the
+  non-paginated path, sets `total` to the filtered count, and slices the
+  filtered list by `offset`/`limit`. Pages are stable across offsets and
+  `has_more` is consistent with `total` and `data.length`.
+- becf694: `kno ls --json` now reports consistent pagination metadata for text queries
+  that filter out every row on the requested page. Previously, the SQL layer
+  paginated before the in-memory query filter ran, so a query with no matches
+  could return `data: []` alongside `total: 50` and `has_more: true`. The CLI
+  now applies all filters before paginating, so empty matches report
+  `total: 0` and `has_more: false`.
+
 ## 0.15.7
 
 ### Patch Changes
