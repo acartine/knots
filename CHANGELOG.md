@@ -1,5 +1,13 @@
 # kno
 
+## 0.15.9
+
+### Patch Changes
+
+- 7a4e510: Fix gitignore setup for Knots-managed project directories. `kno init` now
+  ensures `.knots` is ignored, while `kno skills install` ignores `.agents` and
+  `.claude` contents except for their allowlisted `skills` directories.
+
 ## 0.15.8
 
 ### Patch Changes
