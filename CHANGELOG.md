@@ -1,5 +1,31 @@
 # kno
 
+## 0.15.12
+
+### Patch Changes
+
+- 9fbf49e: Add `--e2e` support to `kno claim` and `kno poll` so end-to-end agent runs can
+  receive an explicit `e2e_continuation` workflow boundary. JSON claim output now
+  includes `e2e` and `workflow_boundary_kind`, while ordinary claims continue to
+  emit the default `single_action` boundary.
+- 597fbcf: Clarify the `planning` workflow prompt so agents create implementation child
+  knots without blocking the parent's `plan_review` transition. The prompt now
+  explicitly recommends `kno q "<title>"`, `kno new "<title>" -f`, or
+  `kno new "<title>" -p autopilot_no_planning` for child knots created during
+  planning, documents the create-then-link order with
+  `kno edge add <parent> parent_of <child>`, and adds a Hierarchy Gate note
+  explaining why a child created with the default `autopilot` profile (rank 1)
+  blocks the parent's `plan_review` transition (rank 3). Hierarchy gate
+  semantics are unchanged.
+- 9fbf49e: Enrich `kno ls --json` output for active action knots with bound lease agent
+  metadata. The `lease_agent` object now mirrors `kno show --json` by including
+  provider, agent, model, and version details when a lease is bound, while queued
+  knots without a bound lease continue to omit `lease_agent`.
+- 9fbf49e: Preserve tag casing in knot creation, updates, event replay, and sync while
+  continuing to treat duplicate tags case-insensitively. Tags such as `Alpha`
+  now display with the casing users entered instead of being normalized to
+  lowercase.
+
 ## 0.15.11
 
 ### Patch Changes
