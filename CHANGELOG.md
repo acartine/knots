@@ -1,5 +1,18 @@
 # kno
 
+## 0.15.13
+
+### Patch Changes
+
+- 0c9693e: Add a `nested_caches` doctor check that warns when cached `.knots` directories
+  are nested inside the canonical store. The warning lists each detected cache and
+  prints the manual `rm -rf <path>` cleanup command so users can resolve silent
+  state-drift risks deliberately.
+- aa52fde: Rename `kno skill <knot-id>` to `kno prompt <knot-id>` to remove the naming
+  collision with `kno skills` (the managed-skill installer). The old form still
+  works as a hidden alias for backward compatibility, but emits
+  `warning: 'kno skill' is deprecated; use 'kno prompt'` on stderr.
+
 ## 0.15.12
 
 ### Patch Changes
