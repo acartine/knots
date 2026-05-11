@@ -13,5 +13,5 @@ cd "${repo_root}"
 # temporary git repos are not confused by the parent context.
 unset GIT_DIR GIT_QUARANTINE_PATH GIT_WORK_TREE 2>/dev/null || true
 
-echo "Running make coverage before push..."
-make coverage
+echo "Running make sanity before push..."
+make sanity

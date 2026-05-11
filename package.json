@@ -7,7 +7,9 @@
   "scripts": {
     "changeset": "changeset",
     "version-packages": "changeset version && node ./scripts/release/sync-cargo-version.mjs",
-    "check-cargo-version": "node ./scripts/release/sync-cargo-version.mjs --check"
+    "check-cargo-version": "node ./scripts/release/sync-cargo-version.mjs --check",
+    "check-changesets": "node ./scripts/release/check-changesets.mjs",
+    "test-release": "node --test ./scripts/release/*.test.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.28.0"

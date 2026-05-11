@@ -13,6 +13,7 @@ Build automation, release tooling, and git hooks.
 
 ## scripts/release/
 
+- **`check-changesets.mjs`** — validates changeset package keys before release
 - **`notes-from-changelog.sh`** — extract GitHub Release notes from CHANGELOG.md
 - **`sync-cargo-version.mjs`** — sync version between Cargo.toml and package.json
 - **`channel-install.sh`** — install from a named release channel

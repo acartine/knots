@@ -25,6 +25,9 @@ jobs:
       - name: Install release tooling
         run: npm install --no-audit --no-fund
 
+      - name: Validate changesets
+        run: npm run check-changesets
+
       - name: Create or update Version Packages PR
         uses: changesets/action@v1
         with:

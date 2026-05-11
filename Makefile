@@ -10,11 +10,13 @@ fmt:
 	cargo fmt --all -- --check
 
 lint:
+	npm run check-changesets
 	CARGO_TARGET_DIR=$(SANITY_TARGET_DIR) cargo clippy --all-targets --all-features -- -D warnings
 	bash scripts/repo/check-file-sizes.sh
 
 test:
 	CARGO_TARGET_DIR=$(SANITY_TARGET_DIR) cargo test --all-targets --all-features
+	npm run test-release
 
 coverage:
 	@if ! cargo tarpaulin --version >/dev/null 2>&1; then \
@@ -22,7 +24,8 @@ coverage:
 	  exit 1; \
 	fi
 	mkdir -p coverage
-	CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=$(SANITY_COVERAGE_TARGET_DIR) cargo tarpaulin --engine llvm --all-features \
+	CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=$(SANITY_COVERAGE_TARGET_DIR) \
+	  cargo tarpaulin --engine llvm --all-features \
 	  --workspace --timeout 120 --out Xml \
 	  --output-dir coverage --fail-under "$(COVERAGE_MIN)"
 
