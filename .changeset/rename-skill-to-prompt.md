@@ -1,5 +1,5 @@
 ---
-"kno": patch
+"knots": patch
 ---
 
 Rename `kno skill <knot-id>` to `kno prompt <knot-id>` to remove the naming
