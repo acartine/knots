@@ -49,14 +49,18 @@ Ship a new Knots release.
    silently omits user-facing changes from the changelog. Re-run this audit
    against the refreshed PR before continuing to step 4.
 
-   Changeset frontmatter must always use the npm package name:
-   `"knots": patch`, `"knots": minor`, or `"knots": major`. Never use the CLI
-   binary name `"kno"` as the Changesets package key; it is not a workspace
-   package and will make the `Changesets Version PR` workflow fail with
-   "Found changeset ... for package kno which is not in the workspace". Before
-   pushing changesets, run:
-   `rg -n '"kno": (patch|minor|major)' .changeset`
-   and fix any matches to `"knots": <bump>`.
+   **CHANGESET PACKAGE NAME INVARIANT: THE ONLY VALID PACKAGE NAME IS
+   `"knots"`.**
+   THIS IS NOT OPTIONAL. THIS IS NOT A BEST-EFFORT CHECK. NEVER WRITE
+   `"kno": patch`, `"kno": minor`, or `"kno": major` in changeset
+   frontmatter. `kno` is the CLI binary name only; it is NEVER a Changesets
+   package name. If a changeset contains `"kno"` as the package key, fix it to
+   `"knots"` before any commit, push, PR, or release step.
+
+   Every changeset frontmatter block must use exactly one of:
+   - `"knots": patch`
+   - `"knots": minor`
+   - `"knots": major`
 
 4. **Decide the path** —
    - If user-facing changes are on `main` and no version PR exists yet, let the

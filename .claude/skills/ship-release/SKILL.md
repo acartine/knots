@@ -49,6 +49,19 @@ Ship a new Knots release.
    from the changelog. Re-run this audit against the refreshed PR before
    continuing to step 4.
 
+   **CHANGESET PACKAGE NAME INVARIANT: THE ONLY VALID PACKAGE NAME IS
+   `"knots"`.**
+   THIS IS NOT OPTIONAL. THIS IS NOT A BEST-EFFORT CHECK. NEVER WRITE
+   `"kno": patch`, `"kno": minor`, or `"kno": major` in changeset
+   frontmatter. `kno` is the CLI binary name only; it is NEVER a Changesets
+   package name. If a changeset contains `"kno"` as the package key, fix it to
+   `"knots"` before any commit, push, PR, or release step.
+
+   Every changeset frontmatter block must use exactly one of:
+   - `"knots": patch`
+   - `"knots": minor`
+   - `"knots": major`
+
 4. **Decide the path** —
    - If user-facing changes are on `main` and no version PR exists yet, let the
      Changesets workflow create or update the `Version Packages` PR.
