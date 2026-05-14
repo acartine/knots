@@ -134,7 +134,10 @@ fn run_doctor_with_fix_progress_announces_diagnostics_then_per_fix_and_summary()
         "a freshly initialized repo should produce at least one fix line; got events: {:?}",
         reporter.events
     );
-    assert!(fix_lines.iter().all(|msg| msg.ends_with(" ok")));
+    assert!(fix_lines
+        .iter()
+        .all(|msg| msg.ends_with(" ok") || msg.ends_with(" skip")));
+    assert!(fix_lines.iter().any(|msg| msg.ends_with(" ok")));
     assert!(reporter
         .events
         .iter()
@@ -146,6 +149,11 @@ fn run_doctor_with_fix_progress_announces_diagnostics_then_per_fix_and_summary()
     assert!(
         last.1.contains("fixed") && last.1.contains("skipped") && last.1.contains("failed"),
         "summary line should report result, got {:?}",
+        last
+    );
+    assert!(
+        last.1.contains("0 failed"),
+        "unexpected failed fix: {:?}",
         last
     );
 

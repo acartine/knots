@@ -17,11 +17,11 @@ use gitignore::{
 #[path = "managed_skills_ops.rs"]
 mod ops;
 use ops::{
-    cleanup_legacy_locations, install_missing, installed_skills, preferred_location, render_skill,
-    skill_path, uninstall_managed, update_managed, write_skills,
+    cleanup_legacy_locations, install_missing, installed_skills, render_skill, skill_path,
+    uninstall_managed, update_managed, write_skills,
 };
 #[cfg(test)]
-use ops::{installed_locations, prompt_install_missing, remove_dir_if_empty};
+use ops::{installed_locations, preferred_location, prompt_install_missing, remove_dir_if_empty};
 #[path = "managed_skills_output.rs"]
 mod output;
 use output::format_skill_detail;
@@ -173,27 +173,33 @@ pub fn doctor_checks(repo_root: &Path) -> Vec<DoctorCheck> {
     doctor_checks_with_home(repo_root, home.as_deref())
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn fix_doctor_check(repo_root: &Path, check_name: &str) {
+    let _ = try_fix_doctor_check(repo_root, check_name);
+}
+
+pub(crate) fn try_fix_doctor_check(repo_root: &Path, check_name: &str) -> Result<bool, AppError> {
     let Some(tool) = tool_for_check_name(check_name) else {
-        return;
+        return Ok(false);
     };
     let home = std::env::var_os("HOME").map(PathBuf::from);
-    let _ = cleanup_legacy_locations(repo_root, home.as_deref(), tool);
+    cleanup_legacy_locations(repo_root, home.as_deref(), tool)?;
     if tool.uses_agents_root() && !repo_root.join(".agents").exists() {
-        return;
+        return Ok(false);
     }
-    let Ok(destination) = preferred_location(repo_root, home.as_deref(), tool) else {
-        return;
+    let Some(destination) = doctor_location(repo_root, home.as_deref(), tool) else {
+        return Ok(false);
     };
     match tool {
         SkillTool::Codex | SkillTool::OpenCode => {
-            let _ = ensure_agents_skills_gitignore(repo_root);
+            ensure_agents_skills_gitignore(repo_root)?;
         }
         SkillTool::Claude => {
-            let _ = ensure_claude_skills_gitignore(repo_root);
+            ensure_claude_skills_gitignore(repo_root)?;
         }
     }
-    let _ = reconcile_skills(&destination);
+    reconcile_skills(&destination)?;
+    Ok(true)
 }
 
 fn doctor_checks_with_home(repo_root: &Path, home: Option<&Path>) -> Vec<DoctorCheck> {
@@ -218,8 +224,8 @@ fn doctor_check(repo_root: &Path, home: Option<&Path>, tool: SkillTool) -> Docto
     let (status, detail) = match preferred {
         Some(location) => {
             let state = inspect_location(&location);
+            let gitignore_ok = managed_skills_gitignore_ok(repo_root, tool).unwrap_or(false);
             if state.is_current() {
-                let gitignore_ok = managed_skills_gitignore_ok(repo_root, tool).unwrap_or(false);
                 if gitignore_ok {
                     (
                         DoctorStatus::Pass,
@@ -242,10 +248,15 @@ fn doctor_check(repo_root: &Path, home: Option<&Path>, tool: SkillTool) -> Docto
                     )
                 }
             } else {
-                (
-                    DoctorStatus::Warn,
-                    format_skill_detail(tool, &location, &state.missing, &state.drifted),
-                )
+                let mut detail =
+                    format_skill_detail(tool, &location, &state.missing, &state.drifted);
+                if !gitignore_ok {
+                    detail.push_str(&format!(
+                        "; .gitignore does not blocklist {} except skills; run `kno doctor --fix`",
+                        managed_root_hint(tool)
+                    ));
+                }
+                (DoctorStatus::Warn, detail)
             }
         }
         None => (

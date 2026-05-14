@@ -219,8 +219,8 @@ fn doctor_without_fix_prints_hint_and_fix_creates_knots_branch() {
             "Fixing remote... ok",
             "Fixing gitignore... ok",
             "Fixing hooks... ok",
-            "Fixing skills_claude... ok",
-            "4 fixed, 0 skipped, 0 failed",
+            "Fixing skills_claude... skip",
+            "3 fixed, 1 skipped, 0 failed",
         ],
     );
     assert!(!String::from_utf8_lossy(&doctor_fix.stderr)

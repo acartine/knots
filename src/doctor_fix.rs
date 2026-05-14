@@ -72,73 +72,81 @@ pub(crate) fn apply_fixes_with_progress(
             continue;
         }
 
-        let applied = match check.name.as_str() {
+        let fix_result = match check.name.as_str() {
             "lock_health" => {
                 fix_lock_health(repo_root);
-                true
+                Ok(true)
             }
             "worktree" => {
                 fix_worktree(repo_root);
-                true
+                Ok(true)
             }
             "remote" => {
                 fix_remote(repo_root);
-                true
+                Ok(true)
             }
             "gitignore" => {
                 fix_gitignore(repo_root);
-                true
+                Ok(true)
             }
             "version" => {
                 fix_version();
-                true
+                Ok(true)
             }
             "hooks" => {
                 fix_hooks(repo_root);
-                true
+                Ok(true)
             }
             "workflow_registry" => {
                 fix_workflow_registry(repo_root);
-                true
+                Ok(true)
             }
             "schema_version" => {
                 fix_schema_version(repo_root);
-                true
+                Ok(true)
             }
             "stuck_leases" => {
                 fix_stuck_leases(repo_root);
-                true
+                Ok(true)
             }
             "terminal_parents" => {
                 fix_terminal_parents(repo_root);
                 outcome.event_log_touched = true;
-                true
+                Ok(true)
             }
             "cold_tier_imbalance" => {
                 crate::doctor_cold_tier::fix_cold_tier_imbalance(repo_root);
-                true
+                Ok(true)
             }
             "workflow_id_parity" => {
                 crate::doctor_workflow_parity::fix_workflow_id_parity(repo_root);
                 outcome.event_log_touched = true;
-                true
+                Ok(true)
             }
             "knot_type_backfill" => {
                 crate::doctor_knot_type_backfill::fix_knot_type_backfill(repo_root);
-                true
+                Ok(true)
             }
             name if name.starts_with("skills_") => {
-                crate::managed_skills::fix_doctor_check(repo_root, name);
-                true
+                crate::managed_skills::try_fix_doctor_check(repo_root, name)
+                    .map_err(|err| err.to_string())
             }
-            _ => false,
+            _ => Ok(false),
         };
-        let result = if applied {
-            summary.fixed += 1;
-            "ok"
-        } else {
-            summary.skipped += 1;
-            "skip"
+
+        let result = match fix_result {
+            Ok(true) => {
+                summary.fixed += 1;
+                "ok".to_string()
+            }
+            Ok(false) => {
+                summary.skipped += 1;
+                "skip".to_string()
+            }
+            Err(err) => {
+                summary.failed += 1;
+                format!("failed: {err}")
+            }
         };
         let _ = emit_progress(
             reporter,

@@ -182,18 +182,15 @@ fn claude_install_bootstraps_claude_gitignore_with_skills_allowlist() {
 }
 
 #[test]
-fn doctor_warns_and_fixes_installed_claude_skills_with_legacy_gitignore() {
+fn doctor_warns_and_fixes_installed_claude_skills_with_broken_gitignore() {
     let repo = unique_root("managed-skills-claude-gitignore-doctor");
     let home = unique_root("managed-skills-home");
     init_git_repo(&repo);
     fs::create_dir_all(repo.join(".claude")).expect("claude root");
 
     install_missing(&repo, Some(&home), SkillTool::Claude).expect("install");
-    fs::write(
-        repo.join(".gitignore"),
-        "/.claude/*\n!/.claude/skills/\n!/.claude/skills/**\n",
-    )
-    .expect("legacy gitignore should write");
+    fs::write(repo.join(".gitignore"), "/.claude/**\n!/.claude/skills/\n")
+        .expect("broken gitignore should write");
 
     let check = doctor_check(&repo, Some(&home), SkillTool::Claude);
     assert_eq!(check.status, DoctorStatus::Warn);
@@ -211,6 +208,68 @@ fn doctor_warns_and_fixes_installed_claude_skills_with_legacy_gitignore() {
     assert!(!check_ignore(&repo, ".claude/skills/knots/SKILL.md"));
     let check = doctor_check(&repo, Some(&home), SkillTool::Claude);
     assert_eq!(check.status, DoctorStatus::Pass);
+}
+
+#[test]
+fn doctor_fix_updates_drifted_skills_without_rewriting_effective_gitignore() {
+    let repo = unique_root("managed-skills-drift-no-gitignore-rewrite");
+    let home = unique_root("managed-skills-home");
+    init_git_repo(&repo);
+    fs::create_dir_all(repo.join(".agents")).expect("agents root");
+    fs::create_dir_all(repo.join(".claude")).expect("claude root");
+
+    install_missing(&repo, Some(&home), SkillTool::Codex).expect("codex install");
+    install_missing(&repo, Some(&home), SkillTool::Claude).expect("claude install");
+
+    let gitignore = "\
+.claude/*
+!.claude/skills/
+!.claude/skills/**
+/.agents/*
+!/.agents/skills/
+!/.agents/skills/**
+";
+    fs::write(repo.join(".gitignore"), gitignore).expect("gitignore should write");
+
+    let e2e = managed_skills()
+        .iter()
+        .copied()
+        .find(|skill| skill.deploy_name == "knots-e2e")
+        .expect("knots-e2e should be managed");
+    let agents_skill = repo.join(".agents/skills/knots-e2e/SKILL.md");
+    let claude_skill = repo.join(".claude/skills/knots-e2e/SKILL.md");
+    fs::write(&agents_skill, "stale").expect("agents skill should be writable");
+    fs::write(&claude_skill, "stale").expect("claude skill should be writable");
+
+    let codex = doctor_check(&repo, Some(&home), SkillTool::Codex);
+    assert_eq!(codex.status, DoctorStatus::Warn);
+    assert!(codex.detail.contains("managed skill drift detected"));
+    assert!(!codex.detail.contains(".gitignore does not blocklist"));
+
+    let checks = [
+        crate::doctor::DoctorCheck::simple("skills_codex", DoctorStatus::Warn, "drift"),
+        crate::doctor::DoctorCheck::simple("skills_claude", DoctorStatus::Warn, "drift"),
+        crate::doctor::DoctorCheck::simple("skills_opencode", DoctorStatus::Warn, "drift"),
+    ];
+    let outcome = crate::doctor_fix::apply_fixes(&repo, &checks);
+    assert!(!outcome.event_log_touched);
+
+    assert_eq!(
+        fs::read_to_string(&agents_skill).expect("agents skill"),
+        render_skill(e2e)
+    );
+    assert_eq!(
+        fs::read_to_string(&claude_skill).expect("claude skill"),
+        render_skill(e2e)
+    );
+    assert_eq!(
+        fs::read_to_string(repo.join(".gitignore")).expect("gitignore"),
+        gitignore
+    );
+    assert!(check_ignore(&repo, ".agents/private.txt"));
+    assert!(check_ignore(&repo, ".claude/settings.local.json"));
+    assert!(!check_ignore(&repo, ".agents/skills/knots-e2e/SKILL.md"));
+    assert!(!check_ignore(&repo, ".claude/skills/knots-e2e/SKILL.md"));
 }
 
 #[test]

@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 use crate::app::AppError;
 
@@ -30,19 +31,17 @@ fn ensure_managed_skills_gitignore(repo_root: &Path, dir: &str) -> Result<(), Ap
         String::new()
     };
 
+    if has_managed_skills_gitignore(repo_root, dir)? {
+        return Ok(());
+    }
+
     let rules = managed_skills_rules(dir);
-    let legacy_rules = [
-        format!("/{dir}/"),
-        format!("/{dir}/*"),
-        format!("!/{dir}/skills/"),
-        format!("!/{dir}/skills/**"),
-    ];
+    let known_rules = managed_skills_rule_variants(dir);
     let mut lines = contents
         .lines()
         .filter(|line| {
             let trimmed = line.trim();
-            !rules.iter().any(|rule| rule == trimmed)
-                && !legacy_rules.iter().any(|rule| rule == trimmed)
+            !known_rules.iter().any(|rule| rule == trimmed)
         })
         .map(ToOwned::to_owned)
         .collect::<Vec<_>>();
@@ -62,13 +61,13 @@ fn has_managed_skills_gitignore(repo_root: &Path, dir: &str) -> Result<bool, App
         return Ok(false);
     }
     let contents = fs::read_to_string(path)?;
-    let lines = contents
-        .lines()
-        .map(str::trim)
-        .collect::<std::collections::HashSet<_>>();
-    Ok(managed_skills_rules(dir)
-        .iter()
-        .all(|rule| lines.contains(rule.as_str())))
+    if contents.trim().is_empty() {
+        return Ok(false);
+    }
+    if let Some(policy_matches) = git_reports_managed_skills_policy(repo_root, dir) {
+        return Ok(policy_matches);
+    }
+    Ok(has_canonical_managed_skills_rules(&contents, dir))
 }
 
 fn managed_skills_rules(dir: &str) -> Vec<String> {
@@ -78,4 +77,85 @@ fn managed_skills_rules(dir: &str) -> Vec<String> {
         format!("!/{dir}/skills/"),
         format!("!/{dir}/skills/**"),
     ]
+}
+
+fn has_canonical_managed_skills_rules(contents: &str, dir: &str) -> bool {
+    let lines = contents
+        .lines()
+        .map(str::trim)
+        .collect::<std::collections::HashSet<_>>();
+    managed_skills_rules(dir)
+        .iter()
+        .all(|rule| lines.contains(rule.as_str()))
+}
+
+fn managed_skills_rule_variants(dir: &str) -> Vec<String> {
+    [
+        format!("{dir}/"),
+        format!("/{dir}/"),
+        format!("{dir}/*"),
+        format!("/{dir}/*"),
+        format!("{dir}/**"),
+        format!("/{dir}/**"),
+        format!("!{dir}/"),
+        format!("!/{dir}/"),
+        format!("!{dir}/skills/"),
+        format!("!/{dir}/skills/"),
+        format!("!{dir}/skills/**"),
+        format!("!/{dir}/skills/**"),
+    ]
+    .into()
+}
+
+fn git_reports_managed_skills_policy(repo_root: &Path, dir: &str) -> Option<bool> {
+    let private_file = format!("{dir}/private.txt");
+    let nested_worktree = format!("{dir}/worktrees/elastic-clarke-9c0ed3/.git");
+    let skill_file = format!("{dir}/skills/knots/SKILL.md");
+
+    let private = git_ignore_decision(repo_root, &private_file)?;
+    let worktree = git_ignore_decision(repo_root, &nested_worktree)?;
+    let skill = git_ignore_decision(repo_root, &skill_file)?;
+
+    Some(
+        private == IgnoreDecision::Ignored
+            && worktree == IgnoreDecision::Ignored
+            && skill == IgnoreDecision::Allowed,
+    )
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum IgnoreDecision {
+    Ignored,
+    Allowed,
+}
+
+fn git_ignore_decision(repo_root: &Path, path: &str) -> Option<IgnoreDecision> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo_root)
+        .args(["check-ignore", "--no-index", "-v", path])
+        .output()
+        .ok()?;
+
+    match output.status.code() {
+        Some(0) => parse_git_check_ignore(&output.stdout),
+        Some(1) => Some(IgnoreDecision::Allowed),
+        _ => None,
+    }
+}
+
+fn parse_git_check_ignore(stdout: &[u8]) -> Option<IgnoreDecision> {
+    let output = String::from_utf8_lossy(stdout);
+    let line = output.lines().last()?;
+    let (source, rest) = line.split_once(':')?;
+    if source != ".gitignore" {
+        return None;
+    }
+    let (_, pattern_and_path) = rest.split_once(':')?;
+    let (pattern, _) = pattern_and_path.split_once('\t')?;
+    if pattern.starts_with('!') {
+        Some(IgnoreDecision::Allowed)
+    } else {
+        Some(IgnoreDecision::Ignored)
+    }
 }
