@@ -1,6 +1,6 @@
 [package]
 name = "knots"
-version = "0.15.13"
+version = "0.15.14"
 edition = "2021"
 
 [lints.rust]
