@@ -179,52 +179,6 @@ fn required_workflow_id_infers_from_knot_type_when_missing() {
 }
 
 #[test]
-fn apply_index_event_rejects_unknown_workflow_with_upgrade_message() {
-    let root = setup_repo();
-    let conn = open_conn(&root);
-    db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
-    let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
-
-    let idx_dir = root.join(".knots/index/2026/02/25");
-    std::fs::create_dir_all(&idx_dir).expect("index directory should be creatable");
-    let now = time::OffsetDateTime::now_utc();
-    let ts = now
-        .format(&time::format_description::well_known::Rfc3339)
-        .expect("timestamp should format");
-    let payload = serde_json::json!({
-        "event_id": "9000",
-        "occurred_at": ts,
-        "type": "idx.knot_head",
-        "data": {
-            "knot_id": "K-future",
-            "title": "Future workflow",
-            "state": "work_item",
-            "workflow_id": "future_sdlc",
-            "profile_id": "autopilot",
-            "updated_at": ts,
-            "terminal": false
-        }
-    });
-    std::fs::write(idx_dir.join("9000-idx.knot_head.json"), payload.to_string())
-        .expect("index event should write");
-
-    let err = applier
-        .apply_index_event(Path::new(".knots/index/2026/02/25/9000-idx.knot_head.json"))
-        .expect_err("unknown workflow should fail");
-    let message = format!("{err}");
-    assert!(
-        message.contains("future_sdlc"),
-        "error should name the workflow: {message}"
-    );
-    assert!(
-        message.contains("kno upgrade"),
-        "error should suggest upgrade: {message}"
-    );
-
-    let _ = std::fs::remove_dir_all(root);
-}
-
-#[test]
 fn apply_index_event_converts_legacy_workflow_id_to_work_sdlc() {
     let root = setup_repo();
     let conn = open_conn(&root);

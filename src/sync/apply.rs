@@ -28,6 +28,7 @@ pub struct IncrementalApplier<'a> {
     git: GitAdapter,
     known_workflows: HashSet<String>,
     warned_legacy: HashSet<String>,
+    skipped_unknown_workflow_knots: HashSet<String>,
 }
 
 impl<'a> IncrementalApplier<'a> {
@@ -43,6 +44,7 @@ impl<'a> IncrementalApplier<'a> {
             git,
             known_workflows,
             warned_legacy: HashSet::new(),
+            skipped_unknown_workflow_knots: HashSet::new(),
         }
     }
 
@@ -216,16 +218,17 @@ impl<'a> IncrementalApplier<'a> {
             }
         }
         if !self.known_workflows.contains(&resolved.id) {
-            return Err(invalid_event(
-                &absolute_path,
-                &format!(
-                    "unrecognized workflow '{}'; \
-                     upgrade knots with `kno upgrade`",
-                    resolved.id
-                ),
-            ));
+            self.skipped_unknown_workflow_knots.insert(knot_id.clone());
+            eprintln!(
+                "warning: can't import knot '{}', unknown workflow '{}'. \
+                 The knot creator should install the workflow into the repository \
+                 so other users can view the knot.",
+                knot_id, resolved.id
+            );
+            return Ok(false);
         }
         let workflow_id = resolved.id;
+        self.skipped_unknown_workflow_knots.remove(&knot_id);
 
         if is_stale_precondition(self.conn, &knot_id, event.precondition.as_ref())? {
             return Ok(false);
@@ -275,6 +278,9 @@ impl<'a> IncrementalApplier<'a> {
         }
 
         let event: FullEvent = read_json_file(&absolute_path)?;
+        if self.skipped_unknown_workflow_knots.contains(&event.knot_id) {
+            return Ok(FullApplyOutcome::Ignored);
+        }
         let data = event
             .data
             .as_object()
@@ -484,3 +490,6 @@ mod tests_invariant;
 #[cfg(test)]
 #[path = "apply_tests_legacy_defaults.rs"]
 mod tests_legacy_defaults;
+#[cfg(test)]
+#[path = "apply_tests_unknown_workflow.rs"]
+mod tests_unknown_workflow;
