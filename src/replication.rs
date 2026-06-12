@@ -234,11 +234,11 @@ impl<'a> ReplicationService<'a> {
         emit_progress(
             reporter,
             ProgressKind::Info,
-            "pushing knots branch to origin",
+            format!("pushing knots data to {}", worktree.remote_display()),
         )?;
         match self
             .git
-            .push_branch(worktree.path(), worktree.remote(), worktree.branch())
+            .push_refspec(worktree.path(), worktree.remote(), &worktree.push_refspec())
         {
             Ok(()) => {
                 emit_progress(
@@ -255,6 +255,7 @@ impl<'a> ReplicationService<'a> {
                 }))
             }
             Err(err) if err.is_non_fast_forward() => Ok(PushAttemptResult::Retry(err)),
+            Err(err) if err.is_ref_policy_rejection() => Err(err),
             Err(err) => Err(err),
         }
     }
@@ -314,22 +315,26 @@ impl<'a> ReplicationService<'a> {
         emit_progress(
             reporter,
             ProgressKind::Info,
-            "refreshing knots worktree from origin/knots",
+            format!(
+                "refreshing knots worktree from {}",
+                worktree.remote_display()
+            ),
         )?;
-        match self.git.fetch_branch_with_filter(
+        match self.git.fetch_refspec_with_filter(
             &self.repo_root,
             worktree.remote(),
-            worktree.branch(),
+            &worktree.fetch_refspec(),
             crate::db::get_sync_fetch_blob_limit_kb(self.conn)?,
         ) {
             Ok(()) => {
-                let remote_ref = format!("{}/{}", worktree.remote(), worktree.branch());
                 emit_progress(
                     reporter,
                     ProgressKind::Info,
-                    format!("resetting knots worktree to {remote_ref}"),
+                    format!("resetting knots worktree to {}", worktree.tracking_rev()),
                 )?;
-                let head = self.git.rev_parse(&self.repo_root, &remote_ref)?;
+                let head = self
+                    .git
+                    .rev_parse(&self.repo_root, &worktree.tracking_rev())?;
                 self.git.reset_hard(worktree.path(), &head)?;
                 Ok(())
             }
@@ -337,7 +342,10 @@ impl<'a> ReplicationService<'a> {
                 emit_progress(
                     reporter,
                     ProgressKind::Warn,
-                    "origin/knots is unavailable; using local knots worktree state",
+                    format!(
+                        "{} is unavailable; using local knots worktree state",
+                        worktree.remote_display()
+                    ),
                 )?;
                 let head = self.git.rev_parse(worktree.path(), "HEAD")?;
                 self.git.reset_hard(worktree.path(), &head)?;
@@ -470,3 +478,7 @@ fn stage_paths(worktree_root: &Path) -> Vec<&'static str> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "replication/tests_ref_policy.rs"]
+mod tests_ref_policy;

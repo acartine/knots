@@ -28,7 +28,7 @@ fn push_pull_and_sync_emit_progress_and_json() {
             "scanning local knots event files",
             "checking",
             "copied",
-            "pushing knots branch to origin",
+            "pushing knots data to origin:refs/heads/knots",
             "push local_event_files=",
         ],
     );

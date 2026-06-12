@@ -84,20 +84,21 @@ impl<'a> SyncService<'a> {
         emit_progress(reporter, ProgressKind::Info, "preparing knots worktree")?;
         worktree.ensure_exists(&self.git)?;
 
-        let target_head = match self.git.fetch_branch_with_filter(
+        let target_head = match self.git.fetch_refspec_with_filter(
             &self.repo_root,
             worktree.remote(),
-            worktree.branch(),
+            &worktree.fetch_refspec(),
             crate::db::get_sync_fetch_blob_limit_kb(self.conn)?,
         ) {
             Ok(()) => {
-                let remote_ref = format!("{}/{}", worktree.remote(), worktree.branch());
                 emit_progress(
                     reporter,
                     ProgressKind::Info,
-                    format!("resetting knots worktree to {remote_ref}"),
+                    format!("resetting knots worktree to {}", worktree.tracking_rev()),
                 )?;
-                let head = self.git.rev_parse(&self.repo_root, &remote_ref)?;
+                let head = self
+                    .git
+                    .rev_parse(&self.repo_root, &worktree.tracking_rev())?;
                 self.git.reset_hard(worktree.path(), &head)?;
                 head
             }
@@ -105,7 +106,10 @@ impl<'a> SyncService<'a> {
                 emit_progress(
                     reporter,
                     ProgressKind::Warn,
-                    "origin/knots is unavailable; using local knots worktree state",
+                    format!(
+                        "{} is unavailable; using local knots worktree state",
+                        worktree.remote_display()
+                    ),
                 )?;
                 self.git.rev_parse(worktree.path(), "HEAD")?
             }
@@ -191,6 +195,7 @@ impl SyncError {
                 stderr.contains("unknown revision")
                     || stderr.contains("bad object")
                     || stderr.contains("bad revision")
+                    || stderr.contains("couldn't find remote ref")
             }
             _ => false,
         }
@@ -205,9 +210,19 @@ impl SyncError {
         match self {
             SyncError::GitCommandFailed { stderr, .. } => {
                 let lower = stderr.to_ascii_lowercase();
-                lower.contains("non-fast-forward")
-                    || lower.contains("fetch first")
-                    || lower.contains("rejected")
+                lower.contains("non-fast-forward") || lower.contains("fetch first")
+            }
+            _ => false,
+        }
+    }
+
+    pub fn is_ref_policy_rejection(&self) -> bool {
+        match self {
+            SyncError::GitCommandFailed { stderr, .. } => {
+                let lower = stderr.to_ascii_lowercase();
+                lower.contains("pre-receive hook declined")
+                    || lower.contains("remote rejected")
+                    || lower.contains("agent personas cannot push this ref")
             }
             _ => false,
         }

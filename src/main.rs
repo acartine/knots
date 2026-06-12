@@ -11,6 +11,7 @@ mod cli_ops;
 mod cli_plan;
 mod cli_scope;
 mod cli_skills;
+mod cli_sync_ref;
 mod cli_workflow;
 mod completions;
 mod db;
@@ -21,6 +22,7 @@ mod doctor_fix;
 mod doctor_gitignore;
 mod doctor_knot_type_backfill;
 mod doctor_nested_cache;
+mod doctor_sync_ref;
 mod doctor_workflow_parity;
 mod doctor_workflows;
 mod domain;
@@ -86,6 +88,8 @@ mod snapshots;
 mod state_hierarchy;
 mod stream_output;
 mod sync;
+mod sync_ref;
+mod sync_ref_migrate;
 mod tiering;
 mod trace;
 mod ui;
@@ -217,7 +221,7 @@ fn run() -> Result<(), app::AppError> {
         return project_commands::run_project_command(args, None, explicit_repo_root);
     }
 
-    if let Commands::Init = &cli.command {
+    if let Commands::Init(args) = &cli.command {
         if let Some(project_id) = cli.project.as_deref() {
             let repo_root = explicit_repo_root.or(Some(cwd.as_path()));
             let _ = project::load_named_project(None, project_id)
@@ -235,6 +239,9 @@ fn run() -> Result<(), app::AppError> {
         let context = project::resolve_context(None, explicit_repo_root, &cwd, None)
             .map_err(app::AppError::InvalidArgument)?;
         let db_path = resolve_db_path(&context, cli.db.as_deref());
+        if let Some(remote_ref) = args.remote_ref.as_deref() {
+            sync_ref::write_remote_ref_override(&context.repo_root, remote_ref)?;
+        }
         init::init_all(&context.repo_root, &db_path)?;
         println!("kno init completed");
         return Ok(());
@@ -272,6 +279,9 @@ fn run() -> Result<(), app::AppError> {
     }
     if let Commands::Skills(args) = &cli.command {
         return run_skills_command(&context.repo_root, args);
+    }
+    if let Commands::SyncRef(args) = &cli.command {
+        return sync_ref_migrate::run_sync_ref_command(&context.repo_root, args);
     }
     if let Commands::Profile(args) = &cli.command {
         return profile_commands::run_profile_command_with_context(args, &context, &db_path);
@@ -311,9 +321,10 @@ fn command_name(command: &cli::Commands) -> &'static str {
         Commands::Pull(_) => "pull",
         Commands::Push(_) => "push",
         Commands::Sync(_) => "sync",
-        Commands::Init => "init",
+        Commands::SyncRef(_) => "sync-ref",
+        Commands::Init(_) => "init",
         Commands::Uninit => "uninit",
-        Commands::InitRemote => "init-remote",
+        Commands::InitRemote(_) => "init-remote",
         Commands::Fsck(_) => "fsck",
         Commands::Doctor(_) => "doctor",
         Commands::Perf(_) => "perf",
@@ -346,9 +357,10 @@ fn dispatch_read_command(command: cli::Commands, app: &app::App) -> Result<(), a
         Commands::Pull(args) => run_commands::run_pull(app, args),
         Commands::Push(args) => run_commands::run_push(app, args),
         Commands::Sync(args) => run_commands::run_sync(app, args),
-        Commands::InitRemote => {
-            app.init_remote()?;
-            println!("initialized remote branch origin/knots");
+        Commands::InitRemote(args) => {
+            app.init_remote(args.remote_ref.as_deref())?;
+            let config = sync_ref::SyncRefConfig::for_repo(app.repo_root());
+            println!("initialized remote knots ref {}", config.remote_display());
             Ok(())
         }
         Commands::Fsck(args) => run_commands::run_fsck(app, args),

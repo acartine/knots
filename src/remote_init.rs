@@ -1,6 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use crate::sync_ref::SyncRefConfig;
+
 #[derive(Debug)]
 pub enum RemoteInitError {
     NotGitRepository,
@@ -87,7 +89,13 @@ impl From<std::io::Error> for RemoteInitError {
 }
 
 pub fn init_remote_knots_branch(repo_root: &Path) -> Result<(), RemoteInitError> {
-    init_remote_branch(repo_root, "origin", "knots")
+    let config = SyncRefConfig::for_repo(repo_root);
+    init_remote_ref(
+        repo_root,
+        config.remote(),
+        config.local_branch(),
+        config.remote_ref(),
+    )
 }
 
 pub fn detect_beads_hooks(repo_root: &Path) -> BeadsHookReport {
@@ -170,19 +178,35 @@ pub fn uninit_remote_knots_branch(
     Ok(true)
 }
 
+pub fn remote_knots_ref_exists(repo_root: &Path) -> Result<bool, RemoteInitError> {
+    let config = SyncRefConfig::for_repo(repo_root);
+    remote_ref_exists(repo_root, config.remote(), config.remote_ref())
+}
+
+#[cfg(test)]
 fn init_remote_branch(repo_root: &Path, remote: &str, branch: &str) -> Result<(), RemoteInitError> {
+    init_remote_ref(repo_root, remote, branch, &format!("refs/heads/{branch}"))
+}
+
+fn init_remote_ref(
+    repo_root: &Path,
+    remote: &str,
+    local_branch: &str,
+    remote_ref: &str,
+) -> Result<(), RemoteInitError> {
     if !repo_root.join(".git").exists() {
         return Err(RemoteInitError::NotGitRepository);
     }
 
     ensure_remote_exists(repo_root, remote)?;
-    ensure_remote_branch_missing(repo_root, remote, branch)?;
+    ensure_remote_ref_missing(repo_root, remote, remote_ref)?;
 
-    if !local_branch_exists(repo_root, branch)? {
-        run_checked(repo_root, &["branch", branch])?;
+    if !local_branch_exists(repo_root, local_branch)? {
+        run_checked(repo_root, &["branch", local_branch])?;
     }
 
-    let push_spec = format!("{}:{}", branch, branch);
+    let local_ref = format!("refs/heads/{local_branch}");
+    let push_spec = format!("{local_ref}:{remote_ref}");
     let push_args = ["push", "-u", remote, push_spec.as_str()];
     run_push_with_hook_fallback(repo_root, &push_args)?;
     Ok(())
@@ -196,19 +220,35 @@ fn ensure_remote_exists(repo_root: &Path, remote: &str) -> Result<(), RemoteInit
     Err(RemoteInitError::MissingRemote(remote.to_string()))
 }
 
-fn ensure_remote_branch_missing(
+fn remote_ref_exists(
     repo_root: &Path,
     remote: &str,
-    branch: &str,
-) -> Result<(), RemoteInitError> {
-    let output = run(
+    remote_ref: &str,
+) -> Result<bool, RemoteInitError> {
+    let output = run(repo_root, &["ls-remote", "--exit-code", remote, remote_ref])?;
+    if output.status.success() {
+        return Ok(true);
+    }
+    if output.status.code() == Some(2) {
+        return Ok(false);
+    }
+    Err(command_failure(
         repo_root,
-        &["ls-remote", "--exit-code", "--heads", remote, branch],
-    )?;
+        &["ls-remote", "--exit-code", remote, remote_ref],
+        output,
+    ))
+}
+
+fn ensure_remote_ref_missing(
+    repo_root: &Path,
+    remote: &str,
+    remote_ref: &str,
+) -> Result<(), RemoteInitError> {
+    let output = run(repo_root, &["ls-remote", "--exit-code", remote, remote_ref])?;
     if output.status.success() {
         return Err(RemoteInitError::RemoteBranchExists {
             remote: remote.to_string(),
-            branch: branch.to_string(),
+            branch: remote_ref.to_string(),
         });
     }
 
@@ -218,7 +258,7 @@ fn ensure_remote_branch_missing(
 
     Err(command_failure(
         repo_root,
-        &["ls-remote", "--exit-code", "--heads", remote, branch],
+        &["ls-remote", "--exit-code", remote, remote_ref],
         output,
     ))
 }

@@ -129,9 +129,12 @@ impl App {
         Ok(outcome)
     }
 
-    pub fn init_remote(&self) -> Result<(), AppError> {
+    pub fn init_remote(&self, remote_ref: Option<&str>) -> Result<(), AppError> {
         self.require_git_distribution("init-remote")?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        if let Some(remote_ref) = remote_ref {
+            crate::sync_ref::write_remote_ref_override(&self.repo_root, remote_ref)?;
+        }
         crate::init::ensure_knots_gitignore(&self.repo_root)?;
         init_remote_knots_branch(&self.repo_root)?;
         Ok(())

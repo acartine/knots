@@ -31,6 +31,18 @@ fn sync_error_classifiers_detect_expected_git_failures() {
     assert!(!non_fast_forward.is_missing_remote());
     assert!(!non_fast_forward.is_unknown_revision());
     assert!(non_fast_forward.is_non_fast_forward());
+
+    let ref_policy = SyncError::GitCommandFailed {
+        command: "git push".to_string(),
+        code: Some(1),
+        stderr: concat!(
+            "remote: diffinite: Agent Personas cannot push this ref\n",
+            "! HEAD:refs/heads/knots [remote rejected] (pre-receive hook declined)"
+        )
+        .to_string(),
+    };
+    assert!(ref_policy.is_ref_policy_rejection());
+    assert!(!ref_policy.is_non_fast_forward());
 }
 
 #[test]

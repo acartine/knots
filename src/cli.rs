@@ -11,6 +11,7 @@ pub use crate::cli_ops::*;
 pub use crate::cli_plan::*;
 pub use crate::cli_scope::*;
 pub use crate::cli_skills::*;
+pub use crate::cli_sync_ref::*;
 pub use crate::cli_workflow::*;
 
 pub fn styled_command() -> clap::Command {
@@ -99,12 +100,14 @@ pub enum Commands {
     Push(SyncArgs),
     #[command(about = "Push then pull knot updates.")]
     Sync(SyncArgs),
+    #[command(about = "Inspect and migrate the Git ref used for Knots sync data.")]
+    SyncRef(SyncRefArgs),
     #[command(about = "Initialize local store and remote or named project state.")]
-    Init,
+    Init(InitArgs),
     #[command(about = "Remove local knots store artifacts and delete remote branch.")]
     Uninit,
     #[command(about = "Create remote knots branch and ensure .knots is gitignored.")]
-    InitRemote,
+    InitRemote(InitRemoteArgs),
     #[command(about = "Validate on-disk knots event/index data.")]
     Fsck(FsckArgs),
     #[command(about = "Run repository health diagnostics.")]
@@ -167,6 +170,20 @@ pub struct QuickNewArgs {
         help = "Initial knot state (defaults to profile initial_state)."
     )]
     pub state: Option<String>,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Initialize local store and remote state.")]
+pub struct InitArgs {
+    #[arg(long = "remote-ref", help = "Remote ref used to store Knots data.")]
+    pub remote_ref: Option<String>,
+}
+
+#[derive(Debug, Args)]
+#[command(about = "Create remote Knots ref and ensure .knots is gitignored.")]
+pub struct InitRemoteArgs {
+    #[arg(long = "remote-ref", help = "Remote ref used to store Knots data.")]
+    pub remote_ref: Option<String>,
 }
 
 #[derive(Debug, Args)]

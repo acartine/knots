@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use crate::app::AppError;
 use crate::db;
 use crate::remote_init::{
-    detect_beads_hooks, init_remote_knots_branch, remote_branch_exists, uninit_remote_knots_branch,
-    RemoteInitError,
+    detect_beads_hooks, init_remote_knots_branch, remote_knots_ref_exists,
+    uninit_remote_knots_branch, RemoteInitError,
 };
 
 const ANSI_RESET: &str = "\x1b[0m";
@@ -23,16 +23,23 @@ pub(crate) fn init_all(repo_root: &Path, db_path: &str) -> Result<(), AppError> 
     init_local_store(repo_root, db_path)?;
     progress_ok("local store initialized")?;
     warn_if_beads_hooks_present(repo_root)?;
-    if remote_branch_exists(repo_root, "origin", "knots")? {
-        progress("found existing remote branch origin/knots")?;
+    let config = crate::sync_ref::SyncRefConfig::for_repo(repo_root);
+    if remote_knots_ref_exists(repo_root)? {
+        progress(&format!(
+            "found existing remote Knots ref {}",
+            config.remote_display()
+        ))?;
         progress("pulling knots from remote")?;
         pull_knots_from_remote(repo_root.to_path_buf(), db_path)?;
         progress_ok("knots pulled from remote")?;
     } else {
-        progress("initializing remote branch origin/knots")?;
+        progress(&format!(
+            "initializing remote Knots ref {}",
+            config.remote_display()
+        ))?;
         progress_note("this can take a bit...")?;
         init_remote_knots_branch(repo_root)?;
-        progress_ok("remote branch origin/knots initialized")?;
+        progress_ok("remote Knots ref initialized")?;
     }
     progress("installing sync hooks (post-merge)")?;
     match crate::git_hooks::install_hooks(repo_root) {

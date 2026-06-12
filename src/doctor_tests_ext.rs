@@ -81,7 +81,7 @@ fn remote_check_warns_when_knots_missing_and_passes_when_present() {
         .find(|check| check.name == "remote")
         .expect("remote check should exist");
     assert_eq!(remote_initial.status, DoctorStatus::Warn);
-    assert!(remote_initial.detail.contains("knots branch missing"));
+    assert!(remote_initial.detail.contains("refs/heads/knots missing"));
 
     run_git(&local, &["push", "origin", "HEAD:knots"]);
     let after = run_doctor(&local).expect("doctor should run after knots push");
@@ -91,7 +91,61 @@ fn remote_check_warns_when_knots_missing_and_passes_when_present() {
         .find(|check| check.name == "remote")
         .expect("remote check should exist");
     assert_eq!(remote_after.status, DoctorStatus::Pass);
-    assert!(remote_after.detail.contains("knots branch exists"));
+    assert!(remote_after.detail.contains("refs/heads/knots exists"));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn remote_check_reports_diffinite_work_ref_and_stale_legacy_head() {
+    let root = unique_workspace();
+    let origin_parent = root.join("diffinite.sneka.ai");
+    let origin = origin_parent.join("origin.git");
+    let local = root.join("local");
+
+    std::fs::create_dir_all(&origin_parent).expect("origin parent should be creatable");
+    std::fs::create_dir_all(&local).expect("local directory should be creatable");
+    run_git(
+        &root,
+        &["init", "--bare", origin.to_str().expect("utf8 origin path")],
+    );
+    run_git(&local, &["init"]);
+    run_git(&local, &["config", "user.email", "knots@example.com"]);
+    run_git(&local, &["config", "user.name", "Knots Test"]);
+    std::fs::write(local.join("README.md"), "# doctor\n").expect("readme should write");
+    run_git(&local, &["add", "README.md"]);
+    run_git(&local, &["commit", "-m", "init"]);
+    run_git(&local, &["branch", "-M", "main"]);
+    run_git(
+        &local,
+        &[
+            "remote",
+            "add",
+            "origin",
+            origin.to_str().expect("utf8 origin path"),
+        ],
+    );
+    run_git(&local, &["push", "-u", "origin", "main"]);
+    run_git(&local, &["push", "origin", "HEAD:refs/work/knots"]);
+    run_git(&local, &["push", "origin", "HEAD:refs/heads/knots"]);
+
+    let report = run_doctor(&local).expect("doctor should run");
+    let remote = report
+        .checks
+        .iter()
+        .find(|check| check.name == "remote")
+        .expect("remote check should exist");
+    assert_eq!(remote.status, DoctorStatus::Pass);
+    assert!(remote.detail.contains("refs/work/knots exists"));
+
+    let legacy = report
+        .checks
+        .iter()
+        .find(|check| check.name == "legacy_knots_head")
+        .expect("legacy check should exist");
+    assert_eq!(legacy.status, DoctorStatus::Warn);
+    assert!(legacy.detail.contains("refs/heads/knots"));
+    assert!(legacy.detail.contains("refs/work/knots"));
 
     let _ = std::fs::remove_dir_all(root);
 }

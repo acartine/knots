@@ -130,6 +130,10 @@ impl App {
         self.store_paths.cache_lock_path()
     }
 
+    pub(crate) fn repo_root(&self) -> &std::path::Path {
+        &self.repo_root
+    }
+
     fn read_pull_drift_warn_threshold(&self) -> Result<u64, AppError> {
         Ok(db::get_pull_drift_warn_threshold(&self.conn)?)
     }

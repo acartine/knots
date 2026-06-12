@@ -112,6 +112,33 @@ fn remote_branch_exists_and_uninit_cover_present_and_missing_paths() {
 }
 
 #[test]
+fn init_remote_knots_branch_uses_configured_full_remote_ref() {
+    let (root, local) = setup_repo_with_remote();
+    run_git(&local, &["config", "knots.remoteRef", "refs/work/knots"]);
+
+    init_remote_knots_branch(&local).expect("remote work ref init should succeed");
+
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(&local)
+        .args(["ls-remote", "origin", "refs/work/knots"])
+        .output()
+        .expect("git ls-remote should run");
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("refs/work/knots"));
+
+    let heads = Command::new("git")
+        .arg("-C")
+        .arg(&local)
+        .args(["ls-remote", "--exit-code", "origin", "refs/heads/knots"])
+        .output()
+        .expect("git ls-remote should run");
+    assert_eq!(heads.status.code(), Some(2));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn uninit_reports_not_repo_or_missing_remote_and_hooks_path_is_respected() {
     let root = unique_dir("knots-remote-init-not-repo");
     assert!(matches!(

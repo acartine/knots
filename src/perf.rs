@@ -90,7 +90,7 @@ pub fn run_perf_harness(iterations: u32) -> Result<PerfReport, PerfError> {
     let write_elapsed = benchmark_write_path(&app, iterations)?;
     let read_elapsed = benchmark_hot_reads(&app, iterations)?;
 
-    app.init_remote()
+    app.init_remote(None)
         .map_err(|err| PerfError::Other(err.to_string()))?;
     let _ = app
         .push()

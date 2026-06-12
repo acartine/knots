@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+use clap::Parser;
+
 use crate::cli::{Commands, HooksSubcommands, SelfUninstallArgs, SelfUpdateArgs};
 
 use crate::dispatch::knot_ref;
@@ -109,8 +111,33 @@ fn knot_ref_prefers_alias_when_available() {
 #[test]
 fn maybe_run_self_command_returns_none_for_non_self_commands() {
     let cwd = std::env::current_dir().expect("cwd should resolve");
-    let outcome = maybe_run_self_command(&Commands::Init, &cwd).expect("init probe should succeed");
+    let outcome = maybe_run_self_command(
+        &Commands::Init(crate::cli::InitArgs { remote_ref: None }),
+        &cwd,
+    )
+    .expect("init probe should succeed");
     assert!(outcome.is_none());
+}
+
+#[test]
+fn cli_parses_sync_ref_migrate_sources_and_target() {
+    let cli = crate::cli::Cli::parse_from([
+        "kno",
+        "sync-ref",
+        "migrate",
+        "--source",
+        "github:refs/heads/knots",
+        "--source",
+        "local",
+        "--target",
+        "origin:refs/work/knots",
+    ]);
+    let Commands::SyncRef(args) = cli.command else {
+        panic!("expected sync-ref command");
+    };
+    let crate::cli_sync_ref::SyncRefSubcommands::Migrate(migrate) = args.command;
+    assert_eq!(migrate.sources, ["github:refs/heads/knots", "local"]);
+    assert_eq!(migrate.target.as_deref(), Some("origin:refs/work/knots"));
 }
 
 #[test]

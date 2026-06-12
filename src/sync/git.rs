@@ -11,11 +11,11 @@ impl GitAdapter {
         Self
     }
 
-    pub fn fetch_branch_with_filter(
+    pub fn fetch_refspec_with_filter(
         &self,
         repo_root: &Path,
         remote: &str,
-        branch: &str,
+        refspec: &str,
         blob_limit_kb: Option<u64>,
     ) -> Result<(), SyncError> {
         let mut args = vec![
@@ -27,7 +27,7 @@ impl GitAdapter {
             args.push(format!("--filter=blob:limit={}k", limit_kb));
         }
         args.push(remote.to_string());
-        args.push(branch.to_string());
+        args.push(refspec.to_string());
         self.run_checked(repo_root, args)?;
         Ok(())
     }
@@ -191,14 +191,14 @@ impl GitAdapter {
         self.rev_parse(cwd, "HEAD")
     }
 
-    pub fn push_branch(&self, cwd: &Path, remote: &str, branch: &str) -> Result<(), SyncError> {
+    pub fn push_refspec(&self, cwd: &Path, remote: &str, refspec: &str) -> Result<(), SyncError> {
         self.run_checked(
             cwd,
             vec![
                 "push".to_string(),
                 "--no-verify".to_string(),
                 remote.to_string(),
-                branch.to_string(),
+                refspec.to_string(),
             ],
         )?;
         Ok(())

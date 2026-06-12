@@ -11,6 +11,7 @@ use crate::project::{DistributionMode, StorePaths};
 use crate::release_version::{fetch_latest_tag, is_outdated, strip_v_prefix, RELEASES_LATEST_URL};
 use crate::state_hierarchy::find_terminal_parent_resolutions;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError};
+use crate::sync_ref::SyncRefConfig;
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -111,6 +112,7 @@ pub fn run_doctor_at(
         check_locks(&store_paths)?,
         check_worktree(repo_root, &store_paths, distribution),
         check_remote(repo_root, distribution)?,
+        crate::doctor_sync_ref::check_legacy_knots_head(repo_root, distribution),
         crate::doctor_gitignore::check_gitignore(repo_root, distribution),
         check_version(),
         check_hooks(repo_root, distribution),
@@ -249,51 +251,53 @@ fn check_remote(
         ));
     }
 
+    let config = SyncRefConfig::for_repo(repo_root);
+    let remote = config.remote();
+    let remote_ref = config.remote_ref();
     let remote_url = Command::new("git")
         .arg("-C")
         .arg(repo_root)
-        .args(["remote", "get-url", "origin"])
+        .args(["remote", "get-url", remote])
         .output()?;
 
     if !remote_url.status.success() {
         return Ok(DoctorCheck::simple(
             "remote",
             DoctorStatus::Fail,
-            "remote 'origin' is not configured",
+            format!("remote '{remote}' is not configured"),
         ));
     }
 
     let ls_remote = Command::new("git")
         .arg("-C")
         .arg(repo_root)
-        .args(["ls-remote", "--heads", "origin"])
+        .args(["ls-remote", "--exit-code", remote, remote_ref])
         .output()?;
 
-    if !ls_remote.status.success() {
+    if ls_remote.status.success() {
         return Ok(DoctorCheck::simple(
             "remote",
-            DoctorStatus::Fail,
-            format!(
-                "origin is not reachable: {}",
-                String::from_utf8_lossy(&ls_remote.stderr).trim()
-            ),
+            DoctorStatus::Pass,
+            format!("{remote} reachable; knots ref {remote_ref} exists"),
         ));
     }
 
-    let knots_exists = String::from_utf8_lossy(&ls_remote.stdout)
-        .lines()
-        .any(|line| line.contains("refs/heads/knots"));
-
-    let (status, detail) = if knots_exists {
-        (DoctorStatus::Pass, "origin reachable; knots branch exists")
-    } else {
-        (
+    if ls_remote.status.code() == Some(2) {
+        return Ok(DoctorCheck::simple(
+            "remote",
             DoctorStatus::Warn,
-            "origin reachable; knots branch missing (run `kno init`)",
-        )
-    };
+            format!("{remote} reachable; knots ref {remote_ref} missing (run `kno init`)"),
+        ));
+    }
 
-    Ok(DoctorCheck::simple("remote", status, detail))
+    Ok(DoctorCheck::simple(
+        "remote",
+        DoctorStatus::Fail,
+        format!(
+            "{remote} is not reachable: {}",
+            String::from_utf8_lossy(&ls_remote.stderr).trim()
+        ),
+    ))
 }
 
 fn check_hooks(repo_root: &Path, distribution: DistributionMode) -> DoctorCheck {
