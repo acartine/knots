@@ -1,5 +1,13 @@
 # kno
 
+## 0.16.3
+
+### Patch Changes
+
+- a2289e9: Add Diffinite-safe Knots sync refs, including `refs/work/knots` defaults,
+  `kno sync-ref migrate`, and doctor diagnostics for stale legacy
+  `refs/heads/knots` state.
+
 ## 0.16.2
 
 ### Patch Changes
