@@ -724,7 +724,7 @@ dependencies = [
 
 [[package]]
 name = "knots"
-version = "0.16.6"
+version = "0.17.0"
 dependencies = [
  "axum",
  "clap",

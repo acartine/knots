@@ -1,5 +1,14 @@
 # kno
 
+## 0.17.0
+
+### Minor Changes
+
+- 51b7ec0: Add the feature-gated `kno-mcp` binary scaffold and structured JSON output for knot creation.
+  Log deferred MCP sync outcomes so the background loop advertises retry status.
+  Publish MCP-owned mutations despite active MCP session leases and keep sandbox attribution current
+  across HTTP initializes.
+
 ## 0.16.6
 
 ### Patch Changes
