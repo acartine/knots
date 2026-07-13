@@ -21,6 +21,7 @@ impl GitAdapter {
         let mut args = vec![
             "fetch".to_string(),
             "--no-tags".to_string(),
+            "--no-write-fetch-head".to_string(),
             "--prune".to_string(),
         ];
         if let Some(limit_kb) = blob_limit_kb {
