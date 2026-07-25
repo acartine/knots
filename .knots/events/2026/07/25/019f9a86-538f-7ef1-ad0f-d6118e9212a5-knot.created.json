@@ -1,0 +1,17 @@
+{
+  "event_id": "019f9a86-538f-7ef1-ad0f-d6118e9212a5",
+  "occurred_at": "2026-07-25T18:25:22.319338Z",
+  "knot_id": "knots-970f",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: codex-workflow-failure-transition",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

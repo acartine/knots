@@ -1,0 +1,17 @@
+{
+  "event_id": "019f9a86-c0ff-7ad0-bd6e-8a1950762305",
+  "occurred_at": "2026-07-25T18:25:50.33585Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\nProvide one supported, workflow-validated command that records a failed action outcome, transitions directly to that outcome's declared earlier queue state, and atomically terminates and unbinds the active claim lease. This must cover shipment failures such as shipment -> ready_for_implementation without abusing repeated generic rollback or leaving the knot claimed.\n\nVerification:\n1. Add a CLI integration test that creates a work knot in shipment with an active bound lease, selects the declared merge_conflicts failure outcome, and asserts the work knot rests in ready_for_implementation, its lease_id is null, and the lease knot is lease_terminated.\n2. Assert step history records the shipment action as failed or aborted with from_state ready_for_shipment and to_state ready_for_implementation, preserving actor identity from the lease.\n3. Assert an undeclared failure outcome or arbitrary target state is rejected and leaves both state and lease unchanged.\n4. Assert generic kno rollback still rejects queue states and retains its existing immediate-prior-queue semantics.\n5. Regenerate the work_sdlc bundle and assert the runtime shipment prompt exposes the exact supported failure command; add a parity gate so source prompt Failure Modes cannot disappear from loom/work_sdlc/dist/bundle.json again.\n6. Run make sanity and expect formatting, lint, tests, and coverage gates to pass.\n\nConstraints:\n- The failure transition and lease release must be one atomic queued write; do not require update -> next -> rollback or manual lease surgery.\n- Validate the requested outcome against the current action state's workflow failure map; do not turn this into unrestricted force-state mutation.\n- Preserve single-action and e2e workflow boundaries and existing successful next behavior.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Make workflow failure rollback atomic",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "019f9a86-c10c-71a1-b4e6-984a7ccff51b",
+  "occurred_at": "2026-07-25T18:25:50.33585Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. From shipment with an active lease, one documented CLI command selects merge_conflicts and moves the knot directly to ready_for_implementation.\n2. The same operation atomically terminates the lease and clears the work knot's lease_id.\n3. Step history records the failed action and its non-adjacent failure target with lease-sourced agent attribution.\n4. Undeclared outcomes and arbitrary rollback targets are rejected without partial state or lease mutation.\n5. Existing generic rollback behavior and queue-state rejection remain unchanged.\n6. The compiled runtime shipment prompt includes the exact failure-transition command, and automated parity coverage prevents source/dist prompt drift.\n7. make sanity passes without lowering the coverage threshold."
+  }
+}

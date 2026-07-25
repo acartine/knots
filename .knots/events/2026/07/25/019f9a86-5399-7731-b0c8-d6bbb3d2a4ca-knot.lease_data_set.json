@@ -1,0 +1,20 @@
+{
+  "event_id": "019f9a86-5399-7731-b0c8-d6bbb3d2a4ca",
+  "occurred_at": "2026-07-25T18:25:22.329879Z",
+  "knot_id": "knots-970f",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "codex-workflow-failure-transition",
+      "timeout_seconds": 1800
+    }
+  }
+}

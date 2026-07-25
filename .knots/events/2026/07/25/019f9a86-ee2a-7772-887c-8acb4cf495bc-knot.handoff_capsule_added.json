@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9a86-ee2a-7772-887c-8acb4cf495bc",
+  "occurred_at": "2026-07-25T18:26:01.898263Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Reproduced with Quilt knot 9a25. A failed shipment needed ready_for_implementation, but kno rollback moved shipment only to ready_for_shipment; a second rollback was rejected because queue states are intentionally invalid. Source evidence: src/rollback.rs hardcodes action -> preceding queue. loom/work_sdlc/prompts/shipment.md declares merge_conflicts -> ready_for_implementation and suggests update --status, but the compiled loom/work_sdlc/dist/bundle.json body omits the Failure Modes commands. The suggested update path is also incomplete: execute_update in src/write_dispatch/execute/execute_write_ops.rs refreshes the heartbeat but never calls release_bound_lease, while next and rollback do. kno lease terminate only changes the lease knot state; it does not unbind the work knot, and materialize_expired_lease ignores a raw lease_terminated record. Implement a first-class atomic failure-outcome transition rather than documenting a multi-command workaround.",
+    "datetime": "2026-07-25T18:26:01.898263Z",
+    "entry_id": "019f9a86-ee2a-7772-887c-8abc800312aa",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
