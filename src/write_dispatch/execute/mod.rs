@@ -14,6 +14,7 @@ use super::helpers::{
     supplied_agent_flag_names, warn_deprecated_agent_metadata,
 };
 
+mod execute_failure_ops;
 pub(crate) mod execute_plan_ops;
 mod execute_write_ops;
 mod scope_validation;

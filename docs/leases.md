@@ -25,6 +25,8 @@ stateDiagram-v2
     [*] --> lease_ready : kno lease create
     lease_ready --> lease_active : kno claim (lease activated)
     lease_active --> lease_terminated : kno next (work advanced)
+    lease_active --> lease_terminated : kno rollback (work rewound)
+    lease_active --> lease_terminated : kno rollback --outcome (action failed)
     lease_active --> lease_terminated : kno lease terminate
     lease_active --> lease_terminated : timeout expired
     lease_ready --> lease_terminated : timeout expired
@@ -83,7 +85,12 @@ the next interaction triggers materialization.
 
 Each `kno claim` call creates and activates a dedicated lease for that knot.
 Leases are never shared between claims. When the claim completes via
-`kno next`, the lease is terminated and the binding is removed.
+`kno next`, the lease is terminated and the binding is removed. A claim that
+ends in failure releases the lease the same way: `kno rollback` rewinds to the
+preceding queue state, and `kno rollback --outcome <name>` records a
+workflow-declared failure outcome and moves to that outcome's target state.
+Both terminate the lease and unbind it in the same operation, so a failed
+action never leaves a knot claimed.
 
 ```mermaid
 sequenceDiagram
@@ -235,7 +242,7 @@ stamps it onto records produced by the active claim:
 | Note | `agentname`, `model`, `version`, `username` | `kno update --add-note` |
 | Handoff capsule | `agentname`, `model`, `version`, `username` | `kno update --add-handoff-capsule` |
 | Step-history entry (claim/transition) | `agent_name`, `agent_model`, `agent_version` | `kno claim`, `kno poll --claim`, `kno next` |
-| Step-history entry (rollback) | `agent_name`, `agent_model`, `agent_version` | `kno rollback` |
+| Step-history entry (rollback) | `agent_name`, `agent_model`, `agent_version` | `kno rollback`, `kno rollback --outcome` |
 | Gate decision metadata | `agentname`, `model`, `version` | `kno gate evaluate` |
 
 Lookup is performed by `resolve_lease_agent_info` in

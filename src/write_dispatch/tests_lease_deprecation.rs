@@ -302,6 +302,8 @@ fn rollback_ignores_bogus_agent_flags_and_uses_lease() {
             agent_model: Some("bogus".to_string()),
             agent_version: Some("bogus".to_string()),
             json: false,
+            outcome: None,
+            lease_id: None,
         }),
     )
     .expect("rollback should succeed");

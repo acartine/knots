@@ -18,6 +18,9 @@ params: {}
 
 # Plan Review
 
+Review the implementation plan for completeness, correctness, and
+feasibility.
+
 ## Input
 - Knot in `ready_for_plan_review` state
 - Implementation plan from the planning phase (in knot notes)
@@ -62,9 +65,19 @@ params: {}
   `kno update <id> --add-handoff-capsule "<revision needed>"`
 
 ## Failure Modes
-- Plan fundamentally flawed:
-  `kno update <id> --status ready_for_planning --add-note "<feedback>"`
+Record the outcome with a single command. `kno rollback --outcome` moves the
+knot to the outcome's workflow-declared target state, closes the step as
+failed, and terminates and unbinds the lease in one atomic operation. Attach
+the note and handoff capsule first, while the lease is still bound.
+- Plan fundamentally flawed (`plan_flawed` -> `ready_for_planning`):
+  `kno update <id> --add-note "<feedback>"`
   `kno update <id> --add-handoff-capsule "<plan flawed>"`
-- Requirements changed:
-  `kno update <id> --status ready_for_planning --add-note "<feedback>"`
+  `kno rollback <id> --outcome plan_flawed --lease <LEASE_ID>`
+- Requirements changed (`requirements_changed` -> `ready_for_planning`):
+  `kno update <id> --add-note "<feedback>"`
   `kno update <id> --add-handoff-capsule "<requirements changed>"`
+  `kno rollback <id> --outcome requirements_changed --lease <LEASE_ID>`
+- Blocked by a dependency (`blocked_by_dependency` -> `blocked`):
+  `kno update <id> --add-note "<blocker details>"`
+  `kno update <id> --add-handoff-capsule "<blocking dependency details>"`
+  `kno rollback <id> --outcome blocked_by_dependency --lease <LEASE_ID>`

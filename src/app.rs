@@ -27,6 +27,7 @@ mod knot_update;
 mod profile_config;
 mod query;
 pub mod rehydrate;
+mod state_fail_ops;
 mod state_ops;
 mod state_resolve;
 mod sync_ops;

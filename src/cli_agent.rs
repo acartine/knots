@@ -57,6 +57,15 @@ pub struct RollbackArgs {
         help = "Preview the rollback target without mutating state."
     )]
     pub dry_run: bool,
+    #[arg(
+        long = "outcome",
+        value_name = "NAME",
+        help = "Record a declared failure outcome (e.g. merge_conflicts) and move \
+                directly to its workflow-declared target state, releasing the lease."
+    )]
+    pub outcome: Option<String>,
+    #[arg(long, help = "Validate lease ownership before rolling back.")]
+    pub lease: Option<String>,
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
     #[arg(long = "actor-kind", help = "Actor kind for the step: human or agent.")]

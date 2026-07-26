@@ -164,6 +164,8 @@ fn map_rollback(args: &crate::cli::RollbackArgs) -> WriteOperation {
         agent_model: args.agent_model.clone(),
         agent_version: args.agent_version.clone(),
         json: args.json,
+        outcome: args.outcome.clone(),
+        lease_id: args.lease.clone(),
     })
 }
 

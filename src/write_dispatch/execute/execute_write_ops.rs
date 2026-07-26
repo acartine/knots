@@ -309,7 +309,16 @@ pub(super) fn execute_rollback(
     app: &App,
     args: &crate::write_queue::RollbackOperation,
 ) -> Result<String, AppError> {
+    if let Some(outcome) = args.outcome.as_deref() {
+        return super::execute_failure_ops::execute_rollback_outcome(app, args, outcome);
+    }
     let resolution = resolve_rollback_state(app, &args.id)?;
+    // Generic rollback has always released whatever lease was bound without
+    // being told which one; only validate when the caller opts in by
+    // passing `--lease`.
+    if args.lease_id.is_some() {
+        validate_next_bound_lease(app, &resolution.knot, args.lease_id.as_deref())?;
+    }
     let lease_bound = resolution.knot.lease_id.is_some();
     warn_deprecated_agent_metadata(
         "rollback",

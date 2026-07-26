@@ -21,6 +21,10 @@ params:
 
 # Shipment
 
+Promote the approved implementation to its final destination. The
+implementation has already been reviewed and approved — your job is to
+merge, push, and verify, not to re-review or second-guess the work.
+
 ## Input
 - Knot in `ready_for_shipment` state
 - Approved implementation on feature branch
@@ -65,6 +69,10 @@ verify CI is green and advance. Do not roll back.
    `{{ output }}` = `remote_main` means merge the feature branch to main.
    `{{ output }}` = `pr` means merge the approved pull request instead of
    performing a branch-only review flow.
+   `{{ output }}` = `branch` means the branch is the final artifact;
+   verify it is pushed and CI passes.
+   `{{ output }}` = `live_deployment` means merge to main and deploy to
+   the target environment.
 3. Tag the knot with any new commit hashes created during merge using
    the `commit:` prefix:
    `short_hash=$(git rev-parse --short=12 <commit>)`
@@ -76,6 +84,9 @@ verify CI is green and advance. Do not roll back.
    `{{ output }}` = `remote_main` means push main after the merge.
    `{{ output }}` = `pr` means verify the merged PR produced the intended
    main-branch result and that the remote reflects it.
+   `{{ output }}` = `branch` means verify the branch is on remote.
+   `{{ output }}` = `live_deployment` means verify the deployment
+   completed and the service is healthy.
 5. Verify CI passes on remote
 
 ## Output
@@ -92,11 +103,19 @@ fails (conflicts, CI red after merge). Finding unmerged commits is
 the normal starting condition — that is what shipment is for.
 
 ## Failure Modes
-- Merge conflicts:
-  `kno update <id> --status ready_for_implementation`
-  `--add-note "<blocker details>"`
+Record the outcome with a single command. `kno rollback --outcome` moves the
+knot to the outcome's workflow-declared target state, closes the step as
+failed, and terminates and unbinds the lease in one atomic operation. Attach
+the note and handoff capsule first, while the lease is still bound.
+- Merge conflicts (`merge_conflicts` -> `ready_for_implementation`):
+  `kno update <id> --add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<merge conflict details>"`
-- CI failure after merge:
-  `kno update <id> --status ready_for_implementation`
-  `--add-note "<blocker details>"`
+  `kno rollback <id> --outcome merge_conflicts --lease <LEASE_ID>`
+- CI failure after merge (`ci_failure` -> `ready_for_implementation`):
+  `kno update <id> --add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<CI failure details>"`
+  `kno rollback <id> --outcome ci_failure --lease <LEASE_ID>`
+- Release blocked (`release_blocked` -> `blocked`):
+  `kno update <id> --add-note "<blocker details>"`
+  `kno update <id> --add-handoff-capsule "<release blocker details>"`
+  `kno rollback <id> --outcome release_blocked --lease <LEASE_ID>`

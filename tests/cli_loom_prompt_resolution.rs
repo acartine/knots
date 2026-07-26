@@ -21,10 +21,13 @@ const IMPLEMENTATION_LOOM_MARKERS: &[&str] = &[
     "a feature branch pushed to remote for branch review",
 ];
 
-const IMPLEMENTATION_STATIC_FALLBACK_MARKERS: &[&str] = &[
-    "Run any sanity gates defined in the project or the plan",
-    "Add a handoff_capsule to the knot with:",
-];
+/// Strings that only ever appeared in the removed static implementation
+/// prompt. "Run any sanity gates defined in the project or the plan" used to
+/// belong here too, but it is now a legitimate line in
+/// `loom/work_sdlc/prompts/implementation.md`; it only read as a fallback
+/// fingerprint while `dist/bundle.json` was stale and omitted it.
+const IMPLEMENTATION_STATIC_FALLBACK_MARKERS: &[&str] =
+    &["Add a handoff_capsule to the knot with:"];
 
 fn loom_heading_for(state: &str) -> &'static str {
     LOOM_HEADINGS

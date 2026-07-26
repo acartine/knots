@@ -34,10 +34,16 @@ fn assert_no_unresolved_templates(prompt: &str, state: &str, profile: &str) {
     );
 }
 
-const IMPLEMENTATION_STATIC_FALLBACK_MARKERS: &[&str] = &[
-    "Run any sanity gates defined in the project or the plan",
-    "Add a handoff_capsule to the knot with:",
-];
+/// Strings that only ever appeared in the removed static implementation
+/// prompt. Seeing one means rendering fell back instead of using the Loom
+/// bundle.
+///
+/// "Run any sanity gates defined in the project or the plan" used to belong
+/// here too, but it is now a legitimate line in
+/// `loom/work_sdlc/prompts/implementation.md`. It only read as a fallback
+/// fingerprint while `dist/bundle.json` was stale and omitted it.
+const IMPLEMENTATION_STATIC_FALLBACK_MARKERS: &[&str] =
+    &["Add a handoff_capsule to the knot with:"];
 
 fn action_state_for(queue_state: &str) -> &str {
     queue_state
