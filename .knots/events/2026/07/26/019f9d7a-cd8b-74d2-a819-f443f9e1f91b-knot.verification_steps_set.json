@@ -1,0 +1,12 @@
+{
+  "event_id": "019f9d7a-cd8b-74d2-a819-f443f9e1f91b",
+  "occurred_at": "2026-07-26T08:11:38.763541Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "Run targeted lease lifecycle, claim, rollback, and managed-skill tests.",
+      "Run make sanity and npm run check-cargo-version."
+    ]
+  }
+}

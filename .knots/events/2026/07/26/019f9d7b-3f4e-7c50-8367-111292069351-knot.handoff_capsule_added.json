@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d7b-3f4e-7c50-8367-111292069351",
+  "occurred_at": "2026-07-26T08:12:07.886928Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan approved. It addresses the deadlock at the ownership boundary, preserves queue/action terminology, guards takeover races by expected lease ID, and includes runtime plus installed-skill coverage. Implementation should prefer the existing locked failure-transition machinery; claim failure may use safe compensation rather than a broad transaction refactor.",
+    "datetime": "2026-07-26T08:12:07.886928Z",
+    "entry_id": "019f9d7b-3f4e-7c50-8367-11006ad2c615",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

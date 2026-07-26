@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9db1-3eb8-75f1-9888-3c54b257fbbc",
+  "occurred_at": "2026-07-26T09:11:06.680203Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review approved. Clean main and origin/main both resolve to bf448a9e72b9, which matches the knot's commit tag. GitHub CI run 30195824231 completed successfully on that exact SHA, including the Sanity and coverage steps. No invariants are defined and no regression was detected.",
+    "datetime": "2026-07-26T09:11:06.680203Z",
+    "entry_id": "019f9db1-3eb8-75f1-9888-3c4b795f9fbd",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

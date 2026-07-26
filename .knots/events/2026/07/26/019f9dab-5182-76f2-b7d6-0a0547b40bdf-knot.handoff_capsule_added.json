@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9dab-5182-76f2-b7d6-0a0547b40bdf",
+  "occurred_at": "2026-07-26T09:04:38.274184Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation review approved against the acceptance criteria. Remote branch codex/lease-death-requeue resolves to tagged commit bf448a9e72b9; diff is clean. Recovery is profile-aware, lock-ordered, matching-lease guarded, and compensates failed claim setup. Tests cover explicit termination, lazy expiry, stale mutation/reclaim, duplicate ownership defense, custom workflow queues, and installed skill artifacts. Managed pre-push make sanity passed with 95.02% coverage. No invariant, security, or regression issue found.",
+    "datetime": "2026-07-26T09:04:38.274184Z",
+    "entry_id": "019f9dab-5182-76f2-b7d6-09f487a4afde",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

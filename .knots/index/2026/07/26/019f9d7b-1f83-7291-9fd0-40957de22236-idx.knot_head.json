@@ -1,0 +1,34 @@
+{
+  "event_id": "019f9d7b-1f83-7291-9fd0-40957de22236",
+  "occurred_at": "2026-07-26T08:11:59.747987Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-1151",
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: codex-8ea1-plan-review",
+    "type": "lease",
+    "updated_at": "2026-07-26T08:11:59.747987Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

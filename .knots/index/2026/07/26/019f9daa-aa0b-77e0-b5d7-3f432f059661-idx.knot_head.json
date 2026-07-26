@@ -1,0 +1,47 @@
+{
+  "event_id": "019f9daa-aa0b-77e0-b5d7-3f432f059661",
+  "occurred_at": "2026-07-26T09:03:55.403369Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-8ea1",
+    "next_step_metadata": {
+      "action_kind": "gate",
+      "action_state": "implementation_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_implementation_review",
+    "step_metadata": {
+      "action_kind": "gate",
+      "action_state": "implementation_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Requeue a knot when its bound lease expires or terminates",
+    "type": "work",
+    "updated_at": "2026-07-26T09:03:55.403369Z",
+    "workflow_id": "work_sdlc"
+  }
+}

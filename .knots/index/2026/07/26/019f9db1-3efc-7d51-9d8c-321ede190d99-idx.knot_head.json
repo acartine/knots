@@ -1,0 +1,21 @@
+{
+  "event_id": "019f9db1-3efc-7d51-9d8c-321ede190d99",
+  "occurred_at": "2026-07-26T09:11:06.748102Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-8ea1",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Requeue a knot when its bound lease expires or terminates",
+    "type": "work",
+    "updated_at": "2026-07-26T09:11:06.748102Z",
+    "workflow_id": "work_sdlc"
+  }
+}

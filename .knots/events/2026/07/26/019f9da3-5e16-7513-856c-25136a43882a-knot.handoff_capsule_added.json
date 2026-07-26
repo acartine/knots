@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9da3-5e16-7513-856c-25136a43882a",
+  "occurred_at": "2026-07-26T08:55:57.206447Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented guarded lease-death recovery. Explicit termination and lazy expiry fail the interrupted step, clear only the matching binding, and return the knot to its profile queue; claim setup failures compensate to the queue; managed skills teach fresh-lease reclaim and stop on a new active owner. Branch: codex/lease-death-requeue. Commit: bf448a9e72b9. make lint, all tests, changeset/version checks, and 95.01% coverage pass.",
+    "datetime": "2026-07-26T08:55:57.206447Z",
+    "entry_id": "019f9da3-5e16-7513-856c-250eeae88d7a",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

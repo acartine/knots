@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9db0-dc74-76f0-be23-0960a934d72b",
+  "occurred_at": "2026-07-26T09:10:41.524596Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment complete. Main was fast-forwarded to reviewed commit bf448a9e72b9 and pushed to origin. GitHub CI run 30195824231 passed its Sanity job, including tests and coverage. No merge commit was created, so the existing commit tag remains complete.",
+    "datetime": "2026-07-26T09:10:41.524596Z",
+    "entry_id": "019f9db0-dc74-76f0-be23-095039d15461",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

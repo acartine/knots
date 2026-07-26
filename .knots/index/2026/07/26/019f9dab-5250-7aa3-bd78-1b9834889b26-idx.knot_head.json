@@ -1,0 +1,21 @@
+{
+  "event_id": "019f9dab-5250-7aa3-bd78-1b9834889b26",
+  "occurred_at": "2026-07-26T09:04:38.480518Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-26df",
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-8ea1-implementation-review",
+    "type": "lease",
+    "updated_at": "2026-07-26T09:04:38.480518Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

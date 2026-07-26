@@ -1,0 +1,9 @@
+{
+  "event_id": "019f9d7a-cd8b-74d2-a819-f434eccf2765",
+  "occurred_at": "2026-07-26T08:11:38.763541Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Expiring or explicitly terminating a lease bound to an action-state knot returns that knot to the corresponding ready_for_* queue state, clears only the matching stale binding, and records the interrupted action as failed. 2. Recovery is idempotent and guarded by the expected lease ID, so it cannot roll back work claimed under a newer active lease. 3. A stale actor mutation observes the recovery and is rejected; it can continue only by creating a fresh lease and claiming the queued knot again. If another active lease owns the action state, the stale actor stops. 4. A claim setup failure compensates back to the original queue state instead of leaving an unleased action-state knot. 5. Installed knots and knots-e2e skills document the fresh-claim/stop behavior, and regression tests cover explicit termination, lazy expiry, claim failure, stale updates, and successful reclaim without kno state --force."
+  }
+}

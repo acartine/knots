@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d7a-cd8b-74d2-a819-f48f390a12e2",
+  "occurred_at": "2026-07-26T08:11:38.763541Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan reviewed locally: implement guarded action-to-queue reconciliation on lease death, claim-failure compensation, consistent stale-owner rejection, managed skill recovery guidance, and focused regression coverage. Avoid broad lease architecture refactoring.",
+    "datetime": "2026-07-26T08:11:38.763541Z",
+    "entry_id": "019f9d7a-cd8b-74d2-a819-f47f32a19d17",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
