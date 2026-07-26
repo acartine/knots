@@ -61,7 +61,7 @@ struct RollbackTarget<'a> {
     reason: String,
 }
 
-fn require_rollback_state(
+pub(crate) fn require_rollback_state(
     profile: &ProfileDefinition,
     knot_type: KnotType,
     state: &str,
@@ -70,7 +70,7 @@ fn require_rollback_state(
     Ok(profile.require_state(state)?)
 }
 
-fn reject_invalid_rollback_state(
+pub(crate) fn reject_invalid_rollback_state(
     profile: &ProfileDefinition,
     knot_type: KnotType,
     state: &str,

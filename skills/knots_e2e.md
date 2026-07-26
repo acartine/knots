@@ -107,6 +107,19 @@ kno claim --e2e <id> --lease <new-lease-id>
 kno rollback <id> --lease <lease-id>
 ```
 
+When the action prompt declares a named failure outcome for what went wrong,
+record that outcome instead. It moves the knot to the outcome's declared
+target state — which may skip past the immediately preceding queue state, as
+`merge_conflicts` does — and terminates and unbinds the lease in the same
+atomic operation:
+
+```bash
+kno rollback <id> --outcome <outcome-name> --lease <lease-id>
+```
+
+The prompt's Failure Modes section lists the outcome names it accepts; an
+undeclared name is rejected without changing state or lease.
+
 If the claimed knot lists children, handle the children first:
 - Claim each child knot with `--e2e` and its own fresh lease, then follow that
   child prompt to completion.

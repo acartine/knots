@@ -24,6 +24,9 @@ params:
 
 # Shipment Review
 
+Verify the shipped result is correct at the review target required by
+the profile output mode.
+
 ## Input
 - Knot in `ready_for_shipment_review` state
 - Code merged to main, CI green
@@ -61,6 +64,10 @@ params:
    `{{ output }}` = `remote_main` means review the code now on main.
    `{{ output }}` = `pr` means review the merged pull request as the
    shipment record and confirm the corresponding code is now on main.
+   `{{ output }}` = `branch` means verify the branch is on remote and
+   CI passed.
+   `{{ output }}` = `live_deployment` means verify the deployment is
+   live, healthy, and matches the approved implementation.
 2. Confirm every commit from implementation/shipment is tagged on the
    knot:
    - Use the `commit:` prefix for each tag.
@@ -85,16 +92,24 @@ params:
   `kno update <id> --add-handoff-capsule "<critical regression>"`
 
 ## Failure Modes
-- Deployment issue:
-  `kno update <id> --status ready_for_shipment`
-  `--add-note "<blocker details>"`
+Record the outcome with a single command. `kno rollback --outcome` moves the
+knot to the outcome's workflow-declared target state, closes the step as
+failed, and terminates and unbinds the lease in one atomic operation. Attach
+the note and handoff capsule first, while the lease is still bound.
+- Deployment issue (`deployment_issue` -> `ready_for_shipment`):
+  `kno update <id> --add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<deployment issue>"`
-- Regression detected:
-  `kno update <id> --status ready_for_implementation`
-  `--add-note "<blocker details>"`
+  `kno rollback <id> --outcome deployment_issue --lease <LEASE_ID>`
+- Regression detected (`critical_regression` -> `ready_for_implementation`):
+  `kno update <id> --add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<regression details>"`
-- Unable to complete review due to dirty workspace:
-  Roll status back to Ready For Impl before handoff.
-  `kno update <id> --status ready_for_implementation`
-  `--add-note "<dirty workspace details>"`
+  `kno rollback <id> --outcome critical_regression --lease <LEASE_ID>`
+- Needs revision (`needs_revision` -> `ready_for_implementation`):
+  `kno update <id> --add-note "<feedback>"`
+  `kno update <id> --add-handoff-capsule "<requested revisions>"`
+  `kno rollback <id> --outcome needs_revision --lease <LEASE_ID>`
+- Unable to complete review due to dirty workspace (`dirty_workspace` ->
+  `ready_for_implementation`):
+  `kno update <id> --add-note "<dirty workspace details>"`
   `kno update <id> --add-handoff-capsule "<dirty workspace handoff>"`
+  `kno rollback <id> --outcome dirty_workspace --lease <LEASE_ID>`

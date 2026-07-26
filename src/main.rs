@@ -27,6 +27,7 @@ mod doctor_workflow_parity;
 mod doctor_workflows;
 mod domain;
 mod events;
+mod failure_outcome;
 mod fsck;
 mod git_hooks;
 #[cfg(test)]

@@ -92,9 +92,19 @@ params:
   `kno next <id> <currentState> --lease <LEASE_ID>`
 
 ## Failure Modes
-- Insufficient context:
-  `kno update <id> --status ready_for_planning --add-note "<note>"`
+Record the outcome with a single command. `kno rollback --outcome` moves the
+knot to the outcome's workflow-declared target state, closes the step as
+failed, and terminates and unbinds the lease in one atomic operation. Attach
+the note and handoff capsule first, while the lease is still bound.
+- Insufficient context (`insufficient_context` -> `ready_for_planning`):
+  `kno update <id> --add-note "<note>"`
   `kno update <id> --add-handoff-capsule "<reason for deferral>"`
-- Out of scope / too complex:
-  `kno update <id> --status ready_for_planning --add-note "<note>"`
+  `kno rollback <id> --outcome insufficient_context --lease <LEASE_ID>`
+- Out of scope / too complex (`out_of_scope` -> `ready_for_planning`):
+  `kno update <id> --add-note "<note>"`
   `kno update <id> --add-handoff-capsule "<reason out of scope>"`
+  `kno rollback <id> --outcome out_of_scope --lease <LEASE_ID>`
+- Blocked by a dependency (`blocked_by_dependency` -> `blocked`):
+  `kno update <id> --add-note "<blocker details>"`
+  `kno update <id> --add-handoff-capsule "<blocking dependency details>"`
+  `kno rollback <id> --outcome blocked_by_dependency --lease <LEASE_ID>`

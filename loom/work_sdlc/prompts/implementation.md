@@ -22,6 +22,8 @@ params:
 
 # Implementation
 
+Implement the approved plan on a feature branch.
+
 ## Input
 - Knot in `ready_for_implementation` state
 - Approved implementation plan (in knot notes)
@@ -57,6 +59,10 @@ params:
    remote. The branch itself is the review artifact.
    `{{ output }}` = `pr` means open a pull request from the feature
    branch. The PR is the review artifact.
+   `{{ output }}` = `branch` means push the feature branch to remote.
+   The branch is the final deliverable (no merge to main expected).
+   `{{ output }}` = `live_deployment` means prepare the implementation
+   for deployment review.
 7. Tag the knot with each commit hash using the `commit:` prefix:
    `short_hash=$(git rev-parse --short=12 <commit>)`
    `kno update <id> --add-tag "commit:${short_hash}"`
@@ -67,22 +73,41 @@ params:
    `kno update <id> --add-tag "branch:<branch-name>"`
    `{{ output }}` = `pr` means tag the PR number:
    `kno update <id> --add-tag "pr:<number>"`
+   `{{ output }}` = `branch` or `live_deployment` means tag the branch
+   name:
+   `kno update <id> --add-tag "branch:<branch-name>"`
 9. Add a handoff capsule that includes the artifact identifier:
    `kno update <id> --add-handoff-capsule "<summary>. Branch: <name>"`
    or for PR workflows:
    `kno update <id> --add-handoff-capsule "<summary>. PR #<number>"`
 
 ## Output
+The expected output artifact is `{{ output }}`:
+- **remote_main**: a feature branch pushed to remote for branch review
+- **pr**: a pull request opened from the feature branch
+- **branch**: a feature branch pushed to remote as the final deliverable
+- **live_deployment**: implementation ready for deployment review
+
 - Working implementation on feature branch
 - All tests passing with coverage threshold met
 - Transition:
   `kno next <id> <currentState> --lease <LEASE_ID>`
 
 ## Failure Modes
-- Blocked by dependency:
-  `kno update <id> --status blocked --add-note "<blocker details>"`
+Record the outcome with a single command. `kno rollback --outcome` moves the
+knot to the outcome's workflow-declared target state, closes the step as
+failed, and terminates and unbinds the lease in one atomic operation. Attach
+the note and handoff capsule first, while the lease is still bound.
+- Blocked by a dependency (`blocked_by_dependency` -> `blocked`):
+  `kno update <id> --add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<blocking dependency details>"`
-- Implementation infeasible:
-  `kno update <id> --status ready_for_planning`
-  `--add-note "<blocker details>"`
+  `kno rollback <id> --outcome blocked_by_dependency --lease <LEASE_ID>`
+- Implementation infeasible (`implementation_infeasible` ->
+  `ready_for_planning`):
+  `kno update <id> --add-note "<blocker details>"`
   `kno update <id> --add-handoff-capsule "<reason infeasible>"`
+  `kno rollback <id> --outcome implementation_infeasible --lease <LEASE_ID>`
+- Merge conflict (`merge_conflict` -> `ready_for_implementation`):
+  `kno update <id> --add-note "<conflict details>"`
+  `kno update <id> --add-handoff-capsule "<merge conflict details>"`
+  `kno rollback <id> --outcome merge_conflict --lease <LEASE_ID>`

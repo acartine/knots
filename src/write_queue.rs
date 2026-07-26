@@ -132,6 +132,10 @@ pub struct RollbackOperation {
     pub agent_version: Option<String>,
     #[serde(default)]
     pub json: bool,
+    #[serde(default)]
+    pub outcome: Option<String>,
+    #[serde(default)]
+    pub lease_id: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ClaimOperation {

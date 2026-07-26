@@ -16,6 +16,7 @@ use super::helpers::{
     next_blocked_from_state, next_deferred_from_state, normalize_state_input,
     resolve_step_metadata, KnotHeadData, StateCascadeMetadata, StateEventParams,
 };
+use super::state_fail_ops::{apply_step_failure_transition, StateWriteOverrides};
 use super::types::{KnotView, StateActorMetadata};
 use super::App;
 
@@ -247,6 +248,33 @@ impl App {
         state_actor: &StateActorMetadata,
         cascade: Option<StateCascadeMetadata<'_>>,
     ) -> Result<KnotCacheRecord, AppError> {
+        self.write_state_change_locked_with(
+            current,
+            next_state,
+            force,
+            expected_profile_etag,
+            state_actor,
+            cascade,
+            StateWriteOverrides::default(),
+        )
+    }
+
+    /// Write a state change with optional same-write overrides.
+    ///
+    /// `overrides` lets a caller unbind the lease and close the active step
+    /// as failed in the *same* `upsert_knot_hot`, which is what makes a
+    /// failure-outcome transition atomic instead of a multi-write sequence.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn write_state_change_locked_with(
+        &self,
+        current: &KnotCacheRecord,
+        next_state: &str,
+        force: bool,
+        expected_profile_etag: Option<&str>,
+        state_actor: &StateActorMetadata,
+        cascade: Option<StateCascadeMetadata<'_>>,
+        overrides: StateWriteOverrides,
+    ) -> Result<KnotCacheRecord, AppError> {
         let profile = self.resolve_profile_for_record(current)?;
         let profile_id = profile.id.clone();
         let knot_type = parse_knot_type(current.knot_type.as_deref());
@@ -269,14 +297,38 @@ impl App {
         )?;
         self.writer.write(&EventRecord::full(full_event))?;
         self.writer.write(&EventRecord::index(idx_event))?;
-        let step_history = apply_step_transition(
-            &current.step_history,
-            &current.state,
-            next_state,
-            &occurred_at,
-            state_actor,
-            current.lease_id.as_deref(),
-        );
+        let clearing_lease = overrides.clear_lease && current.lease_id.is_some();
+        if clearing_lease {
+            self.writer.write(&EventRecord::full(FullEvent::new(
+                current.id.clone(),
+                FullEventKind::KnotLeaseIdSet,
+                serde_json::json!({ "lease_id": Option::<&str>::None }),
+            )))?;
+        }
+        let step_history = if overrides.fail_step {
+            apply_step_failure_transition(
+                &current.step_history,
+                &current.state,
+                next_state,
+                &occurred_at,
+                state_actor,
+                current.lease_id.as_deref(),
+            )
+        } else {
+            apply_step_transition(
+                &current.step_history,
+                &current.state,
+                next_state,
+                &occurred_at,
+                state_actor,
+                current.lease_id.as_deref(),
+            )
+        };
+        let lease_id = if clearing_lease {
+            None
+        } else {
+            current.lease_id.as_deref()
+        };
         db::upsert_knot_hot(
             &self.conn,
             &UpsertKnotHot {
@@ -298,7 +350,7 @@ impl App {
                 gate_data: &current.gate_data,
                 lease_data: &current.lease_data,
                 execution_plan_data: &current.execution_plan_data,
-                lease_id: current.lease_id.as_deref(),
+                lease_id,
                 workflow_id: &profile.workflow_id,
                 profile_id: &profile_id,
                 profile_etag: Some(&idx_id),
