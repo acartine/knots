@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d37-e139-7172-b7a1-dd238a8c1ae5",
+  "occurred_at": "2026-07-26T06:58:32.889806Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped. Merged claude/knots-e2e-42e7-bce40d to main with a no-ff merge commit c50a2245b7fd (implementation commit 0e27bf9c05a9) and pushed to origin/main (5e9f4e12..c50a2245). Pre-push sanity passed at 95.22% coverage. All four GitHub workflows on the merge commit are green: CI, Release, Changesets Version PR, Repo Hygiene. No conflicts; main was clean and even with origin before the merge.",
+    "datetime": "2026-07-26T06:58:32.889806Z",
+    "entry_id": "019f9d37-e139-7172-b7a1-dd168496bb42",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

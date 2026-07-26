@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d38-b7b2-7f01-be4b-c9e85f51f1fb",
+  "occurred_at": "2026-07-26T06:59:27.79491Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Final sign-off complete. kno rollback --outcome is live on main (c50a2245b7fd), verified working against a binary built from main, with CI green. Knot is ready for SHIPPED.",
+    "datetime": "2026-07-26T06:59:27.79491Z",
+    "entry_id": "019f9d38-b7b2-7f01-be4b-c9dfe049061a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

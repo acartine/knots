@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d2a-978b-72d0-b66f-7e20bec72b6b",
+  "occurred_at": "2026-07-26T06:44:02.059905Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation complete and pushed. Branch: claude/knots-e2e-42e7-bce40d, commit 0e27bf9c05a9.\n\nDelivered: `kno rollback <id> --outcome <name>` (plus `--lease` on rollback generally). New src/failure_outcome.rs resolves the target from the compiled workflow failure map and rejects undeclared names, success requests, and queue/terminal/passive states. New src/app/state_fail_ops.rs does the state change, lease unbind, failed step close, and lease-knot termination in one locked section, with transition and unbind sharing a single upsert; write_state_change_locked_with carries the overrides. Bare rollback unchanged (lease validation only when --lease is passed).\n\nBundle drift went both directions, not just one: dist had lost every Failure Modes section, and source had lost the branch/live_deployment output-mode text plus the prompt intro lines. Both restored, bundle regenerated, and tests/loom_bundle_parity.rs now gates source vs dist (verified it fails when Failure Modes is stripped). Two stale static-fallback fingerprints in existing tests were dropped because the stale bundle was the only reason they read as fallback-only strings.\n\nTests: tests/cli_rollback_outcome.rs (12) covers shipment merge_conflicts -> ready_for_implementation with lease_id null and lease_terminated, failed step history with from_state ready_for_shipment, the release_blocked escape-state case, undeclared/success/mismatched-lease/dry-run rejections with no mutation, MCP session lease recycling, and generic rollback regressions. make sanity passes at 95.12% coverage; threshold unchanged at 95.\n\nNote for review: the first implementation lease expired mid-session and auto-rewound the knot to ready_for_implementation; work was already committed and pushed, so it was re-claimed under lease 529c.",
+    "datetime": "2026-07-26T06:44:02.059905Z",
+    "entry_id": "019f9d2a-978b-72d0-b66f-7e1b8dcd4717",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

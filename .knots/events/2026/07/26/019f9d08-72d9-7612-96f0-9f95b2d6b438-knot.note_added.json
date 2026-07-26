@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d08-72d9-7612-96f0-9f95b2d6b438",
+  "occurred_at": "2026-07-26T06:06:44.441881Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review: APPROVED with two refinements.\n\nCompleteness vs acceptance criteria: AC1 step 3, AC2 step 2, AC3 step 2b + step 5, AC4 step 1 + step 5, AC5 step 1 (shared guard extraction keeps bare rollback byte-identical), AC6 step 4, AC7 step 6. No gaps.\n\nFeasibility confirmed against the tree, not assumed: workflow_runtime::next_outcome_state (src/workflow_runtime.rs:112) already resolves failure maps and is unreferenced by CLI code; loom 0.3.0 is installed and a fresh build restores the Failure Modes body, so the bundle work is regeneration rather than authoring; FileLock (src/locks.rs) is non-reentrant, which is what forces the single-locked-section design instead of composing existing App methods.\n\nRefinement 1 - escape-state outcomes. The shipment failure map declares release_blocked -> blocked, an escape state rather than a queue state. The resolver must handle a non-queue target: still clear the lease and close the step as failed, and set blocked_from_state correctly (src/app/state_ops.rs:254 next_blocked_from_state) so hierarchy ranking stays right. Add a test for release_blocked alongside merge_conflicts.\n\nRefinement 2 - dry-run semantics. --outcome must compose with --dry-run: resolve and print the target without mutating state or lease. Assert dry-run leaves lease_id and lease state untouched, since that is the same no-partial-mutation guarantee AC4 demands.\n\nNo security concerns: the change narrows rather than widens mutation authority because targets come from the compiled workflow map, never from caller input. Maintainability concern noted and already mitigated by the plan: state_ops.rs at 437 lines is near the 500-line ceiling, so the new path lands in src/app/state_fail_ops.rs.\n\nNo child knots needed; splitting would break the single-write atomicity the tests assert.",
+    "datetime": "2026-07-26T06:06:44.441881Z",
+    "entry_id": "019f9d08-72d9-7612-96f0-9f8d1d9d67e9",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

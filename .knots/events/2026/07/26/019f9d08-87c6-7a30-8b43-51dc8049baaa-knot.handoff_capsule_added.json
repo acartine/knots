@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d08-87c6-7a30-8b43-51dc8049baaa",
+  "occurred_at": "2026-07-26T06:06:49.798574Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan approved. Implement as planned, plus two review refinements: (1) handle the release_blocked -> blocked escape-state outcome, setting blocked_from_state correctly and still clearing the lease, with a test; (2) make --outcome compose with --dry-run, asserting no state/lease mutation. Start with src/failure_outcome.rs (resolution + rejection), then src/app/state_fail_ops.rs (single-FileLock state change + lease clear + Failed step close + lease termination), then CLI wiring, then prompt/bundle regeneration and the parity test.",
+    "datetime": "2026-07-26T06:06:49.798574Z",
+    "entry_id": "019f9d08-87c6-7a30-8b43-51ca8afc3bdd",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

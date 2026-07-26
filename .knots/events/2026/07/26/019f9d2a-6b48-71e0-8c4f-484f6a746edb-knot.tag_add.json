@@ -1,0 +1,9 @@
+{
+  "event_id": "019f9d2a-6b48-71e0-8c4f-484f6a746edb",
+  "occurred_at": "2026-07-26T06:43:50.728842Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:claude/knots-e2e-42e7-bce40d"
+  }
+}

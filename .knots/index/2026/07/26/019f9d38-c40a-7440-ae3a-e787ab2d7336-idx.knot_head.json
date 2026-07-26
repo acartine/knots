@@ -1,0 +1,21 @@
+{
+  "event_id": "019f9d38-c40a-7440-ae3a-e787ab2d7336",
+  "occurred_at": "2026-07-26T06:59:30.954751Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-42e7",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Make workflow failure rollback atomic",
+    "type": "work",
+    "updated_at": "2026-07-26T06:59:30.954751Z",
+    "workflow_id": "work_sdlc"
+  }
+}

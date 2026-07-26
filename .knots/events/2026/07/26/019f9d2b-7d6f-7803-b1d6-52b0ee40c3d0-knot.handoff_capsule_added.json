@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d2b-7d6f-7803-b1d6-52b0ee40c3d0",
+  "occurred_at": "2026-07-26T06:45:00.911598Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review approved. All 7 acceptance criteria met and independently verified, including proving the new parity gate fails when Failure Modes is stripped from dist. Ship branch claude/knots-e2e-42e7-bce40d (commit 0e27bf9c05a9) to main. One non-blocking cosmetic finding recorded: the --outcome path skips warn_deprecated_agent_metadata; deprecated agent flags are ignored either way.",
+    "datetime": "2026-07-26T06:45:00.911598Z",
+    "entry_id": "019f9d2b-7d6f-7803-b1d6-52a428df7f17",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

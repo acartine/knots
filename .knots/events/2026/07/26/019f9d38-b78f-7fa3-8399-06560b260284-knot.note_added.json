@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d38-b78f-7fa3-8399-06560b260284",
+  "occurred_at": "2026-07-26T06:59:27.759964Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review: APPROVED, final sign-off.\n\nLive on main. origin/main is at c50a2245 (merge) over 0e27bf9c (implementation), and the merge is the tip of the pushed branch. All new files are present on main: src/failure_outcome.rs, src/app/state_fail_ops.rs, tests/cli_rollback_outcome.rs, tests/loom_bundle_parity.rs.\n\nCommit tagging complete: commit:0e27bf9c05a9 (implementation), commit:c50a2245b7fd (merge), branch:claude/knots-e2e-42e7-bce40d. Short 12-character hashes as required.\n\nCI/CD green on the merge commit across all four workflows: CI, Release, Changesets Version PR, Repo Hygiene.\n\nVerified on the shipped artifact rather than by inference: rebuilt kno from main and ran the end-to-end path in a scratch repo. A knot claimed in shipment, given 'kno rollback --outcome merge_conflicts --lease <id>', rests in ready_for_implementation with the lease unbound and no active leases remaining. The compiled shipment prompt on main documents the exact command, so the next agent to hit a failed shipment is told what to run.\n\nNo invariants declared on this knot. No regressions in dependent systems: bare rollback and kno next keep their prior behavior, guarded by regression tests, and the change narrows mutation authority rather than widening it. The pending changeset will carry this out in the next version bump.",
+    "datetime": "2026-07-26T06:59:27.759964Z",
+    "entry_id": "019f9d38-b78f-7fa3-8399-064a1ace3ebf",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

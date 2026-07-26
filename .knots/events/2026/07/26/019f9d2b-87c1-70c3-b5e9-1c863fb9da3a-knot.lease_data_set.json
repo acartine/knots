@@ -1,0 +1,20 @@
+{
+  "event_id": "019f9d2b-87c1-70c3-b5e9-1c863fb9da3a",
+  "occurred_at": "2026-07-26T06:45:03.553538Z",
+  "knot_id": "knots-7c86",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "e2e-42e7-ship",
+      "timeout_seconds": 7200
+    }
+  }
+}

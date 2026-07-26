@@ -1,0 +1,15 @@
+{
+  "event_id": "019f9d07-f5d6-7ac0-b352-bc15bb1b21ff",
+  "occurred_at": "2026-07-26T06:06:12.438869Z",
+  "knot_id": "knots-42e7",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan attached. Design: extend 'kno rollback' with --outcome <name> plus --lease, resolving the target through the existing but unwired workflow_runtime::next_outcome_state failure map. New src/failure_outcome.rs resolves+validates the outcome (rejects unknown names, success outcomes, and arbitrary targets, reusing rollback's queue/terminal/passive guards so bare rollback is unchanged). New src/app/state_fail_ops.rs performs state change + lease_id clear + Failed step close + lease-knot termination inside ONE FileLock section, because FileLock is non-reentrant and today's rollback does set_state then release_bound_lease as separate writes. write_state_change_locked gains an options struct (clear_lease, step close kind); apply_step_failure_transition added next to apply_step_transition. dist/bundle.json was verified merely stale: a fresh 'loom build' restores the Failure Modes body, so step 4 rewrites the prompt Failure Modes to the new command, regenerates via make loom-bundle, and adds a source-vs-dist parity test that needs no loom binary. No child knots: splitting would break the atomicity the tests assert.",
+    "datetime": "2026-07-26T06:06:12.438869Z",
+    "entry_id": "019f9d07-f5d6-7ac0-b352-bc0bc0c8ade5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
