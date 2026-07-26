@@ -1,0 +1,9 @@
+{
+  "event_id": "019f9d5e-f9ff-7d23-a49d-f66dcf7125cc",
+  "occurred_at": "2026-07-26T07:41:15.120676Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. A claim that fails to establish a healthy lease does NOT leave the knot advanced into an action state — the state move and the lease binding commit together, or neither does. 2. A knot in an action state whose bound lease is terminated or expired can be recovered through the normal verbs: rollback accepts a dead bound lease (that is precisely when recovery is needed), or claim may rebind a knot whose bound lease is no longer active. 3. The error text for next/rollback/claim on a dead-lease knot names the recovery command instead of leaving the operator to discover 'kno state --force'. 4. Lease liveness is enforced consistently: either 'kno update' also rejects a terminated bound lease, or next/rollback stop treating it as fatal — the two must not disagree. 5. The knots-worktree checkout collision ('knots' is already used by worktree) no longer kills a lease mid-claim, and a sync/post-hook failure never terminates an otherwise healthy lease. 6. A regression test covers the deadlock: bind a lease, terminate it, and assert the knot is still recoverable without hand-setting state."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "019f9d5e-f9f0-7d12-91c3-cd2581dfa832",
+  "occurred_at": "2026-07-26T07:41:15.120676Z",
+  "knot_id": "knots-8ea1",
+  "type": "knot.created",
+  "data": {
+    "body": "kno 0.17.2. When a lease is TERMINATED while still BOUND to a knot sitting in an action state, that knot has no legal transition left through the normal verbs:\n\n  - kno claim <id>    -> 'is in state <action>, which is not a claimable queue state'\n  - kno next <id>     -> 'bound lease is in state lease_terminated -- expected lease_active'\n  - kno next <id> (no --lease) -> 'knot has a bound lease; rerun with --lease <lease-id>'\n  - kno rollback <id> -> same lease_terminated rejection (rollback is the documented recovery\n                         path, so the one verb meant to unstick a knot is itself blocked by\n                         the condition it should recover from)\n  - kno lease extend  -> 'cannot extend a terminated or expired lease'\n  - a fresh lease     -> 'lease mismatch: knot has <old>, caller provided <new>'\n\nObserved 2026-07-26 on knot quilt-9f51 in the quilt repo, bound lease 41da. The lease's own\nrecord shows created_at 07:09:40.005088Z and updated_at (termination) 07:09:40.117997Z — it\nwas terminated ~113ms after creation, during the very claim that bound it, while that claim\nalso emitted a knots-worktree sync error:\n\n  git -C /Users/cartine/quilt/.knots/_worktree checkout knots\n  fatal: 'knots' is already used by worktree at '/Users/cartine/quilt/.knots/_worktree'\n\nThe claim still advanced the knot into 'planning', so the knot moved while its lease died —\nthe two are not committed together. A later 'kno update -H' on that knot SUCCEEDED against\nthe dead lease; only 'next' and 'rollback' enforce lease liveness. That inconsistency is\npart of the bug: an agent gets no signal that its lease is gone until it tries to advance,\nby which time the knot is already wedged.\n\nThere IS an escape hatch — 'kno state <id> <state> [--force]' — but nothing in the error\nmessages of claim/next/rollback mentions it, so an agent following the documented\nclaim/next/rollback loop concludes the knot is unrecoverable and escalates to a human.\n\nThis is the third lease death observed in one session; the other two were recoverable only\nbecause those knots happened to be sitting in claimable queue states at the time.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "A lease terminated while bound deadlocks its knot in an action state",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}
