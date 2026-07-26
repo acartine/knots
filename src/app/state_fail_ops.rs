@@ -13,8 +13,11 @@
 use std::time::Duration;
 
 use crate::db;
+use crate::domain::knot_type::parse_knot_type;
 use crate::domain::step_history::{StepRecord, StepStatus};
-use crate::lease_expiry::{compute_expiry_ts, DEFAULT_LEASE_TIMEOUT_SECONDS};
+use crate::lease_expiry::{
+    compute_expiry_ts, effective_lease_state, DEFAULT_LEASE_TIMEOUT_SECONDS,
+};
 use crate::locks::FileLock;
 use crate::workflow_runtime;
 
@@ -112,6 +115,137 @@ impl App {
             self.release_lease_knot_locked(lease_id)?;
         }
         self.apply_alias_and_enrich_knot(KnotView::from(updated))
+    }
+
+    /// Materialize an expired lease bound to one action-state knot.
+    ///
+    /// Expiry is lazy, so the caller may have observed a lease that is raw
+    /// `lease_active` but effectively terminated. Re-read both records while
+    /// holding the write locks before changing either one.
+    pub(crate) fn recover_expired_bound_lease(&self, knot_id: &str) -> Result<bool, AppError> {
+        let knot_id = self.resolve_knot_token(knot_id)?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        let knot =
+            db::get_knot_hot(&self.conn, &knot_id)?.ok_or_else(|| AppError::NotFound(knot_id))?;
+        let Some(lease_token) = knot.lease_id.as_deref() else {
+            return Ok(false);
+        };
+        let lease_id = self.resolve_knot_token(lease_token)?;
+        let Some(lease) = db::get_knot_hot(&self.conn, &lease_id)? else {
+            return Ok(false);
+        };
+        if parse_knot_type(lease.knot_type.as_deref()) != crate::domain::knot_type::KnotType::Lease
+            || lease.state == workflow_runtime::LEASE_TERMINATED
+            || effective_lease_state(&lease.state, lease.lease_expiry_ts)
+                != workflow_runtime::LEASE_TERMINATED
+        {
+            return Ok(false);
+        }
+        self.recover_bound_action_locked(&knot, &lease)
+    }
+
+    /// Terminate a lease and recover the action-state knot still bound to it.
+    ///
+    /// A lease may be terminated after its knot has already moved into an
+    /// action state. Keep the release and rollback under one lock boundary so
+    /// callers never observe a dead lease pinning an action state.
+    pub(crate) fn terminate_lease_and_recover_bound_action(
+        &self,
+        lease_id: &str,
+    ) -> Result<KnotView, AppError> {
+        let lease_id = self.resolve_knot_token(lease_id)?;
+        let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        let lease = db::get_knot_hot(&self.conn, &lease_id)?
+            .ok_or_else(|| AppError::NotFound(lease_id.clone()))?;
+        if parse_knot_type(lease.knot_type.as_deref()) != crate::domain::knot_type::KnotType::Lease
+        {
+            return Err(AppError::InvalidArgument(
+                "specified knot is not a lease".to_string(),
+            ));
+        }
+        let mut bound_actions = Vec::new();
+        for knot in db::list_knot_hot(&self.conn)? {
+            let Some(bound_token) = knot.lease_id.as_deref() else {
+                continue;
+            };
+            let profile = self.resolve_profile_for_record(&knot)?;
+            if parse_knot_type(knot.knot_type.as_deref())
+                != crate::domain::knot_type::KnotType::Lease
+                && profile.is_action_state(&knot.state)
+                && self.resolve_knot_token(bound_token)? == lease_id
+            {
+                bound_actions.push(knot);
+            }
+        }
+        if bound_actions.len() > 1 {
+            return Err(AppError::InvalidArgument(format!(
+                "lease '{}' is bound to multiple action-state knots",
+                lease_id
+            )));
+        }
+        if let Some(knot) = bound_actions.first() {
+            self.recover_bound_action_locked(knot, &lease)?;
+        } else if lease.state != workflow_runtime::LEASE_TERMINATED {
+            let actor = StateActorMetadata::default();
+            self.write_state_change_locked(
+                &lease,
+                workflow_runtime::LEASE_TERMINATED,
+                true,
+                None,
+                &actor,
+                None,
+            )?;
+        }
+
+        let updated =
+            db::get_knot_hot(&self.conn, &lease_id)?.ok_or_else(|| AppError::NotFound(lease_id))?;
+        self.apply_alias_and_enrich_knot(KnotView::from(updated))
+    }
+
+    fn recover_bound_action_locked(
+        &self,
+        knot: &db::KnotCacheRecord,
+        lease: &db::KnotCacheRecord,
+    ) -> Result<bool, AppError> {
+        let Some(bound_token) = knot.lease_id.as_deref() else {
+            return Ok(false);
+        };
+        let profile = self.resolve_profile_for_record(knot)?;
+        if parse_knot_type(knot.knot_type.as_deref()) == crate::domain::knot_type::KnotType::Lease
+            || self.resolve_knot_token(bound_token)? != lease.id
+            || !profile.is_action_state(&knot.state)
+        {
+            return Ok(false);
+        }
+        let resolution = crate::rollback::resolve_rollback_state(self, &knot.id)?;
+        let actor = StateActorMetadata::default();
+        self.write_state_change_locked_with(
+            knot,
+            &resolution.target_state,
+            resolution.requires_force,
+            None,
+            &actor,
+            None,
+            StateWriteOverrides {
+                clear_lease: true,
+                fail_step: true,
+            },
+        )?;
+        if lease.state != workflow_runtime::LEASE_TERMINATED {
+            self.write_state_change_locked(
+                lease,
+                workflow_runtime::LEASE_TERMINATED,
+                true,
+                None,
+                &actor,
+                None,
+            )?;
+        }
+        Ok(true)
     }
 
     /// Terminate a lease knot without re-acquiring the repo/cache locks.

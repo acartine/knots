@@ -81,6 +81,16 @@ detected:
 This means an expired lease may briefly appear active in the database until
 the next interaction triggers materialization.
 
+### Requeueing dead claims
+
+An expired or explicitly terminated lease can be encountered while still bound
+to a knot in an action state. Knots recovers that dead claim by unbinding the
+lease and returning the knot to its preceding queue state, where a worker can
+claim it with a fresh lease. A terminated lease is never reusable or extendable.
+
+An action state held by another active lease is not a recovery target. A later
+worker must stop rather than roll it back, rebind it, or use `kno state --force`.
+
 ## One lease per claim
 
 Each `kno claim` call creates and activates a dedicated lease for that knot.

@@ -193,11 +193,22 @@ fn skills_install_and_uninstall_round_trip_for_codex() {
         .exists());
     let installed_knots = std::fs::read_to_string(root.join(".agents/skills/knots/SKILL.md"))
         .expect("installed knots skill");
+    let installed_e2e = std::fs::read_to_string(root.join(".agents/skills/knots-e2e/SKILL.md"))
+        .expect("installed e2e skill");
     let installed_create =
         std::fs::read_to_string(root.join(".agents/skills/knots-create/SKILL.md"))
             .expect("installed create skill");
     assert!(installed_knots.contains("kno claim <id> --lease <lease-id>"));
     assert!(installed_knots.contains("kno update <id> -H \"<capsule>\" --lease <lease-id>"));
+    assert!(installed_knots.contains("## Dead-lease recovery"));
+    assert!(installed_knots.contains("kno claim <id> --lease <new-lease-id>"));
+    assert!(installed_knots.contains("held by an active lease, stop"));
+    assert!(installed_knots.contains("kno state --force"));
+    assert!(installed_e2e.contains("## Dead-lease recovery"));
+    assert!(installed_e2e.contains("kno claim --e2e <id> --lease <new-lease-id>"));
+    assert!(installed_e2e.contains("action state held by an active"));
+    assert!(installed_e2e.contains("lease, stop"));
+    assert!(installed_e2e.contains("kno state --force"));
     assert!(installed_create.contains("kno lease create"));
     assert!(installed_create.contains("kno update <id> -H \"<capsule>\" --lease <lease-id>"));
     assert!(installed_create.contains("comes from the bound lease"));

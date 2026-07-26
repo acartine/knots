@@ -191,6 +191,34 @@ fn managed_skills_document_claim_lease_lifecycle() {
 }
 
 #[test]
+fn managed_skills_document_dead_lease_recovery() {
+    let by_name = |name: &str| {
+        let skill = managed_skills()
+            .iter()
+            .copied()
+            .find(|skill| skill.deploy_name == name)
+            .expect("managed skill should exist");
+        render_skill(skill)
+    };
+
+    let knots = by_name("knots");
+    assert!(knots.contains("## Dead-lease recovery"));
+    assert!(knots.contains("terminated or expired"));
+    assert!(knots.contains("queue state (`ready_for_*`)"));
+    assert!(knots.contains("kno claim <id> --lease <new-lease-id>"));
+    assert!(knots.contains("held by an active lease, stop"));
+    assert!(knots.contains("kno state --force"));
+
+    let e2e = by_name("knots-e2e");
+    assert!(e2e.contains("## Dead-lease recovery"));
+    assert!(e2e.contains("kno claim --e2e <id> --lease <new-lease-id>"));
+    assert!(e2e.contains("resume the e2e loop only after that claim succeeds"));
+    assert!(e2e.contains("action state held by an active"));
+    assert!(e2e.contains("lease, stop"));
+    assert!(e2e.contains("kno state --force"));
+}
+
+#[test]
 fn knots_plan_orchestrator_skill_describes_plan_execution_protocol() {
     let skill = managed_skills()
         .iter()

@@ -41,6 +41,21 @@ bound lease. Create or receive a fresh lease before claiming any later action
 state, then use that fresh lease id for notes, handoff capsules, and the next
 `kno next`.
 
+## Dead-lease recovery
+
+Treat a lease as dead when `kno` reports it terminated or expired. Never reuse
+or extend it. If recovery leaves the knot in a queue state (`ready_for_*`),
+create a fresh lease and claim the knot again:
+
+```bash
+kno lease create --nickname "<session-name>"
+kno claim <id> --lease <new-lease-id>
+```
+
+Use the new claim output and retry that action. If `kno claim` reports that the
+knot is in an action state held by an active lease, stop: another actor owns the
+action. Do not roll it back, rebind it, or use `kno state --force`.
+
 ## Create a knot
 
 Run:

@@ -37,6 +37,22 @@ After every successful `kno next`, treat the lease id you just used as spent.
 Before the next e2e claim, create or receive a fresh lease and pass that new
 lease id to `kno claim --e2e`. Do not try to reuse or extend the old lease.
 
+## Dead-lease recovery
+
+Treat a lease as dead when `kno` reports it terminated or expired. Never reuse
+or extend it. If recovery leaves the knot in a queue state (`ready_for_*`),
+create a fresh lease and re-claim it in e2e mode:
+
+```bash
+kno lease create --nickname "<session-name>"
+kno claim --e2e <id> --lease <new-lease-id>
+```
+
+Use the new claim output and resume the e2e loop only after that claim succeeds.
+If `kno claim` reports that the knot is in an action state held by an active
+lease, stop: another actor owns the action. Do not roll it back, rebind it, or
+use `kno state --force`.
+
 ## Invocation precedence
 
 When this skill is invoked, the agent MUST claim with the `--e2e` flag so the

@@ -65,13 +65,7 @@ pub fn activate_lease(app: &App, lease_id: &str) -> Result<KnotView, AppError> {
 
 /// Transition a lease to lease_terminated.
 pub fn terminate_lease(app: &App, lease_id: &str) -> Result<KnotView, AppError> {
-    app.set_state_with_actor(
-        lease_id,
-        "lease_terminated",
-        true,
-        None,
-        StateActorMetadata::default(),
-    )
+    app.terminate_lease_and_recover_bound_action(lease_id)
 }
 
 /// List leases whose effective state is lease_ready or lease_active.

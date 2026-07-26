@@ -209,7 +209,15 @@ pub fn claim_knot(
     // otherwise. For the auto-created path there is no agent_info source yet,
     // so agent fields stay unset.
     let claim_actor = resolve_claim_lease_actor(app, kind, external_lease);
-    let claimed = app.set_state_with_actor_and_options(
+    // Create an automatic lease before moving the work knot. A failed lease
+    // creation then leaves the knot queueable. External leases have already
+    // been checked above, but activation is still rechecked below.
+    let prepared_lease_id = match external_lease {
+        Some(lid) => lid.to_string(),
+        None => create_claim_lease(app, &knot.id, timeout_seconds)?,
+    };
+    let auto_lease = external_lease.is_none();
+    let claimed = match app.set_state_with_actor_and_options(
         &knot.id,
         &next_action,
         false,
@@ -217,20 +225,50 @@ pub fn claim_knot(
         claim_actor,
         false,
         true,
-    )?;
-
-    // Lease handling: use external lease or create a new one
-    let bound_lease_id = if let Some(lid) = external_lease {
-        bind_external_lease(app, &claimed.id, lid, timeout_seconds)?
-    } else {
-        create_and_bind_lease(app, &claimed.id, timeout_seconds)?
+    ) {
+        Ok(claimed) => claimed,
+        Err(err) => {
+            if auto_lease {
+                let _ = crate::lease::terminate_lease(app, &prepared_lease_id);
+            }
+            return Err(err);
+        }
     };
 
-    let bound = app
-        .show_knot(&claimed.id)?
-        .ok_or_else(|| AppError::NotFound(claimed.id.clone()))?;
-    let completion_cmd =
-        completion_command(&bound.id, &bound.state, bound_lease_id.as_deref(), e2e);
+    if let Err(err) = validate_claim_external_lease(app, &prepared_lease_id) {
+        compensate_failed_claim(app, &claimed.id);
+        if auto_lease {
+            cleanup_claim_lease(app, &prepared_lease_id);
+        }
+        return Err(err);
+    }
+    if let Err(err) = crate::lease::activate_lease(app, &prepared_lease_id) {
+        compensate_failed_claim(app, &claimed.id);
+        if auto_lease {
+            cleanup_claim_lease(app, &prepared_lease_id);
+        }
+        return Err(err);
+    }
+    if let Err(err) = app
+        .set_lease_expiry(
+            &prepared_lease_id,
+            crate::lease_expiry::compute_expiry_ts(timeout_seconds),
+        )
+        .and_then(|()| crate::lease::bind_lease(app, &claimed.id, &prepared_lease_id))
+    {
+        compensate_failed_claim(app, &claimed.id);
+        cleanup_claim_lease(app, &prepared_lease_id);
+        return Err(err);
+    }
+
+    let bound = match app.show_knot(&claimed.id)? {
+        Some(bound) => bound,
+        None => {
+            compensate_failed_claim(app, &claimed.id);
+            return Err(AppError::NotFound(claimed.id.clone()));
+        }
+    };
+    let completion_cmd = completion_command(&bound.id, &bound.state, Some(&prepared_lease_id), e2e);
     Ok(PollResult {
         knot: bound,
         skill,
@@ -251,40 +289,31 @@ fn resolve_claim_lease_actor(
     state_actor_from_agent_info(actor_kind, info.as_ref())
 }
 
-fn bind_external_lease(
-    app: &App,
-    knot_id: &str,
-    lid: &str,
-    timeout_seconds: u64,
-) -> Result<Option<String>, AppError> {
-    validate_claim_external_lease(app, lid)?;
-    crate::lease::activate_lease(app, lid)?;
-    app.set_lease_expiry(lid, crate::lease_expiry::compute_expiry_ts(timeout_seconds))?;
-    crate::lease::bind_lease(app, knot_id, lid)?;
-    Ok(Some(lid.to_string()))
-}
-
-fn create_and_bind_lease(
-    app: &App,
-    knot_id: &str,
-    timeout_seconds: u64,
-) -> Result<Option<String>, AppError> {
-    // Auto-created lease for a claim that did not pass `--lease`. Agent
-    // identity is unknown at this point (the CLI metadata flags that once
-    // declared it are deprecated), so the lease is created with a blank
-    // agent_info. Callers can still record the claim; downstream steps on
-    // this lease will simply carry unset agent fields until the user
-    // creates a real lease with `kno lease create` and re-binds.
+fn create_claim_lease(app: &App, knot_id: &str, timeout_seconds: u64) -> Result<String, AppError> {
     let lease = crate::lease::create_lease(
         app,
-        &format!("claim-{}", knot_id),
+        &format!("claim-{knot_id}"),
         crate::domain::lease::LeaseType::Agent,
         Some(crate::domain::lease::AgentInfo::default()),
         timeout_seconds,
     )?;
-    crate::lease::activate_lease(app, &lease.id)?;
-    crate::lease::bind_lease(app, knot_id, &lease.id)?;
-    Ok(Some(lease.id))
+    Ok(lease.id)
+}
+
+fn compensate_failed_claim(app: &App, knot_id: &str) {
+    let Ok(resolution) = crate::rollback::resolve_rollback_state(app, knot_id) else {
+        return;
+    };
+    let _ = app.fail_state_transition(
+        knot_id,
+        &resolution.target_state,
+        resolution.requires_force,
+        StateActorMetadata::default(),
+    );
+}
+
+fn cleanup_claim_lease(app: &App, lease_id: &str) {
+    let _ = crate::lease::terminate_lease(app, lease_id);
 }
 
 pub fn render_text(result: &PollResult) -> String {

@@ -1,3 +1,4 @@
+use crate::domain::step_history::StepStatus;
 use crate::lease_guard::materialize_expired_lease;
 use crate::poll_claim;
 use crate::write_queue::{UpdateOperation, WriteOperation};
@@ -188,6 +189,88 @@ fn materialize_expired_lease_terminates_and_rolls_back() {
         knot.state, "ready_for_implementation",
         "knot should roll back to ready_for_implementation"
     );
+    assert_eq!(
+        knot.step_history.last().map(|step| &step.status),
+        Some(&StepStatus::Failed),
+        "expired work must not be recorded as completed"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn terminating_bound_lease_requeues_only_its_action_and_allows_reclaim() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let (first_knot, first_lease) = claim_work_knot(&app, 600);
+    let (other_knot, other_lease) = claim_work_knot(&app, 600);
+
+    crate::lease::terminate_lease(&app, &first_lease).expect("terminate bound lease");
+
+    let first = app
+        .show_knot(&first_knot)
+        .expect("show first")
+        .expect("first exists");
+    assert_eq!(first.state, "ready_for_implementation");
+    assert!(first.lease_id.is_none(), "terminated lease must be unbound");
+    assert_eq!(
+        first.step_history.last().map(|step| &step.status),
+        Some(&StepStatus::Failed),
+        "terminated work must not be recorded as completed"
+    );
+
+    let other = app
+        .show_knot(&other_knot)
+        .expect("show other")
+        .expect("other exists");
+    assert_eq!(other.state, "implementation");
+    assert_eq!(other.lease_id.as_deref(), Some(other_lease.as_str()));
+
+    let reclaimed = poll_claim::claim_knot(&app, &first_knot, claim_actor_kind(), None, 600, false)
+        .expect("fresh lease should reclaim requeued work");
+    assert_eq!(reclaimed.knot.state, "implementation");
+    assert_ne!(
+        reclaimed.knot.lease_id.as_deref(),
+        Some(first_lease.as_str())
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn terminating_short_lease_id_recovers_legacy_short_binding() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+    let work = app
+        .create_knot("Short lease", None, Some("work_item"), Some("default"))
+        .expect("create work knot");
+    let lease = crate::lease::create_lease(
+        &app,
+        "short-id",
+        crate::domain::lease::LeaseType::Agent,
+        Some(crate::domain::lease::AgentInfo::default()),
+        600,
+    )
+    .expect("create lease");
+    let short_id = crate::knot_id::display_id(&lease.id).to_string();
+    let claimed = poll_claim::claim_knot(
+        &app,
+        &work.id,
+        claim_actor_kind(),
+        Some(&short_id),
+        600,
+        false,
+    )
+    .expect("claim with short lease id");
+    assert_eq!(claimed.knot.lease_id.as_deref(), Some(short_id.as_str()));
+    crate::lease::terminate_lease(&app, &short_id).expect("terminate short lease id");
+
+    let recovered = app.show_knot(&work.id).expect("show").expect("work exists");
+    assert_eq!(recovered.state, "ready_for_implementation");
+    assert!(recovered.lease_id.is_none());
 
     let _ = std::fs::remove_dir_all(root);
 }
@@ -208,6 +291,61 @@ fn materialize_expired_lease_skips_non_expired() {
     let knot = app.show_knot(&knot_id).expect("show").expect("knot exists");
     assert_eq!(knot.state, "implementation");
     assert_eq!(knot.lease_id.as_deref(), Some(lease_id.as_str()));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn materialize_expired_lease_skips_unbound_work() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+    let work = app
+        .create_knot("Unbound work", None, Some("work_item"), Some("default"))
+        .expect("create work knot");
+
+    let result = materialize_expired_lease(&app, &work).expect("materialize should succeed");
+    assert!(!result, "unbound work has no expired lease to recover");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn terminating_lease_rejects_multiple_action_bindings() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+    let (first_knot, lease_id) = claim_work_knot(&app, 600);
+    let (second_knot, _) = claim_work_knot(&app, 600);
+    app.set_lease_id(&second_knot, Some(&lease_id))
+        .expect("create duplicate action binding");
+
+    let error = crate::lease::terminate_lease(&app, &lease_id)
+        .expect_err("duplicate action bindings must be rejected");
+    assert!(error.to_string().contains("multiple action-state knots"));
+    assert_eq!(
+        app.show_knot(&first_knot)
+            .expect("show first")
+            .expect("first exists")
+            .state,
+        "implementation"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn terminating_non_lease_knot_is_rejected() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+    let work = app
+        .create_knot("Not a lease", None, Some("work_item"), Some("default"))
+        .expect("create work knot");
+
+    let error =
+        crate::lease::terminate_lease(&app, &work.id).expect_err("work knot must be rejected");
+    assert!(error.to_string().contains("specified knot is not a lease"));
 
     let _ = std::fs::remove_dir_all(root);
 }
