@@ -88,7 +88,7 @@ impl App {
         if self.transitioned_to_terminal_resolution_state(&current, &updated)? {
             self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
         }
-        self.apply_alias_and_enrich_knot(KnotView::from(updated))
+        Ok(self.apply_alias_and_enrich_knot_post_write(KnotView::from(updated)))
     }
 
     pub(crate) fn reconcile_terminal_parent_state(
@@ -107,7 +107,7 @@ impl App {
         if self.transitioned_to_terminal_resolution_state(&current, &updated)? {
             self.auto_resolve_terminal_parents_locked([updated.id.as_str()])?;
         }
-        self.apply_alias_and_enrich_knot(KnotView::from(updated))
+        Ok(self.apply_alias_and_enrich_knot_post_write(KnotView::from(updated)))
     }
 
     #[allow(clippy::too_many_arguments)]

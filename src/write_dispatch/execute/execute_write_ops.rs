@@ -277,7 +277,15 @@ pub(super) fn execute_next(app: &App, args: &NextOperation) -> Result<String, Ap
         },
     )?;
     if updated.lease_id.is_some() {
-        release_bound_lease(app, &updated.id)?;
+        // The state write committed; a failed lease release must not make
+        // the advance look failed. Expired-lease materialization recovers
+        // any lease this leaves behind.
+        if let Err(err) = release_bound_lease(app, &updated.id) {
+            eprintln!(
+                "warning: state advanced but lease release failed for '{}': {err}",
+                updated.id
+            );
+        }
     }
     Ok(format_next_output(
         &updated,

@@ -483,3 +483,7 @@ pub fn run_lease_read(app: &app::App, args: crate::cli::LeaseArgs) -> Result<(),
 #[cfg(test)]
 #[path = "run_commands_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "run_commands_tests_json.rs"]
+mod tests_json;
