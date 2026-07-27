@@ -142,3 +142,7 @@ mod tests_lease_ext7;
 #[cfg(test)]
 #[path = "write_dispatch/tests_lease_deprecation.rs"]
 mod tests_lease_deprecation;
+
+#[cfg(test)]
+#[path = "write_dispatch/tests_postwrite.rs"]
+mod tests_postwrite;

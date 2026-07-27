@@ -114,7 +114,7 @@ impl App {
         if let Some(lease_id) = bound_lease.as_deref() {
             self.release_lease_knot_locked(lease_id)?;
         }
-        self.apply_alias_and_enrich_knot(KnotView::from(updated))
+        Ok(self.apply_alias_and_enrich_knot_post_write(KnotView::from(updated)))
     }
 
     /// Materialize an expired lease bound to one action-state knot.
@@ -172,12 +172,25 @@ impl App {
             let Some(bound_token) = knot.lease_id.as_deref() else {
                 continue;
             };
-            let profile = self.resolve_profile_for_record(&knot)?;
             if parse_knot_type(knot.knot_type.as_deref())
-                != crate::domain::knot_type::KnotType::Lease
-                && profile.is_action_state(&knot.state)
-                && self.resolve_knot_token(bound_token)? == lease_id
+                == crate::domain::knot_type::KnotType::Lease
+                || self.resolve_knot_token(bound_token)? != lease_id
             {
+                continue;
+            }
+            // An unrelated knot with an unresolvable profile must not abort
+            // this lease release; skip it with a warning instead.
+            let profile = match self.resolve_profile_for_record(&knot) {
+                Ok(profile) => profile,
+                Err(err) => {
+                    eprintln!(
+                        "warning: skipping bound-action scan of '{}': {err}",
+                        knot.id
+                    );
+                    continue;
+                }
+            };
+            if profile.is_action_state(&knot.state) {
                 bound_actions.push(knot);
             }
         }
@@ -203,7 +216,7 @@ impl App {
 
         let updated =
             db::get_knot_hot(&self.conn, &lease_id)?.ok_or_else(|| AppError::NotFound(lease_id))?;
-        self.apply_alias_and_enrich_knot(KnotView::from(updated))
+        Ok(self.apply_alias_and_enrich_knot_post_write(KnotView::from(updated)))
     }
 
     fn recover_bound_action_locked(

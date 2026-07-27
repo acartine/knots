@@ -111,6 +111,24 @@ impl App {
         Ok(knot)
     }
 
+    /// Post-write variant of [`Self::apply_alias_and_enrich_knot`]: the state
+    /// write already committed, so display enrichment failures must not turn
+    /// the command into an error. Degrades to the un-enriched view with a
+    /// warning on stderr.
+    pub(super) fn apply_alias_and_enrich_knot_post_write(&self, knot: KnotView) -> KnotView {
+        let fallback = knot.clone();
+        match self.apply_alias_and_enrich_knot(knot) {
+            Ok(enriched) => enriched,
+            Err(err) => {
+                eprintln!(
+                    "warning: post-write enrichment failed for '{}': {err}",
+                    fallback.id
+                );
+                fallback
+            }
+        }
+    }
+
     pub(super) fn next_knot_id(&self) -> Result<String, AppError> {
         let existing = self.known_knot_ids()?;
         Ok(match self.project_id.as_deref() {

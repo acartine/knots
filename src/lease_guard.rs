@@ -106,9 +106,10 @@ pub(crate) fn validate_next_bound_lease(
     };
 
     let Some(provided_lease) = provided_lease else {
-        return Err(AppError::InvalidArgument(
-            "knot has a bound lease; rerun with --lease <lease-id>".to_string(),
-        ));
+        return Err(AppError::InvalidArgument(format!(
+            "knot has a bound lease '{bound_lease}'; \
+             rerun with --lease {bound_lease}"
+        )));
     };
     if bound_lease != provided_lease {
         return Err(AppError::InvalidArgument(format!(
