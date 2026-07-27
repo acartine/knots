@@ -1,0 +1,15 @@
+{
+  "event_id": "019fa47c-6da8-71d3-9750-b36cbaf3be6c",
+  "occurred_at": "2026-07-27T16:50:45.800411Z",
+  "knot_id": "knots-6dc2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped: merged claude/knots-e2e-ship-release-aec2f0 to main as 573f1b4c and pushed (1f1fbe7c..573f1b4c). Remote CI green: CI, Release, and Changesets Version PR workflows all success. Changeset postwrite-advance-exit-code (patch) included; Version Packages PR will pick it up.",
+    "datetime": "2026-07-27T16:50:45.800411Z",
+    "entry_id": "019fa47c-6da8-71d3-9750-b359f4f0afa6",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

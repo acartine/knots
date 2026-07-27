@@ -1,0 +1,15 @@
+{
+  "event_id": "019fa47c-cf76-78c3-83b3-4afc954e7b2b",
+  "occurred_at": "2026-07-27T16:51:10.838807Z",
+  "knot_id": "knots-6dc2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review: APPROVED. Fix commit 4867595e7137 and merge commit 573f1b4c53f3 both live on origin/main; workspace clean; remote CI green (CI 5m57s success, Release success, Changesets Version PR success). All commits tagged. No dependent-system regressions: change is CLI-internal error-path handling; JSON output shape unchanged; read paths unchanged.",
+    "datetime": "2026-07-27T16:51:10.838807Z",
+    "entry_id": "019fa47c-cf76-78c3-83b3-4ae0ec2610b1",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "019fa450-b1ba-7f41-a584-8ed7b0222948",
+  "occurred_at": "2026-07-27T16:02:59.642911Z",
+  "knot_id": "knots-6dc2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan complete. D1: make post-write enrichment best-effort (state_ops.rs:91 tail, state_fail_ops.rs terminate scan + tail) and downgrade post-write release errors in execute_next to stderr warnings. D2: not reproducible at HEAD (serde_json escapes correctly; verified multiline/control chars) — add locking regression test anyway. D3: name bound lease id in lease_guard.rs:110 message. Tests T1-T3 per plan note. No child knots. Patch changeset required.",
+    "datetime": "2026-07-27T16:02:59.642911Z",
+    "entry_id": "019fa450-b1ba-7f41-a584-8ec2186b7ea8",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

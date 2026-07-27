@@ -1,0 +1,15 @@
+{
+  "event_id": "019fa46f-9f9a-7ec1-bfc2-c2d804577933",
+  "occurred_at": "2026-07-27T16:36:46.618533Z",
+  "knot_id": "knots-6dc2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review: APPROVED. Diff (commit 4867595e) matches spec exactly: post-write enrichment degraded to stderr warning (state_ops/state_fail_ops/alias), lease-release scan skips unresolvable profiles instead of aborting, execute_next downgrades release failures after committed writes, bound-lease error names the id. 8 regression tests; key test verified to FAIL against pre-fix code. Sanity green (coverage 95.03%). No invariants on knot; no security concerns. AC2 (show -j) locked by test; defect not reproducible at HEAD — serde_json output is RFC 8259-compliant.",
+    "datetime": "2026-07-27T16:36:46.618533Z",
+    "entry_id": "019fa46f-9f9a-7ec1-bfc2-c2c73268ca4a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

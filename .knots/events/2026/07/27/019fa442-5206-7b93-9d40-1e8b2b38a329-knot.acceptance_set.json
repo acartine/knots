@@ -1,0 +1,9 @@
+{
+  "event_id": "019fa442-5206-7b93-9d40-1e8b2b38a329",
+  "occurred_at": "2026-07-27T15:47:17.626723Z",
+  "knot_id": "knots-6dc2",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. A lease-bound kno next whose state write succeeds exits 0 and prints the success line; post-write enrichment failures never change the exit code.\n2. kno show -j output is RFC 8259-valid for knots with multiline capsules (json.load passes).\n3. The bound-lease guidance error includes the bound lease id.\n4. Regression tests cover all three."
+  }
+}

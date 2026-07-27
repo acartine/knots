@@ -1,0 +1,15 @@
+{
+  "event_id": "019fa451-270a-7131-a841-816a71d2e524",
+  "occurred_at": "2026-07-27T16:03:29.674631Z",
+  "knot_id": "knots-6dc2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review: APPROVED. Plan addresses all 4 acceptance criteria: (1) post-write enrichment/release failures downgraded to stderr warnings with exit 0 via best-effort enrichment scoped to post-write sites (state_ops.rs tail, state_fail_ops.rs scan+tail, execute_next release); (2) show -j regression test locks RFC 8259 validity (defect not reproducible at HEAD; serde_json escapes correctly); (3) lease_guard.rs:110 message gains bound lease id; (4) regression tests T1-T3 cover all three. Risks identified and mitigated: enrichment stays fallible on read paths. Proceed to implementation.",
+    "datetime": "2026-07-27T16:03:29.674631Z",
+    "entry_id": "019fa451-270a-7131-a841-815b34423ff0",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

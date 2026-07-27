@@ -1,0 +1,15 @@
+{
+  "event_id": "019fa46f-4d3a-7e63-9955-13623e794609",
+  "occurred_at": "2026-07-27T16:36:25.530593Z",
+  "knot_id": "knots-6dc2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation complete on branch claude/knots-e2e-ship-release-aec2f0 (commit 4867595e7137). Fixed: (1) post-write enrichment + lease-release-scan failures no longer fail a committed advance (stderr warnings, exit 0) — state_ops.rs, state_fail_ops.rs, alias.rs, execute_write_ops.rs; (2) bound-lease guidance error names the lease id — lease_guard.rs; (3) show -j RFC 8259 validity locked by regression test (defect not reproducible at HEAD, serde_json escapes correctly). 8 new tests. make sanity green: fmt, clippy, sizes, tests, coverage 95.03% >= 95. Changeset: patch (postwrite-advance-exit-code). Live-verified all 3 ACs against a scratch store. Branch: claude/knots-e2e-ship-release-aec2f0",
+    "datetime": "2026-07-27T16:36:25.530593Z",
+    "entry_id": "019fa46f-4d3a-7e63-9955-1351ab5dd2e8",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

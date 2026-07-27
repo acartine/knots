@@ -1,0 +1,37 @@
+{
+  "event_id": "019fa47c-8c8f-78e0-a2e0-dac851092591",
+  "occurred_at": "2026-07-27T16:50:53.711008Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-6dc2",
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "step_metadata": {
+      "action_kind": "gate",
+      "action_state": "shipment_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "kno CLI: three defects found during quilt orchestration 2026-07-27",
+    "type": "work",
+    "updated_at": "2026-07-27T16:50:53.711008Z",
+    "workflow_id": "work_sdlc"
+  },
+  "precondition": {
+    "profile_etag": "019fa47c-6dd6-7c62-8ed0-11c391459ac8"
+  }
+}
