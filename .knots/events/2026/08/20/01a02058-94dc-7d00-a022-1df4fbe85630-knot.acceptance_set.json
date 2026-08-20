@@ -1,0 +1,9 @@
+{
+  "event_id": "01a02058-94dc-7d00-a022-1df4fbe85630",
+  "occurred_at": "2026-08-20T18:04:31.321727358Z",
+  "knot_id": "knots-4701",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- A test that panics mid-body leaves no directory behind under the temp root.\n- A full `cargo test --bin knots` run leaves no net new `/tmp/knots-*` trees\n  once the process exits.\n- `scripts/repo/reap-stale-artifacts.sh` reaps stale temp-root knots workspaces\n  as well as `$ROOT/target`, honouring the same `MAX_AGE_HOURS` cutoff and the\n  same stamp-file comparison.\n- The reaper still refuses a zero or non-numeric `MAX_AGE_HOURS`, and still\n  reports when it removed nothing.\n- Workspace creation goes through one shared helper rather than 85 copies, or,\n  if the migration is staged, the knot states plainly which files remain on the\n  old pattern and why.\n- No test asserts on a hard-coded `/tmp` path; `TMPDIR` is respected."
+  }
+}

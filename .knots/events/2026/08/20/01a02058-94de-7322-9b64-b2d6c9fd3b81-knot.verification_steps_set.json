@@ -1,0 +1,15 @@
+{
+  "event_id": "01a02058-94de-7322-9b64-b2d6c9fd3b81",
+  "occurred_at": "2026-08-20T18:04:31.321727358Z",
+  "knot_id": "knots-4701",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "Count temp-root knots dirs before and after a full cargo test --bin knots run; the net change is zero.",
+      "Add a test that panics deliberately and assert its workspace is gone after the run.",
+      "Run scripts/repo/reap-stale-artifacts.sh against a seeded stale temp workspace and confirm it is removed; confirm a fresh one is kept.",
+      "Confirm the reaper still rejects MAX_AGE_HOURS=0 and non-numeric input.",
+      "make sanity passes (fmt, lint, tests, coverage >= .ci/coverage-threshold.txt)."
+    ]
+  }
+}
