@@ -1,5 +1,28 @@
 # kno
 
+## 0.17.5
+
+### Patch Changes
+
+- 3dd6dfc: Fix a flaky `make sanity`: loom tests no longer mutate process-global `PATH`, and the machine-id test no longer depends on `KNOTS_MACHINE_ID` being unset in the environment
+- 5db7c32: Replicate `lease_expiry_ts` on `idx.knot_head` so a lease pulled from another machine shows its real expiry instead of always reading as expired; `kno lease ls --all` and `kno doctor` no longer mislabel a live foreign lease as stuck.
+- 8a0e61c: Record the owning machine on each lease so leases replicated from another machine no longer count as locally held
+- ab9ed3e: Never recover a lease another machine holds, and keep the cache lock off the
+  push half of `kno sync`.
+
+  `lease_expiry_ts` is not replicated, so a live lease pulled from another
+  machine arrived looking long expired. Expiry recovery would then terminate it,
+  roll its knot back, and let a second machine claim work that was still running
+  elsewhere. Recovery is now owner-scoped, matching the sync guard.
+
+  `kno sync` also no longer holds the cache lock across the network push, so a
+  slow push cannot make a concurrent `kno update` or `kno next` fail with
+  `lock busy`.
+
+- dc73d66: Make first-use machine id persistence atomic so concurrent processes on a fresh store converge on the same id instead of silently diverging, and surface persist failures as errors instead of discarding them
+- 3cce93f: `kno pull` and `kno sync` no longer defer wholesale when a local lease is active: they filter per knot instead, applying every event except those for knots this machine currently leases, and quarantine the held-back events for automatic replay once the lease terminates or expires.
+- d555e5c: `kno push` is no longer blocked by an active lease, and `kno sync` now defers only its pull half, reporting what it published.
+
 ## 0.17.4
 
 ### Patch Changes
