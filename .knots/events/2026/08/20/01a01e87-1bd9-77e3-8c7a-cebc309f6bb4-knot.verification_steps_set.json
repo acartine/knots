@@ -1,0 +1,14 @@
+{
+  "event_id": "01a01e87-1bd9-77e3-8c7a-cebc309f6bb4",
+  "occurred_at": "2026-08-20T09:36:06.100539494Z",
+  "knot_id": "knots-ec23",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "Update src/replication/tests.rs:382 (push_blocks_with_active_leases) to assert push now succeeds with an active lease while pull still errors.",
+      "Test: sync with an active lease returns Deferred carrying a non-empty push summary, and the pushed events are present on the knots ref.",
+      "Test deferred_sync_detail reports the push-succeeded deferral shape.",
+      "make sanity passes (fmt, lint, tests, coverage >= .ci/coverage-threshold.txt)."
+    ]
+  }
+}

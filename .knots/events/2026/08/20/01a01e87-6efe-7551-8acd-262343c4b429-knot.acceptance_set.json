@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01e87-6efe-7551-8acd-262343c4b429",
+  "occurred_at": "2026-08-20T09:36:27.387333025Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- `kno pull` and `kno sync` complete while local leases are active, applying\n  events for every knot not locally leased.\n- Events for a locally leased knot are not applied during the lease, and are\n  applied in full once the lease terminates or expires — no event is dropped\n  and none is applied twice.\n- Quarantine rows survive process restart and are keyed to the base commit at\n  which the skip occurred.\n- Replayed events land in event-id order; a knot quarantined across several\n  pulls converges to the same state as an unfiltered sync of the same events.\n- Sync output names the knots that were held back and why.\n- Remote-held leases never cause a local skip.\n- The MCP background sync loop no longer reports perpetual `sync deferred`\n  while agents work."
+  }
+}

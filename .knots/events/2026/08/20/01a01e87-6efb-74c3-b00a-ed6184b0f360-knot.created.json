@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01e87-6efb-74c3-b00a-ed6184b0f360",
+  "occurred_at": "2026-08-20T09:36:27.387333025Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.created",
+  "data": {
+    "body": "Today one active lease anywhere blocks the entire pull. Replace that with a\nper-knot filter: apply every remote event except those for knots this machine\ncurrently holds a lease on.\n\nWhy the filter is one-sided. A lease on a *remote* machine is not a reason to\nskip that knot locally — applying its events is read-only visibility into\nsomeone else's in-flight work, and `is_stale_precondition`\n(src/sync/apply_helpers.rs:327) already drops events whose `profile_etag` no\nlonger matches. The only knots that need holding back are the ones a local\nagent is mid-action on, so it sees a stable state for the duration of its\nclaim. No intersection of local and remote lease sets is required.\n\nThe real obstacle is the watermark. `apply_to_head` writes\n`last_index_head_commit` and `last_full_head_commit` = target_head after the\npass (src/sync/apply.rs:108-111), and `changed_files` diffs forward from there.\nSkipping a knot's events while the watermark advances loses those events\npermanently — strictly worse than deferring the sync.\n\nFix with a quarantine table rather than per-knot watermarks:\n- When knot K's event at head H is skipped because K is locally leased, record\n  `(knot_id, base_commit)` once, using the pre-pass watermark as base_commit.\n- On a later pull, for each quarantined knot no longer locally leased, run\n  `git diff --name-only <base_commit>..HEAD` scoped to that knot's events,\n  apply them, and drop the row.\n- Event ids are UUIDv7, so path sort order is time order and replay stays\n  correctly ordered.\n\nDepends on the lease-ownership knot: \"leased by this machine\" is only\nexpressible once leases record an owner.\n\nNote (do not fix here): `skipped_unknown_workflow_knots` (src/sync/apply.rs:227)\nhas the same watermark hazard — it is an in-memory set discarded at end of\npass, so a knot skipped for an uninstalled workflow is never re-applied after\nthe workflow is installed. The quarantine table is the natural home for that\nfix; file it as a follow-up once this lands.\n\nScope:\n- Quarantine table + migration.\n- Local-lease knot-id set (knots bound via lease_id, plus the lease knots).\n- Filter in `apply_index_event` / `apply_full_event`; drain on unlock.\n- Remove `require_no_active_leases` from the pull path and report deferred\n  knots in `SyncSummary` / `SyncOutcome`.\n- Point the MCP background sync loop (src/bin/kno_mcp/sync_loop.rs:14) at the\n  now-unblocked sync path.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Filter pull per knot instead of blocking sync on any active lease",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

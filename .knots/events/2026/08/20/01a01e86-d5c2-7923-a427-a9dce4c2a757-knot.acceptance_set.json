@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01e86-d5c2-7923-a427-a9dce4c2a757",
+  "occurred_at": "2026-08-20T09:35:48.159936396Z",
+  "knot_id": "knots-0b4c",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- `LeaseData` has an optional owner identity (machine id + pid) that is set on\n  creation and round-trips through event write -> push -> pull -> knot_hot.\n- A lease created on machine A and pulled by machine B is not counted by the\n  local active-lease query on B.\n- A lease whose owner is absent (legacy event) is counted as local.\n- `kno lease list` and `kno show` surface the owning machine for active leases.\n- `require_no_active_leases` and `sync_or_defer_with_progress` consult the\n  owner-aware query.\n- Machine id is stable across processes and adds no user identity the store\n  does not already record."
+  }
+}

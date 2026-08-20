@@ -1,0 +1,14 @@
+{
+  "event_id": "01a01e86-d5c4-70d2-aeb2-cd289c40d609",
+  "occurred_at": "2026-08-20T09:35:48.159936396Z",
+  "knot_id": "knots-0b4c",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "Unit test: a lease owned by machine X is excluded from the local active-lease count when the current machine is Y, and included when it is X.",
+      "Unit test: LeaseData deserialized from a legacy event with no owner field is treated as local.",
+      "Sync test in src/replication/tests.rs: pulling an active lease authored by another machine leaves sync unblocked.",
+      "make sanity passes (fmt, lint, tests, coverage >= .ci/coverage-threshold.txt)."
+    ]
+  }
+}

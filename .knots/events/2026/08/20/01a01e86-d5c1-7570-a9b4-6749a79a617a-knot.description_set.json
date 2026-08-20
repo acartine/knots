@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01e86-d5c1-7570-a9b4-6749a79a617a",
+  "occurred_at": "2026-08-20T09:35:48.159936396Z",
+  "knot_id": "knots-0b4c",
+  "type": "knot.description_set",
+  "data": {
+    "description": "`LeaseData` (src/domain/lease.rs:89) carries lease_type, nickname, agent_info,\nand timeout_seconds — but no identity for the machine that created the lease.\nLease knots are ordinary synced knots (created via `create_lease` ->\n`create_knot_with_options` with `KnotType::Lease`, src/lease.rs:8), so a lease\ncreated on machine A can land in machine B's `knot_hot` through a normal pull.\n\n`count_active_leases` (src/db/catalog.rs:325) filters only on knot_type, state,\nand lease_expiry_ts. It cannot tell a locally held lease from a replicated one,\nso any active lease that reaches another machine blocks that machine's sync\nuntil the lease's expiry timestamp passes, even though no agent there holds it.\n\nAdd an owner identity to leases and make local-lease queries owner-aware. This\nis a prerequisite for per-knot sync filtering: \"skip knots this machine is\nworking on\" is only expressible once \"this machine\" is recorded on the lease.\n\nScope:\n- Add an optional `owner` field to `LeaseData` (stable machine id + pid), set\n  at creation in `create_lease`.\n- Persist and project it through the index event -> knot_hot path so it\n  survives sync (see `parse_lease_data` in src/sync/apply_helpers.rs).\n- Add `count_local_active_leases` / `list_local_active_leases` that filter to\n  the current machine, and switch `require_no_active_leases`\n  (src/replication.rs:456) and `sync_or_defer_with_progress` to them.\n- Treat a lease with no owner (events written before this change) as local, so\n  existing stores keep today's conservative behavior.\n\nOut of scope: removing the sync guard, per-knot filtering. Those are separate\nknots."
+  }
+}

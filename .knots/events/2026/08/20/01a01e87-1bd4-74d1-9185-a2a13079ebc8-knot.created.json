@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01e87-1bd4-74d1-9185-a2a13079ebc8",
+  "occurred_at": "2026-08-20T09:36:06.100539494Z",
+  "knot_id": "knots-ec23",
+  "type": "knot.created",
+  "data": {
+    "body": "`push_with_progress` calls `require_no_active_leases` (src/replication.rs:100,\nguard at :456), so an active lease blocks publishing local events as well as\nimporting remote ones. Push does not need that guard.\n\nPush copies immutable event JSON files into the publish worktree and commits\nthem (`copy_files_into_worktree`, src/replication.rs:201). Event paths are\n`events/YYYY/MM/DD/{uuidv7}-{event_type}.json`\n(`relative_path_for_event`, src/events/mod.rs:284), so two machines cannot\nproduce the same path with different bytes and the `SyncError::FileConflict`\nbranch is unreachable in practice. Every event being pushed is already durable\nin the local store; publishing it while a lease is open exports no state the\nlocal store does not already hold, and it gives other machines visibility into\nin-flight work rather than hiding it.\n\nThe concurrency hazard the lease guard exists for is entirely on the pull side,\nwhere `IncrementalApplier` upserts remote index events into `knot_hot` and can\nmove a knot out from under an agent mid-action. That side is handled by the\nper-knot pull filter knot.\n\nScope:\n- Drop `require_no_active_leases` from `push` / `push_with_progress`.\n- Keep the guard on `pull` / `pull_with_progress` until the per-knot filter\n  lands, so this knot is independently shippable.\n- `sync_or_defer_with_progress` (src/replication.rs:278) should push first and\n  only report `Deferred` for the pull half, so an agent-busy machine still\n  publishes. Extend `SyncOutcome` so a deferred sync can still report its push\n  summary, and update `deferred_sync_detail` in src/bin/kno_mcp/sync_loop.rs to\n  match.\n- Update docs/leases.md, which currently states that sync push/pull is blocked\n  while a lease is active (lines 11, 42-43).\n\nOut of scope: pull-side filtering, lease ownership.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Allow kno push while leases are active",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}
