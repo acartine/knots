@@ -12,7 +12,7 @@ fmt:
 
 lint: reap-artifacts
 	npm run check-changesets
-	CARGO_TARGET_DIR=$(SANITY_TARGET_DIR) cargo clippy --all-targets --all-features -- -D warnings
+	CARGO_TARGET_DIR=$(SANITY_TARGET_DIR) cargo clippy --workspace --all-targets --all-features -- -D warnings
 	bash scripts/repo/check-file-sizes.sh
 
 test: reap-artifacts

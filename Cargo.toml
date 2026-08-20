@@ -1,3 +1,6 @@
+[workspace]
+members = ["crates/knots-test-support"]
+
 [package]
 name = "knots"
 version = "0.17.5"
@@ -40,6 +43,7 @@ schemars = { version = "1", optional = true }
 
 [dev-dependencies]
 portable-pty = "0.9.0"
+knots-test-support = { path = "crates/knots-test-support" }
 
 [[bin]]
 name = "kno-mcp"
