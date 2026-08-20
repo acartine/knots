@@ -234,17 +234,13 @@ fn plan_edit_error(error: PlanEditError) -> AppError {
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
     use std::process::Command;
-
-    use uuid::Uuid;
 
     use super::*;
 
-    fn unique_workspace(prefix: &str) -> PathBuf {
-        let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-        std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-        root
+    fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+        knots_test_support::workspace(prefix)
     }
 
     fn run_git(root: &Path, args: &[&str]) {
@@ -294,7 +290,8 @@ mod tests {
 
     #[test]
     fn plan_wave_add_persists_and_preserves_fields() {
-        let root = unique_workspace("knots-plan-edit-wave-add");
+        let root_ws = unique_workspace("knots-plan-edit-wave-add");
+        let root = root_ws.path().to_path_buf();
         setup_repo(&root);
         let db = root.join(".knots/cache/state.sqlite");
         let app = App::open(db.to_str().expect("utf8"), root.clone()).expect("app");
@@ -329,12 +326,12 @@ mod tests {
         assert_eq!(plan.waves[0].steps.len(), 1);
         assert_eq!(plan.waves[0].steps[0].knot_ids, vec![ref_knot.id]);
         assert_eq!(plan.waves[0].steps[0].notes.as_deref(), Some("notes"));
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn plan_wave_remove_returns_cascade_info() {
-        let root = unique_workspace("knots-plan-edit-wave-remove");
+        let root_ws = unique_workspace("knots-plan-edit-wave-remove");
+        let root = root_ws.path().to_path_buf();
         setup_repo(&root);
         let db = root.join(".knots/cache/state.sqlite");
         let app = App::open(db.to_str().expect("utf8"), root.clone()).expect("app");
@@ -392,12 +389,12 @@ mod tests {
         let plan = updated.execution_plan.expect("plan");
         assert_eq!(plan.waves.len(), 1);
         assert_eq!(plan.waves[0].wave_index, 1);
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn plan_step_move_renumbers_steps() {
-        let root = unique_workspace("knots-plan-edit-step-move");
+        let root_ws = unique_workspace("knots-plan-edit-step-move");
+        let root = root_ws.path().to_path_buf();
         setup_repo(&root);
         let db = root.join(".knots/cache/state.sqlite");
         let app = App::open(db.to_str().expect("utf8"), root.clone()).expect("app");
@@ -447,7 +444,6 @@ mod tests {
         assert_eq!(plan.waves[0].steps[1].knot_ids, vec![ref_a.id.clone()]);
         assert_eq!(plan.waves[0].steps[0].step_index, 1);
         assert_eq!(plan.waves[0].steps[1].step_index, 2);
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]

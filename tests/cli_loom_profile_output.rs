@@ -123,7 +123,8 @@ const OUTPUT_SENSITIVE_STATES: &[&str] = &[
 
 #[test]
 fn autopilot_claim_resolves_remote_main_output() {
-    let root = unique_workspace("knots-e2e-loom-output-rm");
+    let root_ws = unique_workspace("knots-e2e-loom-output-rm");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -150,12 +151,12 @@ fn autopilot_claim_resolves_remote_main_output() {
 
         assert_branch_output_prompt(prompt, queue_state, "autopilot");
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn autopilot_with_pr_claim_resolves_pr_output() {
-    let root = unique_workspace("knots-e2e-loom-output-pr");
+    let root_ws = unique_workspace("knots-e2e-loom-output-pr");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -182,7 +183,6 @@ fn autopilot_with_pr_claim_resolves_pr_output() {
 
         assert_pr_output_prompt(prompt, queue_state, "autopilot_with_pr");
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 // ── Multiple installed workflows coexist ────────────────────
@@ -278,7 +278,8 @@ changes = "ready_for_work"
 "#;
 
 fn install_custom_workflow(root: &std::path::Path, db: &std::path::Path) {
-    let home = unique_workspace("knots-e2e-loom-multi-home");
+    let home_ws = unique_workspace("knots-e2e-loom-multi-home");
+    let home = home_ws.path().to_path_buf();
     let bundle_path = root.join("loom-alt.toml");
     std::fs::write(&bundle_path, CUSTOM_LOOM_BUNDLE).expect("bundle should write");
     let install = std::process::Command::new(knots_binary())
@@ -303,7 +304,8 @@ fn install_custom_workflow(root: &std::path::Path, db: &std::path::Path) {
 
 #[test]
 fn builtin_prompts_survive_custom_workflow_install() {
-    let root = unique_workspace("knots-e2e-loom-multi");
+    let root_ws = unique_workspace("knots-e2e-loom-multi");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -335,12 +337,12 @@ fn builtin_prompts_survive_custom_workflow_install() {
         !prompt.contains("Alt Loom"),
         "builtin prompt should not bleed custom workflow text"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn custom_workflow_prompts_resolve_independently() {
-    let root = unique_workspace("knots-e2e-loom-multi-custom");
+    let root_ws = unique_workspace("knots-e2e-loom-multi-custom");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -378,12 +380,12 @@ fn custom_workflow_prompts_resolve_independently() {
         !prompt.contains("# Implementation"),
         "custom workflow prompt should not contain builtin headings"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn builtin_and_custom_workflows_render_distinct_claim_prompts_in_same_repo() {
-    let root = unique_workspace("knots-e2e-loom-multi-same-repo");
+    let root_ws = unique_workspace("knots-e2e-loom-multi-same-repo");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -436,6 +438,4 @@ fn builtin_and_custom_workflows_render_distinct_claim_prompts_in_same_repo() {
     assert_prompt_contains(custom_prompt, "# Alt Loom Work", "loom_alt/work");
     assert_prompt_contains(custom_prompt, "Alt work delivered", "loom_alt/work");
     assert_prompt_not_contains(custom_prompt, "# Implementation", "loom_alt/work");
-
-    let _ = std::fs::remove_dir_all(root);
 }

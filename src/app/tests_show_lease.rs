@@ -1,12 +1,9 @@
-use std::path::PathBuf;
 use std::process::Command;
 
 use super::App;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-show-lease-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-show-lease")
 }
 
 fn run_git(root: &std::path::Path, args: &[&str]) {
@@ -41,7 +38,8 @@ fn open_app(root: &std::path::Path) -> App {
 
 #[test]
 fn show_knot_populates_lease_agent_from_bound_lease_record() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -77,6 +75,4 @@ fn show_knot_populates_lease_agent_from_bound_lease_record() {
     assert_eq!(agent.agent_name, "claude");
     assert_eq!(agent.model, "opus");
     assert_eq!(agent.model_version, "4.6");
-
-    let _ = std::fs::remove_dir_all(root);
 }

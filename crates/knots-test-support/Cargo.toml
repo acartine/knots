@@ -1,0 +1,14 @@
+[package]
+name = "knots-test-support"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
+
+[lints.clippy]
+too_many_lines = "warn"
+
+[dependencies]
+uuid = { version = "1.8", features = ["v7"] }

@@ -173,13 +173,12 @@ fn test_skill_and_next(root: &std::path::Path, db: &std::path::Path, first_id: &
     assert!(
         String::from_utf8_lossy(&doctor.stderr).contains("kno doctor --fix to address these items")
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn core_cli_commands_dispatch_success_and_failure_paths() {
-    let root = unique_workspace("knots-cli-dispatch");
+    let root_ws = unique_workspace("knots-cli-dispatch");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -191,7 +190,8 @@ fn core_cli_commands_dispatch_success_and_failure_paths() {
 
 #[test]
 fn doctor_without_fix_prints_hint_and_fix_creates_knots_branch() {
-    let root = unique_workspace("knots-cli-doctor-fix");
+    let root_ws = unique_workspace("knots-cli-doctor-fix");
+    let root = root_ws.path().to_path_buf();
     let _remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -246,13 +246,12 @@ fn doctor_without_fix_prints_hint_and_fix_creates_knots_branch() {
         "expected origin/knots after doctor --fix, stderr: {}",
         String::from_utf8_lossy(&knots_remote.stderr)
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn init_and_uninit_commands_work_with_remote_origin() {
-    let root = unique_workspace("knots-cli-init");
+    let root_ws = unique_workspace("knots-cli-init");
+    let root = root_ws.path().to_path_buf();
     let _remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -269,13 +268,12 @@ fn init_and_uninit_commands_work_with_remote_origin() {
     assert_success(&uninit);
     assert!(String::from_utf8_lossy(&uninit.stdout).contains("kno uninit completed"));
     assert!(!root.join(".knots").exists());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn init_command_bootstraps_from_existing_remote_branch() {
-    let root = unique_workspace("knots-cli-init-existing");
+    let root_ws = unique_workspace("knots-cli-init-existing");
+    let root = root_ws.path().to_path_buf();
     let remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -289,7 +287,8 @@ fn init_command_bootstraps_from_existing_remote_branch() {
     let knot_id = parse_created_id(&created);
     assert_success(&run_knots(&root, &db, &["sync"]));
 
-    let clone = unique_workspace("knots-cli-init-existing-clone");
+    let clone_ws = unique_workspace("knots-cli-init-existing-clone");
+    let clone = clone_ws.path().to_path_buf();
     let clone_output = std::process::Command::new("git")
         .arg("clone")
         .arg(&remote)
@@ -320,14 +319,12 @@ fn init_command_bootstraps_from_existing_remote_branch() {
         show_stdout.contains("Shared knot"),
         "clone show: {show_stdout}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
-    let _ = std::fs::remove_dir_all(clone);
 }
 
 #[test]
 fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
-    let root = unique_workspace("knots-cli-dispatch-non-json");
+    let root_ws = unique_workspace("knots-cli-dispatch-non-json");
+    let root = root_ws.path().to_path_buf();
     let _remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -405,13 +402,12 @@ fn cli_dispatch_covers_non_json_paths_and_remote_sync_commands() {
     let doctor = run_knots(&root, &db, &["doctor"]);
     assert_success(&doctor);
     assert!(String::from_utf8_lossy(&doctor.stdout).contains("lock_health"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn completions_command_generates_bash_output() {
-    let root = unique_workspace("knots-cli-completions");
+    let root_ws = unique_workspace("knots-cli-completions");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -420,13 +416,12 @@ fn completions_command_generates_bash_output() {
     let stdout = String::from_utf8_lossy(&result.stdout);
     assert!(!stdout.is_empty());
     assert!(stdout.contains("kno"), "completions: {stdout}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn new_with_tags_creates_knot_with_tags() {
-    let root = unique_workspace("knots-cli-new-tags");
+    let root_ws = unique_workspace("knots-cli-new-tags");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -448,13 +443,12 @@ fn new_with_tags_creates_knot_with_tags() {
     let tag_strs: Vec<&str> = tags.iter().filter_map(Value::as_str).collect();
     assert!(tag_strs.contains(&"Alpha"), "tags: {tag_strs:?}");
     assert!(tag_strs.contains(&"beta"), "tags: {tag_strs:?}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn new_fast_flag_and_q_command_use_quick_profile() {
-    let root = unique_workspace("knots-cli-new-fast");
+    let root_ws = unique_workspace("knots-cli-new-fast");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -470,6 +464,4 @@ fn new_fast_flag_and_q_command_use_quick_profile() {
     assert_success(&q);
     let stdout = String::from_utf8_lossy(&q.stdout);
     assert!(stdout.contains("[READY_FOR_IMPLEMENTATION]"), "q: {stdout}");
-
-    let _ = std::fs::remove_dir_all(root);
 }

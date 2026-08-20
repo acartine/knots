@@ -5,7 +5,8 @@ use serde_json::Value;
 
 #[test]
 fn claim_rejects_active_external_lease_with_warning_and_no_leak_id() {
-    let root = unique_workspace("knots-cli-claim-active-lease");
+    let root_ws = unique_workspace("knots-cli-claim-active-lease");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -57,13 +58,12 @@ fn claim_rejects_active_external_lease_with_warning_and_no_leak_id() {
     assert_success(&show);
     let shown: Value = serde_json::from_slice(&show.stdout).expect("show json");
     assert_eq!(shown["state"], "ready_for_implementation");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_rejects_corrupt_bound_lease_with_warning_and_no_leak_id() {
-    let root = unique_workspace("knots-cli-next-corrupt-lease");
+    let root_ws = unique_workspace("knots-cli-next-corrupt-lease");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -121,6 +121,4 @@ fn next_rejects_corrupt_bound_lease_with_warning_and_no_leak_id() {
     assert_success(&show);
     let shown: Value = serde_json::from_slice(&show.stdout).expect("show json");
     assert_eq!(shown["state"], "implementation");
-
-    let _ = std::fs::remove_dir_all(root);
 }

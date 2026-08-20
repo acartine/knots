@@ -24,7 +24,8 @@ fn create_active_lease(app: &crate::app::App) -> String {
 
 #[test]
 fn extend_active_lease_succeeds() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let lease_id = create_active_lease(&app);
@@ -43,13 +44,12 @@ fn extend_active_lease_succeeds() {
         output.contains("1200s"),
         "output should include timeout: {output}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn extend_active_lease_json_output() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let lease_id = create_active_lease(&app);
@@ -64,13 +64,12 @@ fn extend_active_lease_json_output() {
     assert_eq!(parsed["id"].as_str().unwrap(), lease_id);
     assert_eq!(parsed["timeout_seconds"].as_u64().unwrap(), 600);
     assert!(parsed["lease_expiry_ts"].as_i64().is_some());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn extend_terminated_lease_fails() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let lease_id = create_active_lease(&app);
@@ -87,13 +86,12 @@ fn extend_terminated_lease_fails() {
         "error should mention terminated: {}",
         err
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn extend_non_lease_knot_fails() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let work = app
@@ -111,13 +109,12 @@ fn extend_non_lease_knot_fails() {
         "error should mention not a lease: {}",
         err
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn extend_nonexistent_lease_fails() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -132,13 +129,12 @@ fn extend_nonexistent_lease_fails() {
         "error should mention not found: {}",
         err
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn lease_create_manual_type_succeeds() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -155,6 +151,4 @@ fn lease_create_manual_type_succeeds() {
     });
     let output = execute_operation(&app, &op).expect("create manual");
     assert!(output.contains("created lease"), "output: {output}");
-
-    let _ = std::fs::remove_dir_all(root);
 }

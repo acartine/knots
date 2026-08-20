@@ -2,7 +2,6 @@ use super::{App, CreateKnotOptions, UpdateKnotPatch};
 use crate::domain::gate::{GateData, GateOwnerKind};
 use serde_json::Value;
 use std::path::Path;
-use uuid::Uuid;
 
 const RESPONSE_REVIEW_FLOW: &str = r#"
 [workflow]
@@ -74,12 +73,11 @@ approved = "done"
 changes = "ready_for_work"
 "#;
 
-fn unique_workspace() -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-step-meta-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    crate::installed_workflows::ensure_builtin_workflows_registered(&root)
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    let ws = knots_test_support::workspace("knots-app-step-meta");
+    crate::installed_workflows::ensure_builtin_workflows_registered(ws.path())
         .expect("builtin workflows should register");
-    root
+    ws
 }
 
 fn latest_knot_head_payload(root: &Path, knot_id: &str) -> Value {
@@ -121,7 +119,8 @@ fn install_review_flow(root: &Path) {
 
 #[test]
 fn autopilot_mutation_responses_and_logs_include_step_metadata() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -199,13 +198,12 @@ fn autopilot_mutation_responses_and_logs_include_step_metadata() {
         serde_json::to_value(moved.step_metadata.as_ref().expect("step metadata"))
             .expect("step metadata should serialize"),
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn custom_workflow_show_response_includes_review_hint_metadata() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     install_review_flow(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
@@ -241,13 +239,12 @@ fn custom_workflow_show_response_includes_review_hint_metadata() {
             .map(|output| output.artifact_type.as_str()),
         Some("approval"),
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn gate_show_response_includes_owner_metadata() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -289,6 +286,4 @@ fn gate_show_response_includes_owner_metadata() {
             .and_then(|meta| meta.action_kind.as_deref()),
         Some("gate"),
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -6,13 +6,11 @@ use crate::domain::execution_plan::{
 use crate::knot_id::display_id;
 use rusqlite::params;
 use serde_json::json;
-use std::path::PathBuf;
-use uuid::Uuid;
 
-fn workspace() -> PathBuf {
-    let r = std::env::temp_dir().join(format!("knots-norm-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&r).expect("mkdir");
-    r
+fn workspace() -> knots_test_support::TestWorkspace {
+    let r_ws = knots_test_support::workspace("knots-norm-test");
+    let _r = r_ws.path().to_path_buf();
+    r_ws
 }
 
 fn patch(ep: ExecutionPlanData) -> UpdateKnotPatch {
@@ -24,7 +22,8 @@ fn patch(ep: ExecutionPlanData) -> UpdateKnotPatch {
 
 #[test]
 fn bare_ids_are_normalized_to_fully_qualified() {
-    let root = workspace();
+    let root_ws = workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
     let parent = app
@@ -60,13 +59,12 @@ fn bare_ids_are_normalized_to_fully_qualified() {
     assert_eq!(plan.unassigned_knot_ids, vec![child.id.clone()],);
     assert_eq!(plan.waves[0].knots[0].id, child.id);
     assert_eq!(plan.waves[0].steps[0].knot_ids, vec![child.id.clone()],);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn already_qualified_ids_pass_through_unchanged() {
-    let root = workspace();
+    let root_ws = workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
     let parent = app
@@ -87,13 +85,12 @@ fn already_qualified_ids_pass_through_unchanged() {
 
     let plan = updated.execution_plan.expect("plan present");
     assert_eq!(plan.unassigned_knot_ids, vec![child.id]);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn unresolvable_ids_are_rejected() {
-    let root = workspace();
+    let root_ws = workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
     let parent = app
@@ -118,13 +115,12 @@ fn unresolvable_ids_are_rejected() {
         }
         other => panic!("expected NotFound, got: {other:?}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn show_json_displays_qualified_ids_at_all_levels() {
-    let root = workspace();
+    let root_ws = workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
     let parent = app
@@ -161,13 +157,12 @@ fn show_json_displays_qualified_ids_at_all_levels() {
     assert_eq!(plan.unassigned_knot_ids, vec![child.id.clone()]);
     assert_eq!(plan.waves[0].knots[0].id, child.id);
     assert_eq!(plan.waves[0].steps[0].knot_ids, vec![child.id],);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn show_json_canonicalizes_legacy_bare_ids_from_cache() {
-    let root = workspace();
+    let root_ws = workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
     let parent = app
@@ -207,6 +202,4 @@ fn show_json_canonicalizes_legacy_bare_ids_from_cache() {
     assert_eq!(plan.unassigned_knot_ids, vec![child.id.clone()]);
     assert_eq!(plan.waves[0].knots[0].id, child.id.clone());
     assert_eq!(plan.waves[0].steps[0].knot_ids, vec![child.id]);
-
-    let _ = std::fs::remove_dir_all(root);
 }

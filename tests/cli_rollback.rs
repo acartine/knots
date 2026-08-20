@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(cwd: &Path, args: &[&str]) {
@@ -108,7 +105,8 @@ fn parse_created_id(output: &Output) -> String {
 
 #[test]
 fn rollback_alias_rewinds_review_state_to_prior_ready_state() {
-    let root = unique_workspace("knots-cli-rollback-review");
+    let root_ws = unique_workspace("knots-cli-rollback-review");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -153,13 +151,12 @@ fn rollback_alias_rewinds_review_state_to_prior_ready_state() {
     assert_success(&show);
     let knot: Value = serde_json::from_slice(&show.stdout).expect("show should emit json");
     assert_eq!(knot["state"], "ready_for_implementation");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rollback_dry_run_previews_without_mutating_and_rejects_queue_states() {
-    let root = unique_workspace("knots-cli-rollback-dry-run");
+    let root_ws = unique_workspace("knots-cli-rollback-dry-run");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -198,6 +195,4 @@ fn rollback_dry_run_previews_without_mutating_and_rejects_queue_states() {
     assert_success(&show);
     let knot: Value = serde_json::from_slice(&show.stdout).expect("show should emit json");
     assert_eq!(knot["state"], "implementation");
-
-    let _ = std::fs::remove_dir_all(root);
 }

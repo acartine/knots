@@ -67,10 +67,10 @@ mod tests {
         );
     }
 
-    fn temp_workspace(prefix: &str) -> PathBuf {
-        let path = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
-        std::fs::create_dir_all(&path).expect("workspace should be creatable");
-        path
+    fn temp_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+        let path_ws = knots_test_support::workspace(prefix);
+        let _path = path_ws.path().to_path_buf();
+        path_ws
     }
 
     fn seed_repo(primary: &Path) {
@@ -86,7 +86,8 @@ mod tests {
 
     #[test]
     fn primary_worktree_root_returns_primary_for_linked_worktree() {
-        let root = temp_workspace("knots-project-worktree");
+        let root_ws = temp_workspace("knots-project-worktree");
+        let root = root_ws.path().to_path_buf();
         let primary = root.join("primary");
         seed_repo(&primary);
         let linked = root.join("linked");
@@ -107,14 +108,12 @@ mod tests {
 
         let from_primary = primary_worktree_root(&primary).expect("primary worktree from primary");
         assert_eq!(from_primary, expected);
-
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn primary_worktree_root_returns_none_outside_git() {
-        let root = temp_workspace("knots-project-worktree-nogit");
+        let root_ws = temp_workspace("knots-project-worktree-nogit");
+        let root = root_ws.path().to_path_buf();
         assert!(primary_worktree_root(&root).is_none());
-        let _ = std::fs::remove_dir_all(root);
     }
 }

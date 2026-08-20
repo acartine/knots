@@ -107,7 +107,7 @@ mod tests {
             mode: CompatTestMode::Matrix,
             source: PathBuf::from("<builtin:work_sdlc>"),
             workflow_id: "custom_flow".to_string(),
-            workspace_path: Some(PathBuf::from("/tmp/workspace")),
+            workspace_path: Some(PathBuf::from("/example/workspace")),
             steps: vec![StepResult {
                 name: "build".to_string(),
                 detail: "done".to_string(),
@@ -119,7 +119,7 @@ mod tests {
                 prompt_verified: true,
             }],
         });
-        assert!(rendered.contains("workspace: /tmp/workspace"));
+        assert!(rendered.contains("workspace: /example/workspace"));
         assert!(rendered.contains("- build: done"));
         assert!(rendered.contains("success -> ready_for_review"));
     }

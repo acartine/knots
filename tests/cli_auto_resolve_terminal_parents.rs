@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(cwd: &Path, args: &[&str]) {
@@ -125,7 +122,8 @@ fn show_state(root: &Path, db: &Path, knot_id: &str) -> String {
 
 #[test]
 fn next_auto_resolves_terminal_parents_recursively() {
-    let root = unique_workspace("knots-cli-auto-resolve-next");
+    let root_ws = unique_workspace("knots-cli-auto-resolve-next");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -149,7 +147,8 @@ fn next_auto_resolves_terminal_parents_recursively() {
 
 #[test]
 fn update_auto_resolves_parent_for_cascaded_descendant() {
-    let root = unique_workspace("knots-cli-auto-resolve-update");
+    let root_ws = unique_workspace("knots-cli-auto-resolve-update");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 

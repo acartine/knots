@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use std::collections::BTreeMap;
 
 use crate::cli::{
@@ -10,12 +8,11 @@ use crate::workflow::ActionOutputDef;
 
 use super::*;
 
-fn unique_dir(prefix: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("{}-{}", prefix, uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&dir).expect("temp dir should be creatable");
-    crate::installed_workflows::ensure_builtin_workflows_registered(&dir)
+fn unique_dir(prefix: &str) -> knots_test_support::TestWorkspace {
+    let ws = knots_test_support::workspace(prefix);
+    crate::installed_workflows::ensure_builtin_workflows_registered(ws.path())
         .expect("builtin workflows should register");
-    dir
+    ws
 }
 
 #[test]
@@ -83,7 +80,8 @@ fn profile_helpers_cover_empty_fields_and_enabled_palette_paths() {
 
 #[test]
 fn run_profile_command_handles_list_show_and_set_default() {
-    let root = unique_dir("knots-profcmd-test");
+    let root_ws = unique_dir("knots-profcmd-test");
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     std::fs::create_dir_all(db_path.parent().expect("db parent should exist"))
         .expect("db parent should be creatable");
@@ -182,13 +180,12 @@ fn run_profile_command_handles_list_show_and_set_default() {
         .default_quick_profile_id()
         .expect("should read quick default");
     assert_eq!(quick, "autopilot_no_planning");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn profile_set_requires_state_in_non_interactive_mode() {
-    let root = unique_dir("knots-profcmd-set");
+    let root_ws = unique_dir("knots-profcmd-set");
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let db_str = db_path.to_str().expect("utf8 db path").to_string();
 
@@ -234,13 +231,12 @@ fn profile_set_requires_state_in_non_interactive_mode() {
         .expect("knot should exist");
     assert_eq!(updated.profile_id, "autopilot_no_planning");
     assert_eq!(updated.state, "ready_for_implementation");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn profile_set_formats_alias_when_available() {
-    let root = unique_dir("knots-profcmd-alias");
+    let root_ws = unique_dir("knots-profcmd-alias");
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let db_str = db_path.to_str().expect("utf8 db path").to_string();
 
@@ -273,8 +269,6 @@ fn profile_set_formats_alias_when_available() {
         .expect("show should succeed")
         .expect("child should exist");
     assert!(updated.alias.is_some());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]

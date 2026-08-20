@@ -103,7 +103,7 @@ mod tests {
             "kno",
             "workflow",
             "install",
-            "/tmp/bundle.json",
+            "/example/bundle.json",
             "--type",
             "work",
             "--set-default=true",
@@ -111,7 +111,10 @@ mod tests {
         match cli.command {
             Commands::Workflow(args) => match args.command {
                 WorkflowSubcommands::Install(install) => {
-                    assert_eq!(install.source, std::path::PathBuf::from("/tmp/bundle.json"));
+                    assert_eq!(
+                        install.source,
+                        std::path::PathBuf::from("/example/bundle.json")
+                    );
                     assert_eq!(install.knot_type, "work");
                     assert_eq!(install.set_default.as_deref(), Some("true"));
                 }

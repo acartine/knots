@@ -1,4 +1,4 @@
-use super::{cleanup_db_files, unique_db_path};
+use super::unique_db_path;
 use crate::db::{
     get_sync_fetch_blob_limit_kb, needs_schema_bootstrap, open_connection, set_meta,
     CURRENT_SCHEMA_VERSION,
@@ -10,7 +10,7 @@ fn upsert_and_get_knot_hot_round_trips_invariants() {
     use crate::db::{get_knot_hot, upsert_knot_hot, UpsertKnotHot};
     use crate::domain::invariant::{Invariant, InvariantType};
 
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     let invariants = vec![
@@ -61,15 +61,13 @@ fn upsert_and_get_knot_hot_round_trips_invariants() {
     assert_eq!(record.invariants[1].invariant_type, InvariantType::State);
     assert_eq!(record.invariants[1].condition, "coverage >= 95%");
     assert_eq!(record.verification_steps, verification_steps);
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn upsert_knot_hot_with_empty_invariants_round_trips() {
     use crate::db::{get_knot_hot, upsert_knot_hot, UpsertKnotHot};
 
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     upsert_knot_hot(
@@ -110,8 +108,6 @@ fn upsert_knot_hot_with_empty_invariants_round_trips() {
         .expect("record should exist");
     assert!(record.invariants.is_empty());
     assert!(record.verification_steps.is_empty());
-
-    cleanup_db_files(&path);
 }
 
 #[test]
@@ -120,7 +116,7 @@ fn count_active_leases_returns_count() {
     use crate::domain::lease::LeaseData;
     use crate::lease_expiry::compute_expiry_ts;
 
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     let empty = count_active_leases(&conn).expect("count should succeed on empty db");
@@ -179,15 +175,13 @@ fn count_active_leases_returns_count() {
 
     let count = count_active_leases(&conn).expect("count should succeed");
     assert_eq!(count, 2);
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn get_knot_hot_accepts_legacy_empty_lease_data_json() {
     use crate::db::{get_knot_hot, upsert_knot_hot, UpsertKnotHot};
 
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     upsert_knot_hot(
@@ -236,8 +230,6 @@ fn get_knot_hot_accepts_legacy_empty_lease_data_json() {
         record.lease_data,
         crate::domain::lease::LeaseData::default()
     );
-
-    cleanup_db_files(&path);
 }
 
 #[test]
@@ -248,7 +240,7 @@ fn upsert_and_get_knot_hot_round_trips_execution_plan_data() {
         ExecutionPlanWave,
     };
 
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
     let execution_plan_data = ExecutionPlanData {
         objective: Some("Ship the payload".to_string()),
@@ -316,15 +308,13 @@ fn upsert_and_get_knot_hot_round_trips_execution_plan_data() {
         .expect("get should succeed")
         .expect("record should exist");
     assert_eq!(record.execution_plan_data, execution_plan_data);
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn get_knot_hot_accepts_legacy_empty_execution_plan_data_json() {
     use crate::db::{get_knot_hot, upsert_knot_hot, UpsertKnotHot};
 
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     upsert_knot_hot(
@@ -373,13 +363,11 @@ fn get_knot_hot_accepts_legacy_empty_execution_plan_data_json() {
         record.execution_plan_data,
         crate::domain::execution_plan::ExecutionPlanData::default()
     );
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn needs_schema_bootstrap_detects_meta_drift() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
     assert!(!needs_schema_bootstrap(&conn).expect("fresh schema should not need bootstrap"));
 
@@ -391,13 +379,11 @@ fn needs_schema_bootstrap_detects_meta_drift() {
     conn.execute("DELETE FROM meta WHERE key = 'sync_policy'", [])
         .expect("required meta key should delete");
     assert!(needs_schema_bootstrap(&conn).expect("missing meta should trigger bootstrap"));
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn fetch_blob_limit_env_override_covers_env_path() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
     set_meta(&conn, "sync_fetch_blob_limit_kb", "4").expect("meta update should succeed");
 
@@ -405,6 +391,4 @@ fn fetch_blob_limit_env_override_covers_env_path() {
     let env_value = get_sync_fetch_blob_limit_kb(&conn).expect("env override should parse");
     std::env::remove_var("KNOTS_FETCH_BLOB_LIMIT_KB");
     assert_eq!(env_value, Some(8));
-
-    cleanup_db_files(&path);
 }

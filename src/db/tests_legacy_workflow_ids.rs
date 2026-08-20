@@ -1,21 +1,11 @@
 use crate::db::open_connection;
 
-fn unique_db_path() -> String {
-    let nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .expect("system clock before UNIX_EPOCH")
-        .as_nanos();
-    std::env::temp_dir()
-        .join(format!("knots-legacy-workflow-{}.sqlite", nanos))
-        .display()
-        .to_string()
-}
-
-fn cleanup_db_files(path: &str) {
-    for suffix in ["", "-wal", "-shm"] {
-        let candidate = format!("{path}{suffix}");
-        let _ = std::fs::remove_file(candidate);
-    }
+/// A database inside its own workspace, so the `-wal` and `-shm` siblings the
+/// connection creates are reclaimed with it.
+fn unique_db_path() -> (knots_test_support::TestWorkspace, String) {
+    let ws = knots_test_support::workspace("knots-legacy-workflow");
+    let path = ws.path().join("state.sqlite").display().to_string();
+    (ws, path)
 }
 
 fn column_default(
@@ -126,7 +116,7 @@ INSERT INTO knot_hot (
 
 #[test]
 fn migration_rewrites_knots_sdlc_builtin_workflow_ids_to_work_sdlc() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = rusqlite::Connection::open(&path).expect("pre-migration connection should open");
     conn.execute_batch(SCHEMA_V15_KNOTS_SDLC_FIXTURE)
         .expect("schema v15 fixture should be writable");
@@ -145,6 +135,4 @@ fn migration_rewrites_knots_sdlc_builtin_workflow_ids_to_work_sdlc() {
         column_default(&upgraded, "knot_hot", "workflow_id").as_deref(),
         Some("'work_sdlc'")
     );
-
-    cleanup_db_files(&path);
 }

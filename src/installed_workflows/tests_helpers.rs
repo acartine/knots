@@ -1,6 +1,4 @@
 use std::collections::BTreeMap;
-use std::path::PathBuf;
-use uuid::Uuid;
 
 use super::*;
 
@@ -92,10 +90,8 @@ approved = "done"
 changes = "ready_for_work"
 "#;
 
-pub fn unique_workspace(prefix: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+pub fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 pub fn build_prompt_params(

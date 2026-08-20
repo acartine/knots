@@ -1,16 +1,12 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 use std::time::Duration;
-
-use uuid::Uuid;
 
 use super::{run_doctor, wait_for_lock_release, DoctorStatus};
 use crate::locks::FileLock;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-doctor-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-doctor-test")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -70,15 +66,16 @@ fn check_version_passes_when_upgrade_applied_in_process() {
 
 #[test]
 fn reports_failure_for_non_git_directory() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let report = run_doctor(&root).expect("doctor should run");
     assert!(report.failure_count() >= 1);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn reports_busy_lock_as_warning() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -102,6 +99,4 @@ fn reports_busy_lock_as_warning() {
         !wait_for_lock_release(&lock_path, Duration::from_millis(10))
             .expect("lock wait should succeed")
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

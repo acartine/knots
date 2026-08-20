@@ -10,7 +10,7 @@ while IFS= read -r f; do
     echo "error: ${f} is ${lines} lines (max ${max_lines})"
     violations=$((violations + 1))
   fi
-done < <(find src tests -name '*.rs' 2>/dev/null | sort)
+done < <(find src tests crates -name '*.rs' 2>/dev/null | sort)
 
 if [[ "${violations}" -gt 0 ]]; then
   echo "${violations} file-size violation(s) found."

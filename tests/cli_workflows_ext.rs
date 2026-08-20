@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn knots_binary() -> PathBuf {
@@ -166,8 +163,10 @@ changes = "triage"
 
 #[test]
 fn custom_workflow_supports_non_ready_queue_names() {
-    let root = unique_workspace("knots-cli-workflow-generic-queues");
-    let home = unique_workspace("knots-cli-workflow-generic-queues-home");
+    let root_ws = unique_workspace("knots-cli-workflow-generic-queues");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-workflow-generic-queues-home");
+    let home = home_ws.path().to_path_buf();
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
     let db = root.join(".knots/cache/state.sqlite");
     let bundle_path = root.join("alt-flow.toml");

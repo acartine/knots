@@ -9,12 +9,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_knots(repo_root: &Path, db_path: &Path, home: &Path, args: &[&str]) -> Output {
@@ -47,14 +44,26 @@ struct Fixture {
     root: PathBuf,
     home: PathBuf,
     db: PathBuf,
+    // The guards own the two directories above; they are dropped with the
+    // fixture, so a test that panics mid-body still leaves nothing behind.
+    _root_ws: knots_test_support::TestWorkspace,
+    _home_ws: knots_test_support::TestWorkspace,
 }
 
 impl Fixture {
     fn new(prefix: &str) -> Self {
-        let root = unique_workspace(prefix);
-        let home = unique_workspace(&format!("{prefix}-home"));
+        let root_ws = unique_workspace(prefix);
+        let root = root_ws.path().to_path_buf();
+        let home_ws = unique_workspace(&format!("{prefix}-home"));
+        let home = home_ws.path().to_path_buf();
         let db = root.join(".knots/cache/state.sqlite");
-        let fixture = Self { root, home, db };
+        let fixture = Self {
+            root,
+            home,
+            db,
+            _root_ws: root_ws,
+            _home_ws: home_ws,
+        };
         fixture.run(&["init"]);
         fixture
     }

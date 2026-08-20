@@ -3,14 +3,10 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
 
-use uuid::Uuid;
-
 use super::{check_version, run_doctor, wait_for_lock_release, DoctorError, DoctorStatus};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-doctor-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-doctor-ext")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -28,8 +24,9 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo_with_origin() -> (PathBuf, PathBuf) {
-    let root = unique_workspace();
+fn setup_repo_with_origin() -> (knots_test_support::TestWorkspace, PathBuf) {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let origin = root.join("origin.git");
     let local = root.join("local");
 
@@ -56,7 +53,7 @@ fn setup_repo_with_origin() -> (PathBuf, PathBuf) {
     );
     run_git(&local, &["push", "-u", "origin", "main"]);
 
-    (root, local)
+    (root_ws, local)
 }
 
 #[test]
@@ -65,14 +62,14 @@ fn doctor_error_display_source_and_from_cover_variants() {
     assert!(io.to_string().contains("I/O error"));
     assert!(io.source().is_some());
 
-    let lock: DoctorError = crate::locks::LockError::Busy(PathBuf::from("/tmp/lock")).into();
+    let lock: DoctorError = crate::locks::LockError::Busy(PathBuf::from("/example/lock")).into();
     assert!(lock.to_string().contains("lock error"));
     assert!(lock.source().is_some());
 }
 
 #[test]
 fn remote_check_warns_when_knots_missing_and_passes_when_present() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
 
     let initial = run_doctor(&local).expect("doctor should run");
     let remote_initial = initial
@@ -92,13 +89,12 @@ fn remote_check_warns_when_knots_missing_and_passes_when_present() {
         .expect("remote check should exist");
     assert_eq!(remote_after.status, DoctorStatus::Pass);
     assert!(remote_after.detail.contains("refs/heads/knots exists"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn remote_check_reports_diffinite_work_ref_and_stale_legacy_head() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let origin_parent = root.join("diffinite.sneka.ai");
     let origin = origin_parent.join("origin.git");
     let local = root.join("local");
@@ -146,13 +142,12 @@ fn remote_check_reports_diffinite_work_ref_and_stale_legacy_head() {
     assert_eq!(legacy.status, DoctorStatus::Warn);
     assert!(legacy.detail.contains("refs/heads/knots"));
     assert!(legacy.detail.contains("refs/work/knots"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn remote_check_reports_unreachable_origin() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -172,13 +167,11 @@ fn remote_check_reports_unreachable_origin() {
         .expect("remote check should exist");
     assert_eq!(remote.status, DoctorStatus::Fail);
     assert!(remote.detail.contains("origin is not reachable"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn version_check_is_present_in_doctor_report() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
 
     let report = run_doctor(&local).expect("doctor should run");
     let version = report
@@ -200,8 +193,6 @@ fn version_check_is_present_in_doctor_report() {
         "detail should contain current version or the restart notice: {}",
         version.detail
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -216,7 +207,8 @@ fn check_version_returns_valid_doctor_check() {
 
 #[test]
 fn hooks_check_warns_when_missing_and_passes_after_install() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -241,24 +233,22 @@ fn hooks_check_warns_when_missing_and_passes_after_install() {
         .find(|c| c.name == "hooks")
         .expect("hooks check should exist");
     assert_eq!(hooks_after.status, DoctorStatus::Pass);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn wait_for_lock_release_succeeds_for_unlocked_path() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let lock_path = root.join(".knots/locks/repo.lock");
     let unlocked = wait_for_lock_release(&lock_path, Duration::from_millis(20))
         .expect("lock release probe should succeed");
     assert!(unlocked);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_stuck_leases_passes_when_no_db() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -274,13 +264,12 @@ fn check_stuck_leases_passes_when_no_db() {
         .expect("stuck_leases check should exist");
     assert_eq!(lease_check.status, DoctorStatus::Pass);
     assert!(lease_check.detail.contains("no cache database"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_stuck_leases_warns_when_active() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -344,13 +333,12 @@ fn check_stuck_leases_warns_when_active() {
         .expect("stuck_leases check should exist");
     assert_eq!(lease_check.status, DoctorStatus::Warn);
     assert!(lease_check.detail.contains("1 active lease(s)"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_stuck_leases_terminates_active() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -416,13 +404,12 @@ fn fix_stuck_leases_terminates_active() {
         .expect("get should succeed")
         .expect("record should still exist");
     assert_eq!(record.state, "lease_terminated");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminal_parents_check_passes_when_no_parents_need_reconciliation() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -449,13 +436,12 @@ fn terminal_parents_check_passes_when_no_parents_need_reconciliation() {
         .find(|check| check.name == "terminal_parents")
         .expect("terminal_parents check should exist");
     assert_eq!(check.status, DoctorStatus::Pass);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminal_parents_check_warns_when_parent_can_be_resolved() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -484,6 +470,4 @@ fn terminal_parents_check_warns_when_parent_can_be_resolved() {
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains(&parent.id));
     assert!(check.detail.contains("shipped"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

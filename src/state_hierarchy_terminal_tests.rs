@@ -1,13 +1,10 @@
 use super::*;
 use crate::app::App;
 use crate::db::KnotCacheRecord;
-use std::path::{Path, PathBuf};
-use uuid::Uuid;
+use std::path::Path;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-state-hierarchy-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-state-hierarchy")
 }
 
 fn open_app(root: &Path) -> App {
@@ -53,7 +50,8 @@ fn sample_record(id: &str, state: &str, deferred_from_state: Option<&str>) -> Kn
 
 #[test]
 fn terminal_parent_resolutions_require_all_direct_children_and_pick_precedence() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -150,13 +148,12 @@ fn terminal_parent_resolutions_require_all_direct_children_and_pick_precedence()
     assert!(!summary.iter().any(|(id, _)| id == &deferred_parent.id));
     assert!(summary.contains(&(abandoned_parent.id, "abandoned".to_string())));
     assert!(!summary.iter().any(|(id, _)| id == &blocked_parent.id));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminal_parent_resolutions_skip_terminal_parents_and_missing_children() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -184,8 +181,6 @@ fn terminal_parent_resolutions_skip_terminal_parents_and_missing_children() {
 
     let resolutions = find_terminal_parent_resolutions(&conn).expect("resolutions should load");
     assert!(resolutions.is_empty());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -211,7 +206,8 @@ fn terminal_resolution_target_rejects_deferred_and_handles_abandoned() {
 
 #[test]
 fn ancestor_terminal_resolutions_walk_parents_once_and_sort_results() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -258,6 +254,4 @@ fn ancestor_terminal_resolutions_walk_parents_once_and_sort_results() {
     let mut expected = vec![(parent.id, "shipped".to_string())];
     expected.sort();
     assert_eq!(summary, expected);
-
-    let _ = std::fs::remove_dir_all(root);
 }

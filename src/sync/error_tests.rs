@@ -67,19 +67,19 @@ fn sync_error_display_source_and_from_cover_all_variants() {
     assert!(command_failed.to_string().contains("git command failed"));
     assert!(command_failed.source().is_none());
 
-    let dirty = SyncError::DirtyWorktree(PathBuf::from("/tmp/worktree"));
+    let dirty = SyncError::DirtyWorktree(PathBuf::from("/example/worktree"));
     assert!(dirty.to_string().contains("has uncommitted changes"));
     assert!(dirty.source().is_none());
 
     let invalid_event = SyncError::InvalidEvent {
-        path: PathBuf::from("/tmp/event.json"),
+        path: PathBuf::from("/example/event.json"),
         message: "bad payload".to_string(),
     };
     assert!(invalid_event.to_string().contains("invalid event"));
     assert!(invalid_event.source().is_none());
 
     let conflict = SyncError::FileConflict {
-        path: PathBuf::from("/tmp/file.json"),
+        path: PathBuf::from("/example/file.json"),
     };
     assert!(conflict.to_string().contains("push conflict"));
     assert!(conflict.source().is_none());

@@ -7,10 +7,8 @@ use crate::locks::{FileLock, LockError};
 
 use super::*;
 
-fn unique_root() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-queue-test-{}", uuid::Uuid::now_v7()));
-    fs::create_dir_all(&root).expect("temp root should be creatable");
-    root
+fn unique_root() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-queue-test")
 }
 
 fn state_request(
@@ -47,7 +45,8 @@ fn state_request(
 
 #[test]
 fn drain_pending_requests_processes_all_items_serially() {
-    let root = unique_root();
+    let root_ws = unique_root();
+    let root = root_ws.path().to_path_buf();
     let paths = QueuePaths::for_repo(&root);
     paths.create_dirs().expect("queue dirs should exist");
 
@@ -76,13 +75,12 @@ fn drain_pending_requests_processes_all_items_serially() {
         .expect("second response should read")
         .expect("second response should exist");
     assert_eq!(second_response.output, "second");
-
-    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
 fn enqueue_and_wait_round_trips_response() {
-    let root = unique_root();
+    let root_ws = unique_root();
+    let root = root_ws.path().to_path_buf();
     let response = enqueue_and_wait(
         &root,
         ".knots/cache/state.sqlite",
@@ -103,13 +101,12 @@ fn enqueue_and_wait_round_trips_response() {
 
     assert!(response.success);
     assert!(!response.output.is_empty());
-
-    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
 fn drain_pending_requests_returns_zero_when_worker_is_busy() {
-    let root = unique_root();
+    let root_ws = unique_root();
+    let root = root_ws.path().to_path_buf();
     let paths = QueuePaths::for_repo(&root);
     paths.create_dirs().expect("queue dirs should exist");
 
@@ -122,13 +119,12 @@ fn drain_pending_requests_returns_zero_when_worker_is_busy() {
     })
     .expect("drain should return success when worker is busy");
     assert_eq!(processed, 0);
-
-    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
 fn drain_pending_requests_removes_invalid_request_files() {
-    let root = unique_root();
+    let root_ws = unique_root();
+    let root = root_ws.path().to_path_buf();
     let paths = QueuePaths::for_repo(&root);
     paths.create_dirs().expect("queue dirs should exist");
 
@@ -144,13 +140,12 @@ fn drain_pending_requests_removes_invalid_request_files() {
         !invalid.exists(),
         "invalid request file should be removed after parse failure"
     );
-
-    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
 fn enqueue_and_wait_spins_until_worker_lock_is_released() {
-    let root = unique_root();
+    let root_ws = unique_root();
+    let root = root_ws.path().to_path_buf();
     let paths = QueuePaths::for_repo(&root);
     paths.create_dirs().expect("queue dirs should exist");
 
@@ -182,8 +177,6 @@ fn enqueue_and_wait_spins_until_worker_lock_is_released() {
     assert!(response.success);
     assert!(!response.output.is_empty());
     releaser.join().expect("releaser thread should complete");
-
-    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
@@ -204,7 +197,8 @@ fn queue_error_display_and_from_cover_all_variants() {
 
 #[test]
 fn list_request_files_and_read_response_file_handle_missing_paths() {
-    let root = unique_root();
+    let root_ws = unique_root();
+    let root = root_ws.path().to_path_buf();
 
     let missing_requests = root.join("missing-requests");
     let files = list_request_files(&missing_requests).expect("missing dir should be treated empty");
@@ -213,8 +207,6 @@ fn list_request_files_and_read_response_file_handle_missing_paths() {
     let missing_response = root.join("missing-response.json");
     let response = read_response_file(&missing_response).expect("missing response should be ok");
     assert!(response.is_none());
-
-    let _ = fs::remove_dir_all(root);
 }
 
 #[test]

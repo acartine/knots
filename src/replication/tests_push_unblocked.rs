@@ -103,7 +103,8 @@ fn cat_file_on_knots_ref(origin: &Path, config: &SyncRefConfig, rel: &str) -> Op
 
 #[test]
 fn sync_completes_with_an_active_lease_and_publishes_its_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (origin, dev1) = setup_origin_and_dev1(&root);
     write_note_event(&dev1.join(".knots"));
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
@@ -147,13 +148,12 @@ fn sync_completes_with_an_active_lease_and_publishes_its_events() {
         published.contains(NOTE_TEXT),
         "published blob should carry the event body, got {published}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn sync_publishes_before_it_takes_the_cache_lock() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (origin, dev1) = setup_origin_and_dev1(&root);
     write_note_event(&dev1.join(".knots"));
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
@@ -198,6 +198,4 @@ fn sync_publishes_before_it_takes_the_cache_lock() {
         published.contains(NOTE_TEXT),
         "published blob should carry the event body, got {published}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

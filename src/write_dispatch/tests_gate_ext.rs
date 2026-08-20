@@ -1,9 +1,8 @@
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use clap::Parser;
-use uuid::Uuid;
 
 use super::execute_operation;
 use super::helpers::{
@@ -17,10 +16,8 @@ use crate::domain::invariant::{Invariant, InvariantType};
 use crate::domain::knot_type::KnotType;
 use crate::write_queue::{GateEvaluateOperation, RollbackOperation, WriteOperation};
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -224,7 +221,8 @@ fn create_gate_with_failure_modes(app: &App, target_id: &str) -> crate::app::Kno
 
 #[test]
 fn execute_operation_gate_evaluate_covers_text_and_json_output() {
-    let root = unique_workspace("knots-write-dispatch-gate-ext");
+    let root_ws = unique_workspace("knots-write-dispatch-gate-ext");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -269,13 +267,12 @@ fn execute_operation_gate_evaluate_covers_text_and_json_output() {
     assert_eq!(parsed["decision"], "no");
     assert_eq!(parsed["gate"]["state"], "abandoned");
     assert_eq!(parsed["reopened"][0], target.id);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execute_operation_rollback_rewinds_gate_evaluating_state() {
-    let root = unique_workspace("knots-write-dispatch-gate-rollback");
+    let root_ws = unique_workspace("knots-write-dispatch-gate-rollback");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -329,6 +326,4 @@ fn execute_operation_rollback_rewinds_gate_evaluating_state() {
         .expect("gate should load")
         .expect("gate should exist");
     assert_eq!(reloaded.state, crate::workflow_runtime::READY_TO_EVALUATE);
-
-    let _ = std::fs::remove_dir_all(root);
 }

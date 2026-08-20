@@ -1,5 +1,4 @@
 use super::*;
-use std::path::PathBuf;
 
 const CUSTOM_BUNDLE: &str = r#"
 [workflow]
@@ -88,12 +87,11 @@ approved = "done"
 changes = "ready_for_work"
 "#;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-poll-test-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    crate::installed_workflows::ensure_builtin_workflows_registered(&root)
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    let ws = knots_test_support::workspace("knots-poll-test");
+    crate::installed_workflows::ensure_builtin_workflows_registered(ws.path())
         .expect("builtin workflows should register");
-    root
+    ws
 }
 
 fn install_custom_workflow(root: &std::path::Path) {
@@ -111,7 +109,8 @@ fn install_custom_workflow(root: &std::path::Path) {
 
 #[test]
 fn run_ready_empty_queue_prints_message() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let args = ReadyArgs {
@@ -120,12 +119,12 @@ fn run_ready_empty_queue_prints_message() {
         json: false,
     };
     run_ready(&app, args).expect("run_ready should succeed");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn run_ready_json_empty_queue() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let args = ReadyArgs {
@@ -134,12 +133,12 @@ fn run_ready_json_empty_queue() {
         json: true,
     };
     run_ready(&app, args).expect("run_ready json should succeed");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn peek_knot_does_not_advance_state() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let created = app
@@ -153,12 +152,12 @@ fn peek_knot_does_not_advance_state() {
         .expect("show should succeed")
         .expect("knot should exist");
     assert_eq!(after.state, original_state, "state should be unchanged");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn run_ready_with_knot_in_queue() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     app.create_knot("Test ready", None, Some("work_item"), Some("default"))
@@ -169,12 +168,12 @@ fn run_ready_with_knot_in_queue() {
         json: false,
     };
     run_ready(&app, args).expect("run_ready with knot should succeed");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn peek_knot_completion_command_has_agent_metadata_flags() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let created = app
@@ -190,12 +189,12 @@ fn peek_knot_completion_command_has_agent_metadata_flags() {
         result.completion_cmd,
         completion_command(&created.id, "implementation", None, false)
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_rejects_knot_in_action_state() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let created = app
@@ -231,12 +230,12 @@ fn claim_rejects_knot_in_action_state() {
         err.contains("not a claimable queue state"),
         "error should mention queue state: {err}"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn peek_rejects_knot_in_action_state() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
     let created = app
@@ -259,12 +258,12 @@ fn peek_rejects_knot_in_action_state() {
         err.contains("not a claimable queue state"),
         "error should mention queue state: {err}"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn prompt_body_for_state_distinguishes_branch_and_pr_profiles() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let registry =
         crate::profile::ProfileRegistry::load_for_repo(&root).expect("registry should load");
 
@@ -325,13 +324,12 @@ fn prompt_body_for_state_distinguishes_branch_and_pr_profiles() {
             .expect("shipment review prompt");
         assert!(shipment_review.contains("review the merged pull request"));
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_poll_and_peek_use_installed_workflow_prompt_body() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     install_custom_workflow(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
@@ -360,6 +358,4 @@ fn claim_poll_and_peek_use_installed_workflow_prompt_body() {
     .expect("claim should succeed");
     assert!(claimed.skill.contains("Ship {{ output }} output."));
     assert!(claimed.skill.contains("Built output"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

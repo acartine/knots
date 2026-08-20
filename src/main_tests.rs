@@ -8,10 +8,8 @@ use crate::cli::{Commands, HooksSubcommands, SelfUninstallArgs, SelfUpdateArgs};
 use crate::dispatch::knot_ref;
 use crate::self_manage::maybe_run_self_command;
 
-fn unique_dir(prefix: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("{}-{}", prefix, uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&dir).expect("temp dir should be creatable");
-    dir
+fn unique_dir(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(root: &std::path::Path, args: &[&str]) {
@@ -29,15 +27,16 @@ fn run_git(root: &std::path::Path, args: &[&str]) {
     );
 }
 
-fn setup_git_repo(prefix: &str) -> PathBuf {
-    let root = unique_dir(prefix);
+fn setup_git_repo(prefix: &str) -> knots_test_support::TestWorkspace {
+    let root_ws = unique_dir(prefix);
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# test\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn managed_hook_path(root: &std::path::Path) -> PathBuf {
@@ -156,7 +155,8 @@ fn strip_ansi_codes_removes_escape_sequences() {
 
 #[test]
 fn maybe_run_self_command_update_and_uninstall_paths_execute() {
-    let dir = unique_dir("knots-main-self-test");
+    let dir_ws = unique_dir("knots-main-self-test");
+    let dir = dir_ws.path().to_path_buf();
     let script = dir.join("install.sh");
     std::fs::write(&script, "#!/bin/sh\nexit 0\n").expect("script should be writable");
     let script_url = format!("file://{}", script.display());
@@ -232,18 +232,18 @@ fn maybe_run_self_command_update_and_uninstall_paths_execute() {
     assert!(!binary.exists());
     assert!(!previous.exists());
     assert!(!legacy_previous.exists());
-
-    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]
 fn maybe_run_self_command_upgrade_hint_tracks_hook_health() {
-    let dir = unique_dir("knots-main-self-upgrade-hooks");
+    let dir_ws = unique_dir("knots-main-self-upgrade-hooks");
+    let dir = dir_ws.path().to_path_buf();
     let script = dir.join("install.sh");
     std::fs::write(&script, "#!/bin/sh\nexit 0\n").expect("script should be writable");
     let script_url = format!("file://{}", script.display());
 
-    let clean_repo = setup_git_repo("knots-main-self-upgrade-clean");
+    let clean_repo_ws = setup_git_repo("knots-main-self-upgrade-clean");
+    let clean_repo = clean_repo_ws.path().to_path_buf();
     crate::git_hooks::install_hooks(&clean_repo).expect("hooks should install");
     let clean_outcome = maybe_run_self_command(
         &Commands::Upgrade(SelfUpdateArgs {
@@ -258,7 +258,8 @@ fn maybe_run_self_command_upgrade_hint_tracks_hook_health() {
     .expect("clean upgrade should emit summary");
     assert!(!clean_outcome.contains("kno doctor"));
 
-    let missing_repo = setup_git_repo("knots-main-self-upgrade-missing");
+    let missing_repo_ws = setup_git_repo("knots-main-self-upgrade-missing");
+    let missing_repo = missing_repo_ws.path().to_path_buf();
     let missing_outcome = maybe_run_self_command(
         &Commands::Upgrade(SelfUpdateArgs {
             version: None,
@@ -272,7 +273,8 @@ fn maybe_run_self_command_upgrade_hint_tracks_hook_health() {
     .expect("missing-hook upgrade should emit summary");
     assert!(missing_outcome.contains("kno doctor"));
 
-    let stale_repo = setup_git_repo("knots-main-self-upgrade-stale");
+    let stale_repo_ws = setup_git_repo("knots-main-self-upgrade-stale");
+    let stale_repo = stale_repo_ws.path().to_path_buf();
     crate::git_hooks::install_hooks(&stale_repo).expect("hooks should install");
     std::fs::write(
         managed_hook_path(&stale_repo),
@@ -291,16 +293,12 @@ fn maybe_run_self_command_upgrade_hint_tracks_hook_health() {
     .expect("stale-hook upgrade should succeed")
     .expect("stale-hook upgrade should emit summary");
     assert!(stale_outcome.contains("kno doctor"));
-
-    let _ = std::fs::remove_dir_all(clean_repo);
-    let _ = std::fs::remove_dir_all(missing_repo);
-    let _ = std::fs::remove_dir_all(stale_repo);
-    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]
 fn run_hooks_command_handles_install_status_and_uninstall() {
-    let root = setup_git_repo("knots-main-hooks-test");
+    let root_ws = setup_git_repo("knots-main-hooks-test");
+    let root = root_ws.path().to_path_buf();
     let pre_push = root.join(".git/hooks/pre-push");
     std::fs::create_dir_all(
         pre_push
@@ -327,16 +325,14 @@ fn run_hooks_command_handles_install_status_and_uninstall() {
         .expect("second hook uninstall command should succeed");
     let uninstalled = crate::git_hooks::hooks_status(&root);
     assert!(uninstalled.hooks.iter().all(|(_, managed)| !*managed));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn run_git_panics_with_stderr_when_command_fails() {
-    let root = unique_dir("knots-main-git-panic");
+    let root_ws = unique_dir("knots-main-git-panic");
+    let root = root_ws.path().to_path_buf();
     let panic = std::panic::catch_unwind(|| run_git(&root, &["status"]));
     assert!(panic.is_err(), "run_git should panic for non-repo paths");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]

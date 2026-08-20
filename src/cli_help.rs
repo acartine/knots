@@ -176,7 +176,7 @@ mod tests {
         // Flags starting with -d/--db/-C are stripped; their values are not.
         assert!(is_toplevel_help(&args(&["kno", "-dfoo.db"])));
         assert!(is_toplevel_help(&args(&["kno", "--db=foo.db"])));
-        assert!(is_toplevel_help(&args(&["kno", "-C/tmp"])));
+        assert!(is_toplevel_help(&args(&["kno", "-C/example"])));
         assert!(is_toplevel_help(&args(&["kno", "-dfoo.db", "--help"])));
     }
 }

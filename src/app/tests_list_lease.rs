@@ -1,12 +1,9 @@
-use std::path::PathBuf;
 use std::process::Command;
 
 use super::App;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-list-lease-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-list-lease")
 }
 
 fn run_git(root: &std::path::Path, args: &[&str]) {
@@ -41,7 +38,8 @@ fn open_app(root: &std::path::Path) -> App {
 
 #[test]
 fn list_knots_populates_lease_agent_for_active_knot_and_omits_for_queued() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -107,8 +105,6 @@ fn list_knots_populates_lease_agent_for_active_knot_and_omits_for_queued() {
         queued_view.lease_agent.is_none(),
         "queued knot must not pretend a lease is present"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 /// Create a lease knot owned by another machine, as a pull from that machine
@@ -144,7 +140,8 @@ fn create_foreign_lease(app: &App, nickname: &str) -> String {
 
 #[test]
 fn created_leases_record_this_machine_as_owner() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -168,13 +165,12 @@ fn created_leases_record_this_machine_as_owner() {
     );
     assert_eq!(owner.pid, std::process::id());
     assert!(!owner.machine_id.is_empty());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn list_local_active_leases_excludes_leases_owned_elsewhere() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -201,6 +197,4 @@ fn list_local_active_leases_excludes_leases_owned_elsewhere() {
         vec![mine.id.as_str()],
         "only this machine's lease is locally held"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

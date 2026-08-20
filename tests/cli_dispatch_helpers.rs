@@ -4,12 +4,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use rusqlite::params;
-use uuid::Uuid;
 
-pub fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+pub fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 pub fn run_git(cwd: &Path, args: &[&str]) {

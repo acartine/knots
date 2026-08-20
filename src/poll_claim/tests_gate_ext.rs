@@ -1,6 +1,4 @@
-use std::path::{Path, PathBuf};
-
-use uuid::Uuid;
+use std::path::Path;
 
 use super::{
     claim_knot, list_queue_candidates, peek_knot, poll_queue, run_claim, run_poll, run_ready,
@@ -11,10 +9,8 @@ use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::invariant::{Invariant, InvariantType};
 use crate::domain::knot_type::KnotType;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-poll-gate-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-poll-gate-ext")
 }
 
 fn open_app(root: &Path) -> App {
@@ -24,7 +20,8 @@ fn open_app(root: &Path) -> App {
 
 #[test]
 fn list_and_poll_gate_candidates_respect_stage_and_owner() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     app.create_knot(
         "Implementation work",
@@ -66,13 +63,12 @@ fn list_and_poll_gate_candidates_respect_stage_and_owner() {
     let agent =
         poll_queue(&app, Some("evaluate"), Some("agent"), false).expect("agent poll should work");
     assert!(agent.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn peek_and_claim_gate_follow_gate_workflow_states() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let gate = app
         .create_knot_with_options(
@@ -109,13 +105,12 @@ fn peek_and_claim_gate_follow_gate_workflow_states() {
         .expect("show should work")
         .expect("gate should exist");
     assert_eq!(stored.state, crate::workflow_runtime::EVALUATING);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn run_poll_and_claim_cover_json_and_text_rendering_paths() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let gate = app
         .create_knot_with_options(
@@ -204,13 +199,12 @@ fn run_poll_and_claim_cover_json_and_text_rendering_paths() {
         },
     )
     .expect("peek claim should succeed");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn run_ready_owner_filter_matches_pollable_owner() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     app.create_knot(
         "Implementation work",
@@ -252,15 +246,14 @@ fn run_ready_owner_filter_matches_pollable_owner() {
         .expect("human poll should work")
         .expect("human should see the gate");
     assert_eq!(human_poll.knot.title, "Human gate");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_prompt_for_gate_surfaces_acceptance_context_and_evaluation_rules() {
     use std::collections::BTreeMap;
 
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let target = app
         .create_knot("Blocked work", None, Some("idea"), Some("default"))
@@ -329,13 +322,12 @@ fn claim_prompt_for_gate_surfaces_acceptance_context_and_evaluation_rules() {
             "claim prompt should contain {needle:?}"
         );
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_with_e2e_emits_e2e_continuation_boundary() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     app.create_knot("E2E claim work", None, Some("work_item"), Some("default"))
         .expect("work knot should be created");
@@ -356,13 +348,12 @@ fn claim_with_e2e_emits_e2e_continuation_boundary() {
     assert!(rendered.contains("E2E continuation"));
     assert!(rendered.contains("kno claim --e2e"));
     assert!(!rendered.contains("Complete exactly one workflow action, then stop."));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_without_e2e_emits_single_action_boundary() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     app.create_knot(
         "Single-action claim work",
@@ -391,13 +382,12 @@ fn claim_without_e2e_emits_single_action_boundary() {
     assert!(rendered.contains("kind: `single_action`"));
     assert!(rendered.contains("Complete exactly one workflow action, then stop."));
     assert!(!rendered.contains("E2E continuation"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn json_render_carries_e2e_signals_through_claim_pipeline() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     app.create_knot("JSON e2e", None, Some("work_item"), Some("default"))
         .expect("work knot should be created");
@@ -414,6 +404,4 @@ fn json_render_carries_e2e_signals_through_claim_pipeline() {
     let json = super::render_json(&claimed);
     assert_eq!(json["e2e"], serde_json::Value::Bool(true));
     assert_eq!(json["workflow_boundary_kind"], "e2e_continuation");
-
-    let _ = std::fs::remove_dir_all(root);
 }

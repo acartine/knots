@@ -4,14 +4,11 @@ use crate::app::{App, StateActorMetadata};
 use crate::domain::knot_type::KnotType;
 use crate::write_queue::{RollbackOperation, StepAnnotateOperation, WriteOperation};
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -37,7 +34,8 @@ fn setup_repo(root: &Path) {
 
 #[test]
 fn execute_operation_rollback_covers_rejection_path() {
-    let root = unique_workspace("knots-wd-rb-reject");
+    let root_ws = unique_workspace("knots-wd-rb-reject");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(
@@ -69,12 +67,12 @@ fn execute_operation_rollback_covers_rejection_path() {
         }
         other => panic!("unexpected rollback rejection: {other}"),
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execute_operation_rollback_covers_dry_run_and_real_paths() {
-    let root = unique_workspace("knots-wd-rb-paths");
+    let root_ws = unique_workspace("knots-wd-rb-paths");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(
@@ -124,12 +122,12 @@ fn execute_operation_rollback_covers_dry_run_and_real_paths() {
     assert_eq!(after.state, "implementation");
 
     advance_and_rollback(&app, &implementation);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rollback_releases_bound_lease() {
-    let root = unique_workspace("knots-wd-rb-lease");
+    let root_ws = unique_workspace("knots-wd-rb-lease");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(
@@ -194,8 +192,6 @@ fn rollback_releases_bound_lease() {
         lease.state, "lease_terminated",
         "rollback should terminate the bound lease"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn advance_and_rollback(app: &App, implementation: &crate::app::KnotView) {
@@ -313,7 +309,8 @@ fn normalize_and_format_helpers() {
 
 #[test]
 fn execute_operation_step_annotate_text_and_json() {
-    let root = unique_workspace("knots-wd-step-annotate");
+    let root_ws = unique_workspace("knots-wd-step-annotate");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(

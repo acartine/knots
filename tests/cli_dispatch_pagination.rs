@@ -45,7 +45,8 @@ fn create_knot_with_state(
 
 #[test]
 fn ls_tag_filter_pagination_is_stable_and_total_matches_filtered() {
-    let root = unique_workspace("knots-cli-ls-tag-pagination");
+    let root_ws = unique_workspace("knots-cli-ls-tag-pagination");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -124,13 +125,12 @@ fn ls_tag_filter_pagination_is_stable_and_total_matches_filtered() {
             "missing expected id suffix {expected}"
         );
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn ls_state_shipped_pagination_returns_only_shipped() {
-    let root = unique_workspace("knots-cli-ls-state-pagination");
+    let root_ws = unique_workspace("knots-cli-ls-state-pagination");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -152,6 +152,4 @@ fn ls_state_shipped_pagination_returns_only_shipped() {
             .expect("each item should have a state");
         assert_eq!(state, "shipped", "all items should have state shipped");
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }

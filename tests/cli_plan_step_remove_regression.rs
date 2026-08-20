@@ -76,7 +76,8 @@ fn show_plan(root: &std::path::Path, db: &std::path::Path, plan_id: &str) -> Val
 
 #[test]
 fn plan_step_remove_after_edge_edits_keeps_remaining_waves() {
-    let root = unique_workspace("knots-cli-plan-remove-regression");
+    let root_ws = unique_workspace("knots-cli-plan-remove-regression");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -180,6 +181,4 @@ fn plan_step_remove_after_edge_edits_keeps_remaining_waves() {
     );
     assert_failure(&invalid);
     assert_eq!(show_plan(&root, &db, &plan_id), after_remove);
-
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -9,16 +9,16 @@ pub(super) fn env_lock() -> &'static Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
-fn unique_root(label: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("{label}-{}", uuid::Uuid::now_v7()));
-    fs::create_dir_all(&root).expect("temp root should be creatable");
-    root
+pub(super) fn unique_root(label: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(label)
 }
 
 #[test]
 fn install_prefers_project_location_when_supported() {
-    let repo_root = unique_root("managed-skills-install");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-install");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(repo_root.join(".claude")).expect("project root");
 
     let output = run_command_with_io(
@@ -37,8 +37,10 @@ fn install_prefers_project_location_when_supported() {
 
 #[test]
 fn uninstall_removes_installed_skills_from_all_detected_locations() {
-    let repo_root = unique_root("managed-skills-uninstall");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-uninstall");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(repo_root.join(".claude")).expect("project root");
 
     write_skills(
@@ -65,8 +67,10 @@ fn uninstall_removes_installed_skills_from_all_detected_locations() {
 
 #[test]
 fn update_requires_install_in_noninteractive_mode_when_skills_are_missing() {
-    let repo_root = unique_root("managed-skills-update");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-update");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(repo_root.join(".agents")).expect("agents root");
 
     let err = run_command_with_io(
@@ -82,8 +86,10 @@ fn update_requires_install_in_noninteractive_mode_when_skills_are_missing() {
 
 #[test]
 fn doctor_warns_when_preferred_destination_is_missing_skills() {
-    let repo_root = unique_root("managed-skills-doctor");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-doctor");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(repo_root.join(".claude")).expect("project root");
 
     let check = doctor_check(&repo_root, Some(&home), SkillTool::Claude);
@@ -96,8 +102,10 @@ fn doctor_warns_when_preferred_destination_is_missing_skills() {
 #[test]
 fn doctor_warns_for_drifted_mixed_and_unreadable_skills() {
     // Drifted only
-    let repo = unique_root("managed-skills-doctor-drift");
-    let home = unique_root("managed-skills-home");
+    let repo_ws = unique_root("managed-skills-doctor-drift");
+    let repo = repo_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     let agents = repo.join(".agents");
     fs::create_dir_all(&agents).expect("agents root");
     install_missing(&repo, Some(&home), SkillTool::Codex).expect("install");
@@ -110,8 +118,10 @@ fn doctor_warns_for_drifted_mixed_and_unreadable_skills() {
     assert!(check.detail.contains("run `kno skills update codex`"));
 
     // Missing + drifted
-    let repo = unique_root("managed-skills-doctor-mixed");
-    let home = unique_root("managed-skills-home");
+    let repo_ws = unique_root("managed-skills-doctor-mixed");
+    let repo = repo_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     let agents = repo.join(".agents");
     fs::create_dir_all(&agents).expect("agents root");
     install_missing(&repo, Some(&home), SkillTool::Codex).expect("install");
@@ -130,8 +140,10 @@ fn doctor_warns_for_drifted_mixed_and_unreadable_skills() {
         .contains("run `kno skills install codex` then `kno skills update codex`"));
 
     // Unreadable treated as drift
-    let repo = unique_root("managed-skills-doctor-unreadable");
-    let home = unique_root("managed-skills-home");
+    let repo_ws = unique_root("managed-skills-doctor-unreadable");
+    let repo = repo_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     let agents = repo.join(".agents");
     fs::create_dir_all(&agents).expect("agents root");
     install_missing(&repo, Some(&home), SkillTool::Codex).expect("install");
@@ -175,8 +187,10 @@ fn doctor_fix_reconciles_drifted_skills_and_skips_unconfigured_agents_root() {
     let prior_home = std::env::var_os("HOME");
 
     // Reconcile drifted skills for detected root
-    let repo = unique_root("managed-skills-fix");
-    let home = unique_root("managed-skills-home");
+    let repo_ws = unique_root("managed-skills-fix");
+    let repo = repo_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     let agents = repo.join(".agents");
     fs::create_dir_all(&agents).expect("agents root");
     std::env::set_var("HOME", &home);
@@ -191,8 +205,10 @@ fn doctor_fix_reconciles_drifted_skills_and_skips_unconfigured_agents_root() {
     assert!(fs::read_to_string(&knots).expect("read").contains("---"));
 
     // Skip Codex/OpenCode when .agents is absent
-    let repo2 = unique_root("managed-skills-fix-missing-root");
-    let home2 = unique_root("managed-skills-home");
+    let repo2_ws = unique_root("managed-skills-fix-missing-root");
+    let repo2 = repo2_ws.path().to_path_buf();
+    let home2_ws = unique_root("managed-skills-home");
+    let home2 = home2_ws.path().to_path_buf();
     std::env::set_var("HOME", &home2);
     let c = doctor_check(&repo2, Some(&home2), SkillTool::Codex);
     assert_eq!(c.status, DoctorStatus::Pass);
@@ -221,8 +237,10 @@ fn skill_tool_helpers_cover_display_and_lookup_paths() {
 
 #[test]
 fn locations_detect_supported_roots_for_all_tools() {
-    let repo_root = unique_root("managed-skills-locations");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-locations");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(repo_root.join(".claude")).expect("claude project root");
     fs::create_dir_all(repo_root.join(".opencode")).expect("opencode project root");
     fs::create_dir_all(repo_root.join(".agents")).expect("codex project root");
@@ -248,7 +266,8 @@ fn locations_detect_supported_roots_for_all_tools() {
 
 #[test]
 fn doctor_checks_warn_when_roots_are_missing() {
-    let repo_root = unique_root("managed-skills-doctor-missing");
+    let repo_root_ws = unique_root("managed-skills-doctor-missing");
+    let repo_root = repo_root_ws.path().to_path_buf();
     let checks = doctor_checks_with_home(&repo_root, None);
 
     assert_eq!(checks.len(), 3);
@@ -265,8 +284,10 @@ fn doctor_checks_warn_when_roots_are_missing() {
 
 #[test]
 fn install_reports_already_installed_when_nothing_is_missing() {
-    let repo_root = unique_root("managed-skills-install-existing");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-install-existing");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(repo_root.join(".agents")).expect("agents root");
 
     install_missing(&repo_root, Some(&home), SkillTool::Codex).expect("initial install");
@@ -278,8 +299,10 @@ fn install_reports_already_installed_when_nothing_is_missing() {
 
 #[test]
 fn uninstall_errors_when_no_managed_skills_are_installed() {
-    let repo_root = unique_root("managed-skills-uninstall-empty");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-uninstall-empty");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(repo_root.join(".agents")).expect("agents root");
 
     let err = uninstall_managed(&repo_root, Some(&home), SkillTool::Codex)
@@ -290,8 +313,10 @@ fn uninstall_errors_when_no_managed_skills_are_installed() {
 
 #[test]
 fn update_rewrites_existing_skills_when_install_is_complete() {
-    let repo_root = unique_root("managed-skills-update-existing");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-update-existing");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     let agents_root = repo_root.join(".agents");
     fs::create_dir_all(&agents_root).expect("agents root");
 
@@ -310,8 +335,10 @@ fn update_rewrites_existing_skills_when_install_is_complete() {
 
 #[test]
 fn update_only_writes_to_preferred_location_not_user_level() {
-    let repo_root = unique_root("managed-skills-update-scope");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-update-scope");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(repo_root.join(".claude")).expect("project root");
 
     let project_loc = SkillLocation {
@@ -334,8 +361,10 @@ fn update_only_writes_to_preferred_location_not_user_level() {
 
 #[test]
 fn claude_ignores_user_level_root_even_when_home_is_set() {
-    let repo_root = unique_root("managed-skills-claude-project-only");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-claude-project-only");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(home.join(".claude")).expect("user root");
 
     let check = doctor_check(&repo_root, Some(&home), SkillTool::Claude);
@@ -359,8 +388,8 @@ fn claude_ignores_user_level_root_even_when_home_is_set() {
 fn prompt_install_missing_accepts_yes_and_rejects_no() {
     let destination = SkillLocation {
         scope: LocationScope::Project,
-        tool_root: PathBuf::from("/tmp/.agents"),
-        skills_root: PathBuf::from("/tmp/.agents/skills"),
+        tool_root: PathBuf::from("/example/.agents"),
+        skills_root: PathBuf::from("/example/.agents/skills"),
     };
     let missing = vec![managed_skills()[0], managed_skills()[1]];
     let mut output = Vec::new();
@@ -375,8 +404,8 @@ fn prompt_install_missing_accepts_yes_and_rejects_no() {
     .expect("prompt should succeed");
     assert!(approved);
     let output = String::from_utf8(output).expect("utf8");
-    assert!(output.contains("/tmp/.agents/skills/knots/SKILL.md"));
-    assert!(output.contains("/tmp/.agents/skills/knots-e2e/SKILL.md"));
+    assert!(output.contains("/example/.agents/skills/knots/SKILL.md"));
+    assert!(output.contains("/example/.agents/skills/knots-e2e/SKILL.md"));
 
     let mut output = Vec::new();
     let mut no = std::io::Cursor::new("n\n");
@@ -393,8 +422,10 @@ fn prompt_install_missing_accepts_yes_and_rejects_no() {
 
 #[test]
 fn helper_functions_cover_empty_and_missing_paths() {
-    let repo_root = unique_root("managed-skills-helpers");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-helpers");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     let preferred = preferred_location(&repo_root, Some(&home), SkillTool::Codex)
         .expect("preferred location should resolve to project .agents");
     assert_eq!(preferred.tool_root, repo_root.join(".agents"));
@@ -415,8 +446,10 @@ fn helper_functions_cover_empty_and_missing_paths() {
 #[test]
 fn public_environment_based_helpers_use_home_env() {
     let _guard = env_lock().lock().expect("env lock");
-    let repo_root = unique_root("managed-skills-public");
-    let home = unique_root("managed-skills-home");
+    let repo_root_ws = unique_root("managed-skills-public");
+    let repo_root = repo_root_ws.path().to_path_buf();
+    let home_ws = unique_root("managed-skills-home");
+    let home = home_ws.path().to_path_buf();
     fs::create_dir_all(repo_root.join(".agents")).expect("agents root");
 
     let prior_home = std::env::var_os("HOME");
@@ -436,56 +469,6 @@ fn public_environment_based_helpers_use_home_env() {
     fix_doctor_check(&repo_root, "skills_codex");
     assert!(knots.exists());
     fix_doctor_check(&repo_root, "unknown");
-
-    match prior_home {
-        Some(value) => std::env::set_var("HOME", value),
-        None => std::env::remove_var("HOME"),
-    }
-}
-
-#[test]
-fn codex_install_uses_project_agents_only() {
-    let repo = unique_root("managed-skills-codex-project");
-    let home = unique_root("managed-skills-home");
-    fs::create_dir_all(repo.join(".agents")).expect("agents root");
-    let out = install_missing(&repo, Some(&home), SkillTool::Codex).expect("install");
-    assert!(out.contains("installed"));
-    assert!(repo.join(".agents/skills/knots/SKILL.md").exists());
-
-    // Creates .agents/skills when .agents is absent
-    let repo2 = unique_root("managed-skills-codex-create");
-    let home2 = unique_root("managed-skills-home");
-    let out = install_missing(&repo2, Some(&home2), SkillTool::Codex).expect("install");
-    assert!(out.contains("installed"));
-    assert!(repo2.join(".agents/skills/knots/SKILL.md").exists());
-}
-
-#[test]
-fn doctor_detects_and_fixes_project_level_codex_skills() {
-    let _guard = env_lock().lock().expect("env lock");
-    let repo = unique_root("managed-skills-codex-doctor-project");
-    let home = unique_root("managed-skills-home");
-    let prior_home = std::env::var_os("HOME");
-    fs::create_dir_all(repo.join(".agents")).expect("agents root");
-    std::env::set_var("HOME", &home);
-
-    let check = doctor_check(&repo, Some(&home), SkillTool::Codex);
-    assert_eq!(check.status, DoctorStatus::Warn);
-    assert!(check.detail.contains(".agents/skills"));
-
-    install_missing(&repo, Some(&home), SkillTool::Codex).expect("install");
-    assert!(repo.join(".agents/skills/knots/SKILL.md").exists());
-    let check = doctor_check(&repo, Some(&home), SkillTool::Codex);
-    assert_eq!(check.status, DoctorStatus::Pass);
-
-    let knots = repo.join(".agents/skills/knots/SKILL.md");
-    fs::write(&knots, "stale").expect("stale");
-    let c = doctor_check(&repo, Some(&home), SkillTool::Codex);
-    assert_eq!(c.status, DoctorStatus::Warn);
-    fix_doctor_check(&repo, "skills_codex");
-    let after = doctor_check(&repo, Some(&home), SkillTool::Codex);
-    assert_eq!(after.status, DoctorStatus::Pass);
-    assert!(fs::read_to_string(&knots).expect("read").contains("---"));
 
     match prior_home {
         Some(value) => std::env::set_var("HOME", value),

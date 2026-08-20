@@ -3,8 +3,7 @@ use super::{
     remove_file_if_present, resolve_binary_path, run_uninstall, run_update, update_install_dir,
     upgrade_hint_needed, SelfUninstallOptions, SelfUpdateOptions,
 };
-use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::path::Path;
 
 #[cfg(unix)]
 fn symlink_file(src: &Path, dst: &Path) {
@@ -16,19 +15,14 @@ fn symlink_file(src: &Path, dst: &Path) {
     std::os::windows::fs::symlink_file(src, dst).expect("symlink should be created");
 }
 
-fn unique_temp_dir() -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be after UNIX_EPOCH")
-        .as_nanos();
-    let dir = std::env::temp_dir().join(format!("knots-self-manage-{nanos}"));
-    std::fs::create_dir_all(&dir).expect("temp dir should be created");
-    dir
+fn unique_temp_dir() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-self-manage")
 }
 
 #[test]
 fn uninstall_removes_binary_and_previous_when_requested() {
-    let dir = unique_temp_dir();
+    let dir_ws = unique_temp_dir();
+    let dir = dir_ws.path().to_path_buf();
     let binary = dir.join("knots");
     let alias = dir.join("kno");
     let previous = dir.join("kno.previous");
@@ -63,13 +57,12 @@ fn uninstall_removes_binary_and_previous_when_requested() {
     assert!(!alias.exists());
     assert!(!previous.exists());
     assert!(!legacy_previous.exists());
-
-    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]
 fn uninstall_keeps_previous_without_flag() {
-    let dir = unique_temp_dir();
+    let dir_ws = unique_temp_dir();
+    let dir = dir_ws.path().to_path_buf();
     let binary = dir.join("knots");
     let alias = dir.join("kno");
     let previous = dir.join("kno.previous");
@@ -90,13 +83,12 @@ fn uninstall_keeps_previous_without_flag() {
     assert!(!alias.exists());
     assert!(previous.exists());
     assert!(legacy_previous.exists());
-
-    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]
 fn update_and_path_helpers_cover_error_paths() {
-    let dir = unique_temp_dir();
+    let dir_ws = unique_temp_dir();
+    let dir = dir_ws.path().to_path_buf();
     let installer = dir.join("installer.sh");
     std::fs::write(&installer, "#!/bin/sh\nexit 1\n")
         .expect("installer script fixture should be written");
@@ -139,13 +131,12 @@ fn update_and_path_helpers_cover_error_paths() {
         remove_previous: false,
     });
     assert!(uninstall.is_err());
-
-    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]
 fn update_install_dir_uses_explicit_or_running_binary_parent() {
-    let dir = unique_temp_dir();
+    let dir_ws = unique_temp_dir();
+    let dir = dir_ws.path().to_path_buf();
     assert_eq!(
         update_install_dir(Some(dir.clone())).expect("explicit install dir should resolve"),
         dir
@@ -153,18 +144,21 @@ fn update_install_dir_uses_explicit_or_running_binary_parent() {
 
     let implicit = update_install_dir(None).expect("implicit install dir should resolve");
     assert!(!implicit.as_os_str().is_empty());
-    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]
 fn parent_dir_falls_back_to_dot_for_bare_paths() {
     assert_eq!(parent_dir(Path::new("knots")), Path::new("."));
-    assert_eq!(parent_dir(Path::new("/tmp/knots")), Path::new("/tmp"));
+    assert_eq!(
+        parent_dir(Path::new("/example/knots")),
+        Path::new("/example")
+    );
 }
 
 #[test]
 fn canonicalize_and_remove_file_helpers_cover_directory_and_missing_paths() {
-    let dir = unique_temp_dir();
+    let dir_ws = unique_temp_dir();
+    let dir = dir_ws.path().to_path_buf();
     let fixture_dir = dir.join("directory-fixture");
     std::fs::create_dir_all(&fixture_dir).expect("fixture directory should be creatable");
 
@@ -201,14 +195,12 @@ fn canonicalize_and_remove_file_helpers_cover_directory_and_missing_paths() {
         reset.set_mode(0o755);
         std::fs::set_permissions(&locked, reset).expect("locked dir permissions should reset");
     }
-
-    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]
 fn upgrade_summary_right_aligns_labels_and_left_aligns_values() {
     std::env::set_var("NO_COLOR", "1");
-    let install_dir = Path::new("/tmp/kno-test-install");
+    let install_dir = Path::new("/example/kno-test-install");
     let summary = format_upgrade_summary(
         Some("v1.2.3"),
         Some("acartine/knots"),
@@ -221,13 +213,13 @@ fn upgrade_summary_right_aligns_labels_and_left_aligns_values() {
     assert_eq!(lines[1], "     status:  updated kno binary");
     assert_eq!(lines[2], "    version:  v1.2.3");
     assert_eq!(lines[3], "       repo:  acartine/knots");
-    assert_eq!(lines[4], "install_dir:  /tmp/kno-test-install");
+    assert_eq!(lines[4], "install_dir:  /example/kno-test-install");
     assert!(lines[5].contains("kno doctor"));
 }
 
 #[test]
 fn upgrade_summary_omits_hint_when_not_needed() {
-    let install_dir = Path::new("/tmp/kno-test-install");
+    let install_dir = Path::new("/example/kno-test-install");
     let summary = format_upgrade_summary(
         Some("v1.2.3"),
         Some("acartine/knots"),
@@ -239,9 +231,9 @@ fn upgrade_summary_omits_hint_when_not_needed() {
 
 #[test]
 fn upgrade_hint_needed_stays_enabled_outside_git_repo() {
-    let dir = unique_temp_dir();
+    let dir_ws = unique_temp_dir();
+    let dir = dir_ws.path().to_path_buf();
     assert!(upgrade_hint_needed(&dir));
-    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]

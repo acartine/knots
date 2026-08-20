@@ -1,11 +1,7 @@
 use super::{App, CreateKnotOptions, StateActorMetadata, UpdateKnotPatch};
-use std::path::PathBuf;
-use uuid::Uuid;
 
-fn unique_workspace() -> PathBuf {
-    let r = std::env::temp_dir().join(format!("knots-app-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&r).expect("mkdir");
-    r
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-test")
 }
 
 fn empty_patch() -> UpdateKnotPatch {
@@ -39,7 +35,8 @@ fn empty_patch() -> UpdateKnotPatch {
 
 #[test]
 fn create_and_update_preserve_tag_casing_with_case_insensitive_matching() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("u"), root.clone()).expect("o");
     let c = app
@@ -87,5 +84,4 @@ fn create_and_update_preserve_tag_casing_with_case_insensitive_matching() {
         )
         .expect("r");
     assert_eq!(removed.tags, vec!["Journey-Github-Connect".to_string()]);
-    let _ = std::fs::remove_dir_all(root);
 }

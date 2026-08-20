@@ -6,14 +6,12 @@ use super::{
 use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::knot_type::KnotType;
 use crate::workflow::{OwnerKind, ProfileRegistry};
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> std::path::PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    crate::installed_workflows::ensure_builtin_workflows_registered(&path)
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    let ws = knots_test_support::workspace(prefix);
+    crate::installed_workflows::ensure_builtin_workflows_registered(ws.path())
         .expect("builtin workflows should register");
-    path
+    ws
 }
 
 #[test]
@@ -26,7 +24,8 @@ fn gate_states_have_explicit_queue_and_action_classification() {
 
 #[test]
 fn profile_escape_states_are_non_actionable_and_non_terminal() {
-    let workspace = unique_workspace("knots-workflow-escape");
+    let workspace_ws = unique_workspace("knots-workflow-escape");
+    let workspace = workspace_ws.path().to_path_buf();
     let bundle = workspace.join("custom_flow.toml");
     std::fs::write(
         &bundle,
@@ -123,8 +122,6 @@ changes = "ready_for_work"
         "blocked"
     )
     .expect("blocked should not be terminal"));
-
-    let _ = std::fs::remove_dir_all(workspace);
 }
 
 #[test]

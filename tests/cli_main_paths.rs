@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(cwd: &Path, args: &[&str]) {
@@ -262,7 +259,8 @@ EOF\n\
 
 #[test]
 fn toplevel_help_uses_custom_help_path() {
-    let root = unique_workspace("knots-main-help");
+    let root_ws = unique_workspace("knots-main-help");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
 
     let mut command = Command::new(knots_binary());
@@ -276,13 +274,12 @@ fn toplevel_help_uses_custom_help_path() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Common Commands:"), "stdout: {stdout}");
     assert!(stdout.contains("Other Commands:"), "stdout: {stdout}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fsck_non_json_failure_prints_issue_rows() {
-    let root = unique_workspace("knots-main-fsck-issues");
+    let root_ws = unique_workspace("knots-main-fsck-issues");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -316,13 +313,12 @@ fn fsck_non_json_failure_prints_issue_rows() {
     assert!(stdout.contains("issues="), "stdout: {stdout}");
     assert!(stdout.contains("invalid JSON payload"), "stdout: {stdout}");
     assert!(stderr.contains("fsck found"), "stderr: {stderr}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn ready_claim_peek_skill_terminal_and_rehydrate_missing_paths() {
-    let root = unique_workspace("knots-main-branches");
+    let root_ws = unique_workspace("knots-main-branches");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -384,13 +380,12 @@ fn ready_claim_peek_skill_terminal_and_rehydrate_missing_paths() {
         String::from_utf8_lossy(&missing_rehydrate.stderr).contains("not found"),
         "rehydrate missing should return not found"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn hooks_status_command_dispatches_through_main() {
-    let root = unique_workspace("knots-main-hooks-dispatch");
+    let root_ws = unique_workspace("knots-main-hooks-dispatch");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -398,13 +393,12 @@ fn hooks_status_command_dispatches_through_main() {
     assert_success(&output);
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("missing"), "stdout: {stdout}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn loom_compat_test_dispatches_through_main() {
-    let root = unique_workspace("knots-main-loom-dispatch");
+    let root_ws = unique_workspace("knots-main-loom-dispatch");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let bin_dir = install_stub_loom(&root);
@@ -437,14 +431,14 @@ fn loom_compat_test_dispatches_through_main() {
     let parsed: Value = serde_json::from_slice(&json.stdout).expect("loom json should parse");
     assert_eq!(parsed["workflow_id"], "custom_flow");
     assert_eq!(parsed["mode"], "smoke");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn repo_root_flag_resolves_default_db_relative_to_repo() {
-    let root = unique_workspace("knots-main-repo-root-db");
-    let outside = unique_workspace("knots-main-repo-root-db-outside");
+    let root_ws = unique_workspace("knots-main-repo-root-db");
+    let root = root_ws.path().to_path_buf();
+    let outside_ws = unique_workspace("knots-main-repo-root-db-outside");
+    let outside = outside_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -472,7 +466,4 @@ fn repo_root_flag_resolves_default_db_relative_to_repo() {
         shown_id.ends_with(&format!("-{id}")),
         "show id {shown_id} should end with created suffix {id}"
     );
-
-    let _ = std::fs::remove_dir_all(outside);
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -1,17 +1,15 @@
 use super::{App, CreateKnotOptions, UpdateKnotPatch};
 use crate::db;
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace() -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-acceptance-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-acceptance")
 }
 
 #[test]
 fn create_and_update_round_trip_acceptance() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -55,13 +53,12 @@ fn create_and_update_round_trip_acceptance() {
         )
         .expect("clear should succeed");
     assert_eq!(cleared.acceptance, None);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rehydrate_restores_acceptance_from_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let db_path_str = db_path.to_str().expect("utf8 path").to_string();
     std::fs::create_dir_all(
@@ -152,13 +149,12 @@ fn rehydrate_restores_acceptance_from_events() {
         rehydrated.acceptance.as_deref(),
         Some("Recovered from events")
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn show_knot_does_not_implicitly_rehydrate_from_warm_or_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let db_path_str = db_path.to_str().expect("utf8 path").to_string();
     std::fs::create_dir_all(
@@ -239,13 +235,12 @@ fn show_knot_does_not_implicitly_rehydrate_from_warm_or_events() {
         .expect("rehydrate should succeed")
         .expect("rehydrate should still recover the knot");
     assert_eq!(rehydrated.id, "K-cache-miss");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn json_shape_acceptance_null_when_unset() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -274,13 +269,12 @@ fn json_shape_acceptance_null_when_unset() {
         "acceptance must serialize as null when unset, got: {}",
         json["acceptance"]
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn json_shape_acceptance_string_when_set() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -310,13 +304,12 @@ fn json_shape_acceptance_string_when_set() {
         Some("Tests pass and coverage met"),
         "acceptance must serialize as a string when set"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn json_shape_acceptance_null_after_clear() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -360,13 +353,12 @@ fn json_shape_acceptance_null_after_clear() {
         "acceptance must be null after clearing, got: {}",
         json["acceptance"]
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rehydrate_returns_none_when_only_warm_exists() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let db_path_str = db_path.to_str().expect("utf8 path").to_string();
     std::fs::create_dir_all(db_path.parent().expect("db parent"))
@@ -381,13 +373,12 @@ fn rehydrate_returns_none_when_only_warm_exists() {
         result.is_none(),
         "rehydrate must return None without a cold catalog record"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn auto_sync_dedup_skips_second_call() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -396,6 +387,4 @@ fn auto_sync_dedup_skips_second_call() {
     assert!(first.is_ok(), "first list_knots should succeed");
     let second = app.list_knots();
     assert!(second.is_ok(), "second list_knots should succeed");
-
-    let _ = std::fs::remove_dir_all(root);
 }

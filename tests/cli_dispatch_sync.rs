@@ -11,7 +11,8 @@ fn fmt_rfc3339(ts: OffsetDateTime) -> String {
 
 #[test]
 fn push_pull_and_sync_emit_progress_and_json() {
-    let root = unique_workspace("knots-cli-sync-progress");
+    let root_ws = unique_workspace("knots-cli-sync-progress");
+    let root = root_ws.path().to_path_buf();
     let _remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -71,13 +72,12 @@ fn push_pull_and_sync_emit_progress_and_json() {
     let sync_payload: Value =
         serde_json::from_slice(&sync_json.stdout).expect("sync --json should parse");
     assert_eq!(sync_payload["status"], "completed");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn sync_recent_terminal_heads_are_list_visible() {
-    let root = unique_workspace("knots-cli-sync-recent-terminal");
+    let root_ws = unique_workspace("knots-cli-sync-recent-terminal");
+    let root = root_ws.path().to_path_buf();
     let _remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -136,13 +136,12 @@ fn sync_recent_terminal_heads_are_list_visible() {
         .as_array()
         .expect("state list should be an array");
     assert!(rows.iter().any(|row| row["id"] == "K-recent-cli"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn pull_warns_when_local_drift_exceeds_threshold() {
-    let root = unique_workspace("knots-cli-pull-drift-warning");
+    let root_ws = unique_workspace("knots-cli-pull-drift-warning");
+    let root = root_ws.path().to_path_buf();
     let _remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -170,13 +169,12 @@ fn pull_warns_when_local_drift_exceeds_threshold() {
         "pull warning: {stderr}"
     );
     assert!(stderr.contains("run `kno push`"), "pull warning: {stderr}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn cli_dispatch_covers_json_branches_and_cold_search_results() {
-    let root = unique_workspace("knots-cli-json-branches");
+    let root_ws = unique_workspace("knots-cli-json-branches");
+    let root = root_ws.path().to_path_buf();
     let _remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -250,6 +248,4 @@ fn cli_dispatch_covers_json_branches_and_cold_search_results() {
     let cold_text = run_knots(&root, &db, &["cold", "search", "Cold"]);
     assert_success(&cold_text);
     assert!(String::from_utf8_lossy(&cold_text.stdout).contains("Cold"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

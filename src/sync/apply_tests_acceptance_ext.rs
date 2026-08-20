@@ -1,17 +1,13 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-
-use uuid::Uuid;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::sync::GitAdapter;
 
 use super::IncrementalApplier;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-acceptance-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-acceptance")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -29,15 +25,16 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# apply\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -49,7 +46,8 @@ fn open_conn(root: &Path) -> rusqlite::Connection {
 
 #[test]
 fn apply_full_event_updates_acceptance_metadata() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::upsert_knot_hot(
         &conn,
@@ -122,6 +120,4 @@ fn apply_full_event_updates_acceptance_metadata() {
         .expect("query should succeed")
         .expect("knot should exist");
     assert_eq!(knot.acceptance.as_deref(), Some("Synced criteria"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

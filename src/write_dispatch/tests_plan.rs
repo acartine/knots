@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use clap::Parser;
@@ -12,10 +12,8 @@ use crate::write_queue::{
 
 use super::{execute_operation, operation_from_command};
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -148,7 +146,8 @@ fn operation_from_command_maps_plan_variants() {
 
 #[test]
 fn execute_operation_plan_wave_edits_persist() {
-    let root = unique_workspace("knots-plan-wave-edit");
+    let root_ws = unique_workspace("knots-plan-wave-edit");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let target = app
@@ -195,13 +194,12 @@ fn execute_operation_plan_wave_edits_persist() {
     assert_eq!(plan.waves.len(), 2);
     assert_eq!(plan.waves[0].name, "Second");
     assert_eq!(plan.waves[1].name, "First");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execute_operation_plan_step_edits_persist() {
-    let root = unique_workspace("knots-plan-step-edit");
+    let root_ws = unique_workspace("knots-plan-step-edit");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let target = app
@@ -275,13 +273,12 @@ fn execute_operation_plan_step_edits_persist() {
     assert_eq!(plan.waves[0].steps.len(), 1);
     assert_eq!(plan.waves[0].steps[0].knot_ids, vec![ref_b.id.clone()]);
     assert_eq!(plan.waves[0].steps[0].step_index, 1);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execute_operation_plan_remove_force_skips_confirmation() {
-    let root = unique_workspace("knots-plan-remove-force");
+    let root_ws = unique_workspace("knots-plan-remove-force");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let target = app
@@ -336,13 +333,12 @@ fn execute_operation_plan_remove_force_skips_confirmation() {
     let plan = updated.execution_plan.expect("plan should exist");
     assert_eq!(plan.waves.len(), 1);
     assert_eq!(plan.waves[0].wave_index, 1);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execute_operation_plan_wave_remove_without_force_rejects_non_tty() {
-    let root = unique_workspace("knots-plan-wave-remove-non-tty");
+    let root_ws = unique_workspace("knots-plan-wave-remove-non-tty");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let target = app
@@ -384,13 +380,12 @@ fn execute_operation_plan_wave_remove_without_force_rejects_non_tty() {
     )
     .expect_err("wave remove should require tty");
     assert!(matches!(err, AppError::InvalidArgument(_)));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execute_operation_plan_step_remove_without_force_rejects_non_tty() {
-    let root = unique_workspace("knots-plan-step-remove-non-tty");
+    let root_ws = unique_workspace("knots-plan-step-remove-non-tty");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let target = app
@@ -429,6 +424,4 @@ fn execute_operation_plan_step_remove_without_force_rejects_non_tty() {
     )
     .expect_err("step remove should require tty");
     assert!(matches!(err, AppError::InvalidArgument(_)));
-
-    let _ = std::fs::remove_dir_all(root);
 }

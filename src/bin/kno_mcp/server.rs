@@ -283,8 +283,8 @@ mod tests {
     #[test]
     fn tool_router_lists_core_tools() {
         let server = KnoMcp::new(ServerConfig {
-            repo: PathBuf::from("/tmp/repo"),
-            kno_bin: PathBuf::from("/tmp/kno"),
+            repo: PathBuf::from("/example/repo"),
+            kno_bin: PathBuf::from("/example/kno"),
             lease_timeout_seconds: 600,
         });
         let tools = server.tool_router.list_all();
@@ -487,7 +487,7 @@ mod tests {
     fn server_with_registry(lease_registry: LeaseRegistry) -> KnoMcp {
         KnoMcp::with_lease_registry(
             ServerConfig {
-                repo: PathBuf::from("/tmp/repo"),
+                repo: PathBuf::from("/example/repo"),
                 kno_bin: PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                     .join("tests/fixtures/kno-stub.sh"),
                 lease_timeout_seconds: 600,

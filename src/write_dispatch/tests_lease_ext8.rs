@@ -56,7 +56,8 @@ fn count_json_files(root: &std::path::Path) -> usize {
 /// and must not reorder `kno ls`.
 #[test]
 fn set_lease_expiry_writes_a_replicated_head_event_without_bumping_updated_at() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -117,6 +118,4 @@ fn set_lease_expiry_writes_a_replicated_head_event_without_bumping_updated_at() 
         found,
         "expected an idx.knot_head event on disk for the lease with the new expiry"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

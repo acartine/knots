@@ -1,7 +1,5 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-
-use uuid::Uuid;
 
 use super::execute_operation;
 use crate::app::App;
@@ -9,10 +7,8 @@ use crate::cli_scope::ScopeArgs;
 use crate::domain::scope::ScopePatch;
 use crate::write_queue::{NewOperation, UpdateOperation, WriteOperation};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-scope-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-scope-test")
 }
 
 fn setup_repo(root: &Path) {
@@ -42,7 +38,8 @@ fn run_git(root: &Path, args: &[&str]) {
 
 #[test]
 fn new_and_update_scope_round_trip() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("utf8 path"), root).expect("app should open");
@@ -126,7 +123,8 @@ fn new_and_update_scope_round_trip() {
 
 #[test]
 fn app_scope_update_rejects_empty_patch_and_noops_same_value() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("utf8 path"), root).expect("app should open");

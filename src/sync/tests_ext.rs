@@ -4,10 +4,8 @@ use crate::db;
 
 use super::SyncService;
 
-fn unique_workspace() -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-test-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-test")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -124,7 +122,8 @@ fn write_stale_precondition_events(root: &Path) {
 
 #[test]
 fn sync_ignores_events_with_stale_preconditions() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     init_repo(&root);
     run_git(&root, &["checkout", "-b", "knots"]);
 
@@ -147,8 +146,6 @@ fn sync_ignores_events_with_stale_preconditions() {
     assert_eq!(knot.profile_id, "autopilot");
     assert_eq!(knot.description, None);
     assert_eq!(knot.profile_etag.as_deref(), Some("0300"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn write_snapshot_files(root: &Path) {
@@ -202,7 +199,8 @@ fn write_snapshot_files(root: &Path) {
 
 #[test]
 fn sync_bootstrap_loads_latest_snapshots_when_no_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     init_repo(&root);
     run_git(&root, &["checkout", "-b", "knots"]);
 
@@ -222,6 +220,4 @@ fn sync_bootstrap_loads_latest_snapshots_when_no_events() {
         .expect("knot query should succeed")
         .expect("snapshot knot should be loaded");
     assert_eq!(knot.title, "Snapshot knot");
-
-    let _ = std::fs::remove_dir_all(root);
 }

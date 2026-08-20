@@ -1,7 +1,5 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-
-use uuid::Uuid;
 
 use clap::Parser;
 
@@ -13,10 +11,8 @@ use crate::write_queue::{
     LeaseCreateOperation, LeaseTerminateOperation, NextOperation, UpdateOperation, WriteOperation,
 };
 
-pub(super) fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-wd-lease-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+pub(super) fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-wd-lease-ext")
 }
 
 pub(super) fn run_git(root: &Path, args: &[&str]) {
@@ -51,7 +47,8 @@ pub(super) fn open_app(root: &Path) -> App {
 
 #[test]
 fn next_terminates_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -109,13 +106,12 @@ fn next_terminates_lease() {
         lease_after.state, "lease_terminated",
         "lease should be terminated after next"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_releases_mcp_session_lease_to_ready() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -172,8 +168,6 @@ fn next_releases_mcp_session_lease_to_ready() {
         .expect("show")
         .expect("lease exists");
     assert_eq!(lease_after.state, "lease_ready");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 pub(super) fn parse(args: &[&str]) -> Cli {
@@ -238,7 +232,8 @@ fn operation_from_lease_list_is_none() {
 
 #[test]
 fn execute_lease_create_and_terminate() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -274,13 +269,12 @@ fn execute_lease_create_and_terminate() {
 
     let after = crate::lease::list_active_leases(&app).expect("list should succeed");
     assert!(after.is_empty(), "no active leases after");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn lease_create_json_output() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -300,13 +294,12 @@ fn lease_create_json_output() {
         serde_json::from_str(&output).expect("output should be valid JSON");
     assert!(parsed["id"].is_string(), "JSON should contain id");
     assert_eq!(parsed["title"].as_str().unwrap(), "Lease: json-test");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn lease_create_text_output_when_json_false() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -326,8 +319,6 @@ fn lease_create_text_output_when_json_false() {
         output.contains("created lease"),
         "text output should contain 'created lease': {output}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 pub(super) fn create_test_lease(app: &App) -> String {
@@ -349,7 +340,8 @@ pub(super) fn create_test_lease(app: &App) -> String {
 
 #[test]
 fn update_with_lease_flag_rejects_unbound() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -412,13 +404,12 @@ fn update_with_lease_flag_rejects_unbound() {
     let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
     assert_eq!(updated.title, "Update lease test");
     assert!(updated.lease_id.is_none(), "update should not bind a lease");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn note_auto_fills_from_lease_agent_info() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -480,6 +471,4 @@ fn note_auto_fills_from_lease_agent_info() {
     assert_eq!(note.agentname, "claude");
     assert_eq!(note.model, "opus");
     assert_eq!(note.version, "4.6");
-
-    let _ = std::fs::remove_dir_all(root);
 }

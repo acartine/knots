@@ -6,7 +6,8 @@ const DEPRECATION_WARNING: &str = "warning: 'kno skill' is deprecated; use 'kno 
 
 #[test]
 fn prompt_command_prints_action_state_prompt() {
-    let root = unique_workspace("knots-cli-prompt");
+    let root_ws = unique_workspace("knots-cli-prompt");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -20,13 +21,12 @@ fn prompt_command_prints_action_state_prompt() {
         "`kno prompt` should not emit any stderr output, got: {}",
         String::from_utf8_lossy(&prompt.stderr)
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn prompt_output_matches_deprecated_skill_alias_byte_for_byte() {
-    let root = unique_workspace("knots-cli-prompt-parity");
+    let root_ws = unique_workspace("knots-cli-prompt-parity");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -40,13 +40,12 @@ fn prompt_output_matches_deprecated_skill_alias_byte_for_byte() {
         prompt.stdout, skill.stdout,
         "deprecated `kno skill` stdout must match `kno prompt` byte-for-byte"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn deprecated_skill_alias_emits_exact_deprecation_warning() {
-    let root = unique_workspace("knots-cli-skill-deprecated");
+    let root_ws = unique_workspace("knots-cli-skill-deprecated");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -61,7 +60,8 @@ fn deprecated_skill_alias_emits_exact_deprecation_warning() {
 
 #[test]
 fn prompt_subcommand_appears_in_top_level_help() {
-    let root = unique_workspace("knots-cli-help-prompt");
+    let root_ws = unique_workspace("knots-cli-help-prompt");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -81,6 +81,4 @@ fn prompt_subcommand_appears_in_top_level_help() {
         }),
         "`kno --help` must not show the deprecated `skill` subcommand: {stdout}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

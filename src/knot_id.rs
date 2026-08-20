@@ -103,16 +103,17 @@ mod tests {
 
     #[test]
     fn slug_fallbacks_to_repo_name_when_git_remote_missing() {
-        let root = std::env::temp_dir().join("knots-id-test-repo");
+        let root_ws = knots_test_support::workspace("knots-id-fixture");
+        let root = root_ws.path().join("knots-id-test-repo");
         std::fs::create_dir_all(&root).expect("temp root should be creatable");
         let slug = repo_slug(&root);
         assert_eq!(slug, "knots-id-test-repo");
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn generated_ids_follow_repo_short_hash_shape() {
-        let root = std::env::temp_dir().join("knots-id-shape-test");
+        let root_ws = knots_test_support::workspace("knots-id-fixture");
+        let root = root_ws.path().join("knots-id-shape-test");
         std::fs::create_dir_all(&root).expect("temp root should be creatable");
         let seen: HashSet<String> = HashSet::new();
         let id = generate_knot_id(&root, |candidate| seen.contains(candidate));
@@ -124,7 +125,6 @@ mod tests {
                 .len(),
             4
         );
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
@@ -155,7 +155,8 @@ mod tests {
         assert!(id.starts_with("repo-"));
         assert_eq!(repo_slug(Path::new("/")), "repo");
 
-        let weird = std::env::temp_dir().join("!!!");
+        let weird_ws = knots_test_support::workspace("knots-id-weird");
+        let weird = weird_ws.path().join("!!!");
         assert_eq!(repo_slug(&weird), "repo");
     }
 
@@ -168,8 +169,8 @@ mod tests {
 
     #[test]
     fn blank_origin_url_falls_back_to_repo_basename() {
-        let root = std::env::temp_dir().join("knots-id-blank-origin");
-        let _ = std::fs::remove_dir_all(&root);
+        let root_ws = knots_test_support::workspace("knots-id-fixture");
+        let root = root_ws.path().join("knots-id-blank-origin");
         std::fs::create_dir_all(&root).expect("repo root should be creatable");
 
         let run_git = |args: &[&str]| {
@@ -192,7 +193,5 @@ mod tests {
         run_git(&["config", "remote.origin.url", "   "]);
 
         assert_eq!(repo_slug(&root), "knots-id-blank-origin");
-
-        let _ = std::fs::remove_dir_all(root);
     }
 }

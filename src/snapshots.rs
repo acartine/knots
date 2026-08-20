@@ -275,22 +275,18 @@ fn filename_timestamp() -> String {
 #[cfg(test)]
 mod tests {
     use std::error::Error;
-    use std::path::PathBuf;
-
-    use uuid::Uuid;
 
     use super::{apply_latest_snapshots, latest_snapshot_path, write_snapshots, SnapshotError};
     use crate::db::{self, UpsertKnotHot};
 
-    fn unique_workspace() -> PathBuf {
-        let root = std::env::temp_dir().join(format!("knots-snapshot-test-{}", Uuid::now_v7()));
-        std::fs::create_dir_all(&root).expect("workspace should be creatable");
-        root
+    fn unique_workspace() -> knots_test_support::TestWorkspace {
+        knots_test_support::workspace("knots-snapshot-test")
     }
 
     #[test]
     fn writes_and_loads_snapshots() {
-        let root = unique_workspace();
+        let root_ws = unique_workspace();
+        let root = root_ws.path().to_path_buf();
         let db_path = root.join(".knots/cache/state.sqlite");
         std::fs::create_dir_all(
             db_path
@@ -341,7 +337,8 @@ mod tests {
         assert!(written.active_path.exists());
         assert!(written.cold_path.exists());
 
-        let root2 = unique_workspace();
+        let root2_ws = unique_workspace();
+        let root2 = root2_ws.path().to_path_buf();
         let db2_path = root2.join(".knots/cache/state.sqlite");
         std::fs::create_dir_all(
             db2_path
@@ -388,9 +385,6 @@ mod tests {
             hot.execution_plan_data,
             crate::domain::execution_plan::ExecutionPlanData::default()
         );
-
-        let _ = std::fs::remove_dir_all(root);
-        let _ = std::fs::remove_dir_all(root2);
     }
 
     #[test]
@@ -412,7 +406,8 @@ mod tests {
 
     #[test]
     fn latest_snapshot_path_skips_directories_and_invalid_filenames() {
-        let root = unique_workspace();
+        let root_ws = unique_workspace();
+        let root = root_ws.path().to_path_buf();
         let snapshots = root.join(".knots/snapshots");
         std::fs::create_dir_all(&snapshots).expect("snapshots directory should be creatable");
 
@@ -447,7 +442,5 @@ mod tests {
             .file_name()
             .and_then(|value| value.to_str())
             .is_some_and(|name| name.starts_with("20260225T100002Z")));
-
-        let _ = std::fs::remove_dir_all(root);
     }
 }

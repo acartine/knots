@@ -1,8 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use uuid::Uuid;
-
 use super::{
     apply_fixes, has_non_pass_checks, set_version_fix_applied_for_tests, version_fix_applied,
 };
@@ -14,10 +12,8 @@ use crate::installed_workflows::{
 };
 use crate::sync::{GitAdapter, KnotsWorktree};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-doctor-fix-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-doctor-fix")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -35,8 +31,9 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo_with_origin() -> (PathBuf, PathBuf) {
-    let root = unique_workspace();
+fn setup_repo_with_origin() -> (knots_test_support::TestWorkspace, PathBuf) {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let origin = root.join("origin.git");
     let local = root.join("local");
 
@@ -63,7 +60,7 @@ fn setup_repo_with_origin() -> (PathBuf, PathBuf) {
     );
     run_git(&local, &["push", "-u", "origin", "main"]);
 
-    (root, local)
+    (root_ws, local)
 }
 
 fn sample_check(name: &str, status: DoctorStatus) -> DoctorCheck {
@@ -149,17 +146,18 @@ fn has_non_pass_checks_detects_warn_or_fail() {
 #[test]
 fn apply_fixes_marks_version_fix_applied_for_version_check() {
     set_version_fix_applied_for_tests(false);
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let checks = vec![sample_check("version", DoctorStatus::Warn)];
     apply_fixes(&root, &checks);
     assert!(version_fix_applied());
     set_version_fix_applied_for_tests(false);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_fixes_removes_lock_files() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let repo_lock = root.join(".knots/locks/repo.lock");
     let cache_lock = root.join(".knots/cache/cache.lock");
     std::fs::create_dir_all(repo_lock.parent().expect("repo lock parent should exist"))
@@ -174,13 +172,11 @@ fn apply_fixes_removes_lock_files() {
 
     assert!(!repo_lock.exists());
     assert!(!cache_lock.exists());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_fixes_recreates_non_git_worktree_directory() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
     let fake_worktree = local.join(".knots").join("_worktree");
     std::fs::create_dir_all(&fake_worktree).expect("fake worktree should be creatable");
     std::fs::write(fake_worktree.join("junk.txt"), "junk")
@@ -198,13 +194,12 @@ fn apply_fixes_recreates_non_git_worktree_directory() {
         .expect("git status should run");
     assert!(status.status.success());
     assert!(String::from_utf8_lossy(&status.stdout).trim().is_empty());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_fixes_ignores_non_git_repo_and_unknown_checks() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let checks = vec![
         sample_check("worktree", DoctorStatus::Fail),
         sample_check("remote", DoctorStatus::Fail),
@@ -216,13 +211,11 @@ fn apply_fixes_ignores_non_git_repo_and_unknown_checks() {
     apply_fixes(&root, &checks);
     assert!(root.exists());
     assert!(!super::run_git(&root.join("missing"), &["status"]));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_fixes_cleans_legacy_and_reinstalls_hooks() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
     let hooks_dir = local.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks_dir).unwrap();
 
@@ -261,13 +254,11 @@ fn apply_fixes_cleans_legacy_and_reinstalls_hooks() {
         !pm.contains("kno sync"),
         "post-merge should no longer contain old `kno sync`"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_fixes_cleans_worktree_and_creates_remote_branch() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
 
     let git = GitAdapter::new();
     let worktree = KnotsWorktree::new(local.clone());
@@ -320,13 +311,11 @@ fn apply_fixes_cleans_worktree_and_creates_remote_branch() {
     );
     assert!(!repo_lock.exists());
     assert!(!cache_lock.exists());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_fixes_reconciles_terminal_parents() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
     let db = local.join(".knots/cache/state.sqlite");
     let app = crate::app::App::open(db.to_str().expect("db path should be utf8"), local.clone())
         .expect("app should open");
@@ -351,13 +340,11 @@ fn apply_fixes_reconciles_terminal_parents() {
         .expect("parent should load")
         .expect("parent should exist");
     assert_eq!(updated.state, "shipped");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_fixes_reports_event_log_touched_for_workflow_id_parity() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
     std::fs::create_dir_all(local.join(".knots/cache")).expect("cache dir");
     write_legacy_worktree_head(&local, "K-legacy");
     let checks = vec![sample_check("workflow_id_parity", DoctorStatus::Warn)];
@@ -366,12 +353,11 @@ fn apply_fixes_reports_event_log_touched_for_workflow_id_parity() {
         outcome.event_log_touched,
         "workflow_id_parity fix writes repair events, so event_log_touched must be true"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_fixes_leaves_event_log_touched_false_for_non_event_fixes() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
     let repo_lock = local.join(".knots/locks/repo.lock");
     std::fs::create_dir_all(repo_lock.parent().expect("repo lock parent should exist"))
         .expect("repo lock parent should be creatable");
@@ -383,12 +369,12 @@ fn apply_fixes_leaves_event_log_touched_false_for_non_event_fixes() {
         !outcome.event_log_touched,
         "lock_health fix only removes lock files; the event log should be untouched"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn workflow_registry_fix_preserves_custom_work_selection() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let custom_workflow_id = install_custom_workflow(&root, "custom_flow");
     assert_eq!(custom_workflow_id, "custom_flow");
 
@@ -486,6 +472,4 @@ fn workflow_registry_fix_preserves_custom_work_selection() {
             .map(|workflow| workflow.workflow_id),
         Some("custom_flow".to_string())
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

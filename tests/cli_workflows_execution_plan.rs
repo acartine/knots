@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn knots_binary() -> PathBuf {
@@ -75,8 +72,10 @@ fn bootstrap_builtin_workflows(root: &Path, db: &Path, home: &Path) {
 
 #[test]
 fn execution_plan_builtin_type_resolves_default_workflow_and_profile() {
-    let root = unique_workspace("knots-cli-execution-plan-builtin");
-    let home = unique_workspace("knots-cli-execution-plan-builtin-home");
+    let root_ws = unique_workspace("knots-cli-execution-plan-builtin");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-execution-plan-builtin-home");
+    let home = home_ws.path().to_path_buf();
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db, &home);

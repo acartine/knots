@@ -428,16 +428,16 @@ fn project_file(home_override: Option<&Path>, id: &str) -> Result<PathBuf, Strin
 mod tests {
     use super::*;
 
-    fn temp_home() -> PathBuf {
-        let path =
-            std::env::temp_dir().join(format!("knots-project-test-{}", uuid::Uuid::now_v7()));
-        fs::create_dir_all(&path).expect("temp home should be creatable");
-        path
+    fn temp_home() -> knots_test_support::TestWorkspace {
+        let path_ws = knots_test_support::workspace("knots-project-test");
+        let _path = path_ws.path().to_path_buf();
+        path_ws
     }
 
     #[test]
     fn create_list_and_resolve_named_projects() {
-        let home = temp_home();
+        let home_ws = temp_home();
+        let home = home_ws.path().to_path_buf();
         let project = create_named_project(Some(&home), "demo", None).expect("create project");
         assert_eq!(project.id, "demo");
         let listed = list_named_projects(Some(&home)).expect("list projects");
@@ -446,12 +446,12 @@ mod tests {
         let context = resolve_context(None, None, &home, Some(&home)).expect("resolve context");
         assert_eq!(context.project_id.as_deref(), Some("demo"));
         assert_eq!(context.distribution, DistributionMode::LocalOnly);
-        let _ = fs::remove_dir_all(home);
     }
 
     #[test]
     fn explicit_repo_root_beats_active_project() {
-        let home = temp_home();
+        let home_ws = temp_home();
+        let home = home_ws.path().to_path_buf();
         create_named_project(Some(&home), "demo", None).expect("create project");
         set_active_project(Some(&home), "demo").expect("set active project");
         let repo_root = home.join("repo");
@@ -462,12 +462,12 @@ mod tests {
             resolve_context(None, Some(&repo_root), &home, Some(&home)).expect("resolve git");
         assert_eq!(context.project_id, None);
         assert_eq!(context.distribution, DistributionMode::Git);
-        let _ = fs::remove_dir_all(home);
     }
 
     #[test]
     fn delete_project_removes_store_and_clears_active_project() {
-        let home = temp_home();
+        let home_ws = temp_home();
+        let home = home_ws.path().to_path_buf();
         let project = create_named_project(Some(&home), "demo", None).expect("create project");
         set_active_project(Some(&home), "demo").expect("set active project");
 
@@ -484,6 +484,5 @@ mod tests {
             .exists());
         let config = read_global_config(Some(&home)).expect("config should load");
         assert_eq!(config.active_project, None);
-        let _ = fs::remove_dir_all(home);
     }
 }

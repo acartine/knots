@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn knots_binary() -> PathBuf {
@@ -184,8 +181,10 @@ changes = "ready_for_work"
 
 #[test]
 fn custom_workflow_install_use_and_runtime_flow() {
-    let root = unique_workspace("knots-cli-workflows");
-    let home = unique_workspace("knots-cli-workflows-home");
+    let root_ws = unique_workspace("knots-cli-workflows");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-workflows-home");
+    let home = home_ws.path().to_path_buf();
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db, &home);
@@ -289,8 +288,10 @@ fn custom_workflow_install_use_and_runtime_flow() {
 
 #[test]
 fn workflow_commands_render_text_and_json_views() {
-    let root = unique_workspace("knots-cli-workflow-views");
-    let home = unique_workspace("knots-cli-workflow-views-home");
+    let root_ws = unique_workspace("knots-cli-workflow-views");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-workflow-views-home");
+    let home = home_ws.path().to_path_buf();
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db, &home);
@@ -357,8 +358,10 @@ fn workflow_commands_render_text_and_json_views() {
 
 #[test]
 fn workflow_install_warns_on_unknown_artifact_target() {
-    let root = unique_workspace("knots-cli-unknown-artifact");
-    let home = unique_workspace("knots-cli-unknown-artifact-home");
+    let root_ws = unique_workspace("knots-cli-unknown-artifact");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-unknown-artifact-home");
+    let home = home_ws.path().to_path_buf();
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir");
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db, &home);
@@ -415,15 +418,14 @@ fn workflow_install_warns_on_unknown_artifact_target() {
         claim_stderr.contains("unknown artifact target"),
         "JSON reload should also warn: {claim_stderr}",
     );
-
-    let _ = std::fs::remove_dir_all(&root);
-    let _ = std::fs::remove_dir_all(&home);
 }
 
 #[test]
 fn workflow_install_does_not_switch_without_set_default() {
-    let root = unique_workspace("knots-cli-workflows-install-defaults");
-    let home = unique_workspace("knots-cli-workflows-install-defaults-home");
+    let root_ws = unique_workspace("knots-cli-workflows-install-defaults");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-workflows-install-defaults-home");
+    let home = home_ws.path().to_path_buf();
     std::fs::create_dir_all(root.join(".knots")).expect(".knots dir should exist");
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db, &home);

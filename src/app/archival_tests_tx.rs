@@ -1,10 +1,7 @@
 //! Regression tests for cold-sweep transaction atomicity.
 
-use std::path::PathBuf;
-
 use time::format_description::well_known::Rfc3339;
 use time::{Duration, OffsetDateTime};
-use uuid::Uuid;
 
 use super::super::App;
 use crate::db;
@@ -12,18 +9,17 @@ use crate::domain::execution_plan::ExecutionPlanData;
 use crate::domain::gate::GateData;
 use crate::domain::lease::LeaseData;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-archival-tx-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-archival-tx-test")
 }
 
-fn new_app() -> (App, PathBuf) {
-    let root = unique_workspace();
+fn new_app() -> (App, knots_test_support::TestWorkspace) {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
-    (app, root)
+    (app, root_ws)
 }
 
 fn fmt(ts: OffsetDateTime) -> String {
@@ -86,7 +82,7 @@ fn sweep_rolls_back_all_moves_when_any_insert_fails() {
     // Regression: move_candidates must commit atomically. If the second
     // upsert_cold_catalog fails, the first move must be rolled back so the
     // cold catalog stays empty and the hot rows stay in place.
-    let (app, root) = new_app();
+    let (app, _root_ws) = new_app();
     let now = OffsetDateTime::now_utc();
     let stale = fmt(now - Duration::hours(200));
     let fresh = fmt(now - Duration::hours(1));
@@ -131,6 +127,4 @@ fn sweep_rolls_back_all_moves_when_any_insert_fails() {
     app.conn_for_test()
         .execute_batch("DROP TRIGGER abort_sentinel_insert;")
         .expect("drop trigger");
-
-    let _ = std::fs::remove_dir_all(root);
 }

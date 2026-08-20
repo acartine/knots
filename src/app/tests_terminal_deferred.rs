@@ -1,13 +1,7 @@
-use std::path::PathBuf;
-
-use uuid::Uuid;
-
 use super::{App, StateActorMetadata, UpdateKnotPatch};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-terminal-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-terminal")
 }
 
 fn open_app(root: &std::path::Path) -> App {
@@ -21,7 +15,8 @@ fn open_app(root: &std::path::Path) -> App {
 
 #[test]
 fn update_can_abandon_parent_with_deferred_child_without_auto_resolution() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -78,6 +73,4 @@ fn update_can_abandon_parent_with_deferred_child_without_auto_resolution() {
         "abandoned",
         "deferred child should be cascaded to abandoned"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

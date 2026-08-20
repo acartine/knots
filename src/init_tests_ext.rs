@@ -24,8 +24,8 @@ fn run_git(root: &Path, args: &[&str]) {
 
 #[test]
 fn warn_if_beads_hooks_present_handles_config_without_matching_hook_files() {
-    let root = std::env::temp_dir().join(format!("knots-init-hooks-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
+    let root_ws = knots_test_support::workspace("knots-init-hooks");
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -36,14 +36,12 @@ fn warn_if_beads_hooks_present_handles_config_without_matching_hook_files() {
         .expect("non-beads pre-push should be writable");
 
     warn_if_beads_hooks_present(&root).expect("beads warning path should be non-fatal");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn gitignore_helpers_cover_append_and_noop_removal_paths() {
-    let root = std::env::temp_dir().join(format!("knots-init-gitignore-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
+    let root_ws = knots_test_support::workspace("knots-init-gitignore");
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let gitignore = root.join(".gitignore");
     std::fs::write(&gitignore, "target").expect("gitignore fixture should write");
@@ -58,17 +56,15 @@ fn gitignore_helpers_cover_append_and_noop_removal_paths() {
         .expect("uninit should no-op when knots rule is absent");
     let unchanged = std::fs::read_to_string(&gitignore).expect("gitignore should read");
     assert_eq!(unchanged, "target\n");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn init_all_installs_sync_hooks() {
     use std::path::PathBuf;
 
-    fn setup_repo_with_remote_for_hooks() -> (PathBuf, PathBuf) {
-        let root =
-            std::env::temp_dir().join(format!("knots-init-hooks-int-{}", uuid::Uuid::now_v7()));
+    fn setup_repo_with_remote_for_hooks() -> (knots_test_support::TestWorkspace, PathBuf) {
+        let root_ws = knots_test_support::workspace("knots-init-hooks-int");
+        let root = root_ws.path().to_path_buf();
         let remote = root.join("remote.git");
         let local = root.join("local");
         std::fs::create_dir_all(&local).expect("local dir");
@@ -83,10 +79,10 @@ fn init_all_installs_sync_hooks() {
             &local,
             &["remote", "add", "origin", remote.to_str().expect("utf8")],
         );
-        (root, local)
+        (root_ws, local)
     }
 
-    let (root, local) = setup_repo_with_remote_for_hooks();
+    let (_root_ws, local) = setup_repo_with_remote_for_hooks();
     let db_path = local.join(".knots/cache/state.sqlite");
     super::init_all(&local, db_path.to_str().expect("utf8")).expect("init_all should succeed");
 
@@ -100,22 +96,20 @@ fn init_all_installs_sync_hooks() {
             "{hook_name} should be knots-managed"
         );
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn run_git_panics_with_stderr_when_command_fails() {
-    let root = std::env::temp_dir().join(format!("knots-init-git-panic-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
+    let root_ws = knots_test_support::workspace("knots-init-git-panic");
+    let root = root_ws.path().to_path_buf();
     let panic = std::panic::catch_unwind(|| run_git(&root, &["status"]));
     assert!(panic.is_err(), "run_git should panic for non-repo paths");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn init_local_store_for_named_local_only_project_skips_repo_artifacts() {
-    let home = std::env::temp_dir().join(format!("knots-init-local-only-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&home).expect("home should be creatable");
+    let home_ws = knots_test_support::workspace("knots-init-local-only");
+    let home = home_ws.path().to_path_buf();
     create_named_project(Some(&home), "demo", None).expect("named project should be created");
 
     let context = resolve_context(Some("demo"), None, &home, Some(&home))
@@ -153,6 +147,4 @@ fn init_local_store_for_named_local_only_project_skips_repo_artifacts() {
             .current_workflow_id_for_knot_type(crate::domain::knot_type::KnotType::ExecutionPlan),
         "execution_plan_sdlc"
     );
-
-    let _ = std::fs::remove_dir_all(home);
 }

@@ -3,14 +3,12 @@ use crate::domain::knot_type::KnotType;
 use crate::installed_workflows::bundle_toml::parse_bundle_toml;
 use crate::workflow::{OwnerKind, ProfileRegistry};
 use crate::workflow_runtime::step_metadata_for_state;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> std::path::PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    crate::installed_workflows::ensure_builtin_workflows_registered(&path)
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    let ws = knots_test_support::workspace(prefix);
+    crate::installed_workflows::ensure_builtin_workflows_registered(ws.path())
         .expect("builtin workflows should register");
-    path
+    ws
 }
 
 // ── Pattern 1: Built-in autopilot (all-agent) ────────────
@@ -157,7 +155,8 @@ fn custom_bundle_review_hint_attached_to_review_state() {
 
 #[test]
 fn custom_bundle_step_metadata_includes_review_hint() {
-    let workspace = unique_workspace("knots-stepmeta-review");
+    let workspace_ws = unique_workspace("knots-stepmeta-review");
+    let workspace = workspace_ws.path().to_path_buf();
     let bundle = workspace.join("review_flow.toml");
     std::fs::write(&bundle, BUNDLE_WITH_REVIEW_HINT).expect("bundle should write");
     crate::installed_workflows::install_bundle(&workspace, &bundle).expect("install bundle");
@@ -209,8 +208,6 @@ fn custom_bundle_step_metadata_includes_review_hint() {
             .and_then(|o| o.access_hint.as_deref()),
         Some("git log"),
     );
-
-    let _ = std::fs::remove_dir_all(workspace);
 }
 
 #[test]

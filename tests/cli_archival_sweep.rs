@@ -90,7 +90,8 @@ fn unique_id(tag: &str, idx: usize) -> String {
 
 #[test]
 fn ls_sweeps_stale_terminals_and_prints_summary() {
-    let root = unique_workspace("knots-archival-sweep");
+    let root_ws = unique_workspace("knots-archival-sweep");
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_via_init(&root, &db);
 
@@ -140,13 +141,12 @@ fn ls_sweeps_stale_terminals_and_prints_summary() {
         "expected hot near target, got {hot}"
     );
     assert!(count_cold(&db) >= 50);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn ls_does_not_sweep_recent_terminals() {
-    let root = unique_workspace("knots-archival-recent");
+    let root_ws = unique_workspace("knots-archival-recent");
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_via_init(&root, &db);
 
@@ -188,13 +188,12 @@ fn ls_does_not_sweep_recent_terminals() {
     );
     assert_eq!(count_hot(&db), hot_before);
     assert_eq!(count_cold(&db), 0);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn ls_skips_blocked_and_deferred_even_when_stale() {
-    let root = unique_workspace("knots-archival-blocked");
+    let root_ws = unique_workspace("knots-archival-blocked");
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_via_init(&root, &db);
 
@@ -244,13 +243,12 @@ fn ls_skips_blocked_and_deferred_even_when_stale() {
     );
     assert_eq!(count_hot(&db), 116);
     assert_eq!(count_cold(&db), 0);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn show_reads_cold_catalog_after_sweep() {
-    let root = unique_workspace("knots-archival-show-cold");
+    let root_ws = unique_workspace("knots-archival-show-cold");
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_via_init(&root, &db);
 
@@ -297,13 +295,12 @@ fn show_reads_cold_catalog_after_sweep() {
     assert_eq!(value["id"].as_str(), Some(target_id.as_str()));
     assert_eq!(value["state"].as_str(), Some("shipped"));
     assert_eq!(value["title"].as_str(), Some("Target shipped knot"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rehydrate_bumps_updated_at_and_is_not_immediately_re_swept() {
-    let root = unique_workspace("knots-archival-rehydrate");
+    let root_ws = unique_workspace("knots-archival-rehydrate");
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_via_init(&root, &db);
 
@@ -376,6 +373,4 @@ fn rehydrate_bumps_updated_at_and_is_not_immediately_re_swept() {
         )
         .expect("count cold by id");
     assert_eq!(cold_exists, 0);
-
-    let _ = std::fs::remove_dir_all(root);
 }

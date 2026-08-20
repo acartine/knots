@@ -2,12 +2,9 @@ use std::error::Error;
 
 use super::{GateMode, ProfileError, ProfileRegistry};
 use crate::installed_workflows;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn ensure_builtin_registry(root: &std::path::Path) {
@@ -201,7 +198,8 @@ fn owner_kind_for_state_maps_queue_and_action_states() {
 
 #[test]
 fn load_for_repo_adds_namespaced_profiles_for_custom_workflow() {
-    let root = unique_workspace("knots-profile-load-for-repo");
+    let root_ws = unique_workspace("knots-profile-load-for-repo");
+    let root = root_ws.path().to_path_buf();
     let bundle_path = root.join("custom-flow.toml");
     std::fs::write(&bundle_path, CUSTOM_BUNDLE).expect("bundle should write");
     installed_workflows::install_bundle(&root, &bundle_path).expect("bundle should install");
@@ -221,13 +219,12 @@ fn load_for_repo_adds_namespaced_profiles_for_custom_workflow() {
         .require("autopilot")
         .expect("builtin autopilot should still exist");
     assert_eq!(via_alias.workflow_id, "work_sdlc");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn load_for_repo_preserves_human_gated_profile_owners() {
-    let root = unique_workspace("knots-profile-load-for-repo-builtins");
+    let root_ws = unique_workspace("knots-profile-load-for-repo-builtins");
+    let root = root_ws.path().to_path_buf();
     ensure_builtin_registry(&root);
     let registry = ProfileRegistry::load_for_repo(&root).expect("repo registry should load");
 
@@ -280,13 +277,12 @@ fn load_for_repo_preserves_human_gated_profile_owners() {
             .map(|owner| &owner.kind),
         Some(&super::OwnerKind::Agent)
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn load_for_repo_adds_profiles_for_multiple_installed_workflows() {
-    let root = unique_workspace("knots-profile-load-for-repo-multi");
+    let root_ws = unique_workspace("knots-profile-load-for-repo-multi");
+    let root = root_ws.path().to_path_buf();
     let first_bundle = root.join("custom-flow.toml");
     let second_bundle = root.join("second-flow.toml");
     std::fs::write(&first_bundle, CUSTOM_BUNDLE).expect("first bundle should write");
@@ -299,8 +295,6 @@ fn load_for_repo_adds_profiles_for_multiple_installed_workflows() {
     assert!(registry.require("custom_flow/autopilot").is_ok());
     assert!(registry.require("second_flow/autopilot").is_ok());
     assert!(registry.require("autopilot").is_ok());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]

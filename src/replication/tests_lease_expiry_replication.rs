@@ -60,7 +60,8 @@ fn now_unix() -> i64 {
 
 #[test]
 fn lease_expiry_pushed_from_one_machine_reads_correctly_after_pull_on_another() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (origin, dev1) = setup_origin_and_dev1(&root);
     let future_expiry = now_unix() + 3_600;
     write_lease_head_event(&dev1.join(".knots"), future_expiry);
@@ -100,6 +101,4 @@ fn lease_expiry_pushed_from_one_machine_reads_correctly_after_pull_on_another() 
         "lease_active",
         "a lease with real remaining time must not read as expired on the pulling machine"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

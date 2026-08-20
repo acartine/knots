@@ -729,6 +729,7 @@ dependencies = [
  "axum",
  "clap",
  "clap_complete",
+ "knots-test-support",
  "portable-pty",
  "rmcp",
  "rusqlite",
@@ -739,6 +740,13 @@ dependencies = [
  "time",
  "tokio",
  "toml",
+ "uuid",
+]
+
+[[package]]
+name = "knots-test-support"
+version = "0.0.0"
+dependencies = [
  "uuid",
 ]
 

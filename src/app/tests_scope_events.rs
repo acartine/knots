@@ -3,10 +3,8 @@ use serde_json::{json, Value};
 use super::{rehydrate_from_events, App, CreateKnotOptions};
 use crate::domain::scope::{ScopeData, ScopeFloat, ScopePatch};
 
-fn unique_root(prefix: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("root should be creatable");
-    root
+fn unique_root(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn write_event(root: &std::path::Path, filename: &str, body: &Value) {
@@ -99,7 +97,8 @@ fn scope_event(event_id: &str, occurred_at: &str, scope: &ScopeData) -> Value {
 
 #[test]
 fn scope_update_writes_scope_to_index_head_and_list_view() {
-    let root = unique_root("knots-scope-index-head");
+    let root_ws = unique_root("knots-scope-index-head");
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -147,13 +146,12 @@ fn scope_update_writes_scope_to_index_head_and_list_view() {
     assert_eq!(head["scope"]["scale"], json!("fib_v1"));
     assert_eq!(head["scope"]["reliability"], json!(55));
     assert_eq!(head["scope"]["reliability_band"], json!("high"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rehydrate_restores_full_scope_metadata_from_events() {
-    let root = unique_root("knots-rehydrate-scope-full");
+    let root_ws = unique_root("knots-rehydrate-scope-full");
+    let root = root_ws.path().to_path_buf();
     write_event(&root, "1000-knot.created.json", &created_event());
     let scope = full_scope();
     write_event(
@@ -173,13 +171,12 @@ fn rehydrate_restores_full_scope_metadata_from_events() {
 
     assert_eq!(projection.scope_data, scope);
     assert_eq!(projection.updated_at, "2026-02-25T10:10:00Z");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rehydrate_merges_partial_scope_event_into_prior_scope() {
-    let root = unique_root("knots-rehydrate-scope-partial");
+    let root_ws = unique_root("knots-rehydrate-scope-partial");
+    let root = root_ws.path().to_path_buf();
     write_event(&root, "1000-knot.created.json", &created_event());
     let initial = full_scope();
     write_event(
@@ -220,13 +217,12 @@ fn rehydrate_merges_partial_scope_event_into_prior_scope() {
         Some("high")
     );
     assert_eq!(projection.scope_data.scale.as_deref(), Some("fib_v1"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rehydrate_preserves_field_absence_through_round_trip() {
-    let root = unique_root("knots-rehydrate-scope-absence");
+    let root_ws = unique_root("knots-rehydrate-scope-absence");
+    let root = root_ws.path().to_path_buf();
     write_event(&root, "1000-knot.created.json", &created_event());
     let sparse = ScopeData {
         volume: Some(3),
@@ -260,13 +256,12 @@ fn rehydrate_preserves_field_absence_through_round_trip() {
     assert!(projection.scope_data.volume_score_confidence.is_none());
     assert!(projection.scope_data.reliability.is_none());
     assert!(projection.scope_data.reliability_result_id.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rehydrate_without_scope_events_yields_default_scope() {
-    let root = unique_root("knots-rehydrate-scope-none");
+    let root_ws = unique_root("knots-rehydrate-scope-none");
+    let root = root_ws.path().to_path_buf();
     write_event(&root, "1000-knot.created.json", &created_event());
 
     let projection = rehydrate_from_events(
@@ -280,6 +275,4 @@ fn rehydrate_without_scope_events_yields_default_scope() {
 
     assert_eq!(projection.scope_data, ScopeData::default());
     assert!(projection.scope_data.is_empty());
-
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -6,13 +6,8 @@ use crate::cli_sync_ref::{SyncRefArgs, SyncRefMigrateArgs, SyncRefSubcommands};
 
 use super::{git_command_count, migrate, reset_git_command_count, run_sync_ref_command};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "knots-sync-ref-migrate-test-{}",
-        uuid::Uuid::now_v7()
-    ));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-ref-migrate-test")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -46,8 +41,9 @@ fn git_stdout(root: &Path, args: &[&str]) -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-fn setup_repo() -> (PathBuf, PathBuf) {
-    let root = unique_workspace();
+fn setup_repo() -> (knots_test_support::TestWorkspace, PathBuf) {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let remote = root.join("origin.git");
     let repo = root.join("repo");
     run_git(&root, &["init", "--bare", path(&remote)]);
@@ -61,7 +57,7 @@ fn setup_repo() -> (PathBuf, PathBuf) {
     run_git(&repo, &["branch", "-M", "main"]);
     run_git(&repo, &["remote", "add", "origin", path(&remote)]);
     run_git(&repo, &["push", "-u", "origin", "HEAD:refs/heads/main"]);
-    (root, repo)
+    (root_ws, repo)
 }
 
 fn write_remote_knots_ref(repo: &Path, refname: &str, file: &str, contents: &str) {
@@ -104,7 +100,7 @@ fn write_local_knots_file(repo: &Path, file: &str, contents: &str) {
 
 #[test]
 fn migrate_unions_remote_and_local_knots_files_into_work_ref() {
-    let (root, repo) = setup_repo();
+    let (_root_ws, repo) = setup_repo();
     write_remote_knots_ref(
         &repo,
         "refs/heads/knots",
@@ -147,13 +143,11 @@ fn migrate_unions_remote_and_local_knots_files_into_work_ref() {
         git_stdout(&repo, &["config", "--get", "knots.remoteRef"]),
         "refs/work/knots"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn migrate_batches_remote_blob_reads_for_large_refs() {
-    let (root, repo) = setup_repo();
+    let (_root_ws, repo) = setup_repo();
     let files = (0..64)
         .map(|index| {
             (
@@ -181,13 +175,11 @@ fn migrate_batches_remote_blob_reads_for_large_refs() {
         "remote migration should batch blob reads, but ran {} git commands",
         git_command_count()
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn migrate_ignores_remote_non_json_and_non_store_paths() {
-    let (root, repo) = setup_repo();
+    let (_root_ws, repo) = setup_repo();
     write_remote_knots_files(
         &repo,
         "refs/heads/knots",
@@ -219,13 +211,11 @@ fn migrate_ignores_remote_non_json_and_non_store_paths() {
         &["ls-tree", "-r", "--name-only", "FETCH_HEAD", "--", ".knots"],
     );
     assert_eq!(listing, ".knots/index/2026/06/12/remote.json");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn migrate_default_target_uses_config_and_returns_unchanged_on_second_run() {
-    let (root, repo) = setup_repo();
+    let (_root_ws, repo) = setup_repo();
     write_local_knots_file(
         &repo,
         ".knots/events/2026/06/12/local.json",
@@ -250,13 +240,11 @@ fn migrate_default_target_uses_config_and_returns_unchanged_on_second_run() {
         ),
         "{\"event_id\":\"local\"}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn migrate_existing_target_publishes_fast_forward_when_sources_add_files() {
-    let (root, repo) = setup_repo();
+    let (_root_ws, repo) = setup_repo();
     write_remote_knots_ref(
         &repo,
         "refs/work/knots",
@@ -293,13 +281,12 @@ fn migrate_existing_target_publishes_fast_forward_when_sources_add_files() {
         ),
         "{\"event_id\":\"local\"}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn migrate_errors_on_empty_inputs_and_malformed_endpoints() {
-    let (root, repo) = setup_repo();
+    let (root_ws, repo) = setup_repo();
+    let root = root_ws.path().to_path_buf();
 
     let empty = migrate(&repo, &[], Some("origin:refs/work/knots"))
         .expect_err("empty migration should fail");
@@ -334,13 +321,11 @@ fn migrate_errors_on_empty_inputs_and_malformed_endpoints() {
     )
     .expect_err("non-git repo should fail");
     assert_invalid_argument_contains(err, "is not a git repository");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn migrate_skips_target_when_it_is_also_listed_as_a_source() {
-    let (root, repo) = setup_repo();
+    let (_root_ws, repo) = setup_repo();
     write_remote_knots_ref(
         &repo,
         "refs/work/knots",
@@ -356,13 +341,11 @@ fn migrate_skips_target_when_it_is_also_listed_as_a_source() {
     .expect("migration should skip duplicate target source");
     assert_eq!(summary.files, 1);
     assert_eq!(summary.commit, None);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn sync_ref_command_wrapper_runs_migration() {
-    let (root, repo) = setup_repo();
+    let (_root_ws, repo) = setup_repo();
     write_local_knots_file(
         &repo,
         ".knots/snapshots/2026/06/12/snapshot.json",
@@ -388,13 +371,11 @@ fn sync_ref_command_wrapper_runs_migration() {
         ),
         "{\"snapshot\":\"local\"}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn migrate_stops_on_same_path_different_content_conflict() {
-    let (root, repo) = setup_repo();
+    let (_root_ws, repo) = setup_repo();
     let file = ".knots/index/2026/06/12/same.json";
     write_remote_knots_ref(
         &repo,
@@ -414,8 +395,6 @@ fn migrate_stops_on_same_path_different_content_conflict() {
         AppError::InvalidArgument(message) => assert!(message.contains(file)),
         other => panic!("expected invalid argument, got {other:?}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn assert_invalid_argument_contains(err: AppError, expected: &str) {

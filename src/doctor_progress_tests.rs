@@ -1,8 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use uuid::Uuid;
-
 use super::{run_doctor_with_fix_at_with_progress, DoctorCheck, DoctorReport, DoctorStatus};
 use crate::doctor_fix::announce_and_apply_fixes;
 use crate::progress::{ProgressKind, ProgressReporter};
@@ -20,10 +18,8 @@ impl ProgressReporter for CapturingReporter {
     }
 }
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-doctor-progress-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-doctor-progress")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -41,8 +37,9 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo_with_origin() -> (PathBuf, PathBuf) {
-    let root = unique_workspace();
+fn setup_repo_with_origin() -> (knots_test_support::TestWorkspace, PathBuf) {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let origin = root.join("origin.git");
     let local = root.join("local");
 
@@ -69,12 +66,12 @@ fn setup_repo_with_origin() -> (PathBuf, PathBuf) {
     );
     run_git(&local, &["push", "-u", "origin", "main"]);
 
-    (root, local)
+    (root_ws, local)
 }
 
 #[test]
 fn run_doctor_with_fix_progress_is_silent_when_fix_false() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
     let baseline = run_doctor_with_fix_at_with_progress(
         &local,
         &local.join(".knots"),
@@ -101,7 +98,6 @@ fn run_doctor_with_fix_progress_is_silent_when_fix_false() {
     let captured_checks = non_version_checks(&captured.checks);
     let baseline_checks = non_version_checks(&baseline.checks);
     assert_eq!(captured_checks, baseline_checks);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn non_version_checks(checks: &[DoctorCheck]) -> Vec<&DoctorCheck> {
@@ -113,7 +109,7 @@ fn non_version_checks(checks: &[DoctorCheck]) -> Vec<&DoctorCheck> {
 
 #[test]
 fn run_doctor_with_fix_progress_announces_diagnostics_then_per_fix_and_summary() {
-    let (root, local) = setup_repo_with_origin();
+    let (_root_ws, local) = setup_repo_with_origin();
     let mut reporter = CapturingReporter::default();
     let mut dyn_reporter: Option<&mut dyn ProgressReporter> = Some(&mut reporter);
     let _ = run_doctor_with_fix_at_with_progress(
@@ -165,13 +161,12 @@ fn run_doctor_with_fix_progress_announces_diagnostics_then_per_fix_and_summary()
         "unexpected failed fix: {:?}",
         last
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn announce_and_apply_fixes_reports_ordered_results_then_final_summary() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let report = DoctorReport {
         checks: vec![
             DoctorCheck::simple("lock_health", DoctorStatus::Pass, "ok"),
@@ -202,13 +197,12 @@ fn announce_and_apply_fixes_reports_ordered_results_then_final_summary() {
     assert_eq!(reporter.events[1].0, ProgressKind::Info);
     assert_eq!(reporter.events[2].0, ProgressKind::Info);
     assert_eq!(reporter.events[3].0, ProgressKind::Success);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn announce_and_apply_fixes_reports_no_issues_when_all_checks_pass() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let report = DoctorReport {
         checks: vec![
             DoctorCheck::simple("lock_health", DoctorStatus::Pass, "ok"),
@@ -222,13 +216,12 @@ fn announce_and_apply_fixes_reports_no_issues_when_all_checks_pass() {
     assert_eq!(reporter.events.len(), 1);
     assert_eq!(reporter.events[0].0, ProgressKind::Success);
     assert_eq!(reporter.events[0].1, "No issues found.");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn announce_and_apply_fixes_local_only_reports_count_without_fixing() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let report = DoctorReport {
         checks: vec![
             DoctorCheck::simple("worktree", DoctorStatus::Pass, "ok"),
@@ -258,5 +251,4 @@ fn announce_and_apply_fixes_local_only_reports_count_without_fixing() {
         "local-only must not emit per-fix lines; got: {:?}",
         messages
     );
-    let _ = std::fs::remove_dir_all(root);
 }

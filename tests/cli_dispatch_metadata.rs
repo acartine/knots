@@ -56,7 +56,8 @@ fn add_notes_and_handoffs(root: &std::path::Path, db: &std::path::Path, knot_id:
 
 #[test]
 fn show_hides_older_metadata_unless_verbose() {
-    let root = unique_workspace("knots-cli-show-metadata");
+    let root_ws = unique_workspace("knots-cli-show-metadata");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -72,8 +73,6 @@ fn show_hides_older_metadata_unless_verbose() {
     assert_show_hides_old_metadata(&root, &db, &knot_id);
     assert_show_json_hides_old_metadata(&root, &db, &knot_id);
     assert_show_verbose_includes_all(&root, &db, &knot_id);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn assert_show_hides_old_metadata(root: &std::path::Path, db: &std::path::Path, knot_id: &str) {
@@ -141,7 +140,8 @@ fn add_simple_notes_and_handoffs(root: &std::path::Path, db: &std::path::Path, k
 
 #[test]
 fn claim_hides_older_metadata_unless_verbose() {
-    let root = unique_workspace("knots-cli-claim-metadata");
+    let root_ws = unique_workspace("knots-cli-claim-metadata");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -176,8 +176,6 @@ fn claim_hides_older_metadata_unless_verbose() {
 
     assert_claim_json_hides_old(&root, &db);
     assert_claim_verbose_includes_all(&root, &db);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn assert_claim_json_hides_old(root: &std::path::Path, db: &std::path::Path) {

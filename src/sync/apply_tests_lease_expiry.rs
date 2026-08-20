@@ -19,10 +19,8 @@ use crate::sync::GitAdapter;
 
 use super::IncrementalApplier;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-lease-expiry-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-lease-expiry")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -40,15 +38,16 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# lease-expiry\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -112,7 +111,8 @@ fn head_event_body(ts: &str, knot_id: &str, state: &str, lease_expiry_field: &st
 /// machine B with that same expiry after pull, and reads as non-expired.
 #[test]
 fn apply_index_event_replicates_future_lease_expiry_and_reads_non_expired() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -140,8 +140,6 @@ fn apply_index_event_replicates_future_lease_expiry_and_reads_non_expired() {
         "lease_active",
         "a lease pulled with a future expiry must not read as expired"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 /// An index event with no `lease_expiry_ts` field (an older binary, or a
@@ -150,7 +148,8 @@ fn apply_index_event_replicates_future_lease_expiry_and_reads_non_expired() {
 /// today's pre-fix behavior, not a new failure mode.
 #[test]
 fn apply_index_event_missing_lease_expiry_ts_defaults_new_knot_to_unknown() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -172,8 +171,6 @@ fn apply_index_event_missing_lease_expiry_ts_defaults_new_knot_to_unknown() {
         "lease_terminated",
         "absent expiry must preserve today's 0-as-expired legacy behavior"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 /// A later event that omits `lease_expiry_ts` must not clobber a value a
@@ -181,7 +178,8 @@ fn apply_index_event_missing_lease_expiry_ts_defaults_new_knot_to_unknown() {
 /// "unknown to this event", not "reset to expired".
 #[test]
 fn apply_index_event_missing_lease_expiry_ts_preserves_previously_known_value() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -215,6 +213,4 @@ fn apply_index_event_missing_lease_expiry_ts_preserves_previously_known_value() 
         record.lease_expiry_ts, future_expiry,
         "an event without the field must not reset a previously known expiry"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

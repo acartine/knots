@@ -109,7 +109,7 @@ mod tests {
     #[test]
     fn creates_and_caches_session_lease() {
         let registry = LeaseRegistry::default();
-        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/tmp/repo"));
+        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/example/repo"));
         let mut client = Implementation::new("test-client", "1.2.3");
         client.title = Some("test-provider".to_string());
 
@@ -128,7 +128,7 @@ mod tests {
     #[test]
     fn current_tracks_latest_initialized_client() {
         let registry = LeaseRegistry::default();
-        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/tmp/repo"));
+        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/example/repo"));
         let first = Implementation::new("test-client", "1.2.3");
         let second = Implementation::new("other-client", "1.2.3");
 

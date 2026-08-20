@@ -11,7 +11,8 @@ fn explicit_note_agent_flags_are_ignored_lease_wins() {
     // Lease is the declared source of note agent identity. Deprecated
     // --note-* agent flags on `kno update` are ignored; the lease wins.
     // The non-agent --note-username override is preserved.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -76,12 +77,11 @@ fn explicit_note_agent_flags_are_ignored_lease_wins() {
     assert_eq!(note.agentname, "claude");
     assert_eq!(note.model, "opus");
     assert_eq!(note.version, "4.6");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 #[test]
 fn note_defaults_preserved_without_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -139,12 +139,11 @@ fn note_defaults_preserved_without_lease() {
     let note = updated.notes.last().expect("should have a note");
     assert_eq!(note.username, "unknown");
     assert_eq!(note.agentname, "unknown");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 #[test]
 fn handoff_capsule_auto_fills_from_lease_agent_info() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -209,8 +208,6 @@ fn handoff_capsule_auto_fills_from_lease_agent_info() {
     assert_eq!(hc.agentname, "claude");
     assert_eq!(hc.model, "opus");
     assert_eq!(hc.version, "4.6");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -219,7 +216,8 @@ fn explicit_handoff_agent_flags_are_ignored_lease_wins() {
     // --handoff-agentname / --handoff-model / --handoff-version values on
     // `kno update` must be ignored; the lease's agent_info wins. The
     // non-agent --handoff-username override is preserved.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -284,13 +282,12 @@ fn explicit_handoff_agent_flags_are_ignored_lease_wins() {
     assert_eq!(hc.agentname, "claude");
     assert_eq!(hc.model, "opus");
     assert_eq!(hc.version, "4.6");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_with_matching_lease_succeeds() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -319,13 +316,12 @@ fn next_with_matching_lease_succeeds() {
     });
     let result = execute_operation(&app, &next_op);
     assert!(result.is_ok(), "next with matching lease should succeed");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_with_wrong_lease_fails() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -353,13 +349,12 @@ fn next_with_wrong_lease_fails() {
         "error should mention lease mismatch: {}",
         err_msg
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_without_lease_fails_when_knot_has_bound_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -390,15 +385,14 @@ fn next_without_lease_fails_when_knot_has_bound_lease() {
         err.contains("bound lease"),
         "error should require the bound lease: {err}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_with_lease_on_unleasedknot_fails() {
     // Claim now always auto-creates a lease, so to reach the "knot has no
     // active lease" branch we must release the lease before running `next`.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -442,6 +436,4 @@ fn next_with_lease_on_unleasedknot_fails() {
         err.contains("no active lease"),
         "error should mention no active lease: {err}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

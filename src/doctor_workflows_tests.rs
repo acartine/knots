@@ -8,16 +8,14 @@ use crate::installed_workflows::{
     WorkflowRepoConfig,
 };
 
-fn unique_workspace() -> std::path::PathBuf {
-    let root =
-        std::env::temp_dir().join(format!("knots-doctor-workflows-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-doctor-workflows")
 }
 
 #[test]
 fn workflow_registry_check_passes_when_builtins_are_registered() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     ensure_builtin_workflows_registered(&root).expect("builtin workflows should register");
 
     let check = check_registered_workflows(&root);
@@ -28,13 +26,12 @@ fn workflow_registry_check_passes_when_builtins_are_registered() {
     assert!(check.detail.contains("lease=lease_sdlc"));
     assert!(check.detail.contains("explore=explore_sdlc"));
     assert!(check.detail.contains("execution_plan=execution_plan_sdlc"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn workflow_registry_auto_repairs_partial_config() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let config = WorkflowRepoConfig {
         knot_type_workflows: BTreeMap::from([(
             KnotType::Work.as_str().to_string(),
@@ -53,6 +50,4 @@ fn workflow_registry_auto_repairs_partial_config() {
     assert_eq!(check.status, DoctorStatus::Pass);
     assert!(check.detail.contains("gate=gate_sdlc"));
     assert!(check.detail.contains("execution_plan=execution_plan_sdlc"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

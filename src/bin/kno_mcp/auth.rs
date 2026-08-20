@@ -46,14 +46,13 @@ mod tests {
 
     #[test]
     fn reads_token_file_or_environment() {
-        let token_file =
-            std::env::temp_dir().join(format!("kno-mcp-auth-token-{}", std::process::id()));
+        let token_ws = knots_test_support::workspace("knots-kno-mcp-auth-token");
+        let token_file = token_ws.path().join("token");
         fs::write(&token_file, " file-secret \n").expect("write token file");
         assert_eq!(
             read_token(Some(&token_file), "KNO_MCP_AUTH_UNUSED").expect("token file"),
             "file-secret"
         );
-        let _ = fs::remove_file(token_file);
 
         std::env::set_var("KNO_MCP_AUTH_TEST_TOKEN", "env-secret");
         assert_eq!(

@@ -54,7 +54,8 @@ fn create_gate_knot(root: &std::path::Path, db: &std::path::Path, target_id: &st
 
 #[test]
 fn gate_knots_support_human_evaluation_and_reopen_flow() {
-    let root = unique_workspace("knots-cli-gate");
+    let root_ws = unique_workspace("knots-cli-gate");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -64,8 +65,6 @@ fn gate_knots_support_human_evaluation_and_reopen_flow() {
     verify_gate_show(&root, &db, &gate_id);
     verify_gate_poll_and_claim(&root, &db, &gate_id);
     verify_gate_evaluate_and_reopen(&root, &db, &gate_id, &target_id);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn verify_gate_show(root: &std::path::Path, db: &std::path::Path, gate_id: &str) {

@@ -2,7 +2,6 @@ use std::path::Path;
 use std::process::Command;
 
 use serde_json::json;
-use uuid::Uuid;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::invariant::InvariantType;
@@ -10,10 +9,8 @@ use crate::sync::GitAdapter;
 
 use super::IncrementalApplier;
 
-fn unique_workspace() -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-apply-inv-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-apply-inv")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -31,15 +28,16 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> std::path::PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# apply inv\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -86,7 +84,8 @@ fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
 
 #[test]
 fn apply_full_event_invariants_set_updates_hot_knot() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     seed_hot_knot(&conn, "K-inv");
     let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -124,13 +123,12 @@ fn apply_full_event_invariants_set_updates_hot_knot() {
     assert_eq!(record.invariants[0].condition, "only src/db.rs");
     assert_eq!(record.invariants[1].invariant_type, InvariantType::State);
     assert_eq!(record.invariants[1].condition, "no regressions");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_index_event_with_invariants_persists_them() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -179,13 +177,12 @@ fn apply_index_event_with_invariants_persists_them() {
     assert_eq!(record.invariants.len(), 1);
     assert_eq!(record.invariants[0].invariant_type, InvariantType::Scope);
     assert_eq!(record.invariants[0].condition, "src/ only");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_invariants_set_on_missing_hot_knot_is_noop() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
 
@@ -215,6 +212,4 @@ fn apply_invariants_set_on_missing_hot_knot_is_noop() {
 
     let record = db::get_knot_hot(&conn, "K-ghost").expect("hot lookup should succeed");
     assert!(record.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }

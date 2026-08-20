@@ -7,14 +7,12 @@ use crate::domain::gate::GateData;
 use crate::domain::knot_type::KnotType;
 use crate::installed_workflows;
 use crate::workflow::{OwnerKind, ProfileRegistry};
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> std::path::PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    crate::installed_workflows::ensure_builtin_workflows_registered(&path)
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    let ws = knots_test_support::workspace(prefix);
+    crate::installed_workflows::ensure_builtin_workflows_registered(ws.path())
         .expect("builtin workflows should register");
-    path
+    ws
 }
 
 #[test]
@@ -247,7 +245,8 @@ fn gate_and_lease_queue_action_helpers_cover_remaining_paths() {
 
 #[test]
 fn custom_workflow_failure_outcomes_resolve_from_installed_bundle() {
-    let root = unique_workspace("knots-runtime-outcomes");
+    let root_ws = unique_workspace("knots-runtime-outcomes");
+    let root = root_ws.path().to_path_buf();
     let bundle = root.join("bundle.toml");
     std::fs::write(
         &bundle,
@@ -354,14 +353,13 @@ changes = "ready_for_work"
         .expect("happy path should resolve"),
         Some("ready_for_review".to_string())
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn non_work_outcomes_return_none_without_installed_workflow_lookup() {
     let registry = ProfileRegistry::load().unwrap();
-    let root = unique_workspace("knots-runtime-non-work-outcome");
+    let root_ws = unique_workspace("knots-runtime-non-work-outcome");
+    let root = root_ws.path().to_path_buf();
     assert_eq!(
         next_outcome_state(
             &registry,
@@ -375,6 +373,4 @@ fn non_work_outcomes_return_none_without_installed_workflow_lookup() {
         .expect("gate outcomes should not error"),
         None
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

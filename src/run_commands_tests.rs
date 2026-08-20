@@ -90,11 +90,8 @@ approved = "done"
 changes = "ready_for_work"
 "#;
 
-fn unique_workspace() -> std::path::PathBuf {
-    let root =
-        std::env::temp_dir().join(format!("knots-run-command-test-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-run-command-test")
 }
 
 fn setup_git_repo(root: &Path) {
@@ -136,7 +133,8 @@ fn install_custom_workflow(root: &Path) {
 
 #[test]
 fn resolve_prompt_by_name_uses_current_workflow_prompt() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     install_custom_workflow(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
@@ -145,13 +143,12 @@ fn resolve_prompt_by_name_uses_current_workflow_prompt() {
     assert!(skill.contains("Ship {{ output }} output."));
     assert!(skill.contains("## Acceptance Criteria"));
     assert!(skill.contains("Built output"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn resolve_prompt_by_name_builtin_returns_loom_body_for_implementation() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
 
@@ -161,12 +158,12 @@ fn resolve_prompt_by_name_builtin_returns_loom_body_for_implementation() {
         skill.contains("# Implementation"),
         "builtin skill should contain Loom heading: {skill}"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn resolve_prompt_by_name_builtin_covers_all_loom_action_states() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
 
@@ -187,12 +184,12 @@ fn resolve_prompt_by_name_builtin_covers_all_loom_action_states() {
             "{state}: skill should contain Loom heading '{heading}'"
         );
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn resolve_prompt_for_knot_returns_loom_body_for_builtin_profile() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
 
@@ -205,12 +202,12 @@ fn resolve_prompt_for_knot_returns_loom_body_for_builtin_profile() {
         skill.contains("# Implementation"),
         "skill for knot should contain Loom heading"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn resolve_prompt_for_knot_custom_workflow_returns_loom_body() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     install_custom_workflow(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
@@ -228,12 +225,12 @@ fn resolve_prompt_for_knot_custom_workflow_returns_loom_body() {
         skill.contains("Built output"),
         "custom knot skill should include acceptance criteria"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn resolve_prompt_by_name_rejects_legacy_fallbacks_for_custom_workflows() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     install_custom_workflow(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
@@ -241,8 +238,6 @@ fn resolve_prompt_by_name_rejects_legacy_fallbacks_for_custom_workflows() {
     let err = resolve_prompt_by_name(&app, "implementation")
         .expect_err("missing custom state should not fall back");
     assert!(format!("{err}").contains("not a knot id or skill state name"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -302,7 +297,8 @@ fn show_json_value_hides_lease_id_and_keeps_lease_agent_metadata() {
 
 #[test]
 fn run_show_rejects_lease_knots_but_lease_show_still_allows_them() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_git_repo(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
@@ -365,13 +361,12 @@ fn run_show_rejects_lease_knots_but_lease_show_still_allows_them() {
         },
     )
     .expect("lease show json should remain available");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn run_ls_stream_succeeds_with_knots() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_git_repo(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
@@ -396,13 +391,12 @@ fn run_ls_stream_succeeds_with_knots() {
         },
     )
     .expect("stream ls should succeed");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn run_ls_stream_with_limit_caps_output() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_git_repo(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
@@ -429,6 +423,4 @@ fn run_ls_stream_with_limit_caps_output() {
         },
     )
     .expect("stream ls with limit should succeed");
-
-    let _ = std::fs::remove_dir_all(root);
 }

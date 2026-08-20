@@ -1,17 +1,14 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 use time::format_description::well_known::Rfc3339;
 use time::{Duration, OffsetDateTime};
-use uuid::Uuid;
 
 use crate::db;
 
 use super::{GitAdapter, KnotsWorktree, SyncService};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-test")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -46,7 +43,8 @@ fn fmt_rfc3339(ts: OffsetDateTime) -> String {
 
 #[test]
 fn worktree_manager_creates_knots_branch_worktree() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     init_repo(&root);
 
     let git = GitAdapter::new();
@@ -60,13 +58,12 @@ fn worktree_manager_creates_knots_branch_worktree() {
         .current_branch(worktree.path())
         .expect("current branch should be available");
     assert_eq!(branch, "knots");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn sync_applies_index_and_edge_events_from_knots_branch() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     init_repo(&root);
 
     run_git(&root, &["checkout", "-b", "knots"]);
@@ -157,8 +154,6 @@ fn sync_applies_index_and_edge_events_from_knots_branch() {
         .expect("edge list should succeed");
     assert_eq!(edges.len(), 1);
     assert_eq!(edges[0].dst, "K-2");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn write_parity_index_event(root: &Path) {
@@ -262,7 +257,8 @@ fn open_sync_db(root: &Path) -> rusqlite::Connection {
 
 #[test]
 fn sync_reduces_description_tag_and_note_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     init_repo(&root);
     run_git(&root, &["checkout", "-b", "knots"]);
 
@@ -286,13 +282,12 @@ fn sync_reduces_description_tag_and_note_events() {
     assert!(knot.tags.contains(&"migration".to_string()));
     assert_eq!(knot.notes.len(), 1);
     assert_eq!(knot.notes[0].entry_id, "note-1");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn sync_keeps_recent_terminal_heads_hot() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     init_repo(&root);
     run_git(&root, &["checkout", "-b", "knots"]);
 
@@ -348,13 +343,12 @@ fn sync_keeps_recent_terminal_heads_hot() {
     );
     let cold = db::get_cold_catalog(&conn, "K-recent").expect("cold lookup should succeed");
     assert!(cold.is_none(), "recent terminal must not be cold");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn sync_keeps_old_non_terminal_knots_hot_and_terminal_knots_cold() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     init_repo(&root);
     run_git(&root, &["checkout", "-b", "knots"]);
 
@@ -452,6 +446,4 @@ fn sync_keeps_old_non_terminal_knots_hot_and_terminal_knots_cold() {
     let cold = db::get_cold_catalog(&conn, "K-cold").expect("cold lookup should succeed");
     let cold = cold.expect("cold entry should exist");
     assert_eq!(cold.state, "shipped");
-
-    let _ = std::fs::remove_dir_all(root);
 }
