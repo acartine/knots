@@ -162,7 +162,10 @@ fn created_leases_record_this_machine_as_owner() {
         .as_ref()
         .and_then(|data| data.owner.as_ref())
         .expect("a newly created lease must record its owner");
-    assert_eq!(owner.machine_id, app.machine_id());
+    assert_eq!(
+        owner.machine_id,
+        app.machine_id().expect("machine id should resolve")
+    );
     assert_eq!(owner.pid, std::process::id());
     assert!(!owner.machine_id.is_empty());
 

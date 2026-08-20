@@ -445,7 +445,7 @@ pub fn run_lease_read(app: &app::App, args: crate::cli::LeaseArgs) -> Result<(),
                 );
             } else {
                 let palette = ui::Palette::auto();
-                let local_machine = app.machine_id();
+                let local_machine = app.machine_id()?;
                 for l in &leases {
                     println!("{}", ui::format_lease_row(l, &local_machine, &palette));
                 }

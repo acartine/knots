@@ -136,8 +136,8 @@ impl App {
     }
 
     /// Stable id of the machine that owns leases created in this store.
-    pub(crate) fn machine_id(&self) -> String {
-        crate::machine::machine_id(&self.store_paths.root)
+    pub(crate) fn machine_id(&self) -> Result<String, AppError> {
+        Ok(crate::machine::machine_id(&self.store_paths.root)?)
     }
 
     fn read_pull_drift_warn_threshold(&self) -> Result<u64, AppError> {
