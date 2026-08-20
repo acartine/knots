@@ -1,0 +1,22 @@
+{
+  "event_id": "01a02091-7b97-7650-9dc2-3502a2ab5156",
+  "occurred_at": "2026-08-20T19:06:40.407902531Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-4701",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Reclaim leaked /tmp test workspaces that can fill the filesystem",
+    "type": "work",
+    "updated_at": "2026-08-20T19:06:40.407902531Z",
+    "workflow_id": "work_sdlc"
+  }
+}

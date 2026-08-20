@@ -1,0 +1,9 @@
+{
+  "event_id": "01a02085-6ffb-70d0-9a9e-6132a0db5812",
+  "occurred_at": "2026-08-20T18:53:31.003139285Z",
+  "knot_id": "knots-4701",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-4701-reclaim-tmp-workspaces"
+  }
+}

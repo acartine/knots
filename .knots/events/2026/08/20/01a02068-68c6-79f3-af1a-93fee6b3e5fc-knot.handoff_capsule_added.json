@@ -1,0 +1,15 @@
+{
+  "event_id": "01a02068-68c6-79f3-af1a-93fee6b3e5fc",
+  "occurred_at": "2026-08-20T18:21:48.614819907Z",
+  "knot_id": "knots-4701",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan attached. Root cause is two independent leaks: the reaper never covers ${TMPDIR:-/tmp}, and 634 trailing remove_dir_all lines only run on the happy path. Fix is (a) one shared RAII guard in a new path dev-dependency member crate crates/knots-test-support — required because knots is binary-only (no src/lib.rs), so tests/*.rs cannot import from src/ — and (b) extending scripts/repo/reap-stale-artifacts.sh to reap ${TMPDIR:-/tmp}/knots-* dirs owned by the current user, reusing the existing stamp-file cutoff. Migration keeps root a PathBuf (ws.path().to_path_buf()) so ~600 &root uses are untouched; only the creation line changes and the trailing cleanup line is deleted. Watch two rail gaps a new member crate would slip through: make lint's clippy has no --workspace, and check-file-sizes.sh finds only under src tests — both are fixed in step 2. No child knots; sweep is staged as ordered commits.",
+    "datetime": "2026-08-20T18:21:48.614819907Z",
+    "entry_id": "01a02068-68c6-79f3-af1a-93ef37a6b4f7",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

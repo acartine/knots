@@ -1,0 +1,15 @@
+{
+  "event_id": "01a02091-7b5f-7851-b0e2-1a6d413c043b",
+  "occurred_at": "2026-08-20T19:06:40.35188181Z",
+  "knot_id": "knots-4701",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment APPROVED. Verified on main at 04bf2cdfa198, not on the feature branch. All four commits are tagged with 12-character short hashes and match main exactly (04bf2cdfa198 merge, 8fbddf8829f6, b5b0c8ed549c, 11e5ee57a2ee) plus the branch tag. Re-ran the suite on main: 36 test targets pass, zero failures, and a full cargo test --all-targets --all-features from an emptied temp baseline leaves ZERO knots-* or kno-mcp-* trees — the behaviour this knot exists for holds in the shipped code, not just in the branch. The anti-regression guards run on main too: repo_reaper 7/7 and repo_test_workspaces 4/4. make lint green post-merge; the pre-push hook had already run full make sanity with coverage 95.22% against the 95 gate. Remote CI green on all four workflows for this commit (CI, Release, Repo Hygiene, Changesets Version PR). The knot declares no invariants; the body's out-of-scope items (git_hooks_tests ETXTBSY flake, other test-race work) were not touched. No regressions in dependent systems: the only production behaviour that changed is the perf harness cleanup and the reaper's added sweep, both covered by tests. Signed off.",
+    "datetime": "2026-08-20T19:06:40.35188181Z",
+    "entry_id": "01a02091-7b5f-7851-b0e2-1a5fbd7cbcc1",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

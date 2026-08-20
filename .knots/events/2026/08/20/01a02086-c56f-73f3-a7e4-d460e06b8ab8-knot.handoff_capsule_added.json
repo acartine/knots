@@ -1,0 +1,15 @@
+{
+  "event_id": "01a02086-c56f-73f3-a7e4-d460e06b8ab8",
+  "occurred_at": "2026-08-20T18:54:58.415495807Z",
+  "knot_id": "knots-4701",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation APPROVED. All six acceptance criteria re-verified against the branch, not taken from the implementation report: panic-safety proven at the guard via catch_unwind; cargo test --bin knots measured from an emptied baseline leaves 0 temp trees (1294 tests pass); the reaper's two sweeps share one is_stale cutoff and the temp sweep uses -uid as the plan review required; both argument refusals and the removed-nothing report are pinned by the new tests/repo_reaper.rs, which sandboxes the script so it cannot walk the real target dir; one shared helper with exactly three production files named-with-reason in PRODUCTION_TEMP_DIR_USERS; zero /tmp literals. Gates: fmt/lint/test green, coverage 95.22% vs the 95 gate, threshold untouched, patch changeset included. Branch worktree-knots-4701-reclaim-tmp-workspaces is clean and equal to origin at 8fbddf8829f6. Non-blocking: coverage margin is 0.22 points, and the two guardrail allowlists are burn-down lists — if production ever needs the guard, move the crate off dev-dependencies rather than growing them.",
+    "datetime": "2026-08-20T18:54:58.415495807Z",
+    "entry_id": "01a02086-c56f-73f3-a7e4-d45fe4ee998a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

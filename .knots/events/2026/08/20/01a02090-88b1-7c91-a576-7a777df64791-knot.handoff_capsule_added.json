@@ -1,0 +1,15 @@
+{
+  "event_id": "01a02090-88b1-7c91-a576-7a777df64791",
+  "occurred_at": "2026-08-20T19:05:38.225289288Z",
+  "knot_id": "knots-4701",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped. Merged worktree-knots-4701-reclaim-tmp-workspaces to main as merge commit 04bf2cdfa198 (no-ff over 11e5ee57, b5b0c8ed, 8fbddf88) and pushed 4af22574..04bf2cdf. The managed pre-push hook ran full make sanity on the merge result: fmt, clippy --workspace -D warnings, file sizes, the whole test suite, and coverage at 95.22% against the 95 gate (-0.01% change). Post-merge on main, make lint is green and all 36 test targets pass with zero failures. Remote CI green on every workflow for this commit: CI, Release, Repo Hygiene, Changesets Version PR. No conflicts, no post-merge fixups, nothing out of scope leaked in.",
+    "datetime": "2026-08-20T19:05:38.225289288Z",
+    "entry_id": "01a02090-88b1-7c91-a576-7a63f774e519",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

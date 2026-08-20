@@ -1,0 +1,15 @@
+{
+  "event_id": "01a02085-9cce-72b2-87ab-273f347ac29b",
+  "occurred_at": "2026-08-20T18:53:42.478167033Z",
+  "knot_id": "knots-4701",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented in three commits on branch worktree-knots-4701-reclaim-tmp-workspaces (11e5ee57 support crate + rail gaps, b5b0c8ed reaper + tests, 8fbddf88 the sweep). Branch: worktree-knots-4701-reclaim-tmp-workspaces. crates/knots-test-support holds one RAII guard reachable from both src/ and tests/ (knots is binary-only). The reaper now sweeps ${TMPDIR:-/tmp}/knots-* dirs owned by the caller with the same stamp cutoff, using find -uid per the plan review. Every migrated site binds the guard to a live local; setup helpers return the guard because returning only the path deletes the directory before the test body runs -- that was 30 real failures mid-sweep, caught and fixed. Found and fixed a genuine production leak: perf.rs setup_workspace returned the clone, so the harness removed only that and leaked the enclosing root with origin.git in it every run. tests/repo_test_workspaces.rs is the anti-regression guard (4 checks, with a documented allowlist for the 3 production temp-dir users and 2 deliberate removals). Verified: make fmt/lint/test green, make coverage 95.22% over the 95 gate, and a full cargo test --all-targets --all-features from an empty temp baseline leaves ZERO knots-* or kno-mcp-* trees. Two files crossed the 500-line limit from the one-to-two line expansion and were split (managed_skills_tests_codex.rs, managed_skills_tests_gitignore.rs). A patch changeset is included.",
+    "datetime": "2026-08-20T18:53:42.478167033Z",
+    "entry_id": "01a02085-9cce-72b2-87ab-2725c6a55ef4",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

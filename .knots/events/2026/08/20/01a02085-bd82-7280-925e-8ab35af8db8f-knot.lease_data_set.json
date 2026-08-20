@@ -1,0 +1,24 @@
+{
+  "event_id": "01a02085-bd82-7280-925e-8ab35af8db8f",
+  "occurred_at": "2026-08-20T18:53:50.850869503Z",
+  "knot_id": "knots-015d",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "knots-4701-e2e",
+      "owner": {
+        "machine_id": "a1fe982a5844ddd1c07e25b9fd9653c1",
+        "pid": 3546625
+      },
+      "timeout_seconds": 600
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a02069-f15f-7b93-8fdd-ab0cd4656424",
+  "occurred_at": "2026-08-20T18:23:29.119738877Z",
+  "knot_id": "knots-4701",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan APPROVED. Verified independently: knots really is binary-only (no src/lib.rs), the clippy --workspace and check-file-sizes.sh gaps are real, tarpaulin already runs --workspace so the new crate needs its own tests to clear the 95% gate, and the release scripts match Cargo.lock's 'knots' package name exactly so a member crate cannot shadow it. Three binding corrections for implementation: (1) use find -uid \"$(id -u)\", not -user, since GNU find's -user takes a name; (2) NEVER emit the collapsed form let root = workspace(\"x\").path().to_path_buf() — the guard drops at end of statement and deletes the dir before the test body runs; bind ws to a live local, and have the step-7 guardrail reject the one-liner; (3) [workspace] members is redundant (Cargo auto-adds path deps), keep it only for legibility. Non-blocking: add a patch changeset for the reaper behaviour change, and keep each sweep commit independently green so bisect works.",
+    "datetime": "2026-08-20T18:23:29.119738877Z",
+    "entry_id": "01a02069-f15f-7b93-8fdd-aaff47a917da",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
