@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
 
 use super::*;
@@ -97,11 +96,6 @@ pub fn unique_workspace(prefix: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
     root
-}
-
-pub fn env_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
 }
 
 pub fn build_prompt_params(

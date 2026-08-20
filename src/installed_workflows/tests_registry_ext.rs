@@ -1,6 +1,7 @@
 use super::bundle_toml::render_json_bundle_from_toml;
-use super::operations::{read_bundle_source, repo_config_path, write_repo_config};
-use super::tests_helpers::{env_lock, unique_workspace, SAMPLE_BUNDLE};
+use super::loom::CommandLoomBundleBuilder;
+use super::operations::{read_bundle_source_with_builder, repo_config_path, write_repo_config};
+use super::tests_helpers::{unique_workspace, SAMPLE_BUNDLE};
 use super::*;
 use crate::domain::knot_type::KnotType;
 
@@ -10,7 +11,6 @@ fn ensure_builtin_registry(root: &std::path::Path) -> WorkflowRepoConfig {
 
 #[test]
 fn read_bundle_source_can_shell_out_to_loom() {
-    let _guard = env_lock().lock().expect("env lock");
     let root = unique_workspace("knots-installed-workflows-loom-dir");
     let bin_dir = root.join("bin");
     let package_dir = root.join("pkg");
@@ -31,25 +31,15 @@ fn read_bundle_source_can_shell_out_to_loom() {
     std::fs::write(&loom_path, loom_script).expect("loom script writes");
     make_executable(&loom_path);
 
-    let original_path = std::env::var_os("PATH");
-    let joined_path = match &original_path {
-        Some(path) => {
-            let mut paths = vec![bin_dir.clone()];
-            paths.extend(std::env::split_paths(path));
-            std::env::join_paths(paths).expect("joined path")
-        }
-        None => std::env::join_paths([bin_dir.clone()]).expect("joined path"),
-    };
-    std::env::set_var("PATH", joined_path);
-
-    let (raw, format) = read_bundle_source(&package_dir).expect("loom package should build");
+    // Point the builder directly at the fake binary's absolute path instead
+    // of mutating process-global PATH, so this test cannot race the ~1280
+    // other tests that spawn processes and share the same process-wide PATH.
+    let builder = CommandLoomBundleBuilder::with_binary(&loom_path);
+    let (raw, format) =
+        read_bundle_source_with_builder(&package_dir, &builder).expect("loom package should build");
     assert!(matches!(format, BundleFormat::Json));
     assert!(raw.contains("\"format\": \"knots-bundle\""));
 
-    match original_path {
-        Some(path) => std::env::set_var("PATH", path),
-        None => std::env::remove_var("PATH"),
-    }
     let _ = std::fs::remove_dir_all(root);
 }
 
@@ -253,7 +243,6 @@ fn falls_back_to_first_profile_without_default() {
 
 #[test]
 fn loom_failures_and_invalid_utf8_reported() {
-    let _guard = env_lock().lock().expect("env lock");
     let root = unique_workspace("knots-installed-workflows-loom-errors");
     let bin_dir = root.join("bin");
     let package_dir = root.join("pkg");
@@ -262,31 +251,22 @@ fn loom_failures_and_invalid_utf8_reported() {
     std::fs::write(package_dir.join("loom.toml"), "name = 'pkg'").expect("loom.toml writes");
 
     let loom_path = bin_dir.join("loom");
-    let original_path = std::env::var_os("PATH");
-    let joined_path = match &original_path {
-        Some(path) => {
-            let mut paths = vec![bin_dir.clone()];
-            paths.extend(std::env::split_paths(path));
-            std::env::join_paths(paths).expect("joined path")
-        }
-        None => std::env::join_paths([bin_dir.clone()]).expect("joined path"),
-    };
-    std::env::set_var("PATH", joined_path);
+    // Point the builder directly at the fake binary's absolute path instead
+    // of mutating process-global PATH; see read_bundle_source_can_shell_out_to_loom.
+    let builder = CommandLoomBundleBuilder::with_binary(&loom_path);
 
     write_loom_failure_script(&loom_path);
-    let err = read_bundle_source(&package_dir).expect_err("loom failure should bubble up");
+    let err = read_bundle_source_with_builder(&package_dir, &builder)
+        .expect_err("loom failure should bubble up");
     assert!(err
         .to_string()
         .contains("loom build --emit knots-bundle failed"));
 
     write_loom_invalid_utf8_script(&loom_path);
-    let err = read_bundle_source(&package_dir).expect_err("invalid utf8 should fail");
+    let err = read_bundle_source_with_builder(&package_dir, &builder)
+        .expect_err("invalid utf8 should fail");
     assert!(err.to_string().contains("invalid UTF-8 bundle output"));
 
-    match original_path {
-        Some(path) => std::env::set_var("PATH", path),
-        None => std::env::remove_var("PATH"),
-    }
     let _ = std::fs::remove_dir_all(root);
 }
 

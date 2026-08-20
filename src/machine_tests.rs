@@ -91,6 +91,14 @@ fn machine_id_reads_the_process_environment() {
     let root = unique_store_root();
     std::fs::write(root.join(MACHINE_ID_FILE), "file-id\n").expect("file should be writable");
 
-    assert_eq!(machine_id(&root), "file-id");
+    // Read (never mutate) the real KNOTS_MACHINE_ID so this test is correct
+    // whether or not an operator/CI has exported it (docs/leases.md documents
+    // that override), and so it can never race the other tests in this suite
+    // that call machine_id()/app.machine_id() concurrently. This proves
+    // machine_id() is wired to the process environment through
+    // resolve_machine_id, using the same injected-env seam the other tests
+    // in this file use directly.
+    let env_value = std::env::var(MACHINE_ID_ENV).ok();
+    assert_eq!(machine_id(&root), resolve_machine_id(env_value, &root));
     std::fs::remove_dir_all(&root).ok();
 }

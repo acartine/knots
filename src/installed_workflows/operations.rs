@@ -49,7 +49,7 @@ pub fn write_repo_config(
 }
 
 pub fn install_bundle(repo_root: &Path, source: &Path) -> Result<String, ProfileError> {
-    install_bundle_with_builder(repo_root, source, &CommandLoomBundleBuilder)
+    install_bundle_with_builder(repo_root, source, &CommandLoomBundleBuilder::new())
 }
 
 pub(crate) fn install_bundle_with_builder(
@@ -421,7 +421,7 @@ pub fn set_workflow_default_profile(
 
 #[cfg(test)]
 pub(crate) fn read_bundle_source(source: &Path) -> Result<(String, BundleFormat), ProfileError> {
-    read_bundle_source_with_builder(source, &CommandLoomBundleBuilder)
+    read_bundle_source_with_builder(source, &CommandLoomBundleBuilder::new())
 }
 
 pub(crate) fn read_bundle_source_with_builder(
