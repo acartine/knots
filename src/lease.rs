@@ -1,6 +1,6 @@
 use crate::app::{App, AppError, CreateKnotOptions, KnotView, StateActorMetadata};
 use crate::domain::knot_type::KnotType;
-use crate::domain::lease::{AgentInfo, LeaseData, LeaseType};
+use crate::domain::lease::{AgentInfo, LeaseData, LeaseOwner, LeaseType};
 
 const MCP_SESSION_LEASE_PREFIX: &str = "mcp-";
 
@@ -17,6 +17,10 @@ pub fn create_lease(
         nickname: nickname.to_string(),
         agent_info,
         timeout_seconds: Some(timeout_seconds),
+        owner: Some(LeaseOwner {
+            machine_id: app.machine_id(),
+            pid: std::process::id(),
+        }),
     };
     let title = lease_title(nickname);
     let lease = app.create_knot_with_options(
@@ -79,6 +83,23 @@ pub fn list_active_leases(app: &App) -> Result<Vec<KnotView>, AppError> {
                     crate::lease_expiry::effective_lease_state(&k.state, k.lease_expiry_ts,),
                     "lease_ready" | "lease_active"
                 )
+        })
+        .collect())
+}
+
+/// List active leases held by this machine.
+///
+/// Leases replicated from another machine are excluded: no agent here holds
+/// them. A lease with no recorded owner predates owner tracking and is
+/// treated as local.
+pub fn list_local_active_leases(app: &App) -> Result<Vec<KnotView>, AppError> {
+    let machine_id = app.machine_id();
+    Ok(list_active_leases(app)?
+        .into_iter()
+        .filter(|k| {
+            k.lease
+                .as_ref()
+                .is_none_or(|data| data.is_owned_by(&machine_id))
         })
         .collect())
 }

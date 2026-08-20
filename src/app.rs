@@ -135,6 +135,11 @@ impl App {
         &self.repo_root
     }
 
+    /// Stable id of the machine that owns leases created in this store.
+    pub(crate) fn machine_id(&self) -> String {
+        crate::machine::machine_id(&self.store_paths.root)
+    }
+
     fn read_pull_drift_warn_threshold(&self) -> Result<u64, AppError> {
         Ok(db::get_pull_drift_warn_threshold(&self.conn)?)
     }

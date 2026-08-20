@@ -110,3 +110,94 @@ fn list_knots_populates_lease_agent_for_active_knot_and_omits_for_queued() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+/// Create a lease knot owned by another machine, as a pull from that machine
+/// would leave it in this cache.
+fn create_foreign_lease(app: &App, nickname: &str) -> String {
+    let lease_data = crate::domain::lease::LeaseData {
+        lease_type: crate::domain::lease::LeaseType::Manual,
+        nickname: nickname.to_string(),
+        owner: Some(crate::domain::lease::LeaseOwner {
+            machine_id: "another-machine".to_string(),
+            pid: 4242,
+        }),
+        ..Default::default()
+    };
+    let lease = app
+        .create_knot_with_options(
+            &format!("Lease: {}", nickname),
+            None,
+            Some("lease_ready"),
+            None,
+            None,
+            super::CreateKnotOptions {
+                knot_type: crate::domain::knot_type::KnotType::Lease,
+                lease_data,
+                ..super::CreateKnotOptions::default()
+            },
+        )
+        .expect("foreign lease should be created");
+    app.set_lease_expiry(&lease.id, crate::lease_expiry::compute_expiry_ts(600))
+        .expect("expiry should be settable");
+    lease.id
+}
+
+#[test]
+fn created_leases_record_this_machine_as_owner() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let lease = crate::lease::create_lease(
+        &app,
+        "owner-stamp",
+        crate::domain::lease::LeaseType::Manual,
+        None,
+        600,
+    )
+    .expect("lease should be created");
+
+    let owner = lease
+        .lease
+        .as_ref()
+        .and_then(|data| data.owner.as_ref())
+        .expect("a newly created lease must record its owner");
+    assert_eq!(owner.machine_id, app.machine_id());
+    assert_eq!(owner.pid, std::process::id());
+    assert!(!owner.machine_id.is_empty());
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn list_local_active_leases_excludes_leases_owned_elsewhere() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let mine = crate::lease::create_lease(
+        &app,
+        "mine",
+        crate::domain::lease::LeaseType::Manual,
+        None,
+        600,
+    )
+    .expect("local lease should be created");
+    let theirs = create_foreign_lease(&app, "theirs");
+
+    let all = crate::lease::list_active_leases(&app).expect("list should succeed");
+    let mut all_ids: Vec<&str> = all.iter().map(|k| k.id.as_str()).collect();
+    all_ids.sort_unstable();
+    assert_eq!(all_ids.len(), 2, "both leases are active: {:?}", all_ids);
+    assert!(all_ids.contains(&theirs.as_str()));
+
+    let local = crate::lease::list_local_active_leases(&app).expect("list should succeed");
+    let local_ids: Vec<&str> = local.iter().map(|k| k.id.as_str()).collect();
+    assert_eq!(
+        local_ids,
+        vec![mine.id.as_str()],
+        "only this machine's lease is locally held"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}

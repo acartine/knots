@@ -457,3 +457,6 @@ fn push_blocks_with_active_leases() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[path = "tests_lease_owner.rs"]
+mod lease_owner;

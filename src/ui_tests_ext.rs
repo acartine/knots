@@ -346,3 +346,79 @@ fn progress_lines_use_palette_colors_and_plain_fallback() {
     );
     assert_eq!(warn, "! origin/knots is unavailable");
 }
+
+fn lease_knot(owner: Option<crate::domain::lease::LeaseOwner>) -> KnotView {
+    let mut knot = sample_knot();
+    knot.id = "K-lease".to_string();
+    knot.title = "Lease: agent".to_string();
+    knot.state = "lease_active".to_string();
+    knot.knot_type = crate::domain::knot_type::KnotType::Lease;
+    knot.lease = Some(crate::domain::lease::LeaseData {
+        nickname: "agent".to_string(),
+        owner,
+        ..Default::default()
+    });
+    knot
+}
+
+#[test]
+fn knot_show_fields_surface_the_lease_owner() {
+    let knot = lease_knot(Some(crate::domain::lease::LeaseOwner {
+        machine_id: "abcdef0123456789".to_string(),
+        pid: 99,
+    }));
+
+    let fields = knot_show_fields(&knot, false);
+    let owner = fields
+        .iter()
+        .find(|f| f.label == "lease_owner")
+        .expect("lease_owner field should be present");
+    assert_eq!(owner.value, "machine=abcdef0123456789 pid=99");
+}
+
+#[test]
+fn knot_show_fields_omit_the_owner_for_legacy_leases() {
+    let fields = knot_show_fields(&lease_knot(None), false);
+    assert!(fields.iter().all(|f| f.label != "lease_owner"));
+}
+
+#[test]
+fn lease_row_labels_local_and_foreign_owners() {
+    let palette = Palette { enabled: false };
+    let local = super::format_lease_row(
+        &lease_knot(Some(crate::domain::lease::LeaseOwner {
+            machine_id: "abcdef0123456789".to_string(),
+            pid: 99,
+        })),
+        "abcdef0123456789",
+        &palette,
+    );
+    assert!(
+        local.contains("(machine=abcdef01 pid=99 this machine)"),
+        "{local}"
+    );
+    assert!(local.contains("Lease: agent"), "{local}");
+
+    let foreign = super::format_lease_row(
+        &lease_knot(Some(crate::domain::lease::LeaseOwner {
+            machine_id: "0123456789abcdef".to_string(),
+            pid: 7,
+        })),
+        "abcdef0123456789",
+        &palette,
+    );
+    assert!(
+        foreign.contains("(machine=01234567 pid=7 another machine)"),
+        "{foreign}"
+    );
+}
+
+#[test]
+fn lease_row_omits_the_owner_for_legacy_leases() {
+    let row = super::format_lease_row(
+        &lease_knot(None),
+        "abcdef0123456789",
+        &Palette { enabled: false },
+    );
+    assert!(!row.contains("machine="), "{row}");
+}

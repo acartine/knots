@@ -86,6 +86,24 @@ pub struct AgentInfo {
     pub model_version: String,
 }
 
+/// Identity of the machine and process that created a lease.
+///
+/// Lease knots replicate like any other knot, so this is what lets a machine
+/// tell a lease it holds from one that merely arrived through a pull.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LeaseOwner {
+    #[serde(default)]
+    pub machine_id: String,
+    #[serde(default)]
+    pub pid: u32,
+}
+
+impl fmt::Display for LeaseOwner {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "machine={} pid={}", self.machine_id, self.pid)
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct LeaseData {
     #[serde(default)]
@@ -96,6 +114,22 @@ pub struct LeaseData {
     pub agent_info: Option<AgentInfo>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_seconds: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner: Option<LeaseOwner>,
+}
+
+impl LeaseData {
+    /// Whether this lease belongs to `machine_id`.
+    ///
+    /// A lease with no owner comes from an event written before owners
+    /// existed. Those are treated as local so existing stores keep today's
+    /// conservative sync behavior instead of silently unblocking.
+    pub fn is_owned_by(&self, machine_id: &str) -> bool {
+        match self.owner.as_ref() {
+            None => true,
+            Some(owner) => owner.machine_id == machine_id,
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -179,6 +213,7 @@ mod tests {
                 model_version: "4".to_string(),
             }),
             timeout_seconds: Some(600),
+            owner: None,
         };
         let json = serde_json::to_string(&data).unwrap();
         let parsed: LeaseData = serde_json::from_str(&json).unwrap();
@@ -262,5 +297,66 @@ mod tests {
             ..Default::default()
         };
         assert!(validate_lease_data(&data).is_ok());
+    }
+
+    #[test]
+    fn lease_without_owner_is_treated_as_local() {
+        let legacy: LeaseData = serde_json::from_str(
+            r#"{"lease_type":"agent","nickname":"legacy","timeout_seconds":600}"#,
+        )
+        .expect("legacy lease payload should deserialize");
+
+        assert!(legacy.owner.is_none());
+        assert!(legacy.is_owned_by("machine-a"));
+        assert!(legacy.is_owned_by("machine-b"));
+    }
+
+    #[test]
+    fn lease_owner_matches_only_its_own_machine() {
+        let data = LeaseData {
+            nickname: "owned".to_string(),
+            owner: Some(LeaseOwner {
+                machine_id: "machine-a".to_string(),
+                pid: 4242,
+            }),
+            ..Default::default()
+        };
+
+        assert!(data.is_owned_by("machine-a"));
+        assert!(!data.is_owned_by("machine-b"));
+    }
+
+    #[test]
+    fn lease_owner_round_trips_through_json() {
+        let data = LeaseData {
+            nickname: "owned".to_string(),
+            owner: Some(LeaseOwner {
+                machine_id: "machine-a".to_string(),
+                pid: 7,
+            }),
+            ..Default::default()
+        };
+
+        let encoded = serde_json::to_string(&data).expect("lease data should serialize");
+        assert!(encoded.contains("\"machine_id\":\"machine-a\""));
+        let decoded: LeaseData =
+            serde_json::from_str(&encoded).expect("lease data should deserialize");
+        assert_eq!(decoded, data);
+    }
+
+    #[test]
+    fn lease_without_owner_omits_the_field_when_serialized() {
+        let encoded = serde_json::to_string(&LeaseData::default())
+            .expect("default lease data should serialize");
+        assert!(!encoded.contains("owner"), "got {}", encoded);
+    }
+
+    #[test]
+    fn lease_owner_displays_machine_and_pid() {
+        let owner = LeaseOwner {
+            machine_id: "machine-a".to_string(),
+            pid: 12,
+        };
+        assert_eq!(owner.to_string(), "machine=machine-a pid=12");
     }
 }
