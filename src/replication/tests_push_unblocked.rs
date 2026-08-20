@@ -144,3 +144,54 @@ fn deferred_sync_publishes_its_events_to_the_knots_ref() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn sync_publishes_before_it_takes_the_cache_lock() {
+    let root = unique_workspace();
+    let (origin, dev1) = setup_origin_and_dev1(&root);
+    write_note_event(&dev1.join(".knots"));
+    init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
+
+    let db_path = dev1.join(".knots/cache/state.sqlite");
+    std::fs::create_dir_all(db_path.parent().expect("db parent should exist"))
+        .expect("db parent should be creatable");
+
+    let store_paths = crate::project::StorePaths {
+        root: dev1.join(".knots"),
+    };
+    // Hold the cache lock for the whole call. Only work that writes SQLite
+    // should contend on it; the push half must not.
+    let _held = crate::locks::FileLock::acquire(
+        &store_paths.cache_lock_path(),
+        std::time::Duration::from_millis(1_000),
+    )
+    .expect("the test should win the cache lock");
+
+    let app = crate::app::App::open(db_path.to_str().expect("utf8 db path"), dev1.clone())
+        .expect("app should open");
+
+    let config = SyncRefConfig::for_repo(&dev1);
+    assert!(
+        cat_file_on_knots_ref(&origin, &config, EVENT_REL).is_none(),
+        "the event must not be on the remote before the sync"
+    );
+
+    // The pull half needs the cache lock and cannot have it, so the call
+    // fails -- but only after the push half already reached the remote.
+    let err = app
+        .sync_or_defer_with_progress(None)
+        .expect_err("the pull half should fail while the cache lock is held");
+    assert!(
+        matches!(err, crate::app::AppError::Lock(_)),
+        "expected a lock error, got {err:?}"
+    );
+
+    let published = cat_file_on_knots_ref(&origin, &config, EVENT_REL)
+        .expect("the push half must publish before it waits on the cache lock");
+    assert!(
+        published.contains(NOTE_TEXT),
+        "published blob should carry the event body, got {published}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}

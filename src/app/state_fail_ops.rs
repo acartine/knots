@@ -122,6 +122,9 @@ impl App {
     /// Expiry is lazy, so the caller may have observed a lease that is raw
     /// `lease_active` but effectively terminated. Re-read both records while
     /// holding the write locks before changing either one.
+    ///
+    /// Only leases this machine owns are recovered. See the owner guard
+    /// below for why a foreign lease must be left alone.
     pub(crate) fn recover_expired_bound_lease(&self, knot_id: &str) -> Result<bool, AppError> {
         let knot_id = self.resolve_knot_token(knot_id)?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
@@ -141,6 +144,13 @@ impl App {
             || effective_lease_state(&lease.state, lease.lease_expiry_ts)
                 != workflow_runtime::LEASE_TERMINATED
         {
+            return Ok(false);
+        }
+        // Never recover a lease another machine holds. `lease_expiry_ts` is
+        // not replicated, so a live foreign lease arrives here with expiry 0
+        // and reads as long expired. Recovering it would terminate work still
+        // running elsewhere and leave two machines driving one knot.
+        if !lease.lease_data.is_owned_by(&self.machine_id()) {
             return Ok(false);
         }
         self.recover_bound_action_locked(&knot, &lease)

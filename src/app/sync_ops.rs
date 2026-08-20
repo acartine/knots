@@ -115,14 +115,19 @@ impl App {
         self.require_git_distribution("sync")?;
         let mut reporter = reporter;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
-        let _cache_guard =
-            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let service = ReplicationService::with_store_paths(
             &self.conn,
             self.repo_root.clone(),
             self.store_paths.clone(),
         );
-        let outcome = service.sync_or_defer_with_progress(&mut reporter)?;
+        // Publish under the repo lock alone. The cache lock guards SQLite
+        // writes, and the push half performs none; holding it across a git
+        // round trip would stall concurrent agent writes for the length of
+        // the network call, which is exactly when agents are busiest.
+        let push = service.push_with_progress(&mut reporter)?;
+        let _cache_guard =
+            FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
+        let outcome = service.finish_sync_or_defer_with_progress(&mut reporter, push)?;
         if matches!(outcome, SyncOutcome::Deferred { .. }) {
             self.mark_sync_pending()?;
         }
