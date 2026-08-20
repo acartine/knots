@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01ed6-516e-77c1-a6e5-fa392f6642e1",
+  "occurred_at": "2026-08-20T11:02:37.16620911Z",
+  "knot_id": "knots-ec23",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-ec23-push-unblock"
+  }
+}

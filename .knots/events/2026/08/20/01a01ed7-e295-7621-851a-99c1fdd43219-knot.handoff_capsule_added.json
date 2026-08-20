@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01ed7-e295-7621-851a-99c1fdd43219",
+  "occurred_at": "2026-08-20T11:04:19.861417139Z",
+  "knot_id": "knots-ec23",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review APPROVED. Branch worktree-knots-ec23-push-unblock @ d555e5cebc37, +471/-96 across 14 files. All six acceptance criteria traced to code and to a named test; the strongest one is tests_push_unblocked.rs, which proves the deferred sync actually landed the event blob on the origin knots ref via git cat-file rather than trusting the returned summary. Pull paths are byte-identical to main, require_no_active_leases stays live for pull so the KNOTS_ALLOW_ACTIVE_LEASE_REPLICATION hatch is intact, and every Deferred consumer is updated or provably unaffected (app/sync_ops.rs matches with ..; mark_sync_pending is still correct because the pull is what is pending). The summary.rs carve-out plus SyncOutcome::render is a genuine improvement, not a size workaround: it took replication.rs to 486 and run_commands.rs to 465 and deleted a 27-line match from the CLI layer, with public paths preserved by pub use. make sanity exit 0 (clippy -D warnings, file sizes, changeset check, 1277 tests, 95.14% vs threshold 95, threshold untouched). One non-blocking cosmetic note recorded: the docs sample sync output shows a backslash line wrap the real command does not print. Ready for shipment: merge worktree-knots-ec23-push-unblock into main, re-run make sanity on merged main, then push.",
+    "datetime": "2026-08-20T11:04:19.861417139Z",
+    "entry_id": "01a01ed7-e295-7621-851a-99b4607d869e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

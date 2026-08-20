@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01ec5-6337-7970-ab3b-d6d168e58c48",
+  "occurred_at": "2026-08-20T10:44:07.60731915Z",
+  "knot_id": "knots-ec23",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan APPROVED. Verified read-only: replication.rs is 497/499 lines so the summary.rs carve-out is required; the only Deferred consumers are app/sync_ops.rs:126 (matches! with .., unaffected), run_commands.rs:216 (destructures active_leases, compiler-enforced update), and two test literals. Knot has no invariants. Test strategy maps 1:1 to all four verification steps and every acceptance criterion. ONE ADDENDUM for implementation: also reword SyncError::ActiveLeasesExist (src/sync/mod.rs:270) from 'terminate leases before syncing' to name the pull, since after this change only pull raises it; src/sync/error_tests.rs:100 only asserts the 'N active lease(s)' substring so the reword is safe. Accepted trade: sync_or_defer now does a publish-worktree fetch+reset even when it will defer.",
+    "datetime": "2026-08-20T10:44:07.60731915Z",
+    "entry_id": "01a01ec5-6337-7970-ab3b-d6c68b9d560b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

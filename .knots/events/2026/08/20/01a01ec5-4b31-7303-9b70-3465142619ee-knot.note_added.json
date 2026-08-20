@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01ec5-4b31-7303-9b70-3465142619ee",
+  "occurred_at": "2026-08-20T10:44:01.457354822Z",
+  "knot_id": "knots-ec23",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Plan review: APPROVED (with one addendum)\n\nRead-only verification performed against main @ 90cb8d0d:\n\n- Confirmed replication.rs is 497 lines and check-file-sizes.sh caps at 499,\n  so step 1 (carving out src/replication/summary.rs) is a real prerequisite,\n  not gold-plating. tests.rs is 462 lines, which justifies the new\n  tests_push_unblocked.rs file rather than growing tests.rs.\n- Enumerated every SyncOutcome consumer. Only four sites touch the Deferred\n  variant: src/app/sync_ops.rs:126 uses `matches!(outcome, Deferred { .. })`\n  and is unaffected by the added field; src/run_commands.rs:216 destructures\n  `{ active_leases }` and MUST be updated (plan step 5 covers it, and it\n  will not compile otherwise, so the compiler enforces this); and the two\n  test literals at tests.rs:456 and tests_lease_owner.rs:199 (plan V1/V1b).\n  No other in-repo consumer of the deferred JSON exists besides\n  deferred_sync_detail.\n- Knot has no invariants, so there is nothing to breach.\n- Test strategy covers all four verification steps 1:1 and every acceptance\n  criterion. The V2 git cat-file assertion is the right proof that a\n  deferred sync genuinely published, rather than trusting the summary struct.\n\nAddendum required in implementation (not a rejection):\n- SyncError::ActiveLeasesExist renders as \"N active lease(s) found;\n  terminate leases before syncing\" (src/sync/mod.rs:270). After this change\n  that error is only ever raised by the pull half, so \"before syncing\" is\n  misleading. Reword it to name the pull. src/sync/error_tests.rs:100 only\n  asserts the \"N active lease(s)\" substring, so the reword is safe; update\n  that assertion if the wording drifts further.\n\nSecurity/performance/maintainability: no new attack surface (push already\nran with the same credentials and worktree). Push now runs on every\nsync_or_defer call even when deferring, which costs one extra fetch+reset of\nthe publish worktree on a lease-held machine; that is the intended trade and\nis bounded by the existing blob-size filter.",
+    "datetime": "2026-08-20T10:44:01.457354822Z",
+    "entry_id": "01a01ec5-4b31-7303-9b70-345b3196b4cc",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

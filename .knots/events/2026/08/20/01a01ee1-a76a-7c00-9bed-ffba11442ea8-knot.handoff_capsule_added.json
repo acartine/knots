@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01ee1-a76a-7c00-9bed-ffba11442ea8",
+  "occurred_at": "2026-08-20T11:15:00.074237471Z",
+  "knot_id": "knots-ec23",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped to main. Merged worktree-knots-ec23-push-unblock (d555e5cebc37) into main with --no-ff as eb2ee1e4b371 and pushed to origin; main moved 90cb8d0d -> eb2ee1e4. No conflicts. make sanity ran green on the merged main before the push (1447 tests, 95.15% coverage, threshold .ci/coverage-threshold.txt untouched at 95) and again inside the managed pre-push hook. Remote CI on eb2ee1e4 is all green: CI 32362452513 (4m55s), Repo Hygiene 32362452527, Changesets Version PR 32362452517, Release 32362452522 -- four for four success. The changeset .changeset/push-while-leases-active.md rode along, so the Version Packages PR will pick up the patch bump. Knot has no invariants; the merge diff is exactly the reviewed 14 files, nothing out of scope leaked in. Remaining cleanup for the shipment review step: remove the /home/cartine/knots-ec23-push-unblock worktree, confirm no lease is left active, and run kno sync once the last lease is spent.",
+    "datetime": "2026-08-20T11:15:00.074237471Z",
+    "entry_id": "01a01ee1-a76a-7c00-9bed-ffa11dd7c7f8",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "event_id": "01a01ee2-2398-7f81-8080-8f015966561c",
+  "occurred_at": "2026-08-20T11:15:31.864007553Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ec23",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Allow kno push while leases are active",
+    "type": "work",
+    "updated_at": "2026-08-20T11:15:31.864007553Z",
+    "workflow_id": "work_sdlc"
+  }
+}

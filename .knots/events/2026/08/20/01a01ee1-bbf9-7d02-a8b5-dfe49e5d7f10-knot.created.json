@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01ee1-bbf9-7d02-a8b5-dfe49e5d7f10",
+  "occurred_at": "2026-08-20T11:15:05.337808995Z",
+  "knot_id": "knots-045b",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: wf-knots-ec23-shipment-review",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

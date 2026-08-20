@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01ee2-236b-7532-b54f-fc44de913a2f",
+  "occurred_at": "2026-08-20T11:15:31.819781329Z",
+  "knot_id": "knots-ec23",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review APPROVED -- final sign-off.\n\nVerified on main (output mode remote_main, so main is the review target):\n- local main == origin/main == eb2ee1e4b371b5d97e9d10affc9a2d7ef6d5b630, working tree clean.\n- git diff eb2ee1e4 d555e5ce is empty, so the --no-ff merge carried the reviewed tree onto main byte for byte with nothing extra.\n- The shipped code is correct: require_no_active_leases now appears only at src/replication.rs:50 (pull), :63 (pull_with_progress) and :455 (its definition). It is gone from the push path, exactly as scoped.\n- .changeset/push-while-leases-active.md is present on main alongside the previous knot's changeset, so the patch bump will be picked up.\n- File-size gate clean on main: replication.rs 486, summary.rs 80, run_commands.rs 465; check-file-sizes.sh reports all Rust files within the 499-line limit.\n- Commit tags complete, all short-form 12-hex: commit:d555e5cebc37 (implementation) and commit:eb2ee1e4b371 (merge), plus branch:worktree-knots-ec23-push-unblock.\n- Knot has no invariants to re-check.\n- CI/CD complete and green on eb2ee1e4: CI 32362452513, Repo Hygiene 32362452527, Changesets Version PR 32362452517, Release 32362452522 -- four for four success.\n- No regressions in dependent systems: make sanity on merged main was green (1447 tests, 95.15%, +0.05% vs the pre-merge baseline; .ci/coverage-threshold.txt still 95). The only behavioral change outside the push path is the reworded pull-side lease error, which is covered by src/sync/error_tests.rs.\n- Cleanup done: the /home/cartine/knots-ec23-push-unblock worktree is removed and /home/cartine/knots is on main with a clean tree.",
+    "datetime": "2026-08-20T11:15:31.819781329Z",
+    "entry_id": "01a01ee2-236b-7532-b54f-fc3a1e733ee3",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01ec4-c22f-78f1-9900-11e0a2d1eb1d",
+  "occurred_at": "2026-08-20T10:43:26.383733688Z",
+  "knot_id": "knots-ec23",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan attached as a note. Small change, no child knots. Six edit steps: (1) carve PushSummary/ReplicationSummary/SyncOutcome into src/replication/summary.rs because replication.rs is 497/499 lines and step 4 grows it; (2) SyncOutcome::Deferred gains a push: PushSummary field (additive JSON); (3) delete require_no_active_leases from push_with_progress, keep it on pull/pull_with_progress; (4) sync_or_defer_with_progress pushes first, then defers only the pull half, carrying the push summary; (5) run_commands.rs deferred branch prints the push summary; (6) deferred_sync_detail renders active_leases=N push(copied_files=M pushed=B). Plus docs/leases.md lines 11 and 42-43 and the ownership bullet. Tests map 1:1 to the knot's verification steps: rewrite push_blocks_with_active_leases as push-succeeds/pull-blocks, flip the same assertion in tests_lease_owner.rs, add src/replication/tests_push_unblocked.rs proving a deferred sync still lands the event on the origin knots ref (git cat-file), and extend the sync_loop deferred_sync_detail tests. Main risk noted: sync_or_defer can now surface a push error where it used to defer silently; that is intended.",
+    "datetime": "2026-08-20T10:43:26.383733688Z",
+    "entry_id": "01a01ec4-c22f-78f1-9900-11dcc6f72ff1",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
