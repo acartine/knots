@@ -72,6 +72,7 @@ fn hold_active_local_lease(conn: &rusqlite::Connection) {
             lease_data: &crate::domain::lease::LeaseData::default(),
             execution_plan_data: &crate::domain::execution_plan::ExecutionPlanData::default(),
             lease_id: None,
+            lease_expiry_ts: 0,
             workflow_id: "lease_sdlc",
             profile_id: "autopilot",
             profile_etag: None,

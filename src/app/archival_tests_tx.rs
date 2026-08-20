@@ -57,6 +57,7 @@ fn seed_hot(app: &App, id: &str, state: &str, updated_at: &str) {
             lease_data: &lease,
             execution_plan_data: &plan,
             lease_id: None,
+            lease_expiry_ts: 0,
             workflow_id: "work_sdlc",
             profile_id: "autopilot",
             profile_etag: None,

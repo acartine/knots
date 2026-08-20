@@ -348,6 +348,7 @@ fn seed_hot_knot_empty_type(conn: &rusqlite::Connection, knot_id: &str) {
             lease_data: &crate::domain::lease::LeaseData::default(),
             execution_plan_data: &ExecutionPlanData::default(),
             lease_id: None,
+            lease_expiry_ts: 0,
             workflow_id: "execution_plan_sdlc",
             profile_id: "autopilot",
             profile_etag: Some("etag-1"),

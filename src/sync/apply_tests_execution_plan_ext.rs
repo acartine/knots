@@ -84,6 +84,7 @@ fn seed_plan_with_waves(
             lease_data: &LeaseData::default(),
             execution_plan_data: &plan_data,
             lease_id: None,
+            lease_expiry_ts: 0,
             workflow_id: "execution_plan_sdlc",
             profile_id: "autopilot",
             profile_etag: Some(profile_etag),

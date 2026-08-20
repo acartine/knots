@@ -197,6 +197,12 @@ pub struct UpsertKnotHot<'a> {
     pub lease_data: &'a LeaseData,
     pub execution_plan_data: &'a ExecutionPlanData,
     pub lease_id: Option<&'a str>,
+    /// Absolute unix-seconds expiry for this knot's own lease binding, if
+    /// it is a lease knot. Callers pass through the value already cached
+    /// on the record they read (`current.lease_expiry_ts`) unless they are
+    /// deliberately changing it; this is a `NOT NULL DEFAULT 0` column, so
+    /// there is no separate "unset" representation at this layer.
+    pub lease_expiry_ts: i64,
     pub workflow_id: &'a str,
     pub profile_id: &'a str,
     pub profile_etag: Option<&'a str>,
@@ -222,7 +228,7 @@ INSERT INTO knot_hot (
     id, title, state, updated_at, body, description, acceptance,
     priority, knot_type, tags_json, notes_json,
     handoff_capsules_json, invariants_json, verification_steps_json, step_history_json,
-    gate_data_json, lease_data_json, execution_plan_data_json, lease_id,
+    gate_data_json, lease_data_json, execution_plan_data_json, lease_id, lease_expiry_ts,
     workflow_id, profile_id, profile_etag,
     deferred_from_state, blocked_from_state, created_at
 )
@@ -230,9 +236,9 @@ VALUES (
     ?1, ?2, ?3, ?4, ?5, ?6, ?7,
     ?8, ?9, ?10, ?11,
     ?12, ?13, ?14, ?15, ?16,
-    ?17, ?18, ?19,
-    ?20, ?21, ?22,
-    ?23, ?24, ?25
+    ?17, ?18, ?19, ?20,
+    ?21, ?22, ?23,
+    ?24, ?25, ?26
 )
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
@@ -253,6 +259,7 @@ ON CONFLICT(id) DO UPDATE SET
     lease_data_json = excluded.lease_data_json,
     execution_plan_data_json = excluded.execution_plan_data_json,
     lease_id = excluded.lease_id,
+    lease_expiry_ts = excluded.lease_expiry_ts,
     workflow_id = excluded.workflow_id,
     profile_id = excluded.profile_id,
     profile_etag = excluded.profile_etag,
@@ -280,6 +287,7 @@ ON CONFLICT(id) DO UPDATE SET
                 lease_data_json.as_str(),
                 execution_plan_data_json.as_str(),
                 args.lease_id,
+                args.lease_expiry_ts,
                 args.workflow_id,
                 args.profile_id,
                 args.profile_etag,

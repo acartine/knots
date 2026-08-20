@@ -60,6 +60,11 @@ fn create_knot_head_data(params: CreateKnotHeadParams<'_>) -> serde_json::Value 
         scope_data: Some(&params.options.scope_data),
         step_metadata: params.step_metadata,
         next_step_metadata: params.next_step_metadata,
+        // A brand-new knot's lease expiry (if it is a lease knot at all)
+        // is not known until `App::set_lease_expiry` runs after creation;
+        // that call emits its own idx.knot_head refresh with the real
+        // value, so 0 here is a transient placeholder, not a lie.
+        lease_expiry_ts: 0,
     })
 }
 
@@ -260,6 +265,7 @@ impl App {
                 lease_data: &options.lease_data,
                 execution_plan_data: &options.execution_plan_data,
                 lease_id: options.lease_id.as_deref(),
+                lease_expiry_ts: 0,
                 workflow_id: profile.workflow_id.as_str(),
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&idx_event.event_id),

@@ -140,6 +140,7 @@ impl App {
                 scope_data: Some(&current.scope_data),
                 step_metadata: step_metadata.as_ref(),
                 next_step_metadata: next_step_metadata.as_ref(),
+                lease_expiry_ts: current.lease_expiry_ts,
             }),
         );
         if let Some(expected) = expected_profile_etag {
@@ -147,13 +148,30 @@ impl App {
         }
         self.writer.write(&EventRecord::full(full_event))?;
         self.writer.write(&EventRecord::index(idx_event))?;
+        self.upsert_profile_cache(ProfileCacheUpdate {
+            id,
+            current,
+            profile,
+            next_state,
+            deferred: deferred.as_deref(),
+            blocked: blocked.as_deref(),
+            occurred_at: &occurred_at,
+            index_event_id: &index_event_id,
+        })?;
+        let updated =
+            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
+        self.apply_alias_and_enrich_knot(KnotView::from(updated))
+    }
+
+    fn upsert_profile_cache(&self, update: ProfileCacheUpdate<'_>) -> Result<(), AppError> {
+        let current = update.current;
         db::upsert_knot_hot(
             &self.conn,
             &UpsertKnotHot {
-                id,
+                id: update.id,
                 title: &current.title,
-                state: next_state,
-                updated_at: &occurred_at,
+                state: update.next_state,
+                updated_at: update.occurred_at,
                 body: current.body.as_deref(),
                 description: current.description.as_deref(),
                 acceptance: current.acceptance.as_deref(),
@@ -169,16 +187,26 @@ impl App {
                 lease_data: &current.lease_data,
                 execution_plan_data: &current.execution_plan_data,
                 lease_id: current.lease_id.as_deref(),
-                workflow_id: &profile.workflow_id,
-                profile_id: &profile.id,
-                profile_etag: Some(&index_event_id),
-                deferred_from_state: deferred.as_deref(),
-                blocked_from_state: blocked.as_deref(),
+                lease_expiry_ts: current.lease_expiry_ts,
+                workflow_id: &update.profile.workflow_id,
+                profile_id: &update.profile.id,
+                profile_etag: Some(update.index_event_id),
+                deferred_from_state: update.deferred,
+                blocked_from_state: update.blocked,
                 created_at: current.created_at.as_deref(),
             },
         )?;
-        let updated =
-            db::get_knot_hot(&self.conn, id)?.ok_or_else(|| AppError::NotFound(id.to_string()))?;
-        self.apply_alias_and_enrich_knot(KnotView::from(updated))
+        Ok(())
     }
+}
+
+struct ProfileCacheUpdate<'a> {
+    id: &'a str,
+    current: &'a KnotCacheRecord,
+    profile: &'a crate::workflow::ProfileDefinition,
+    next_state: &'a str,
+    deferred: Option<&'a str>,
+    blocked: Option<&'a str>,
+    occurred_at: &'a str,
+    index_event_id: &'a str,
 }

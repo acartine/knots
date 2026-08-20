@@ -144,6 +144,7 @@ fn seed_projection() -> RehydrateProjection {
         execution_plan_data_from_full: false,
         scope_data: crate::domain::scope::ScopeData::default(),
         lease_id: None,
+        lease_expiry_ts: 0,
         workflow_id: String::new(),
         profile_id: String::new(),
         profile_etag: None,

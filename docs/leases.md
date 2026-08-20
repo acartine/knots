@@ -104,7 +104,10 @@ kno claim <id> --lease <lease-id> --timeout-seconds 1800      # 30 min
 
 Any write command that touches a bound knot (`kno update`) automatically
 refreshes the lease expiry. Agents that are actively working don't need to
-explicitly extend -- each interaction resets the timer.
+explicitly extend -- each interaction resets the timer. Every refresh --
+heartbeat, explicit extend, or the expiry set at creation -- also queues a
+replicated update, so the next `kno push` carries the new expiry to other
+machines.
 
 ### Explicit extension
 
@@ -214,11 +217,32 @@ Ownership decides which leases hold back pull here:
 - A lease with no recorded owner comes from an event written before ownership
   tracking existed. Those are treated as local, so existing stores keep their
   previous, conservative behavior.
-- Expiry-based recovery is owner-scoped too. `lease_expiry_ts` is not
-  replicated, so a live lease pulled from another machine arrives looking
-  expired; Knots never terminates or rolls back work behind a lease it does not
-  own. Claiming such a knot fails until the owning machine releases it, or
-  until an operator runs `kno doctor --fix`.
+- Expiry-based recovery is owner-scoped too, regardless of what expiry says.
+  `lease_expiry_ts` replicates on every lease creation, claim heartbeat, and
+  explicit extend, so `kno lease ls --all` and `kno doctor` display a pulled
+  lease's real remaining time rather than always reading it as expired.
+  Replicated expiry makes the *display* honest; it changes nothing about
+  safety. Knots never terminates or rolls back work behind a lease it does
+  not own, whatever the (possibly stale) effective state says -- see
+  "Clock skew" below. Claiming such a knot fails until the owning machine
+  releases it, or until an operator runs `kno doctor --fix`.
+
+### Clock skew
+
+`lease_expiry_ts` is an absolute Unix timestamp. A machine evaluates a
+foreign lease's expiry against its *own* clock, exactly as it does for
+local leases -- there is no cross-machine clock negotiation or adjustment.
+If two machines' clocks drift, one may see a foreign lease as expired
+slightly before or after the owner does; an event still in flight (pushed
+but not yet pulled here) can also make a live lease look momentarily
+expired. Either way this is a display-only risk: the owner guard in
+`recover_expired_bound_lease` refuses to terminate or roll back any lease
+this machine does not own, independent of the effective-expiry
+calculation. So a skewed or stale-looking foreign expiry can make `kno
+lease ls --all` under- or over-report remaining time, but it can never
+cause one machine to tear down work another machine still holds. Keep
+machine clocks reasonably synced (NTP) for an accurate *display*; nothing
+about safety depends on it.
 
 ## Stuck lease recovery
 

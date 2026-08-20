@@ -121,8 +121,13 @@ fn pulled_foreign_lease_survives_sync_and_does_not_block_it() {
     assert_eq!(owner.machine_id, "machine-a");
     assert_eq!(owner.pid, 4242);
 
-    // Lease expiry is local-only state, so give the replicated lease a live
-    // expiry to isolate ownership as the reason sync stays unblocked.
+    // `write_lease_events` above doesn't set `lease_expiry_ts` on its
+    // fixture, so the pulled row keeps the "unknown" default of 0 (see
+    // knot e045: absent means unknown, not 0-as-expired -- but 0 still
+    // reads as expired via `effective_lease_state`). Set a live expiry
+    // directly so this test isolates ownership, not expiry, as the reason
+    // sync stays unblocked. Real replication of a live expiry is covered by
+    // `tests_lease_expiry_replication.rs`.
     db::update_lease_expiry_ts(&conn2, LEASE_ID, compute_expiry_ts(600))
         .expect("expiry update should succeed");
 

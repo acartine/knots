@@ -425,8 +425,10 @@ fn materialize_expired_lease_leaves_another_machines_lease_alone() {
     let app = open_app(&root);
 
     let (knot_id, lease_id) = claim_work_knot(&app, 600);
-    // `lease_expiry_ts` does not replicate, so a pulled foreign lease looks
-    // expired here no matter how long it really has left.
+    // Force an expired-looking effective state directly (skew, an in-flight
+    // heartbeat, or a stale pull can all produce this even now that
+    // `lease_expiry_ts` replicates) and confirm the owner guard refuses to
+    // recover it regardless of what the effective state says.
     app.set_lease_expiry(&lease_id, 1).expect("set expiry");
     reassign_lease_owner(&root, "some-other-machine");
 
