@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01f01-ff20-7822-a99c-0736b8a9ca03",
+  "occurred_at": "2026-08-20T11:50:19.676857679Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- No test mutates process-global `PATH`.\n- `cargo test --bin knots` passes 20 consecutive runs on an unchanged tree.\n- The loom bundle behaviors currently covered by the two affected tests are\n  still covered, by assertion not by deletion.\n- `env_lock` poisoning can no longer cascade one test failure into another.\n- `machine_id_reads_the_process_environment` passes with `KNOTS_MACHINE_ID`\n  exported in the environment."
+  }
+}

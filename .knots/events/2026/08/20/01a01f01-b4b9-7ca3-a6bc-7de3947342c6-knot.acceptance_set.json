@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01f01-b4b9-7ca3-a6bc-7de3947342c6",
+  "occurred_at": "2026-08-20T11:50:00.615275006Z",
+  "knot_id": "knots-e045",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- A lease pulled from another machine reports the owner's real expiry, not 0.\n- `kno lease ls --all` and `kno doctor` no longer describe a live foreign lease\n  as expired or stuck.\n- An index event with no expiry field is treated as unknown expiry and keeps\n  the pre-change behavior; no legacy store changes meaning.\n- The owner guard in `recover_expired_bound_lease` is still in place and still\n  covered by its regression test.\n- Clock-skew handling between machines is documented in docs/leases.md."
+  }
+}

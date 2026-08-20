@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01f01-ff1c-71b2-b86b-083693c49c2a",
+  "occurred_at": "2026-08-20T11:50:19.676857679Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.created",
+  "data": {
+    "body": "`make sanity` fails non-deterministically on unrelated changes because two\ntests mutate process-global `PATH` while the rest of the suite runs in\nparallel.\n\n`src/installed_workflows/tests_registry_ext.rs:43,50,274,287` call\n`std::env::set_var(\"PATH\", ...)`. The two loom tests serialize against each\nother through `env_lock` (`src/installed_workflows/tests_helpers.rs:102`) but\nnot against the other ~1280 tests, and `Command::spawn` reads `PATH` from the\nprocess environment. When the race is lost,\n`loom_failures_and_invalid_utf8_reported` fails its assertion at line 278, then\npoisons `env_lock` and cascades into `read_bundle_source_can_shell_out_to_loom`\nfailing with `PoisonError`.\n\nThis is pre-existing, not a regression. It was reproduced at commit b693169e\n(before the lease-owner and push-unblock work) by exporting the tree with\n`git archive` and running `cargo test --bin knots` 13 times: 11 clean, 1 run\nwith 1 failure, 1 run with 2 failures. Running the module alone always passes.\n\n`make sanity` is a required pre-push gate (CLAUDE.md), so this flake blocks\nunrelated work and trains people to re-run until green.\n\nLikely fixes, in preference order:\n- Remove the `PATH` mutation: give the code under test an injectable lookup\n  seam so the test passes an explicit binary path, the way `resolve_machine_id`\n  takes its env value as a parameter (`src/machine.rs`).\n- Failing that, run the affected tests in a child process with its own\n  environment, so no global state is shared.\n- A wider `env_lock` is not sufficient on its own: it would have to be taken by\n  every test that spawns a process, which is not enforceable.\n\nThere is a related smaller case: `src/machine_tests.rs:90`\n(`machine_id_reads_the_process_environment`) reads the real environment and\nfails whenever the documented `KNOTS_MACHINE_ID` override is set\n(docs/leases.md). Fix it in the same pass by using the injected-env seam the\nother tests in that file already use.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Remove PATH mutation from loom tests that makes make sanity flaky",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

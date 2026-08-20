@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01f01-b4a7-7510-a321-12dd370c48a5",
+  "occurred_at": "2026-08-20T11:50:00.615275006Z",
+  "knot_id": "knots-e045",
+  "type": "knot.created",
+  "data": {
+    "body": "`lease_expiry_ts` is not part of the replicated index event: it is not a field\nof `UpsertKnotHot`, nothing under `src/sync/` writes it, and the column\ndefaults to 0 (`src/db/migrations.rs:211`). A lease pulled from another machine\ntherefore always arrives with expiry 0, and `effective_lease_state`\n(`src/lease_expiry.rs:19`) reads 0 as expired.\n\nThe destructive consequence is already fixed: `recover_expired_bound_lease`\n(`src/app/state_fail_ops.rs`) now refuses to touch a lease this machine does\nnot own, so a live foreign lease can no longer be terminated and its knot\nrolled back. What remains is a display and diagnosis gap:\n\n- `kno lease ls --all` labels a live foreign lease as though it were expired.\n- `kno doctor` counts it under `stuck_leases` and suggests `--fix`.\n- Anyone reading that display may conclude the owner guard is wrong and remove\n  it, which would reopen the corruption path.\n\nReplicate the expiry so remote lease state reads honestly.\n\nScope:\n- Carry `lease_expiry_ts` on the `idx.knot_head` event and through\n  `UpsertKnotHot` / `build_index_upsert` into `knot_hot`.\n- Absent field must mean \"unknown\", not 0-as-expired, so events written by\n  older binaries keep today's behavior.\n- Decide and document how clock skew between machines is handled; a foreign\n  expiry is another machine's clock, not ours.\n- Keep the owner guard in `recover_expired_bound_lease` regardless. Replicated\n  expiry makes the display honest; it does not make it safe to terminate\n  another machine's lease, because that machine may have heartbeated since it\n  last pushed.\n\nOut of scope: changing which leases block sync, per-knot pull filtering.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Replicate lease_expiry_ts so pulled leases do not read as expired",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

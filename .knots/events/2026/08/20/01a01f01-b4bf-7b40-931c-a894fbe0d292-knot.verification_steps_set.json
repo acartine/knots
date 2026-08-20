@@ -1,0 +1,14 @@
+{
+  "event_id": "01a01f01-b4bf-7b40-931c-a894fbe0d292",
+  "occurred_at": "2026-08-20T11:50:00.615275006Z",
+  "knot_id": "knots-e045",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "Test: a lease pushed from machine A with a future expiry is readable on machine B with that same expiry after pull.",
+      "Test: an index event with no expiry field yields unknown expiry and preserves current behavior.",
+      "Test: recover_expired_bound_lease still refuses a foreign lease after expiry replication lands.",
+      "make sanity passes (fmt, lint, tests, coverage >= .ci/coverage-threshold.txt)."
+    ]
+  }
+}

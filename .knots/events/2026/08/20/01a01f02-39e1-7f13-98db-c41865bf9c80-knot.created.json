@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01f02-39e1-7f13-98db-c41865bf9c80",
+  "occurred_at": "2026-08-20T11:50:34.721895079Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.created",
+  "data": {
+    "body": "`persisted_machine_id` (`src/machine.rs:45-52`) does an unsynchronized\nread-derive-write, and `system_seed` (`src/machine.rs:86-93`) falls back to a\nfresh random `Uuid::now_v7()` when neither `/etc/machine-id` nor\n`/var/lib/dbus/machine-id` exists, which is the case on macOS and Windows.\n`persist` (`src/machine.rs:95-100`) is a non-atomic `fs::write` whose error is\ndiscarded.\n\nFailure on macOS with a fresh store: `kno lease ls` (a read command that\nresolves the machine id and takes no repo lock) runs concurrently with the\nfirst `kno lease create`. Both find no `.knots/machine-id`, derive different\nrandom-seeded digests A and B, and both write; last write wins. If the\nlease-creating process derived B but A won the file, the lease is stamped with\nowner B while every later local-lease query resolves A. `count_local_active_leases`\nthen returns 0 and sync proceeds unblocked while an agent on this machine\nreally does hold that lease -- the exact condition the guard exists to prevent.\n\nThe same disowning happens deterministically on macOS if `.knots/machine-id` is\never deleted or the store rebuilt, because the value cannot be regenerated. On\nLinux it regenerates identically from `/etc/machine-id`, so this is\nplatform-specific.\n\nScope:\n- Make first-use persistence atomic: write to a temp file in the same\n  directory and rename, or create-new and re-read the winner on `AlreadyExists`\n  so every racer converges on the same id.\n- Stop discarding the persist error; a machine id that fails to persist should\n  surface, not silently re-randomize next call.\n- Consider deriving a stable per-store seed on platforms with no system machine\n  id, so a deleted `.knots/machine-id` is recoverable rather than a new\n  identity.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Make first-use machine id persistence atomic",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

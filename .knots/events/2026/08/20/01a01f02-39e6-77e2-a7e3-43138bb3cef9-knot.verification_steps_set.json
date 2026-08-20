@@ -1,0 +1,14 @@
+{
+  "event_id": "01a01f02-39e6-77e2-a7e3-43138bb3cef9",
+  "occurred_at": "2026-08-20T11:50:34.721895079Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "Test: N threads resolving the machine id on a fresh store all return the same value, equal to the persisted file contents.",
+      "Test: a persist failure is reported rather than swallowed.",
+      "Test: an existing .knots/machine-id is never rewritten.",
+      "make sanity passes (fmt, lint, tests, coverage >= .ci/coverage-threshold.txt)."
+    ]
+  }
+}

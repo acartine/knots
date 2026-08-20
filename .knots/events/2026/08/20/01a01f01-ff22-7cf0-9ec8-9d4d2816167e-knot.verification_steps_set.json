@@ -1,0 +1,14 @@
+{
+  "event_id": "01a01f01-ff22-7cf0-9ec8-9d4d2816167e",
+  "occurred_at": "2026-08-20T11:50:19.676857679Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "Run cargo test --bin knots 20 times consecutively on an unchanged tree; all runs pass.",
+      "Run the suite with KNOTS_MACHINE_ID exported and confirm machine_tests passes.",
+      "Confirm no remaining std::env::set_var(\"PATH\", ..) call sites under src/.",
+      "make sanity passes (fmt, lint, tests, coverage >= .ci/coverage-threshold.txt)."
+    ]
+  }
+}

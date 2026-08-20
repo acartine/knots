@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01f02-39e5-7460-be77-5701dc6a7234",
+  "occurred_at": "2026-08-20T11:50:34.721895079Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "- Concurrent first-use resolution converges: N processes racing on a fresh\n  store all end up with the same machine id, matching the persisted file.\n- A failed persist surfaces as an error rather than being silently discarded.\n- On a platform with no system machine id, the behavior when\n  `.knots/machine-id` is deleted is defined and documented.\n- Existing stores keep their current machine id; no store changes identity on\n  upgrade."
+  }
+}
