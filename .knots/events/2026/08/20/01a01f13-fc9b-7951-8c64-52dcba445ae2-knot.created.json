@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01f13-fc9b-7951-8c64-52dcba445ae2",
+  "occurred_at": "2026-08-20T12:09:58.683417431Z",
+  "knot_id": "knots-ae30",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: wf-knots-4bfa-implementation",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

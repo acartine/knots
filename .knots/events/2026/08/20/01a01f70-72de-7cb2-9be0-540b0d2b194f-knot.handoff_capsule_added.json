@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f70-72de-7cb2-9be0-540b0d2b194f",
+  "occurred_at": "2026-08-20T13:50:58.270629695Z",
+  "knot_id": "knots-e045",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review approved. Both tagged commits (5db7c32e852a implementation, d3227d80b26f merge) confirmed on main via git branch --contains. All 4 GitHub Actions workflows for d3227d80b26f are green (Repo Hygiene, Release, Changesets Version PR, CI). Owner guard regression test verified passing on main. No dependent-system regressions: kno sync's per-knot quarantine logic (knots-0f9c, merged just before this knot) is untouched by this diff; the two are orthogonal (that knot governs which knots' events get held back during pull, this knot governs what data an applied idx.knot_head event carries). Final sign-off given.",
+    "datetime": "2026-08-20T13:50:58.270629695Z",
+    "entry_id": "01a01f70-72de-7cb2-9be0-53f65e164da3",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f70-21ca-7263-a613-54b0df609dc4",
+  "occurred_at": "2026-08-20T13:50:37.514582248Z",
+  "knot_id": "knots-e045",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment complete. Merged knots-e045-lease-expiry-replication into main (fast, no conflicts) and pushed. Merge commit d3227d80b26f. All 4 GitHub Actions workflows on that commit are green: Repo Hygiene, Release, Changesets Version PR, CI. Pre-push hook's make sanity passed on both the feature-branch push and the merged-main push (95.41% then 95.29% coverage, both above the 95% floor).",
+    "datetime": "2026-08-20T13:50:37.514582248Z",
+    "entry_id": "01a01f70-21ca-7263-a613-54a948f74524",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01f66-62f6-7931-81ea-7adaa20bd96d",
+  "occurred_at": "2026-08-20T13:39:58.838945291Z",
+  "knot_id": "knots-e045",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:knots-e045-lease-expiry-replication"
+  }
+}

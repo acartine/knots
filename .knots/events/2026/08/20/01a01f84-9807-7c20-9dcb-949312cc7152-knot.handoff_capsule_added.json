@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f84-9807-7c20-9dcb-949312cc7152",
+  "occurred_at": "2026-08-20T14:12:58.503642272Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review APPROVED. All 5 acceptance criteria traced to code and to a passing test. The 20x repeat-run criterion is the load-bearing one and it passed 20/20. Ready to merge worktree-knots-4bfa-path-mutation to main.",
+    "datetime": "2026-08-20T14:12:58.503642272Z",
+    "entry_id": "01a01f84-9807-7c20-9dcb-9487accf7dcc",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

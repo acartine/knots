@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f66-8813-7850-b733-93df46092bc8",
+  "occurred_at": "2026-08-20T13:40:08.339039704Z",
+  "knot_id": "knots-e045",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation complete. Root cause: lease_expiry_ts was never carried by any event (UpsertKnotHot/MetadataProjection had no field for it), only written directly to the local DB column via App::set_lease_expiry. Fix: (1) added lease_expiry_ts to KnotHeadData/build_knot_head_data and threaded it through all 9 head-event call sites plus UpsertKnotHot/MetadataProjection/knot_hot SQL; (2) on apply, fall back to cached value and only override when the event JSON has the key, so pre-fix events (no key) preserve today's 0-as-expired behavior; (3) App::set_lease_expiry -- the single choke point for creation/heartbeat/extend/lazy-recovery re-arm -- now also emits a fresh idx.knot_head event, split into set_lease_expiry (acquires locks) and set_lease_expiry_locked (assumes caller holds them, used by release_lease_knot_locked to avoid a lock-reacquisition deadlock I found and fixed via a failing cli_rollback_outcome test); (4) owner guard in recover_expired_bound_lease is unchanged, only its stale comment corrected; (5) documented clock-skew handling in docs/leases.md (no cross-machine normalization, display-only risk, owner guard is the real safety net). Split MetadataProjection into new src/sync/apply_projection.rs to keep apply_helpers.rs under 500 lines. New tests: src/sync/apply_tests_lease_expiry.rs (round trip, missing-field fallback, preserve-on-absence), src/replication/tests_lease_expiry_replication.rs (real push/pull across two machine stores proving verification step 1), src/write_dispatch/tests_lease_ext8.rs (set_lease_expiry writes exactly one event, updated_at pinned). make sanity passed directly (95.41% coverage) and again via the pre-push hook on push (95.41%/-0.01% delta, still above the 95% floor). Branch: knots-e045-lease-expiry-replication. Commit: 5db7c32e852a.",
+    "datetime": "2026-08-20T13:40:08.339039704Z",
+    "entry_id": "01a01f66-8813-7850-b733-93c04e302604",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

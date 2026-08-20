@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f8c-49ab-7291-8b4e-27c4a164b338",
+  "occurred_at": "2026-08-20T14:21:22.731523402Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Shipment review: APPROVED -> SHIPPED\n\nMerged to main as f3244ad8 (d3227d80..f3244ad8), pushed to origin.\n\nPost-merge verification actually run:\n- Remote CI on main for f3244ad8: CI, Repo Hygiene, Changesets Version PR, Release -- all four success (run ids 32379108013, 32379107951, 32379107953, 32379107920).\n- Pre-push hook re-ran make sanity green on merged main.\n- Coverage threshold .ci/coverage-threshold.txt unchanged at 95.\n\nThe knot's load-bearing claim -- that the flake is gone -- was verified by\n20 consecutive full-suite runs with 0 failures, against a measured baseline\nof 2 failures in 13 runs at b693169e before the fix.\n\nKnown and deliberately out of scope: git_hooks_tests::hook_template_uses_installed_binary_when_path_is_stripped\ncan fail with ExecutableFileBusy (ETXTBSY) under heavy parallel load. That is\na different mechanism -- fork/exec fd inheritance, not PATH mutation -- and it\nwas observed only while two full make sanity runs ran concurrently on this\nmachine. Not addressed here; recorded so it is not mistaken for a regression.",
+    "datetime": "2026-08-20T14:21:22.731523402Z",
+    "entry_id": "01a01f8c-49ab-7291-8b4e-27b6403e5d0e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

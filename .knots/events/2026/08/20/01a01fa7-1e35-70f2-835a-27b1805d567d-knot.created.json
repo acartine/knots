@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01fa7-1e35-70f2-835a-27b1805d567d",
+  "occurred_at": "2026-08-20T14:50:41.077654703Z",
+  "knot_id": "knots-9a5c",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: verify-sync-under-lease",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

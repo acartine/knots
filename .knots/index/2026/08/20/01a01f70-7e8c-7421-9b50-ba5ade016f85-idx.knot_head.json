@@ -1,0 +1,21 @@
+{
+  "event_id": "01a01f70-7e8c-7421-9b50-ba5ade016f85",
+  "occurred_at": "2026-08-20T13:51:01.260415026Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-e045",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Replicate lease_expiry_ts so pulled leases do not read as expired",
+    "type": "work",
+    "updated_at": "2026-08-20T13:51:01.260415026Z",
+    "workflow_id": "work_sdlc"
+  }
+}

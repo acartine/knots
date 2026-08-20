@@ -1,0 +1,21 @@
+{
+  "event_id": "01a01f3e-1db8-7d31-9d61-8bcf19301983",
+  "occurred_at": "2026-08-20T12:55:59.672088412Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-0f9c",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Filter pull per knot instead of blocking sync on any active lease",
+    "type": "work",
+    "updated_at": "2026-08-20T12:55:59.672088412Z",
+    "workflow_id": "work_sdlc"
+  }
+}

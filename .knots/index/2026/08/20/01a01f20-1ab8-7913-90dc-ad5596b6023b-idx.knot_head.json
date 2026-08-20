@@ -1,0 +1,21 @@
+{
+  "event_id": "01a01f20-1ab8-7913-90dc-ad5596b6023b",
+  "occurred_at": "2026-08-20T12:23:12.824081827Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-bee5",
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: wf-knots-edf8-planning",
+    "type": "lease",
+    "updated_at": "2026-08-20T12:23:12.824081827Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

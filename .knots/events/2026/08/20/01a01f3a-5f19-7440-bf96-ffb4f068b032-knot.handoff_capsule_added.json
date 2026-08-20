@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f3a-5f19-7440-bf96-ffb4f068b032",
+  "occurred_at": "2026-08-20T12:51:54.265097476Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review: approved. Verified against every acceptance criterion: (1) pull/sync complete with active local leases, applying non-leased knots normally -- tested in tests_push_unblocked.rs and tests_lease_owner.rs; (2) locally leased knot events are skipped and later replayed exactly once, no drop/double-apply -- tested in sync/apply_tests_quarantine.rs across 3 successive pulls; (3) quarantine rows survive a reopened connection, keyed to base_commit -- db/tests_quarantine.rs; (4) replay converges to the same state as an unfiltered sync -- verified (A v1+v2 -> A v2); (5) SyncSummary.held_back_knots + render() name held-back knots; (6) remote-owned leases excluded from local_leased_knot_ids -- tested; (7) kno-mcp sync_loop.rs rewritten, no more perpetual deferred status since sync always completes. make sanity re-verified green by the pre-push hook on this exact commit (95.26% coverage). No security/regression concerns; skipped_unknown_workflow_knots watermark bug correctly left out of scope per the knot body. Branch: worktree-knots-0f9c-quarantine-pull-filter.",
+    "datetime": "2026-08-20T12:51:54.265097476Z",
+    "entry_id": "01a01f3a-5f19-7440-bf96-ffa8d909414a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

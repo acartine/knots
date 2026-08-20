@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f31-5130-7313-91bb-0111873392be",
+  "occurred_at": "2026-08-20T12:42:00.88013181Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review: approved. Design (quarantine table keyed by knot_id with a base_commit captured once at first skip, local-lease set via lease_id binding plus the lease knots themselves, drain-on-unlock replay independent of the shared watermark) directly matches the knot's required design and every acceptance criterion. Implementation already completed and verified (make sanity green, 95.26% coverage). Proceeding to implementation.",
+    "datetime": "2026-08-20T12:42:00.88013181Z",
+    "entry_id": "01a01f31-5130-7313-91bb-010bac67a842",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

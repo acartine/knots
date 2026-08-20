@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f84-97c1-7420-b9b9-3963f024dc66",
+  "occurred_at": "2026-08-20T14:12:58.433810927Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Implementation review: APPROVED\n\nArtifact: branch worktree-knots-4bfa-path-mutation @ 3dd6dfca2b8d (pushed).\nDiff: 6 files, +59/-49.\n\nAcceptance criteria, each traced to code:\n1. No test mutates process-global PATH -- grep 'set_var(\"PATH\"' under src/ returns nothing. The two call sites in tests_registry_ext.rs now use CommandLoomBundleBuilder::with_binary(&loom_path) with read_bundle_source_with_builder.\n2. 20 consecutive cargo test --bin knots runs on an unchanged tree: 0 failures. Compare 2 failures in 13 runs measured at b693169e before the fix.\n3. Loom behaviors still covered by assertion, not deletion -- both tests retain their original assertions (BundleFormat::Json, bundle content, loom failure and invalid-utf8 error paths); only the binary-resolution mechanism changed.\n4. env_lock removed from installed_workflows/tests_helpers.rs, so a panic in one loom test can no longer poison a mutex and cascade into the other.\n5. machine::tests::machine_id_reads_the_process_environment now reads (never mutates) KNOTS_MACHINE_ID and compares against resolve_machine_id with the same value injected; all 8 machine tests pass with KNOTS_MACHINE_ID=pinned-ci-id exported.\n\nProduction behavior unchanged: CommandLoomBundleBuilder::new() still resolves KNOTS_LOOM_BIN, else the bare 'loom' name for the OS to resolve through PATH at spawn time.\n\nGates: make sanity exit 0 -- fmt, clippy -D warnings, file-size check, 1291 tests, 95.40% coverage against a 95 threshold. Changeset present. Pre-push hook re-ran sanity green on push.",
+    "datetime": "2026-08-20T14:12:58.433810927Z",
+    "entry_id": "01a01f84-97c1-7420-b9b9-395e542c9899",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

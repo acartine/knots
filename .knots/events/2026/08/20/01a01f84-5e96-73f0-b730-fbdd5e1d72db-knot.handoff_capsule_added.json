@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f84-5e96-73f0-b730-fbdd5e1d72db",
+  "occurred_at": "2026-08-20T14:12:43.798636183Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation complete. Branch worktree-knots-4bfa-path-mutation @ 3dd6dfca2b8d, pushed to origin. CommandLoomBundleBuilder now owns an explicit binary: PathBuf with a #[cfg(test)] with_binary() seam; no test mutates PATH; env_lock deleted so poisoning cannot cascade. Verified: make sanity exit 0 (1291 tests, 95.40% coverage), 20 consecutive full-suite runs with 0 failures, and all 8 machine::tests pass with KNOTS_MACHINE_ID exported. Changeset .changeset/fix-loom-test-path-flake.md present.",
+    "datetime": "2026-08-20T14:12:43.798636183Z",
+    "entry_id": "01a01f84-5e96-73f0-b730-fbc484e70cae",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

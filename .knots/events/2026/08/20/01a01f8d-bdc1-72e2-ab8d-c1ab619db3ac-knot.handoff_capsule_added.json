@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f8d-bdc1-72e2-ab8d-c1ab619db3ac",
+  "occurred_at": "2026-08-20T14:22:57.985595584Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation complete. Branch worktree-knots-edf8-machine-id-atomic @ dc73d66916f2, rebased onto f3244ad8 and pushed. First-use persistence is now atomic: unique temp file + hard_link as the atomic create-if-absent, converging on the winner's value on AlreadyExists so every racer returns the id that actually landed on disk. machine_id() returns io::Result<String> so a persist failure surfaces instead of being swallowed; all call sites propagate, including src/sync/mod.rs which knots-0f9c added after this branch was cut. Verified: make sanity exit 0 (1294 tests, 95.24% coverage); the owner-guard and cache-lock regression tests still pass; knots-4bfa's PATH fix preserved through the rebase (no set_var(\"PATH\") under src/).",
+    "datetime": "2026-08-20T14:22:57.985595584Z",
+    "entry_id": "01a01f8d-bdc1-72e2-ab8d-c19e5695bed6",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

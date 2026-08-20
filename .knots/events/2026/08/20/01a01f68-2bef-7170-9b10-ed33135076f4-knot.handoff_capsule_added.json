@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f68-2bef-7170-9b10-ed33135076f4",
+  "occurred_at": "2026-08-20T13:41:55.823129046Z",
+  "knot_id": "knots-e045",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review approved. Verified against acceptance criteria: (1) lease_expiry_ts now round-trips through idx.knot_head into knot_hot, proven by src/replication/tests_lease_expiry_replication.rs's real two-machine push/pull; (2) both kno lease ls --all (lease.rs::list_active_leases) and doctor's active-lease accounting read effective_lease_state(state, lease_expiry_ts) from the same now-correctly-populated knot_hot.lease_expiry_ts column, so no separate display-code change was needed -- the plumbing fix alone corrects both; (3) missing-field events preserve prior cached value / legacy 0-default, proven by apply_tests_lease_expiry.rs; (4) recover_expired_bound_lease's owner check is byte-identical, its regression test (materialize_expired_lease_leaves_another_machines_lease_alone) passes unmodified; (5) docs/leases.md documents clock-skew handling explicitly. Diff is scoped: 43 files, mostly one-line lease_expiry_ts threading through existing UpsertKnotHot/KnotHeadData literals, plus the real logic changes (build_index_upsert fallback/override, set_lease_expiry event emission, MetadataProjection split for the 500-line cap). make sanity passed twice (95.41% coverage both times, once directly and once via the pre-push hook). No security concerns; the one non-trivial risk (a lock-reacquisition deadlock in release_lease_knot_locked from set_lease_expiry now taking locks) was caught by a real failing test (cli_rollback_outcome::mcp_session_leases_are_returned_to_ready_rather_than_terminated) and fixed via a locked/unlocked split, not swept aside. Approved for shipment.",
+    "datetime": "2026-08-20T13:41:55.823129046Z",
+    "entry_id": "01a01f68-2bef-7170-9b10-ed2fb61e6c8c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f31-0270-7fe0-a02b-680a3e6135b9",
+  "occurred_at": "2026-08-20T12:41:40.720069953Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: Add a knot_sync_quarantine table (migration v20: knot_id PK, base_commit, quarantined_at). New db module db/quarantine.rs exposes quarantine_knot_if_absent (insert-or-ignore, so the base_commit anchors to the first skip and never moves forward), list_quarantined_knots, remove_quarantine, and local_leased_knot_ids(conn, machine_id) which unions the ACTIVE_LEASE_PREDICATE+LOCAL_LEASE_PREDICATE (reused pub(super) from catalog.rs) for both the lease knots themselves and any knot bound to one via lease_id. IncrementalApplier (sync/apply.rs) gains a locally_leased_knot_ids set and a pre_pass_base_commit field; apply_index_event/apply_full_event check the set immediately after extracting knot_id and quarantine+skip instead of applying. A new sync/apply_quarantine.rs module holds file-discovery helpers (moved from apply.rs to stay under the 500-line cap) plus drain_quarantine, which for each quarantined knot no longer locally leased replays events from its own base_commit up to target_head (independent of the shared watermark, which keeps advancing every pass) and drops the row; drained paths are tracked so the normal per-pass loop does not reapply them. ReplicationService.pull()/pull_with_progress() drop require_no_active_leases entirely; finish_sync_or_defer_with_progress always pulls and returns Completed (SyncOutcome::Deferred and SyncError::ActiveLeasesExist removed as dead code once nothing constructs them). SyncSummary gains held_back_knots: Vec<String>, surfaced in kno sync output and JSON. kno_mcp sync_loop.rs now reports held-back knots instead of a deferred-status check. Out of scope per the knot body: skipped_unknown_workflow_knots (src/sync/apply.rs) keeps its own separate in-memory-only bug; the quarantine table's shape would host that fix later but this knot does not touch it. Docs updated: README.md, TAXONOMY.md (lease/sync/replication/sync-outcome entries, new quarantine noun), docs/leases.md.",
+    "datetime": "2026-08-20T12:41:40.720069953Z",
+    "entry_id": "01a01f31-0270-7fe0-a02b-67fb9136fbb1",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "event_id": "01a01f95-fc29-7201-8161-c0f0af904e08",
+  "occurred_at": "2026-08-20T14:31:58.249739506Z",
+  "knot_id": "knots-8308",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "orch-edf8-shipreview",
+      "timeout_seconds": 5400
+    }
+  }
+}

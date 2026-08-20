@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f3e-1564-7b90-b4a1-a4449a10931b",
+  "occurred_at": "2026-08-20T12:55:57.540713303Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review: approved. main is at c97573b7 (merge of commit 3cce93fc99f4), matches origin/main exactly, working tree clean. Both commits tagged (commit:3cce93fc99f4, commit:c97573b74aaa). All acceptance criteria verified on the shipped code: pull/sync per-knot filtering, quarantine drain-on-unlock, held_back_knots reporting, remote-lease exclusion, MCP sync loop update -- all covered by tests that ran green under the pre-push hook's make sanity both on the feature branch and again after merging to main (95.25-95.26% coverage, above the 95% threshold). No regressions found; no dependent-system impact beyond the intended sync/lease behavior change, which is the point of this knot.",
+    "datetime": "2026-08-20T12:55:57.540713303Z",
+    "entry_id": "01a01f3e-1564-7b90-b4a1-a43fcfcda163",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

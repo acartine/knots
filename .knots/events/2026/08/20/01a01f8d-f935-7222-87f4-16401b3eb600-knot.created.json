@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01f8d-f935-7222-87f4-16401b3eb600",
+  "occurred_at": "2026-08-20T14:23:13.205910699Z",
+  "knot_id": "knots-0099",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: orch-edf8-implreview",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

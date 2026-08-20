@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01f39-dae8-72b3-b7d6-f6162f0b0778",
+  "occurred_at": "2026-08-20T12:51:20.424858432Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-0f9c-quarantine-pull-filter"
+  }
+}

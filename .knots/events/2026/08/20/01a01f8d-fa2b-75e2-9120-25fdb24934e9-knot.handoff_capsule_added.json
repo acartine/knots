@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f8d-fa2b-75e2-9120-25fdb24934e9",
+  "occurred_at": "2026-08-20T14:23:13.451368884Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review APPROVED. All 4 acceptance criteria met; cross-knot invariants from 0f9c, e045, the owner-guard fix and 4bfa all verified intact after rebase. Ready to merge to main.",
+    "datetime": "2026-08-20T14:23:13.451368884Z",
+    "entry_id": "01a01f8d-fa2b-75e2-9120-25e982f8de67",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

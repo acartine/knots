@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f44-8d05-7733-8e90-8eb9014c44ff",
+  "occurred_at": "2026-08-20T13:03:01.381840887Z",
+  "knot_id": "knots-e045",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Planning complete. Root cause confirmed: lease_expiry_ts is only ever written directly to the DB via App::set_lease_expiry (src/app/knot_lease.rs), never carried by any event, and UpsertKnotHot/MetadataProjection (the structs that flow through events) have no field for it at all -- so it can never replicate regardless of what an event contains. Plan: (1) add lease_expiry_ts to KnotHeadData/build_knot_head_data (src/app/helpers.rs) and thread current.lease_expiry_ts through all 9 build_knot_head_data call sites; (2) add lease_expiry_ts to UpsertKnotHot (db.rs, SQL) and MetadataProjection (sync/apply_helpers.rs), threading existing values through every local UpsertKnotHot call site; (3) in build_index_upsert, fallback to existing cached value then override only if the incoming event JSON contains the key, so pre-fix events (no key) preserve today's 0-as-expired behavior; (4) make App::set_lease_expiry itself emit a fresh idx.knot_head event (the actual root-cause fix for heartbeats/renewals, which currently never push anything) while keeping payload updated_at pinned to the record's existing updated_at so heartbeats don't reorder kno ls; (5) leave the owner guard in recover_expired_bound_lease untouched, fix only its now-stale comment; (6) document clock-skew handling (no normalization; display-only risk, guard is safety-net) in docs/leases.md. Full design and file-by-file touch list is in the plan note. Ready for plan_review.",
+    "datetime": "2026-08-20T13:03:01.381840887Z",
+    "entry_id": "01a01f44-8d05-7733-8e90-8ea88f52a666",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

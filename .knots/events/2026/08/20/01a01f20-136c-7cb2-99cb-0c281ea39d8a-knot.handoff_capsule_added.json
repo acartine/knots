@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f20-136c-7cb2-99cb-0c281ea39d8a",
+  "occurred_at": "2026-08-20T12:23:10.95675754Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: make src/machine.rs first-use persistence atomic via write-temp-then-hard_link (converge racers on the winner's re-read value on AlreadyExists), thread io::Result through machine_id/resolve_machine_id/persisted_machine_id and the ~9 existing callers (App::machine_id -> Result<String, AppError>, plus SyncError call sites), document (not change) the delete-and-regenerate behavior on no-system-id platforms, add a concurrency test proving N racing threads converge on one persisted id. Single-file core change (src/machine.rs) plus small Result-threading edits, no new files, no child knots.",
+    "datetime": "2026-08-20T12:23:10.95675754Z",
+    "entry_id": "01a01f20-136c-7cb2-99cb-0c1c73c0a058",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

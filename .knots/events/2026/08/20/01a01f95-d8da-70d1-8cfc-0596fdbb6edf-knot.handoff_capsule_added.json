@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f95-d8da-70d1-8cfc-0596fdbb6edf",
+  "occurred_at": "2026-08-20T14:31:49.210218869Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment complete. Merged to main as 7660f52f (f3244ad8..7660f52f), pushed to origin. Pre-push hook re-ran make sanity green on merged main.",
+    "datetime": "2026-08-20T14:31:49.210218869Z",
+    "entry_id": "01a01f95-d8da-70d1-8cfc-058438f50288",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

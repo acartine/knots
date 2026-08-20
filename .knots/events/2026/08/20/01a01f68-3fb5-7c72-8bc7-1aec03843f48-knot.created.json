@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01f68-3fb5-7c72-8bc7-1aec03843f48",
+  "occurred_at": "2026-08-20T13:42:00.885951604Z",
+  "knot_id": "knots-e66b",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: wf-knots-e045-shipment",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

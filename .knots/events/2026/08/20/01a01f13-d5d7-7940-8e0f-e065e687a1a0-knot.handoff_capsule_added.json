@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f13-d5d7-7940-8e0f-e065e687a1a0",
+  "occurred_at": "2026-08-20T12:09:48.759491818Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review: approved. The proposed CommandLoomBundleBuilder::with_binary test seam matches existing prior art (StubLoomBundleBuilder in doctor_fix_tests.rs) and the knot's own preferred fix (injectable lookup seam like resolve_machine_id). Scope correctly limited to PATH and KNOTS_MACHINE_ID; other env var mutations (HOME, NO_COLOR, KNO_TRACE, KNOTS_FETCH_BLOB_LIMIT_KB) are out of scope and untouched. Test strategy preserves behavioral coverage via real process spawn against absolute paths, not deletion. No invariant or security concerns. Proceeding to implementation.",
+    "datetime": "2026-08-20T12:09:48.759491818Z",
+    "entry_id": "01a01f13-d5d7-7940-8e0f-e05f56602c25",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

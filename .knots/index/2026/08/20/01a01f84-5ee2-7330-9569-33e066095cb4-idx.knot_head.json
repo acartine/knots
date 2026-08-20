@@ -1,0 +1,21 @@
+{
+  "event_id": "01a01f84-5ee2-7330-9569-33e066095cb4",
+  "occurred_at": "2026-08-20T14:12:43.87489385Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-cc7a",
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: orch-4bfa-impl2",
+    "type": "lease",
+    "updated_at": "2026-08-20T14:12:43.87489385Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

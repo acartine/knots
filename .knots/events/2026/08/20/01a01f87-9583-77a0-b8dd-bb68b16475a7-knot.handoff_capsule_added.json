@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f87-9583-77a0-b8dd-bb68b16475a7",
+  "occurred_at": "2026-08-20T14:16:14.467017125Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment complete. worktree-knots-4bfa-path-mutation merged to main as f3244ad8 (d3227d80..f3244ad8) and pushed to origin. Pre-push hook re-ran make sanity green on merged main.",
+    "datetime": "2026-08-20T14:16:14.467017125Z",
+    "entry_id": "01a01f87-9583-77a0-b8dd-bb5a0181c02c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

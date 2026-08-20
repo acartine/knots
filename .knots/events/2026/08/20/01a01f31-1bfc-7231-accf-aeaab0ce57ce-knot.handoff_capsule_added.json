@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f31-1bfc-7231-accf-aeaab0ce57ce",
+  "occurred_at": "2026-08-20T12:41:47.260506323Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan complete and implemented (code already written on branch worktree-knots-0f9c-quarantine-pull-filter, not yet committed): quarantine table + db/quarantine.rs, IncrementalApplier per-knot filter + apply_quarantine.rs (drain on unlock), ReplicationService pull/sync simplified to always complete, SyncSummary.held_back_knots, docs updated, changeset added. make sanity green (95.26% coverage, all tests pass, clippy clean, fmt clean, file-size check clean). Next: plan_review gate, then implementation/implementation_review/shipment states can move quickly since the code is already done and verified -- shipment should focus on committing, pushing, and merging the branch.",
+    "datetime": "2026-08-20T12:41:47.260506323Z",
+    "entry_id": "01a01f31-1bfc-7231-accf-ae911aee76bc",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01f8d-bdc1-72e2-ab8d-c1811417b9c2",
+  "occurred_at": "2026-08-20T14:22:57.985595584Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-edf8-machine-id-atomic"
+  }
+}

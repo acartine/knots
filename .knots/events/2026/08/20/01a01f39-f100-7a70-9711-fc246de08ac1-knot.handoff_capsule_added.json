@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f39-f100-7a70-9711-fc246de08ac1",
+  "occurred_at": "2026-08-20T12:51:26.080346161Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation complete. Branch: worktree-knots-0f9c-quarantine-pull-filter (commit 3cce93fc99f4), pushed to origin. make sanity green (fmt, clippy -D warnings, 1286 tests passing, file-size check, 95.26% coverage >= threshold). New: src/db/quarantine.rs, src/sync/apply_quarantine.rs, migration v20 (knot_sync_quarantine table), db::local_leased_knot_ids, IncrementalApplier per-knot lease filter + drain-on-unlock, SyncSummary.held_back_knots, ReplicationService pull/sync no longer defer wholesale on active leases (SyncOutcome::Deferred / SyncError::ActiveLeasesExist removed as they became unconstructed), kno-mcp sync_loop reports held-back knots. Docs (README, TAXONOMY, docs/leases.md) updated to match. Changeset added.",
+    "datetime": "2026-08-20T12:51:26.080346161Z",
+    "entry_id": "01a01f39-f100-7a70-9711-fc16c60c9c15",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

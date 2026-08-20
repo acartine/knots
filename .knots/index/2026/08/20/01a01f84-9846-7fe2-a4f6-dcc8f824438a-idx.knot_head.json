@@ -1,0 +1,47 @@
+{
+  "event_id": "01a01f84-9846-7fe2-a4f6-dcc8f824438a",
+  "occurred_at": "2026-08-20T14:12:58.566049478Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-4bfa",
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "shipment",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_shipment",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "shipment",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Remove PATH mutation from loom tests that makes make sanity flaky",
+    "type": "work",
+    "updated_at": "2026-08-20T14:12:58.566049478Z",
+    "workflow_id": "work_sdlc"
+  }
+}

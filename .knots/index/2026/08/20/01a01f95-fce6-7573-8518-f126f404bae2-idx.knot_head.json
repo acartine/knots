@@ -1,0 +1,21 @@
+{
+  "event_id": "01a01f95-fce6-7573-8518-f126f404bae2",
+  "occurred_at": "2026-08-20T14:31:58.438489687Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-edf8",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Make first-use machine id persistence atomic",
+    "type": "work",
+    "updated_at": "2026-08-20T14:31:58.438489687Z",
+    "workflow_id": "work_sdlc"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "01a01f3f-26a3-7080-bafd-252fb7d4f7c7",
+  "occurred_at": "2026-08-20T12:57:07.491742675Z",
+  "knot_id": "knots-80c9",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: wf-knots-e045-planning",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

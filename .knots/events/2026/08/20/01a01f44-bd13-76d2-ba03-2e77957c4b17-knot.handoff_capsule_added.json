@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f44-bd13-76d2-ba03-2e77957c4b17",
+  "occurred_at": "2026-08-20T13:03:13.683879637Z",
+  "knot_id": "knots-e045",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan approved. Verified against invariants: owner guard in recover_expired_bound_lease is untouched (only its comment is corrected), the fix is scoped strictly to lease_expiry_ts replication (no per-knot pull filtering changes, no new knot types), test strategy covers all 3 verification_steps plus make sanity, and the design correctly distinguishes 'absent field = unknown/legacy' from 'explicit value' via the same fallback-then-override pattern already used for lease_id/deferred_from_state elsewhere in build_index_upsert. Proceeding to implementation.",
+    "datetime": "2026-08-20T13:03:13.683879637Z",
+    "entry_id": "01a01f44-bd13-76d2-ba03-2e6245f832d8",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f3d-c6a2-7672-b8ff-48e7c681ecc1",
+  "occurred_at": "2026-08-20T12:55:37.378066323Z",
+  "knot_id": "knots-0f9c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipped to main. Merge commit c97573b74aaa (merged worktree-knots-0f9c-quarantine-pull-filter, commit 3cce93fc99f4, no-ff). Pushed to origin/main; pre-push hook re-ran make sanity green (95.25% coverage). CI green on remote via the pre-push hook's own full sanity gate.",
+    "datetime": "2026-08-20T12:55:37.378066323Z",
+    "entry_id": "01a01f3d-c6a2-7672-b8ff-48d4f1618a25",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "event_id": "01a01f8d-f99b-7993-9c60-388bacc0c4be",
+  "occurred_at": "2026-08-20T14:23:13.307386151Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-0099",
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: orch-edf8-implreview",
+    "type": "lease",
+    "updated_at": "2026-08-20T14:23:13.307386151Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

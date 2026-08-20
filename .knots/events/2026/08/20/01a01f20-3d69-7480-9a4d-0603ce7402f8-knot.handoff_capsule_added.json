@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f20-3d69-7480-9a4d-0603ce7402f8",
+  "occurred_at": "2026-08-20T12:23:21.705169654Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan approved: write-temp-then-hard_link for atomic first-use persistence with AlreadyExists-convergence matches the description's suggested approach, correctly rejected the naive create_new-on-final-path variant (torn-read window), threads io::Result/AppError through all ~9 real call sites (enumerated and verified against a full grep), documents rather than reinvents the no-system-id delete-and-regenerate behavior (matches the 'Consider' framing in scope), and specifies a concrete N-thread convergence test plus a persist-failure-surfaces test. Proceeding to implementation.",
+    "datetime": "2026-08-20T12:23:21.705169654Z",
+    "entry_id": "01a01f20-3d69-7480-9a4d-05faf1429043",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

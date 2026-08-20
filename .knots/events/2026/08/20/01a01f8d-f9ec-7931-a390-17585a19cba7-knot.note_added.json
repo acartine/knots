@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f8d-f9ec-7931-a390-17585a19cba7",
+  "occurred_at": "2026-08-20T14:23:13.388707467Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Implementation review: APPROVED\n\nArtifact: branch worktree-knots-edf8-machine-id-atomic @ dc73d66916f2 (pushed), rebased onto f3244ad8.\n\nAcceptance criteria, traced to code:\n1. Concurrent first-use converges -- persist_first_use (src/machine.rs) writes a uniquely-named temp file then hard_links it onto the target. hard_link is the atomic create-if-absent primitive; on AlreadyExists link_or_converge reads the existing value and returns THAT, so a racer that loses still returns the id on disk rather than its own candidate. This is the criterion that matters: the old code let a lease be stamped with an id no later ownership check would resolve.\n2. Persist failure surfaces -- machine_id returns io::Result<String>; the error is propagated, never discarded. All call sites updated, including src/sync/mod.rs, which knots-0f9c introduced after this branch was cut.\n3. Platform split documented -- the module header states that deleting .knots/machine-id is recoverable where a system machine id exists (Linux) and permanent where it does not (macOS/Windows), and marks the recoverable-seed option as explicitly not implemented here.\n4. Existing stores keep their id -- a non-blank existing file is always reused; only a blank file is replaced, bounded by a retry count.\n\nCross-knot safety, explicitly checked because this branch was cut before three other knots landed:\n- The owner guard in recover_expired_bound_lease survived the rebase and still gates on ownership, not expiry. Its two regression tests pass.\n- sync_publishes_before_it_takes_the_cache_lock still passes, so the cache-lock scoping is intact.\n- knots-4bfa's PATH fix is preserved; grep for set_var(\"PATH\") under src/ returns nothing.\n- Conflicts in state_fail_ops.rs, replication.rs, tests_lease_owner.rs and machine_tests.rs were resolved toward main's semantics with this knot's fallible signature layered on.\n\nGates: make sanity exit 0 -- fmt, clippy -D warnings, size checks, 1294 tests, 95.24% coverage against a 95 threshold. Changeset .changeset/machine-id-atomic-first-use.md present. Pre-push hook re-ran sanity green on push.",
+    "datetime": "2026-08-20T14:23:13.388707467Z",
+    "entry_id": "01a01f8d-f9ec-7931-a390-174bdc272b9f",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

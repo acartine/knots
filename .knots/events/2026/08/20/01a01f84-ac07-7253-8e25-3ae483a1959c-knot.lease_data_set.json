@@ -1,0 +1,20 @@
+{
+  "event_id": "01a01f84-ac07-7253-8e25-3ae483a1959c",
+  "occurred_at": "2026-08-20T14:13:03.623206082Z",
+  "knot_id": "knots-4ea0",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "orch-4bfa-shipment",
+      "timeout_seconds": 5400
+    }
+  }
+}

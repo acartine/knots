@@ -1,0 +1,21 @@
+{
+  "event_id": "01a01f8c-49f4-7ff3-9339-822ef1923bc2",
+  "occurred_at": "2026-08-20T14:21:22.804400502Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-9fa2",
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: orch-4bfa-shipreview",
+    "type": "lease",
+    "updated_at": "2026-08-20T14:21:22.804400502Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

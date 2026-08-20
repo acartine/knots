@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f95-fcb1-76d1-a084-0806d38ede76",
+  "occurred_at": "2026-08-20T14:31:58.38549259Z",
+  "knot_id": "knots-edf8",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "## Shipment review: APPROVED -> SHIPPED\n\nMerged to main as 7660f52f (f3244ad8..7660f52f), pushed to origin.\n10 files changed, +267/-35.\n\nPost-merge verification actually run:\n- Remote CI on main for 7660f52f: CI, Repo Hygiene, Changesets Version PR, Release -- all four success.\n- Pre-push hook re-ran make sanity green on merged main.\n- Coverage threshold .ci/coverage-threshold.txt unchanged at 95.\n\nThis knot closes the last of the four opened from the lease/sync review. The\nownership story is now complete end to end: leases record an owner (0b4c),\nthat owner is resolved atomically even on first use under concurrency (this\nknot), foreign leases never block sync and never get recovered (0b4c + the\nowner-guard fix), pull holds back only locally leased knots instead of\nrefusing wholesale (0f9c), and a pulled lease reports its real expiry rather\nthan reading as expired (e045).",
+    "datetime": "2026-08-20T14:31:58.38549259Z",
+    "entry_id": "01a01f95-fcb1-76d1-a084-07fa5ed685f1",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

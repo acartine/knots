@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01f13-aa3b-72b3-a889-76cf9234d6c5",
+  "occurred_at": "2026-08-20T12:09:37.594988514Z",
+  "knot_id": "knots-4bfa",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: give CommandLoomBundleBuilder an explicit-binary test seam (with_binary), point the two flaky loom tests at absolute script paths instead of mutating PATH, drop the now-unused env_lock, and fix machine_id_reads_the_process_environment to compare machine_id() against resolve_machine_id(read-only env snapshot) instead of assuming KNOTS_MACHINE_ID is unset. No PATH/KNOTS_MACHINE_ID mutation remains anywhere in src/.",
+    "datetime": "2026-08-20T12:09:37.594988514Z",
+    "entry_id": "01a01f13-aa3b-72b3-a889-76b575445c88",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
