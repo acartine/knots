@@ -13,6 +13,8 @@ use super::{GitAdapter, SyncError, SyncSummary};
 
 #[path = "apply_helpers.rs"]
 mod apply_helpers;
+#[path = "apply_quarantine.rs"]
+mod apply_quarantine;
 #[path = "apply_state.rs"]
 mod apply_state;
 #[path = "apply_step_history.rs"]
@@ -35,6 +37,13 @@ pub struct IncrementalApplier<'a> {
     known_workflows: HashSet<String>,
     warned_legacy: HashSet<String>,
     skipped_unknown_workflow_knots: HashSet<String>,
+    /// Knots this machine currently holds a local lease on (including the
+    /// lease knots themselves). Their events are quarantined instead of
+    /// applied -- see `apply_quarantine`.
+    locally_leased_knot_ids: HashSet<String>,
+    /// Watermark captured at the start of the current pass, used as the
+    /// `base_commit` for any knot newly quarantined this pass.
+    pre_pass_base_commit: String,
 }
 
 impl<'a> IncrementalApplier<'a> {
@@ -43,6 +52,7 @@ impl<'a> IncrementalApplier<'a> {
         worktree: PathBuf,
         git: GitAdapter,
         known_workflows: HashSet<String>,
+        locally_leased_knot_ids: HashSet<String>,
     ) -> Self {
         Self {
             conn,
@@ -51,6 +61,8 @@ impl<'a> IncrementalApplier<'a> {
             known_workflows,
             warned_legacy: HashSet::new(),
             skipped_unknown_workflow_knots: HashSet::new(),
+            locally_leased_knot_ids,
+            pre_pass_base_commit: String::new(),
         }
     }
 
@@ -60,7 +72,28 @@ impl<'a> IncrementalApplier<'a> {
             .into_iter()
             .map(crate::installed_workflows::builtin_workflow_id_for_knot_type)
             .collect();
-        Self::new(conn, worktree, git, known_workflows)
+        Self::new(conn, worktree, git, known_workflows, HashSet::new())
+    }
+
+    /// Test-only constructor for exercising the per-knot quarantine filter.
+    #[cfg(test)]
+    pub fn new_with_builtins_and_leased(
+        conn: &'a Connection,
+        worktree: PathBuf,
+        git: GitAdapter,
+        locally_leased_knot_ids: HashSet<String>,
+    ) -> Self {
+        let known_workflows = crate::domain::knot_type::KnotType::ALL
+            .into_iter()
+            .map(crate::installed_workflows::builtin_workflow_id_for_knot_type)
+            .collect();
+        Self::new(
+            conn,
+            worktree,
+            git,
+            known_workflows,
+            locally_leased_knot_ids,
+        )
     }
 
     pub fn apply_to_head(&mut self, target_head: &str) -> Result<SyncSummary, SyncError> {
@@ -76,6 +109,10 @@ impl<'a> IncrementalApplier<'a> {
             })?;
         }
 
+        self.pre_pass_base_commit = self.resolve_pre_pass_base_commit()?;
+        let drained =
+            crate::trace::measure("drain_quarantine", || self.drain_quarantine(target_head))?;
+
         let index_files = crate::trace::measure("changed_index_files", || {
             self.changed_files("last_index_head_commit", ".knots/index", target_head)
         })?;
@@ -90,15 +127,22 @@ impl<'a> IncrementalApplier<'a> {
             knot_updates: 0,
             edge_adds: 0,
             edge_removes: 0,
+            held_back_knots: Vec::new(),
         };
 
         for rel_path in index_files {
+            if drained.contains(&rel_path) {
+                continue;
+            }
             if self.apply_index_event(&rel_path)? {
                 summary.knot_updates += 1;
             }
         }
 
         for rel_path in full_files {
+            if drained.contains(&rel_path) {
+                continue;
+            }
             match self.apply_full_event(&rel_path)? {
                 FullApplyOutcome::EdgeAdded => summary.edge_adds += 1,
                 FullApplyOutcome::EdgeRemoved => summary.edge_removes += 1,
@@ -114,69 +158,11 @@ impl<'a> IncrementalApplier<'a> {
             "last_sync_success_at_ms",
             &current_unix_ms_string(),
         )?;
+        summary.held_back_knots = db::list_quarantined_knots(self.conn)?
+            .into_iter()
+            .map(|row| row.knot_id)
+            .collect();
         Ok(summary)
-    }
-
-    fn changed_files(
-        &self,
-        meta_key: &str,
-        prefix: &str,
-        target_head: &str,
-    ) -> Result<Vec<PathBuf>, SyncError> {
-        let base = db::get_meta(self.conn, meta_key)?;
-        if let Some(base_head) = base {
-            if base_head == target_head {
-                return Ok(Vec::new());
-            }
-
-            match self
-                .git
-                .diff_name_only(&self.worktree, &base_head, target_head, prefix)
-            {
-                Ok(mut files) => {
-                    files.retain(|path| path.extension().is_some_and(|ext| ext == "json"));
-                    files.sort();
-                    return Ok(files);
-                }
-                Err(err) if err.is_unknown_revision() => {}
-                Err(err) => return Err(err),
-            }
-        }
-
-        let mut files = self.scan_json_files(prefix)?;
-        files.sort();
-        Ok(files)
-    }
-
-    fn scan_json_files(&self, prefix: &str) -> Result<Vec<PathBuf>, SyncError> {
-        let root = self.worktree.join(prefix);
-        if !root.exists() {
-            return Ok(Vec::new());
-        }
-
-        let mut stack = vec![root];
-        let mut files = Vec::new();
-        while let Some(dir) = stack.pop() {
-            for entry in std::fs::read_dir(&dir)? {
-                let path = entry?.path();
-                if path.is_dir() {
-                    stack.push(path);
-                    continue;
-                }
-                if path.extension().is_none_or(|ext| ext != "json") {
-                    continue;
-                }
-                let relative = path
-                    .strip_prefix(&self.worktree)
-                    .map_err(|err| SyncError::InvalidEvent {
-                        path: path.clone(),
-                        message: format!("failed to relativize path: {}", err),
-                    })?
-                    .to_path_buf();
-                files.push(relative);
-            }
-        }
-        Ok(files)
     }
 
     fn apply_index_event(&mut self, relative_path: &Path) -> Result<bool, SyncError> {
@@ -196,6 +182,10 @@ impl<'a> IncrementalApplier<'a> {
             .ok_or_else(|| invalid_event(&absolute_path, "idx.knot_head data must be an object"))?;
 
         let knot_id = required_string(data, "knot_id", &absolute_path)?;
+        if self.locally_leased_knot_ids.contains(&knot_id) {
+            db::quarantine_knot_if_absent(self.conn, &knot_id, &self.pre_pass_base_commit)?;
+            return Ok(false);
+        }
         let title = required_string(data, "title", &absolute_path)?;
         let state = required_string(data, "state", &absolute_path)?;
         let updated_at = required_string(data, "updated_at", &absolute_path)?;
@@ -284,6 +274,10 @@ impl<'a> IncrementalApplier<'a> {
         }
 
         let event: FullEvent = read_json_file(&absolute_path)?;
+        if self.locally_leased_knot_ids.contains(&event.knot_id) {
+            db::quarantine_knot_if_absent(self.conn, &event.knot_id, &self.pre_pass_base_commit)?;
+            return Ok(FullApplyOutcome::Ignored);
+        }
         if self.skipped_unknown_workflow_knots.contains(&event.knot_id) {
             return Ok(FullApplyOutcome::Ignored);
         }
@@ -488,6 +482,9 @@ mod tests_invariant;
 #[cfg(test)]
 #[path = "apply_tests_legacy_defaults.rs"]
 mod tests_legacy_defaults;
+#[cfg(test)]
+#[path = "apply_tests_quarantine.rs"]
+mod tests_quarantine;
 #[cfg(test)]
 #[path = "apply_tests_step_history.rs"]
 mod tests_step_history;

@@ -21,20 +21,16 @@ pub struct ReplicationSummary {
     pub pull: SyncSummary,
 }
 
-/// Result of a `kno sync` that gracefully handles active leases.
+/// Result of a `kno sync`.
 ///
-/// Push is never blocked by a lease, so the deferred arm still carries the
-/// push summary: only the pull half is postponed.
+/// Neither half blocks wholesale on an active lease: push never has, and
+/// pull now filters per knot instead of deferring entirely -- see
+/// `SyncSummary::held_back_knots` for what a locally leased knot skips.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(tag = "status")]
 pub enum SyncOutcome {
     #[serde(rename = "completed")]
     Completed(ReplicationSummary),
-    #[serde(rename = "deferred")]
-    Deferred {
-        active_leases: i64,
-        push: PushSummary,
-    },
 }
 
 impl PushSummary {
@@ -53,25 +49,28 @@ impl SyncOutcome {
         match self {
             SyncOutcome::Completed(summary) => format!(
                 "sync {} pull(head={} index_files={} full_files={} \
-                 knot_updates={} edge_adds={} edge_removes={})",
+                 knot_updates={} edge_adds={} edge_removes={}{})",
                 summary.push.render(),
                 summary.pull.target_head,
                 summary.pull.index_files,
                 summary.pull.full_files,
                 summary.pull.knot_updates,
                 summary.pull.edge_adds,
-                summary.pull.edge_removes
-            ),
-            SyncOutcome::Deferred {
-                active_leases,
-                push,
-            } => format!(
-                "sync {} pull deferred: {} active lease(s); \
-                 pull will run when leases are terminated",
-                push.render(),
-                active_leases
+                summary.pull.edge_removes,
+                held_back_note(&summary.pull.held_back_knots),
             ),
         }
+    }
+}
+
+fn held_back_note(held_back_knots: &[String]) -> String {
+    if held_back_knots.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " held_back=[{}] (locally leased)",
+            held_back_knots.join(",")
+        )
     }
 }
 

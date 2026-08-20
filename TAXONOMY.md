@@ -195,7 +195,7 @@ Complete serializable projection of a knot with all properties, relationships, m
 - `src/app/types.rs:16`
 
 ### lease <!-- auto -->
-A session token created when an agent claims a knot. While active, it blocks the pull half of sync (push is never blocked); terminating it releases the knot. Leases themselves are knots (of type `Lease`).
+A session token created when an agent claims a knot. While active and held by this machine, it holds back pull for the knots it covers (push is never blocked); terminating it releases those knots for the next pull. Leases themselves are knots (of type `Lease`).
 - `docs/leases.md:3`
 - `src/lease.rs:6` — `create_lease`
 - `src/domain/lease.rs:90` — `LeaseData`
@@ -268,8 +268,13 @@ Files under `.knots/writes/` and `.knots/responses/` that serialize CLI write in
 - `src/write_queue.rs:195` — `QueuedWriteRequest`
 - `src/write_queue.rs:207` — `QueuedWriteResponse`
 
+### quarantine (sync) <!-- auto -->
+A `knot_sync_quarantine` row recording `(knot_id, base_commit)` for a knot whose events a pull skipped because this machine locally leases it. `base_commit` is the watermark from just before the pass that first skipped the knot, and is set once; it anchors the scoped replay a later pull runs once the knot is no longer locally leased. Distinct from the shared `last_index_head_commit` / `last_full_head_commit` watermark, which advances every pass regardless of what was quarantined.
+- `src/db/quarantine.rs`
+- `src/sync/apply_quarantine.rs` — `drain_quarantine`
+
 ### replication <!-- auto -->
-The combined `push + pull` operation. `ReplicationService` owns the push side; `SyncService` owns the pull side. `kno sync` always pushes, then pulls unless a locally held lease is active, in which case only the pull half defers.
+The combined `push + pull` operation. `ReplicationService` owns the push side; `SyncService` owns the pull side. `kno sync` always pushes, then always pulls; the pull half filters out events for locally leased knots instead of deferring wholesale.
 - `src/replication.rs` — `ReplicationService`
 - `src/replication/summary.rs` — `ReplicationSummary`, `SyncOutcome`
 
@@ -315,7 +320,7 @@ Computed on-disk paths that make up a project's knot store (db file, events dir,
 - `src/project.rs:17` — `StorePaths`
 
 ### sync outcome <!-- auto -->
-High-level result of `kno sync`: `Completed(ReplicationSummary)` or `Deferred { active_leases, push }` when a locally held lease defers the pull half. The deferred arm still reports what the push half published.
+High-level result of `kno sync`: `Completed(ReplicationSummary)`. Pull no longer defers wholesale on a locally held lease; `ReplicationSummary.pull.held_back_knots` names any knots this machine's active leases held back this pass.
 - `src/replication/summary.rs` — `SyncOutcome`
 
 ### terminal state <!-- auto -->
@@ -498,9 +503,9 @@ Peek at (or, with `--claim`, grab) the top claimable knot, respecting profile ow
 - `src/poll_claim.rs:33` — `run_poll`
 
 ### pull / push / sync <!-- auto -->
-- **pull**: fetch remote `knots`, reset worktree, apply index + full events to the cache.
+- **pull**: fetch remote `knots`, reset worktree, apply index + full events to the cache, filtering out events for any knot this machine locally leases (see *quarantine*).
 - **push**: copy local event files into the worktree, commit, push.
-- **sync**: push then pull; the push half always runs, the pull half defers if this machine holds an active lease.
+- **sync**: push then pull; both halves always run. Pull never defers wholesale on an active lease — it holds back only the knots that lease covers and reports them (`SyncSummary::held_back_knots`).
 - `src/app/sync_ops.rs:18`, `:54`, `:80`
 - ⚠ overloaded: `push_unique` in `src/installed_workflows/mod.rs:396` is unrelated — it appends an item to an internal list.
 

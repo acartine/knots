@@ -29,7 +29,15 @@ fn write_note_event(store_root: &Path) {
                 "  \"occurred_at\": \"2026-03-12T10:00:00Z\",\n",
                 "  \"knot_id\": \"K-busy\",\n",
                 "  \"type\": \"knot.note_added\",\n",
-                "  \"data\": {{\"text\": \"{text}\"}}\n",
+                "  \"data\": {{\n",
+                "    \"entry_id\": \"9201\",\n",
+                "    \"content\": \"{text}\",\n",
+                "    \"username\": \"tester\",\n",
+                "    \"datetime\": \"2026-03-12T10:00:00Z\",\n",
+                "    \"agentname\": \"codex\",\n",
+                "    \"model\": \"gpt-5\",\n",
+                "    \"version\": \"1\"\n",
+                "  }}\n",
                 "}}\n"
             ),
             text = NOTE_TEXT
@@ -38,8 +46,8 @@ fn write_note_event(store_root: &Path) {
     .expect("note event should be writable");
 }
 
-/// Record an owner-less active lease, which `count_local_active_leases`
-/// treats as held by this machine.
+/// Record an owner-less active lease, which `local_leased_knot_ids` treats
+/// as held by this machine.
 fn hold_active_local_lease(conn: &rusqlite::Connection) {
     let gate_data = crate::domain::gate::GateData::default();
     db::upsert_knot_hot(
@@ -93,7 +101,7 @@ fn cat_file_on_knots_ref(origin: &Path, config: &SyncRefConfig, rel: &str) -> Op
 }
 
 #[test]
-fn deferred_sync_publishes_its_events_to_the_knots_ref() {
+fn sync_completes_with_an_active_lease_and_publishes_its_events() {
     let root = unique_workspace();
     let (origin, dev1) = setup_origin_and_dev1(&root);
     write_note_event(&dev1.join(".knots"));
@@ -115,24 +123,21 @@ fn deferred_sync_publishes_its_events_to_the_knots_ref() {
     let mut reporter = None;
     let outcome = service
         .sync_or_defer_with_progress(&mut reporter)
-        .expect("sync_or_defer should succeed while a lease is held");
+        .expect("sync should complete while a lease is held");
 
-    let SyncOutcome::Deferred {
-        active_leases,
-        push,
-    } = outcome
-    else {
-        panic!("expected the pull half to defer, got {:?}", outcome);
-    };
-    assert_eq!(active_leases, 1);
+    let SyncOutcome::Completed(summary) = outcome;
+    assert!(
+        summary.pull.held_back_knots.is_empty(),
+        "the lease knot was never authored as an event, so this pull has \
+         nothing of its to hold back: {:?}",
+        summary.pull.held_back_knots
+    );
+    let push = summary.push;
     assert_eq!(push.local_event_files, 1, "the note event was scanned");
     assert_eq!(push.copied_files, 1, "the note event was staged");
     assert!(push.committed, "the push half committed");
     assert!(push.pushed, "the push half reached the remote");
-    assert!(
-        push.commit.is_some(),
-        "the deferred summary names the commit"
-    );
+    assert!(push.commit.is_some(), "the summary names the commit");
 
     // The summary is only a claim; prove the bytes landed on the ref.
     let published = cat_file_on_knots_ref(&origin, &config, EVENT_REL)

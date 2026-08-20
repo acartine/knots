@@ -436,36 +436,25 @@ fn push_succeeds_with_active_leases_but_pull_blocks() {
         .push()
         .expect("push should succeed with active leases");
 
-    // Pull still refuses: it can move a knot out from under the claim.
-    let pull_err = service
+    // Pull no longer refuses wholesale either: it filters per knot instead.
+    service
         .pull()
-        .expect_err("pull should fail with active leases");
-    assert!(
-        matches!(pull_err, SyncError::ActiveLeasesExist(1)),
-        "expected ActiveLeasesExist(1), got {:?}",
-        pull_err
-    );
+        .expect("pull should succeed with active leases");
 
-    // `sync` still surfaces the error, now raised by its pull half.
-    let sync_err = service
+    service
         .sync()
-        .expect_err("sync should fail with active leases");
-    assert!(sync_err.is_active_leases());
+        .expect("sync should succeed with active leases");
 
-    // sync_or_defer defers only the pull half and reports what it pushed.
+    // sync_or_defer completes and reports what it pushed; no defer occurs.
     let mut reporter = None;
     let outcome = service
         .sync_or_defer_with_progress(&mut reporter)
         .expect("sync_or_defer should succeed");
-    let super::SyncOutcome::Deferred {
-        active_leases,
-        push,
-    } = outcome
-    else {
-        panic!("expected Deferred, got {:?}", outcome);
-    };
-    assert_eq!(active_leases, 1);
-    assert_eq!(push.local_event_files, 0, "no events authored in this test");
+    let super::SyncOutcome::Completed(summary) = outcome;
+    assert_eq!(
+        summary.push.local_event_files, 0,
+        "no events authored in this test"
+    );
 
     let _ = std::fs::remove_dir_all(root);
 }

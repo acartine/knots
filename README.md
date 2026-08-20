@@ -337,14 +337,17 @@ should produce, and `review_hint` to tell reviewers what to inspect.
 
 A lease is a session token automatically created when an agent claims a knot and
 terminated when the agent advances (`kno next`). Every claim gets its own
-dedicated lease — they are never shared. An active lease blocks the *pull* half
-of sync, so a remote update cannot move a knot out from under an agent. Push is
-never blocked: events are immutable, so publishing mid-claim is safe and lets
-other machines see work in flight.
+dedicated lease — they are never shared. An active lease held by *this* machine
+holds back pull for the knots it covers (the lease knot itself, plus whatever
+knot it is bound to), so a remote update cannot move a knot out from under an
+agent mid-claim. Every other knot pulls normally, even while a lease is active
+here. Push is never blocked: events are immutable, so publishing mid-claim is
+safe and lets other machines see work in flight.
 
 Leases expire after a configurable timeout (default: 10 minutes). Write commands
 that touch a bound knot automatically refresh the timer. Expired leases are
-lazily terminated on the next interaction and unblock pull.
+lazily terminated on the next interaction, and their held-back events replay on
+the next pull.
 
 The lease is also the **declared source of agent identity** (name, model,
 version). Knots stamps identity onto notes, handoff capsules, step-history

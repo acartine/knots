@@ -425,5 +425,5 @@ fn set_meta_retries_when_database_is_temporarily_locked() {
 #[path = "tests_ext.rs"]
 mod tests_ext;
 
-#[path = "tests_lease_owner.rs"]
-mod tests_lease_owner;
+#[path = "tests_quarantine.rs"]
+mod tests_quarantine;
