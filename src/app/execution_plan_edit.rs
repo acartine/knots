@@ -182,6 +182,7 @@ impl App {
                 scope_data: Some(&current.scope_data),
                 step_metadata: step_metadata.as_ref(),
                 next_step_metadata: next_step_metadata.as_ref(),
+                lease_expiry_ts: current.lease_expiry_ts,
             }),
         );
         if let Some(expected) = current.profile_etag.as_deref() {
@@ -211,6 +212,7 @@ impl App {
                 lease_data: &current.lease_data,
                 execution_plan_data: &execution_plan_data,
                 lease_id: current.lease_id.as_deref(),
+                lease_expiry_ts: current.lease_expiry_ts,
                 workflow_id: profile.workflow_id.as_str(),
                 profile_id: profile.id.as_str(),
                 profile_etag: Some(&index_event_id),

@@ -5,17 +5,17 @@ use rusqlite::Connection;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
-use crate::db::{self, KnotCacheRecord, UpsertKnotHot};
+use crate::db::{self, KnotCacheRecord};
 use crate::domain::execution_plan::ExecutionPlanData;
 use crate::domain::gate::GateData;
 use crate::domain::invariant::Invariant;
 use crate::domain::lease::LeaseData;
 use crate::domain::metadata::MetadataEntry;
 use crate::domain::scope::ScopeData;
-use crate::domain::step_history::StepRecord;
 use crate::events::FullEvent;
 use crate::installed_workflows;
 
+use super::apply_projection::MetadataProjection;
 use super::SyncError;
 
 pub(super) fn current_unix_ms_string() -> String {
@@ -24,101 +24,6 @@ pub(super) fn current_unix_ms_string() -> String {
         .unwrap_or_default()
         .as_millis()
         .to_string()
-}
-
-pub(super) struct MetadataProjection {
-    pub title: String,
-    pub state: String,
-    pub updated_at: String,
-    pub body: Option<String>,
-    pub description: Option<String>,
-    pub acceptance: Option<String>,
-    pub priority: Option<i64>,
-    pub knot_type: Option<String>,
-    pub tags: Vec<String>,
-    pub notes: Vec<MetadataEntry>,
-    pub handoff_capsules: Vec<MetadataEntry>,
-    pub invariants: Vec<Invariant>,
-    pub verification_steps: Vec<String>,
-    pub step_history: Vec<StepRecord>,
-    pub gate_data: GateData,
-    pub lease_data: LeaseData,
-    pub execution_plan_data: ExecutionPlanData,
-    pub scope_data: ScopeData,
-    pub lease_id: Option<String>,
-    pub workflow_id: String,
-    pub profile_id: String,
-    pub profile_etag: Option<String>,
-    pub deferred_from_state: Option<String>,
-    pub blocked_from_state: Option<String>,
-    pub created_at: Option<String>,
-}
-
-impl MetadataProjection {
-    pub fn from_existing(existing: &KnotCacheRecord) -> Self {
-        Self {
-            title: existing.title.clone(),
-            state: existing.state.clone(),
-            updated_at: existing.updated_at.clone(),
-            body: existing.body.clone(),
-            description: existing.description.clone(),
-            acceptance: existing.acceptance.clone(),
-            priority: existing.priority,
-            knot_type: existing.knot_type.clone(),
-            tags: existing.tags.clone(),
-            notes: existing.notes.clone(),
-            handoff_capsules: existing.handoff_capsules.clone(),
-            invariants: existing.invariants.clone(),
-            verification_steps: existing.verification_steps.clone(),
-            step_history: existing.step_history.clone(),
-            gate_data: existing.gate_data.clone(),
-            lease_data: existing.lease_data.clone(),
-            execution_plan_data: existing.execution_plan_data.clone(),
-            scope_data: existing.scope_data.clone(),
-            lease_id: existing.lease_id.clone(),
-            workflow_id: existing.workflow_id.clone(),
-            profile_id: existing.profile_id.clone(),
-            profile_etag: existing.profile_etag.clone(),
-            deferred_from_state: existing.deferred_from_state.clone(),
-            blocked_from_state: existing.blocked_from_state.clone(),
-            created_at: existing.created_at.clone(),
-        }
-    }
-
-    pub fn upsert(&self, conn: &Connection, id: &str) -> Result<(), SyncError> {
-        db::upsert_knot_hot(
-            conn,
-            &UpsertKnotHot {
-                id,
-                title: &self.title,
-                state: &self.state,
-                updated_at: &self.updated_at,
-                body: self.body.as_deref(),
-                description: self.description.as_deref(),
-                acceptance: self.acceptance.as_deref(),
-                priority: self.priority,
-                knot_type: self.knot_type.as_deref(),
-                tags: &self.tags,
-                notes: &self.notes,
-                handoff_capsules: &self.handoff_capsules,
-                invariants: &self.invariants,
-                verification_steps: &self.verification_steps,
-                step_history: &self.step_history,
-                gate_data: &self.gate_data,
-                lease_data: &self.lease_data,
-                execution_plan_data: &self.execution_plan_data,
-                lease_id: self.lease_id.as_deref(),
-                workflow_id: &self.workflow_id,
-                profile_id: &self.profile_id,
-                profile_etag: self.profile_etag.as_deref(),
-                deferred_from_state: self.deferred_from_state.as_deref(),
-                blocked_from_state: self.blocked_from_state.as_deref(),
-                created_at: self.created_at.as_deref(),
-            },
-        )?;
-        db::update_knot_scope_data(conn, id, &self.scope_data)?;
-        Ok(())
-    }
 }
 
 pub(super) fn read_json_file<T>(path: &Path) -> Result<T, SyncError>
@@ -423,17 +328,9 @@ pub(super) fn build_index_upsert(
     if params.data.contains_key("scope") {
         scope_data = parse_index_scope_data(params.data, params.absolute_path)?;
     }
-    let mut execution_plan_data = existing
-        .as_ref()
-        .map(|r| r.execution_plan_data.clone())
-        .unwrap_or_default();
-    if params.data.contains_key("execution_plan") {
-        let incoming = parse_execution_plan_data(params.data, params.absolute_path)?;
-        if should_use_index_execution_plan(&execution_plan_data, &incoming) {
-            execution_plan_data = incoming;
-        }
-    }
+    let execution_plan_data = index_execution_plan_data(existing.as_ref(), params)?;
     let lease_id = existing.as_ref().and_then(|r| r.lease_id.clone());
+    let lease_expiry_ts = index_lease_expiry_ts(existing.as_ref(), params);
     let deferred_from_state =
         optional_string(params.data.get("deferred_from_state")).or_else(|| {
             existing
@@ -467,6 +364,7 @@ pub(super) fn build_index_upsert(
         execution_plan_data,
         scope_data,
         lease_id,
+        lease_expiry_ts,
         workflow_id: params.workflow_id.to_string(),
         profile_id: params.profile_id.to_string(),
         profile_etag: Some(params.event_id.to_string()),
@@ -486,6 +384,37 @@ fn index_verification_steps(
     Ok(existing
         .map(|record| record.verification_steps.clone())
         .unwrap_or_default())
+}
+
+fn index_execution_plan_data(
+    existing: Option<&KnotCacheRecord>,
+    params: &IndexUpsertParams<'_>,
+) -> Result<ExecutionPlanData, SyncError> {
+    let current = existing
+        .map(|r| r.execution_plan_data.clone())
+        .unwrap_or_default();
+    if !params.data.contains_key("execution_plan") {
+        return Ok(current);
+    }
+    let incoming = parse_execution_plan_data(params.data, params.absolute_path)?;
+    Ok(if should_use_index_execution_plan(&current, &incoming) {
+        incoming
+    } else {
+        current
+    })
+}
+
+/// An absent `lease_expiry_ts` key means either a legacy event written
+/// before this field existed, or an event whose knot has no lease binding.
+/// Either way, keep whatever is already cached (0 for a knot never seen
+/// before) rather than treating the omission as an explicit reset -- this
+/// is what makes old events forward-compatible (knot e045).
+fn index_lease_expiry_ts(
+    existing: Option<&KnotCacheRecord>,
+    params: &IndexUpsertParams<'_>,
+) -> i64 {
+    optional_i64(params.data.get("lease_expiry_ts"))
+        .unwrap_or_else(|| existing.map(|r| r.lease_expiry_ts).unwrap_or(0))
 }
 
 fn should_use_index_execution_plan(

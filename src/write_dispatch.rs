@@ -140,6 +140,10 @@ mod tests_lease_ext6;
 mod tests_lease_ext7;
 
 #[cfg(test)]
+#[path = "write_dispatch/tests_lease_ext8.rs"]
+mod tests_lease_ext8;
+
+#[cfg(test)]
 #[path = "write_dispatch/tests_lease_deprecation.rs"]
 mod tests_lease_deprecation;
 

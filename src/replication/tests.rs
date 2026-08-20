@@ -412,6 +412,7 @@ fn push_succeeds_with_active_leases_but_pull_blocks() {
             lease_data: &crate::domain::lease::LeaseData::default(),
             execution_plan_data: &crate::domain::execution_plan::ExecutionPlanData::default(),
             lease_id: None,
+            lease_expiry_ts: 0,
             workflow_id: "lease_sdlc",
             profile_id: "autopilot",
             profile_etag: None,
@@ -461,6 +462,9 @@ fn push_succeeds_with_active_leases_but_pull_blocks() {
 
 #[path = "tests_lease_owner.rs"]
 mod lease_owner;
+
+#[path = "tests_lease_expiry_replication.rs"]
+mod lease_expiry_replication;
 
 #[path = "tests_push_unblocked.rs"]
 mod push_unblocked;

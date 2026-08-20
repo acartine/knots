@@ -40,6 +40,7 @@ pub(crate) struct RehydrateProjection {
     pub execution_plan_data_from_full: bool,
     pub scope_data: ScopeData,
     pub lease_id: Option<String>,
+    pub lease_expiry_ts: i64,
     pub workflow_id: String,
     pub profile_id: String,
     pub profile_etag: Option<String>,
@@ -84,6 +85,7 @@ fn new_projection(title: String, state: String, updated_at: String) -> Rehydrate
         execution_plan_data_from_full: false,
         scope_data: ScopeData::default(),
         lease_id: None,
+        lease_expiry_ts: 0,
         workflow_id: String::new(),
         profile_id: String::new(),
         profile_etag: None,
@@ -238,6 +240,12 @@ fn apply_index_head(
         projection.execution_plan_data =
             parse_execution_plan_data_value(data.get("execution_plan"));
     }
+    // Absent on events written before this field existed; keep whatever the
+    // replay has accumulated so far rather than resetting to 0/expired.
+    projection.lease_expiry_ts = data
+        .get("lease_expiry_ts")
+        .and_then(Value::as_i64)
+        .unwrap_or(projection.lease_expiry_ts);
     projection.profile_etag = Some(event_id.to_string());
 }
 

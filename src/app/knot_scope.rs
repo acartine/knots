@@ -96,6 +96,7 @@ impl App {
                 scope_data: Some(scope_data),
                 step_metadata: step_metadata.as_ref(),
                 next_step_metadata: next_step_metadata.as_ref(),
+                lease_expiry_ts: current.lease_expiry_ts,
             }),
         );
         self.writer.write(&EventRecord::index(idx_event))?;
@@ -132,6 +133,7 @@ impl App {
                 lease_data: &current.lease_data,
                 execution_plan_data: &current.execution_plan_data,
                 lease_id: current.lease_id.as_deref(),
+                lease_expiry_ts: current.lease_expiry_ts,
                 workflow_id: &current.workflow_id,
                 profile_id: &current.profile_id,
                 profile_etag: Some(profile_etag),

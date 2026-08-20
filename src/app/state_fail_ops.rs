@@ -146,10 +146,15 @@ impl App {
         {
             return Ok(false);
         }
-        // Never recover a lease another machine holds. `lease_expiry_ts` is
-        // not replicated, so a live foreign lease arrives here with expiry 0
-        // and reads as long expired. Recovering it would terminate work still
-        // running elsewhere and leave two machines driving one knot.
+        // Never recover a lease another machine holds. `lease_expiry_ts` now
+        // replicates (knot e045), so the effective-state check above is
+        // usually honest -- but this guard stays regardless of what it says.
+        // A foreign expiry is that machine's clock, not ours: clock skew, a
+        // stale pull, or a heartbeat in flight can all make a still-live
+        // foreign lease read as expired here. Recovering on effective state
+        // alone would terminate work still running elsewhere and leave two
+        // machines driving one knot, so ownership -- not expiry -- is what
+        // gates recovery.
         if !lease.lease_data.is_owned_by(&self.machine_id()) {
             return Ok(false);
         }
@@ -298,7 +303,7 @@ impl App {
                 .as_ref()
                 .and_then(|data| data.timeout_seconds)
                 .unwrap_or(DEFAULT_LEASE_TIMEOUT_SECONDS);
-            self.set_lease_expiry(&resolved, compute_expiry_ts(timeout))?;
+            self.set_lease_expiry_locked(&resolved, compute_expiry_ts(timeout))?;
             return Ok(());
         }
         self.write_state_change_locked(

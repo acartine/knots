@@ -3,7 +3,7 @@ use serde_json::Value;
 use crate::app::helpers::apply_step_transition;
 use crate::app::types::StateActorMetadata;
 
-use super::apply_helpers::MetadataProjection;
+use super::apply_projection::MetadataProjection;
 
 pub(super) fn apply_state_set_step_history(
     projection: &mut MetadataProjection,

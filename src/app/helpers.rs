@@ -215,6 +215,12 @@ pub(crate) struct KnotHeadData<'a> {
     pub scope_data: Option<&'a ScopeData>,
     pub step_metadata: Option<&'a crate::workflow::StepMetadata>,
     pub next_step_metadata: Option<&'a crate::workflow::StepMetadata>,
+    /// This knot's own `lease_expiry_ts`, if it is a lease knot (0
+    /// otherwise/if unset). Always present in the payload so a receiving
+    /// machine can tell "this event predates the field" (key absent, only
+    /// possible from an older binary) apart from "this machine has no
+    /// expiry yet" (key present with value 0).
+    pub lease_expiry_ts: i64,
 }
 
 pub(crate) fn build_knot_head_data(head: KnotHeadData<'_>) -> Value {
@@ -238,6 +244,10 @@ pub(crate) fn build_knot_head_data(head: KnotHeadData<'_>) -> Value {
         Value::String(head.updated_at.to_string()),
     );
     payload.insert("terminal".to_string(), Value::Bool(head.terminal));
+    payload.insert(
+        "lease_expiry_ts".to_string(),
+        Value::from(head.lease_expiry_ts),
+    );
     payload.insert(
         "type".to_string(),
         Value::String(head.knot_type.as_str().to_string()),

@@ -13,6 +13,8 @@ use super::{GitAdapter, SyncError, SyncSummary};
 
 #[path = "apply_helpers.rs"]
 mod apply_helpers;
+#[path = "apply_projection.rs"]
+mod apply_projection;
 #[path = "apply_quarantine.rs"]
 mod apply_quarantine;
 #[path = "apply_state.rs"]
@@ -24,8 +26,9 @@ use apply_helpers::{
     is_stale_precondition, optional_i64, optional_string, parse_execution_plan_data,
     parse_gate_data, parse_invariants, parse_lease_data, parse_metadata_entry, parse_scope_data,
     parse_string_vec, read_json_file, required_profile_id, required_string, required_workflow_id,
-    IndexUpsertParams, MetadataProjection, WorkflowIdResolution,
+    IndexUpsertParams, WorkflowIdResolution,
 };
+use apply_projection::MetadataProjection;
 use apply_state::resolve_tier;
 use apply_state::FullApplyOutcome;
 use apply_step_history::apply_state_set_step_history;
@@ -479,6 +482,9 @@ mod tests_ext;
 #[cfg(test)]
 #[path = "apply_tests_invariant.rs"]
 mod tests_invariant;
+#[cfg(test)]
+#[path = "apply_tests_lease_expiry.rs"]
+mod tests_lease_expiry;
 #[cfg(test)]
 #[path = "apply_tests_legacy_defaults.rs"]
 mod tests_legacy_defaults;

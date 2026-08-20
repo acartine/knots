@@ -281,6 +281,7 @@ fn show_knot_fails_when_cache_contains_legacy_workflow_id() {
             lease_data: &crate::domain::lease::LeaseData::default(),
             execution_plan_data: &crate::domain::execution_plan::ExecutionPlanData::default(),
             lease_id: None,
+            lease_expiry_ts: 0,
             workflow_id: "knots_sdlc",
             profile_id: "autopilot",
             profile_etag: Some("etag-1"),
