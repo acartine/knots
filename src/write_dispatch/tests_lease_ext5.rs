@@ -385,3 +385,101 @@ fn execute_update_materializes_expired_before_validation() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+/// Re-stamp the workspace's only lease so it looks like another machine's.
+fn reassign_lease_owner(root: &std::path::Path, machine_id: &str) {
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let conn = crate::db::open_connection(db_path.to_str().expect("utf8 db path"))
+        .expect("cache db should open");
+    let changed = conn
+        .execute(
+            "UPDATE knot_hot SET lease_data_json = \
+             json_set(lease_data_json, '$.owner', \
+             json_object('machine_id', ?1, 'pid', 4242)) \
+             WHERE knot_type = 'lease'",
+            rusqlite::params![machine_id],
+        )
+        .expect("owner rewrite should succeed");
+    assert_eq!(changed, 1, "exactly one lease should be re-stamped");
+}
+
+/// Drop the owner entirely, as an event written before owners existed.
+fn clear_lease_owner(root: &std::path::Path) {
+    let db_path = root.join(".knots/cache/state.sqlite");
+    let conn = crate::db::open_connection(db_path.to_str().expect("utf8 db path"))
+        .expect("cache db should open");
+    let changed = conn
+        .execute(
+            "UPDATE knot_hot SET lease_data_json = \
+             json_remove(lease_data_json, '$.owner') WHERE knot_type = 'lease'",
+            [],
+        )
+        .expect("owner removal should succeed");
+    assert_eq!(changed, 1, "exactly one lease should be stripped");
+}
+
+#[test]
+fn materialize_expired_lease_leaves_another_machines_lease_alone() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let (knot_id, lease_id) = claim_work_knot(&app, 600);
+    // `lease_expiry_ts` does not replicate, so a pulled foreign lease looks
+    // expired here no matter how long it really has left.
+    app.set_lease_expiry(&lease_id, 1).expect("set expiry");
+    reassign_lease_owner(&root, "some-other-machine");
+
+    let knot = app.show_knot(&knot_id).expect("show").expect("knot exists");
+    let result = materialize_expired_lease(&app, &knot).expect("materialize should succeed");
+    assert!(
+        !result,
+        "a lease held by another machine must never be recovered"
+    );
+
+    let lease = app
+        .show_knot(&lease_id)
+        .expect("show")
+        .expect("lease exists");
+    assert_eq!(
+        lease.state, "lease_active",
+        "the other machine's lease must stay active"
+    );
+
+    let knot = app.show_knot(&knot_id).expect("show").expect("knot exists");
+    assert_eq!(
+        knot.state, "implementation",
+        "the knot must stay in its action state"
+    );
+    assert_eq!(
+        knot.lease_id.as_deref(),
+        Some(lease_id.as_str()),
+        "the knot must stay bound to the other machine's lease"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn materialize_expired_lease_still_recovers_an_owner_less_lease() {
+    let root = unique_workspace();
+    setup_repo(&root);
+    let app = open_app(&root);
+
+    let (knot_id, lease_id) = claim_work_knot(&app, 600);
+    app.set_lease_expiry(&lease_id, 1).expect("set expiry");
+    clear_lease_owner(&root);
+
+    let knot = app.show_knot(&knot_id).expect("show").expect("knot exists");
+    let result = materialize_expired_lease(&app, &knot).expect("materialize should succeed");
+    assert!(
+        result,
+        "a lease written before owners existed is treated as local"
+    );
+
+    let knot = app.show_knot(&knot_id).expect("show").expect("knot exists");
+    assert_eq!(knot.state, "ready_for_implementation");
+    assert!(knot.lease_id.is_none());
+
+    let _ = std::fs::remove_dir_all(root);
+}

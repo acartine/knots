@@ -186,9 +186,11 @@ $ kno lease show <id>
   lease_owner:  machine=a1fe982a5844ddd1c07e25b9fd9653c1 pid=3898159
 ```
 
-The machine id is an opaque digest stored at `.knots/machine-id`. It is local to
-the machine (never synced), stable across processes, and carries no hostname or
-username. Set `KNOTS_MACHINE_ID` to pin it explicitly.
+The machine id is an opaque digest. The file that holds it,
+`.knots/machine-id`, is never synced, but the id itself travels with every
+lease you publish -- that is what lets other machines tell your leases from
+theirs. It is stable across processes and carries no hostname or username. Set
+`KNOTS_MACHINE_ID` to pin it explicitly.
 
 Ownership decides which leases block work here:
 
@@ -200,6 +202,11 @@ Ownership decides which leases block work here:
 - A lease with no recorded owner comes from an event written before ownership
   tracking existed. Those are treated as local, so existing stores keep their
   previous, conservative behavior.
+- Expiry-based recovery is owner-scoped too. `lease_expiry_ts` is not
+  replicated, so a live lease pulled from another machine arrives looking
+  expired; Knots never terminates or rolls back work behind a lease it does not
+  own. Claiming such a knot fails until the owning machine releases it, or
+  until an operator runs `kno doctor --fix`.
 
 ## Stuck lease recovery
 
@@ -215,8 +222,9 @@ inspection, debugging, and recovery:
 
 ```bash
 # Inspect
-kno lease ls                  # active leases only
-kno lease ls --all            # include terminated
+kno lease ls                  # active leases held by this machine
+kno lease ls --all            # every lease, including other machines' and
+                              # terminated ones
 kno lease ls --json
 kno lease show <id>
 kno lease show <id> --json

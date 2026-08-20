@@ -255,14 +255,26 @@ impl<'a> ReplicationService<'a> {
         Ok(ReplicationSummary { push, pull })
     }
 
-    /// Like `sync_with_progress` but defers the pull half instead of
-    /// erroring when this machine holds an active lease. The push half
-    /// always runs, so a busy machine still publishes its events.
+    /// Test-only composition of both halves. Production goes through `App`,
+    /// which runs the push half under the repo lock alone and takes the cache
+    /// lock only for `finish_sync_or_defer_with_progress`.
+    #[cfg(test)]
     pub fn sync_or_defer_with_progress(
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncOutcome, SyncError> {
         let push = self.push_with_progress(reporter)?;
+        self.finish_sync_or_defer_with_progress(reporter, push)
+    }
+
+    /// Complete a sync whose push half already ran. Split out so callers can
+    /// publish under the repo lock alone and hold the cache lock only for the
+    /// pull half, which is the part that writes SQLite.
+    pub fn finish_sync_or_defer_with_progress(
+        &self,
+        reporter: &mut Option<&mut dyn ProgressReporter>,
+        push: PushSummary,
+    ) -> Result<SyncOutcome, SyncError> {
         let count = self.count_local_active_leases()?;
         if count > 0 {
             emit_progress(

@@ -500,7 +500,7 @@ Peek at (or, with `--claim`, grab) the top claimable knot, respecting profile ow
 ### pull / push / sync <!-- auto -->
 - **pull**: fetch remote `knots`, reset worktree, apply index + full events to the cache.
 - **push**: copy local event files into the worktree, commit, push.
-- **sync**: push then pull; defers if active leases exist.
+- **sync**: push then pull; the push half always runs, the pull half defers if this machine holds an active lease.
 - `src/app/sync_ops.rs:18`, `:54`, `:80`
 - ⚠ overloaded: `push_unique` in `src/installed_workflows/mod.rs:396` is unrelated — it appends an item to an internal list.
 
