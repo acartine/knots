@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01e91-fd05-71a2-b2e3-ea6a468d77fe",
+  "occurred_at": "2026-08-20T09:47:59.109643435Z",
+  "knot_id": "knots-0b4c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "PLAN REVIEW: APPROVED. Verified against all six acceptance criteria and both out-of-scope guards (sync guard stays, no per-knot filtering). Feasibility checks done read-only: (a) json1 is confirmed available -- libsqlite3-sys 0.30.1 build.rs passes -DSQLITE_ENABLE_JSON1 for the bundled build, so COALESCE(json_extract(lease_data_json,'$.owner.machine_id'), ?1) = ?1 is safe, and the column is NOT NULL DEFAULT '{}' so no malformed-JSON path exists; (b) parse_lease_data is plain serde over LeaseData, so owner round-trips through knot.created -> push -> pull -> knot_hot with zero sync-layer edits, and the plan correctly tests that rather than editing it; (c) file-size cap risk is real and correctly mitigated -- src/replication.rs 487/499 and src/run_commands.rs 489/499, so helper logic goes to src/machine.rs and src/ui.rs and the replication sync test goes to a new src/replication/tests_lease_owner.rs. Test strategy covers all four knot verification steps 1:1. Two implementation directives: (1) leave count_active_leases in place for kno doctor -- changing doctor's stuck_leases probe is out of this knot's scope; (2) kno lease list must keep listing foreign active leases and merely label the owner, not filter them out, so operators do not lose visibility. No invariants on this knot. No child knots needed.",
+    "datetime": "2026-08-20T09:47:59.109643435Z",
+    "entry_id": "01a01e91-fd05-71a2-b2e3-ea5191d6070f",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

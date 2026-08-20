@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01ebb-0bce-7cc0-9049-363296803ecf",
+  "occurred_at": "2026-08-20T10:32:49.870363549Z",
+  "knot_id": "knots-0b4c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "SHIPMENT REVIEW: APPROVED -- final sign-off.\n\nREVIEW TARGET (output mode remote_main): the code now on main. Local main and origin/main are both at 90cb8d0d247ac4919ce1cb69cd2422ecf0ec70ae, working tree clean. Commits merged since the previous main tip b693169e are exactly two: 8a0e61cb (implementation) and 90cb8d0d (merge). Nothing else rode in.\n\nCOMMIT TAGGING COMPLETE: knot tags are commit:8a0e61cbc155, commit:90cb8d0d247a, branch:worktree-knots-0b4c-lease-owner. Both are 12-character short hashes from git rev-parse --short=12, and together they cover every commit created during implementation and shipment.\n\nSHIPPED CODE VERIFIED ON MAIN, not on the branch: src/machine.rs, src/machine_tests.rs, src/db/tests_lease_owner.rs, src/replication/tests_lease_owner.rs and .changeset/lease-owner-machine-id.md are all present; count_local_active_leases is wired into both replication guards (src/replication.rs:283 sync_or_defer_with_progress and :470 require_no_active_leases, via the helper at :458) and lease::list_local_active_leases backs kno lease list.\n\nBEHAVIORAL VERIFICATION FROM MAIN, not from tests: built the binary from main and drove it against a scratch repo. kno lease create stamped the owner and kno lease list printed 'Lease: smoke (machine=a1fe982a pid=... this machine)'. After rewriting the cached owner to another machine, kno lease list printed 'no active leases held by this machine' while kno lease list --all still showed the lease labelled '(machine=another- pid=... another machine)'. That is the acceptance behavior end to end on shipped code.\n\nCI/CD ON MAIN: all four workflows for 90cb8d0d completed successfully -- CI 32358535066, Repo Hygiene 32358535096, Changesets Version PR 32358535091, Release 32358535094. make sanity also passed locally on the merged main (95.21%) and again in the pre-push hook (95.22%), against an unchanged 95 threshold in .ci/coverage-threshold.txt.\n\nNO REGRESSIONS IN DEPENDENT SYSTEMS: the pre-existing owner-blind guard test push_blocks_with_active_leases still passes untouched, which is the legacy no-owner path; kno doctor still uses count_active_leases as intended; the KNOTS_ALLOW_ACTIVE_LEASE_REPLICATION escape hatch is unchanged. This knot's own workflow exercised the guard live -- the post-merge sync hook correctly refused to sync while this session's lease was active, which is the desired conservative behavior for locally held leases.\n\nNo invariants are declared on this knot. Downstream knots-0f9c (per-knot pull filtering, blocked_by this knot) now has what it needed: 'leased by THIS machine' is expressible via LeaseData::is_owned_by plus App::machine_id, and legacy owner-less leases resolve as local so no existing store silently unblocks.",
+    "datetime": "2026-08-20T10:32:49.870363549Z",
+    "entry_id": "01a01ebb-0bce-7cc0-9049-36204df16d80",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

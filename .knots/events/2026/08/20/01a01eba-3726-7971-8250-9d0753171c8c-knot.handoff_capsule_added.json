@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01eba-3726-7971-8250-9d0753171c8c",
+  "occurred_at": "2026-08-20T10:31:55.430916505Z",
+  "knot_id": "knots-0b4c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "CORRECTION to the previous shipment capsule: the merge commit short hash is 90cb8d0d247a (tagged on this knot as commit:90cb8d0d247a), not 90cb8d0d7ee0. Everything else in that capsule stands.",
+    "datetime": "2026-08-20T10:31:55.430916505Z",
+    "entry_id": "01a01eba-3726-7971-8250-9cf73e24a333",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

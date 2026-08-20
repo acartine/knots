@@ -1,0 +1,13 @@
+{
+  "event_id": "01a01e91-4512-7293-8770-3229d0389115",
+  "occurred_at": "2026-08-20T09:47:12.018009723Z",
+  "knot_id": "knots-0b4c",
+  "type": "knot.state_set",
+  "data": {
+    "force": false,
+    "from": "planning",
+    "profile_id": "autopilot",
+    "to": "ready_for_plan_review",
+    "workflow_id": "work_sdlc"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a01eba-22e8-7b22-860a-d68c5b49e480",
+  "occurred_at": "2026-08-20T10:31:50.248035099Z",
+  "knot_id": "knots-0b4c",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "SHIPPED TO MAIN. Merge commit 90cb8d0d7ee0 (--no-ff merge of worktree-knots-0b4c-lease-owner carrying implementation commit 8a0e61cbc155). main advanced b693169e -> 90cb8d0d and is pushed to origin.\n\nPRE-PUSH VERIFICATION ON THE MERGED RESULT: make sanity run on main after the merge, exit 0 -- cargo fmt --check, clippy --all-targets --all-features -D warnings, npm run check-changesets, check-file-sizes.sh, full cargo test suite, npm run test-release, tarpaulin 95.21% against the 95 gate in .ci/coverage-threshold.txt (threshold unchanged). The managed pre-push hook re-ran the same gate during the push, reporting 95.22% (+0.01%).\n\nREMOTE CI ON MAIN, ALL GREEN for commit 90cb8d0d: CI (run 32358535066, success), Repo Hygiene (32358535096, success), Changesets Version PR (32358535091, success), Release (32358535094, success). Only annotation is a pre-existing Node 20 deprecation notice from codecov/codecov-action@v4, unrelated to this change.\n\nNo new commits were created during shipment beyond the merge commit. No conflicts. Scope held: the merged diff is exactly the reviewed diff -- nothing out of scope leaked in, and the sync guard and per-knot filtering behavior owned by knots-ec23 / knots-0f9c are untouched. .changeset/lease-owner-machine-id.md rides along, so the next Version Packages PR will pick this up as a patch.",
+    "datetime": "2026-08-20T10:31:50.248035099Z",
+    "entry_id": "01a01eba-22e8-7b22-860a-d67143f1049e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "event_id": "01a01ebb-0bfa-70b3-9c1a-ed5fed9063cd",
+  "occurred_at": "2026-08-20T10:32:49.914755533Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-0b4c",
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Record owning machine on leases so replicated leases cannot block sync",
+    "type": "work",
+    "updated_at": "2026-08-20T10:32:49.914755533Z",
+    "workflow_id": "work_sdlc"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "01a01ea9-6212-7852-83de-eed619eac746",
+  "occurred_at": "2026-08-20T10:13:32.306060373Z",
+  "knot_id": "knots-0b4c",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:worktree-knots-0b4c-lease-owner"
+  }
+}
