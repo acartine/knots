@@ -195,7 +195,7 @@ Complete serializable projection of a knot with all properties, relationships, m
 - `src/app/types.rs:16`
 
 ### lease <!-- auto -->
-A session token created when an agent claims a knot. While active, it blocks sync; terminating it releases the knot. Leases themselves are knots (of type `Lease`).
+A session token created when an agent claims a knot. While active, it blocks the pull half of sync (push is never blocked); terminating it releases the knot. Leases themselves are knots (of type `Lease`).
 - `docs/leases.md:3`
 - `src/lease.rs:6` — `create_lease`
 - `src/domain/lease.rs:90` — `LeaseData`
@@ -269,9 +269,9 @@ Files under `.knots/writes/` and `.knots/responses/` that serialize CLI write in
 - `src/write_queue.rs:207` — `QueuedWriteResponse`
 
 ### replication <!-- auto -->
-The combined `push + pull` operation. `ReplicationService` owns the push side; `SyncService` owns the pull side. `kno sync` invokes both (or defers if active leases exist).
-- `src/replication.rs:41` — `ReplicationService`
-- `src/replication.rs:20` — `ReplicationSummary`
+The combined `push + pull` operation. `ReplicationService` owns the push side; `SyncService` owns the pull side. `kno sync` always pushes, then pulls unless a locally held lease is active, in which case only the pull half defers.
+- `src/replication.rs` — `ReplicationService`
+- `src/replication/summary.rs` — `ReplicationSummary`, `SyncOutcome`
 
 ### repo lock <!-- auto -->
 Exclusive advisory lock serializing git mutations (fetch, commit, push, ref updates). Taken before the cache lock.
@@ -315,8 +315,8 @@ Computed on-disk paths that make up a project's knot store (db file, events dir,
 - `src/project.rs:17` — `StorePaths`
 
 ### sync outcome <!-- auto -->
-High-level result of `kno sync`: `Completed(ReplicationSummary)` or `Deferred { active_leases }` when a lease is active.
-- `src/replication.rs:28` — `SyncOutcome`
+High-level result of `kno sync`: `Completed(ReplicationSummary)` or `Deferred { active_leases, push }` when a locally held lease defers the pull half. The deferred arm still reports what the push half published.
+- `src/replication/summary.rs` — `SyncOutcome`
 
 ### terminal state <!-- auto -->
 A knot state that marks completion. Today: `shipped`, `abandoned`, `lease_terminated`. Terminal knots are eligible for the cold tier.

@@ -1,36 +1,14 @@
 use std::path::{Path, PathBuf};
 
 use rusqlite::Connection;
-use serde::Serialize;
 
 use crate::progress::{emit_progress, ProgressKind, ProgressReporter};
 use crate::project::StorePaths;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError, SyncService, SyncSummary};
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub struct PushSummary {
-    pub local_event_files: u64,
-    pub copied_files: u64,
-    pub committed: bool,
-    pub pushed: bool,
-    pub commit: Option<String>,
-}
+mod summary;
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub struct ReplicationSummary {
-    pub push: PushSummary,
-    pub pull: SyncSummary,
-}
-
-/// Result of a `kno sync` that gracefully handles active leases.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-#[serde(tag = "status")]
-pub enum SyncOutcome {
-    #[serde(rename = "completed")]
-    Completed(ReplicationSummary),
-    #[serde(rename = "deferred")]
-    Deferred { active_leases: i64 },
-}
+pub use summary::{PushSummary, ReplicationSummary, SyncOutcome};
 
 enum PushAttemptResult {
     Success(PushSummary),
@@ -100,7 +78,10 @@ impl<'a> ReplicationService<'a> {
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<PushSummary, SyncError> {
-        self.require_no_active_leases()?;
+        // Deliberately unguarded by leases: event files are immutable and
+        // uuidv7-named, so publishing mid-claim exports nothing the local
+        // store does not already hold. Only pull can move a knot out from
+        // under an active claim.
         const MAX_ATTEMPTS: usize = 3;
 
         emit_progress(
@@ -274,20 +255,28 @@ impl<'a> ReplicationService<'a> {
         Ok(ReplicationSummary { push, pull })
     }
 
-    /// Like `sync_with_progress` but returns `Deferred` instead of erroring
-    /// when active leases exist.
+    /// Like `sync_with_progress` but defers the pull half instead of
+    /// erroring when this machine holds an active lease. The push half
+    /// always runs, so a busy machine still publishes its events.
     pub fn sync_or_defer_with_progress(
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncOutcome, SyncError> {
+        let push = self.push_with_progress(reporter)?;
         let count = self.count_local_active_leases()?;
         if count > 0 {
+            emit_progress(
+                reporter,
+                ProgressKind::Warn,
+                format!("{count} active lease(s) held here; deferring pull"),
+            )?;
             return Ok(SyncOutcome::Deferred {
                 active_leases: count,
+                push,
             });
         }
-        let summary = self.sync_with_progress(reporter)?;
-        Ok(SyncOutcome::Completed(summary))
+        let pull = self.pull_with_progress(reporter)?;
+        Ok(SyncOutcome::Completed(ReplicationSummary { push, pull }))
     }
 
     pub fn count_unpushed_event_files(&self) -> Result<u64, SyncError> {

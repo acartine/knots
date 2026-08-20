@@ -8,12 +8,48 @@ Every claim gets its own lease. There is no sharing or reuse across claims.
 
 ## Why leases exist
 
-- **Concurrency safety** -- sync (push/pull) is blocked while a lease is active,
-  preventing partial in-progress work from replicating to other machines.
+- **Concurrency safety** -- the *pull* half of sync is blocked while a lease is
+  active, so a remote update cannot move a knot out from under an agent
+  mid-action. Push is never blocked (see below).
 - **Session auditing** -- leases record which agent (name, model, version) held a
   claim, giving a durable audit trail of who did what.
 - **Stuck-work detection** -- leases expire after a configurable timeout. Expired
-  leases unblock sync automatically and are cleaned up on the next interaction.
+  leases unblock pull automatically and are cleaned up on the next interaction.
+
+## Push is never blocked
+
+`kno push` publishes local event files and runs regardless of leases. Events
+are immutable and named `events/YYYY/MM/DD/{uuidv7}-{event_type}.json`, so two
+machines can never write different bytes to the same path, and every event
+being published is already durable in the local store. Publishing mid-claim
+therefore exports nothing the local store does not already hold -- it just
+gives other machines visibility into work that is in flight.
+
+Only the pull half is held back, because pull imports remote index events into
+the hot cache and can change a knot an agent is actively working on.
+
+`kno sync` reflects that split. With a lease active it publishes and then
+defers only the pull:
+
+```
+$ kno sync
+sync push(local_event_files=12 copied_files=3 committed=true pushed=true) \
+    pull deferred: 1 active lease(s); pull will run when leases are terminated
+```
+
+The JSON form carries the same detail, so automated callers can tell "pushed,
+pull deferred" apart from "nothing happened":
+
+```json
+{
+  "status": "deferred",
+  "active_leases": 1,
+  "push": { "local_event_files": 12, "copied_files": 3,
+            "committed": true, "pushed": true, "commit": "9f2c..." }
+}
+```
+
+`kno pull` on its own still refuses while a lease is active.
 
 ## Lifecycle
 
@@ -39,8 +75,8 @@ stateDiagram-v2
 | State | Meaning |
 |-------|---------|
 | `lease_ready` | Created; waiting to be activated via claim |
-| `lease_active` | Claim is live; sync is blocked; work is in progress |
-| `lease_terminated` | Completed, expired, or abandoned; sync is unblocked |
+| `lease_active` | Claim is live; the pull half of sync is blocked; work is in progress |
+| `lease_terminated` | Completed, expired, or abandoned; pull is unblocked |
 
 ## Timeout and expiry
 
@@ -76,7 +112,7 @@ detected:
 1. The lease state is written to `lease_terminated` in the database.
 2. The lease is unbound from the work knot.
 3. The knot is rolled back to its previous queue state.
-4. Sync is unblocked.
+4. The pull half of sync is unblocked.
 
 This means an expired lease may briefly appear active in the database until
 the next interaction triggers materialization.
@@ -158,8 +194,9 @@ Ownership decides which leases block work here:
 
 - `kno lease ls` lists the active leases held by **this** machine. Use
   `kno lease ls --all` to see every lease, each labelled with its owner.
-- Sync is blocked only by leases this machine holds. A lease pulled from another
-  machine no longer blocks your push, pull, or sync.
+- The pull half of sync is blocked only by leases this machine holds. A lease
+  pulled from another machine never blocks your pull, and nothing blocks your
+  push.
 - A lease with no recorded owner comes from an event written before ownership
   tracking existed. Those are treated as local, so existing stores keep their
   previous, conservative behavior.
@@ -168,7 +205,7 @@ Ownership decides which leases block work here:
 
 ```bash
 kno doctor          # report stuck/expired leases
-kno doctor --fix    # terminate all, unbind knots, unblock sync
+kno doctor --fix    # terminate all, unbind knots, unblock pull
 ```
 
 ## Manual lease management

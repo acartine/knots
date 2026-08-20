@@ -156,7 +156,7 @@ fn pulled_foreign_lease_survives_sync_and_does_not_block_it() {
 }
 
 #[test]
-fn lease_owned_by_this_machine_still_blocks_sync() {
+fn lease_owned_by_this_machine_still_blocks_the_pull_half() {
     let (root, dev2) = publish_lease_and_clone("placeholder-machine");
 
     let conn2 = open_store_db(&dev2);
@@ -185,18 +185,29 @@ fn lease_owned_by_this_machine_still_blocks_sync() {
         1
     );
 
-    let err = service2
+    service2
         .push()
-        .expect_err("push should fail with a locally held lease");
+        .expect("push is never blocked, even by a locally held lease");
+
+    let err = service2
+        .pull()
+        .expect_err("pull should fail with a locally held lease");
     assert!(err.is_active_leases(), "got {:?}", err);
 
     let mut reporter = None;
     let outcome = service2
         .sync_or_defer_with_progress(&mut reporter)
         .expect("sync_or_defer should succeed");
-    assert_eq!(
-        outcome,
-        super::super::SyncOutcome::Deferred { active_leases: 1 }
+    assert!(
+        matches!(
+            outcome,
+            super::super::SyncOutcome::Deferred {
+                active_leases: 1,
+                ..
+            }
+        ),
+        "expected a deferred pull, got {:?}",
+        outcome
     );
 
     let _ = std::fs::remove_dir_all(root);

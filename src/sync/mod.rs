@@ -271,7 +271,8 @@ impl fmt::Display for SyncError {
                 write!(
                     f,
                     "{} active lease(s) found; \
-                     terminate leases before syncing",
+                     terminate leases before pulling \
+                     (push is never blocked by leases)",
                     count
                 )
             }
