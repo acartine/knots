@@ -223,11 +223,6 @@ impl App {
         self.current_workflow_id()
     }
 
-    fn mark_sync_pending(&self) -> Result<(), AppError> {
-        db::set_meta(&self.conn, "sync_pending", "true")?;
-        Ok(())
-    }
-
     fn pull_unlocked_with_progress(
         &self,
         reporter: &mut Option<&mut dyn crate::progress::ProgressReporter>,

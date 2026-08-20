@@ -11,18 +11,23 @@ fn push(copied_files: u64, pushed: bool) -> PushSummary {
     }
 }
 
+fn pull(held_back_knots: Vec<String>) -> SyncSummary {
+    SyncSummary {
+        target_head: "abc123".to_string(),
+        index_files: 4,
+        full_files: 5,
+        knot_updates: 6,
+        edge_adds: 7,
+        edge_removes: 8,
+        held_back_knots,
+    }
+}
+
 #[test]
 fn completed_render_reports_both_halves() {
     let outcome = SyncOutcome::Completed(ReplicationSummary {
         push: push(3, true),
-        pull: SyncSummary {
-            target_head: "abc123".to_string(),
-            index_files: 4,
-            full_files: 5,
-            knot_updates: 6,
-            edge_adds: 7,
-            edge_removes: 8,
-        },
+        pull: pull(Vec::new()),
     });
     assert_eq!(
         outcome.render(),
@@ -33,28 +38,26 @@ fn completed_render_reports_both_halves() {
 }
 
 #[test]
-fn deferred_render_still_reports_what_the_push_published() {
-    let outcome = SyncOutcome::Deferred {
-        active_leases: 2,
+fn completed_render_names_held_back_knots() {
+    let outcome = SyncOutcome::Completed(ReplicationSummary {
         push: push(3, true),
-    };
+        pull: pull(vec!["K-1".to_string(), "K-2".to_string()]),
+    });
     assert_eq!(
         outcome.render(),
         "sync push(local_event_files=12 copied_files=3 committed=true pushed=true) \
-         pull deferred: 2 active lease(s); pull will run when leases are terminated"
+         pull(head=abc123 index_files=4 full_files=5 knot_updates=6 edge_adds=7 \
+         edge_removes=8 held_back=[K-1,K-2] (locally leased))"
     );
 }
 
 #[test]
-fn deferred_json_exposes_the_push_summary() {
-    let outcome = SyncOutcome::Deferred {
-        active_leases: 1,
+fn completed_json_exposes_held_back_knots() {
+    let outcome = SyncOutcome::Completed(ReplicationSummary {
         push: push(0, false),
-    };
+        pull: pull(vec!["K-1".to_string()]),
+    });
     let value = serde_json::to_value(&outcome).expect("outcome should serialize");
-    assert_eq!(value["status"], "deferred");
-    assert_eq!(value["active_leases"], 1);
-    assert_eq!(value["push"]["copied_files"], 0);
-    assert_eq!(value["push"]["pushed"], false);
-    assert!(value["push"]["commit"].is_null());
+    assert_eq!(value["status"], "completed");
+    assert_eq!(value["pull"]["held_back_knots"][0], "K-1");
 }

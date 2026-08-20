@@ -13,8 +13,8 @@ pub fn spawn_background_sync(runner: KnoRunner, interval: Duration) {
             tick.tick().await;
             match runner.run("sync", &[]) {
                 Ok(value) => {
-                    if let Some(detail) = deferred_sync_detail(&value) {
-                        eprintln!("kno-mcp sync deferred; retry pending: {detail}");
+                    if let Some(detail) = held_back_sync_detail(&value) {
+                        eprintln!("kno-mcp sync completed; {detail}");
                     }
                 }
                 Err(err) => eprintln!("kno-mcp sync retry pending: {}", err.stderr),
@@ -23,26 +23,22 @@ pub fn spawn_background_sync(runner: KnoRunner, interval: Duration) {
     });
 }
 
-/// Describe a deferred sync. Push is never blocked by leases, so the detail
-/// distinguishes "pushed, pull deferred" from "nothing happened".
-fn deferred_sync_detail(value: &Value) -> Option<String> {
-    if value.get("status").and_then(Value::as_str) != Some("deferred") {
+/// Describe a sync that held back some knots. Sync no longer defers
+/// wholesale on an active lease -- it filters per knot, so this only
+/// surfaces the knots this machine is mid-action on and skipped for now.
+fn held_back_sync_detail(value: &Value) -> Option<String> {
+    let held_back = value
+        .get("pull")
+        .and_then(|pull| pull.get("held_back_knots"))
+        .and_then(Value::as_array)?;
+    if held_back.is_empty() {
         return None;
     }
-    let Some(active_leases) = value.get("active_leases").and_then(Value::as_u64) else {
-        return Some("status=deferred".to_string());
-    };
-    let detail = format!("active_leases={active_leases} pull deferred");
-    let Some(push) = value.get("push") else {
-        return Some(detail);
-    };
-    let copied = push
-        .get("copied_files")
-        .and_then(Value::as_u64)
-        .unwrap_or(0);
-    let pushed = push.get("pushed").and_then(Value::as_bool).unwrap_or(false);
+    let ids: Vec<&str> = held_back.iter().filter_map(Value::as_str).collect();
     Some(format!(
-        "{detail}; push(copied_files={copied} pushed={pushed})"
+        "{} knot(s) held back (locally leased): {}",
+        ids.len(),
+        ids.join(", ")
     ))
 }
 
@@ -52,63 +48,35 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn deferred_sync_detail_reports_active_leases() {
-        let detail = deferred_sync_detail(&json!({
-            "status": "deferred",
-            "active_leases": 2
-        }));
-        assert_eq!(detail, Some("active_leases=2 pull deferred".to_string()));
-    }
-
-    #[test]
-    fn deferred_sync_detail_reports_the_push_succeeded_shape() {
-        let detail = deferred_sync_detail(&json!({
-            "status": "deferred",
-            "active_leases": 1,
-            "push": {
-                "local_event_files": 7,
-                "copied_files": 3,
-                "committed": true,
-                "pushed": true,
-                "commit": "abc123"
-            }
+    fn held_back_sync_detail_reports_the_held_back_knot_ids() {
+        let detail = held_back_sync_detail(&json!({
+            "status": "completed",
+            "push": { "copied_files": 0, "pushed": false },
+            "pull": { "held_back_knots": ["K-1", "K-2"] }
         }));
         assert_eq!(
             detail,
-            Some(
-                "active_leases=1 pull deferred; \
-                 push(copied_files=3 pushed=true)"
-                    .to_string()
-            )
+            Some("2 knot(s) held back (locally leased): K-1, K-2".to_string())
         );
     }
 
     #[test]
-    fn deferred_sync_detail_reports_a_no_op_push_distinctly() {
-        let detail = deferred_sync_detail(&json!({
-            "status": "deferred",
-            "active_leases": 1,
-            "push": { "copied_files": 0, "pushed": false }
-        }));
+    fn held_back_sync_detail_is_none_when_nothing_was_held_back() {
         assert_eq!(
-            detail,
-            Some(
-                "active_leases=1 pull deferred; \
-                 push(copied_files=0 pushed=false)"
-                    .to_string()
-            )
-        );
-    }
-
-    #[test]
-    fn deferred_sync_detail_covers_missing_count_and_completed() {
-        assert_eq!(
-            deferred_sync_detail(&json!({ "status": "deferred" })),
-            Some("status=deferred".to_string())
-        );
-        assert_eq!(
-            deferred_sync_detail(&json!({ "status": "completed" })),
+            held_back_sync_detail(&json!({
+                "status": "completed",
+                "pull": { "held_back_knots": [] }
+            })),
             None
         );
+    }
+
+    #[test]
+    fn held_back_sync_detail_covers_missing_fields() {
+        assert_eq!(
+            held_back_sync_detail(&json!({ "status": "completed" })),
+            None
+        );
+        assert_eq!(held_back_sync_detail(&json!({})), None);
     }
 }

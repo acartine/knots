@@ -8,15 +8,17 @@ Every claim gets its own lease. There is no sharing or reuse across claims.
 
 ## Why leases exist
 
-- **Concurrency safety** -- the *pull* half of sync is blocked while a lease is
-  active, so a remote update cannot move a knot out from under an agent
-  mid-action. Push is never blocked (see below).
+- **Concurrency safety** -- pull holds back events for the knots a local lease
+  covers, so a remote update cannot move a knot out from under an agent
+  mid-action. Every other knot pulls normally, and push is never blocked (see
+  below).
 - **Session auditing** -- leases record which agent (name, model, version) held a
   claim, giving a durable audit trail of who did what.
 - **Stuck-work detection** -- leases expire after a configurable timeout. Expired
-  leases unblock pull automatically and are cleaned up on the next interaction.
+  leases release their held-back knots automatically and are cleaned up on the
+  next interaction.
 
-## Push is never blocked
+## Push is never blocked, and pull no longer blocks wholesale
 
 `kno push` publishes local event files and runs regardless of leases. Events
 are immutable and named `events/YYYY/MM/DD/{uuidv7}-{event_type}.json`, so two
@@ -25,31 +27,41 @@ being published is already durable in the local store. Publishing mid-claim
 therefore exports nothing the local store does not already hold -- it just
 gives other machines visibility into work that is in flight.
 
-Only the pull half is held back, because pull imports remote index events into
-the hot cache and can change a knot an agent is actively working on.
+Pull imports remote index and full events into the hot cache, and doing that
+for a knot an agent is actively working on could move it out from under the
+claim. Rather than deferring the *entire* pull whenever any lease is active
+here, pull filters per knot: it applies every event except the ones for knots
+this machine currently leases (the lease knot itself, plus whatever knot it is
+bound to). Held-back events are recorded in a quarantine table keyed by the
+knot and the commit just before the skip, so nothing is lost -- the next pull
+where that knot is no longer locally leased replays everything it missed, in
+order, and only then drops the row.
 
-`kno sync` reflects that split. With a lease active it publishes and then
-defers only the pull:
+`kno sync` always completes both halves now:
 
 ```
 $ kno sync
 sync push(local_event_files=12 copied_files=3 committed=true pushed=true) \
-    pull deferred: 1 active lease(s); pull will run when leases are terminated
+    pull(head=9f2c1a... index_files=4 full_files=2 knot_updates=3 edge_adds=0 \
+    edge_removes=0 held_back=[K-1] (locally leased))
 ```
 
-The JSON form carries the same detail, so automated callers can tell "pushed,
-pull deferred" apart from "nothing happened":
+The JSON form carries the same detail under `pull.held_back_knots`, so
+automated callers can tell which knots -- if any -- were skipped this pass:
 
 ```json
 {
-  "status": "deferred",
-  "active_leases": 1,
+  "status": "completed",
   "push": { "local_event_files": 12, "copied_files": 3,
-            "committed": true, "pushed": true, "commit": "9f2c..." }
+            "committed": true, "pushed": true, "commit": "9f2c..." },
+  "pull": { "target_head": "9f2c1a...", "index_files": 4, "full_files": 2,
+            "knot_updates": 3, "edge_adds": 0, "edge_removes": 0,
+            "held_back_knots": ["K-1"] }
 }
 ```
 
-`kno pull` on its own still refuses while a lease is active.
+`kno pull` on its own behaves the same way: it always completes, holding back
+only the knots this machine currently leases.
 
 ## Lifecycle
 
@@ -75,8 +87,8 @@ stateDiagram-v2
 | State | Meaning |
 |-------|---------|
 | `lease_ready` | Created; waiting to be activated via claim |
-| `lease_active` | Claim is live; the pull half of sync is blocked; work is in progress |
-| `lease_terminated` | Completed, expired, or abandoned; pull is unblocked |
+| `lease_active` | Claim is live; pull holds back this lease's knots; work is in progress |
+| `lease_terminated` | Completed, expired, or abandoned; those knots pull normally again |
 
 ## Timeout and expiry
 
@@ -112,7 +124,7 @@ detected:
 1. The lease state is written to `lease_terminated` in the database.
 2. The lease is unbound from the work knot.
 3. The knot is rolled back to its previous queue state.
-4. The pull half of sync is unblocked.
+4. That knot's held-back events, if any, replay on the next pull.
 
 This means an expired lease may briefly appear active in the database until
 the next interaction triggers materialization.
@@ -192,13 +204,13 @@ lease you publish -- that is what lets other machines tell your leases from
 theirs. It is stable across processes and carries no hostname or username. Set
 `KNOTS_MACHINE_ID` to pin it explicitly.
 
-Ownership decides which leases block work here:
+Ownership decides which leases hold back pull here:
 
 - `kno lease ls` lists the active leases held by **this** machine. Use
   `kno lease ls --all` to see every lease, each labelled with its owner.
-- The pull half of sync is blocked only by leases this machine holds. A lease
-  pulled from another machine never blocks your pull, and nothing blocks your
-  push.
+- Pull only holds back knots covered by leases this machine holds. A lease
+  pulled from another machine never holds back anything locally, and nothing
+  blocks your push.
 - A lease with no recorded owner comes from an event written before ownership
   tracking existed. Those are treated as local, so existing stores keep their
   previous, conservative behavior.
@@ -212,7 +224,7 @@ Ownership decides which leases block work here:
 
 ```bash
 kno doctor          # report stuck/expired leases
-kno doctor --fix    # terminate all, unbind knots, unblock pull
+kno doctor --fix    # terminate all, unbind knots, release their held-back knots
 ```
 
 ## Manual lease management

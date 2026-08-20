@@ -322,7 +322,7 @@ pub fn count_knot_hot(conn: &Connection) -> Result<i64> {
     conn.query_row("SELECT COUNT(*) FROM knot_hot", [], |row| row.get(0))
 }
 
-const ACTIVE_LEASE_PREDICATE: &str = r#"
+pub(super) const ACTIVE_LEASE_PREDICATE: &str = r#"
 WHERE knot_type = 'lease'
   AND state IN ('lease_ready', 'lease_active')
   AND lease_expiry_ts > unixepoch('now')
@@ -330,22 +330,12 @@ WHERE knot_type = 'lease'
 
 /// Leases owned by `?1`. A lease with no recorded owner predates owner
 /// tracking and counts as local, so existing stores keep today's behavior.
-const LOCAL_LEASE_PREDICATE: &str =
+pub(super) const LOCAL_LEASE_PREDICATE: &str =
     "  AND COALESCE(json_extract(lease_data_json, '$.owner.machine_id'), ?1) = ?1\n";
 
 pub fn count_active_leases(conn: &Connection) -> Result<i64> {
     let sql = format!("SELECT COUNT(*) FROM knot_hot{}", ACTIVE_LEASE_PREDICATE);
     conn.query_row(&sql, [], |row| row.get(0))
-}
-
-/// Active leases held by this machine. Replicated leases owned elsewhere are
-/// excluded: no agent here holds them, so they must not block local work.
-pub fn count_local_active_leases(conn: &Connection, machine_id: &str) -> Result<i64> {
-    let sql = format!(
-        "SELECT COUNT(*) FROM knot_hot{}{}",
-        ACTIVE_LEASE_PREDICATE, LOCAL_LEASE_PREDICATE
-    );
-    conn.query_row(&sql, params![machine_id], |row| row.get(0))
 }
 
 pub fn update_lease_expiry_ts(conn: &Connection, id: &str, ts: i64) -> Result<()> {

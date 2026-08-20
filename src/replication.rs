@@ -47,7 +47,6 @@ impl<'a> ReplicationService<'a> {
 
     #[allow(dead_code)]
     pub fn pull(&self) -> Result<SyncSummary, SyncError> {
-        self.require_no_active_leases()?;
         let service = SyncService::with_store_paths(
             self.conn,
             self.repo_root.clone(),
@@ -60,7 +59,6 @@ impl<'a> ReplicationService<'a> {
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncSummary, SyncError> {
-        self.require_no_active_leases()?;
         let service = SyncService::with_store_paths(
             self.conn,
             self.repo_root.clone(),
@@ -270,23 +268,15 @@ impl<'a> ReplicationService<'a> {
     /// Complete a sync whose push half already ran. Split out so callers can
     /// publish under the repo lock alone and hold the cache lock only for the
     /// pull half, which is the part that writes SQLite.
+    ///
+    /// The pull half no longer defers wholesale on an active local lease: it
+    /// applies every knot except the ones this machine is mid-action on, and
+    /// reports those in `pull.held_back_knots` (see `SyncSummary`).
     pub fn finish_sync_or_defer_with_progress(
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
         push: PushSummary,
     ) -> Result<SyncOutcome, SyncError> {
-        let count = self.count_local_active_leases()?;
-        if count > 0 {
-            emit_progress(
-                reporter,
-                ProgressKind::Warn,
-                format!("{count} active lease(s) held here; deferring pull"),
-            )?;
-            return Ok(SyncOutcome::Deferred {
-                active_leases: count,
-                push,
-            });
-        }
         let pull = self.pull_with_progress(reporter)?;
         Ok(SyncOutcome::Completed(ReplicationSummary { push, pull }))
     }
@@ -452,27 +442,6 @@ impl<'a> ReplicationService<'a> {
                     message: format!("expected .knots-relative event path: {}", err),
                 })?;
         Ok(self.store_paths.root.join(store_relative))
-    }
-
-    /// Active leases held by this machine. Leases replicated from elsewhere
-    /// are excluded so a remote agent's lease cannot block local sync.
-    fn count_local_active_leases(&self) -> Result<i64, SyncError> {
-        let machine_id = crate::machine::machine_id(&self.store_paths.root);
-        Ok(crate::db::count_local_active_leases(
-            self.conn,
-            &machine_id,
-        )?)
-    }
-
-    fn require_no_active_leases(&self) -> Result<(), SyncError> {
-        if std::env::var_os("KNOTS_ALLOW_ACTIVE_LEASE_REPLICATION").is_some() {
-            return Ok(());
-        }
-        let count = self.count_local_active_leases()?;
-        if count > 0 {
-            return Err(SyncError::ActiveLeasesExist(count));
-        }
-        Ok(())
     }
 }
 

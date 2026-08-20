@@ -133,9 +133,10 @@ fn pulled_foreign_lease_survives_sync_and_does_not_block_it() {
         1,
         "the replicated lease is active by the owner-blind query"
     );
-    assert_eq!(
-        db::count_local_active_leases(&conn2, &local_machine).expect("count should succeed"),
-        0,
+    assert!(
+        db::local_leased_knot_ids(&conn2, &local_machine)
+            .expect("query should succeed")
+            .is_empty(),
         "no agent on this machine holds the replicated lease"
     );
 
@@ -156,7 +157,7 @@ fn pulled_foreign_lease_survives_sync_and_does_not_block_it() {
 }
 
 #[test]
-fn lease_owned_by_this_machine_still_blocks_the_pull_half() {
+fn lease_owned_by_this_machine_no_longer_blocks_the_pull_half() {
     let (root, dev2) = publish_lease_and_clone("placeholder-machine");
 
     let conn2 = open_store_db(&dev2);
@@ -165,7 +166,8 @@ fn lease_owned_by_this_machine_still_blocks_the_pull_half() {
     service2.pull().expect("pull should succeed");
 
     // Re-stamp the pulled lease with dev2's own machine id: this is the
-    // "an agent here holds it" case, which must keep blocking.
+    // "an agent here holds it" case, which must now be filtered per knot
+    // instead of blocking the whole pull.
     let local_machine = crate::machine::machine_id(&dev2.join(".knots"));
     let owned = format!(
         r#"{{"lease_type":"agent","nickname":"local","owner":{{"machine_id":"{}","pid":7}}}}"#,
@@ -180,33 +182,28 @@ fn lease_owned_by_this_machine_still_blocks_the_pull_half() {
     db::update_lease_expiry_ts(&conn2, LEASE_ID, compute_expiry_ts(600))
         .expect("expiry update should succeed");
 
-    assert_eq!(
-        db::count_local_active_leases(&conn2, &local_machine).expect("count should succeed"),
-        1
+    assert!(
+        db::local_leased_knot_ids(&conn2, &local_machine)
+            .expect("query should succeed")
+            .contains(LEASE_ID),
+        "the lease knot itself must be in the local-leased set"
     );
 
     service2
         .push()
         .expect("push is never blocked, even by a locally held lease");
 
-    let err = service2
+    service2
         .pull()
-        .expect_err("pull should fail with a locally held lease");
-    assert!(err.is_active_leases(), "got {:?}", err);
+        .expect("pull no longer refuses with a locally held lease");
 
     let mut reporter = None;
     let outcome = service2
         .sync_or_defer_with_progress(&mut reporter)
         .expect("sync_or_defer should succeed");
     assert!(
-        matches!(
-            outcome,
-            super::super::SyncOutcome::Deferred {
-                active_leases: 1,
-                ..
-            }
-        ),
-        "expected a deferred pull, got {:?}",
+        matches!(outcome, super::super::SyncOutcome::Completed(_)),
+        "expected Completed, got {:?}",
         outcome
     );
 

@@ -128,9 +128,6 @@ impl App {
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
         let outcome = service.finish_sync_or_defer_with_progress(&mut reporter, push)?;
-        if matches!(outcome, SyncOutcome::Deferred { .. }) {
-            self.mark_sync_pending()?;
-        }
         Ok(outcome)
     }
 

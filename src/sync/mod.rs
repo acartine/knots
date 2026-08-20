@@ -26,6 +26,10 @@ pub struct SyncSummary {
     pub knot_updates: u64,
     pub edge_adds: u64,
     pub edge_removes: u64,
+    /// Knots whose events were skipped this pass, or an earlier pass, because
+    /// this machine holds a local lease on them. They replay automatically
+    /// once the lease terminates or expires.
+    pub held_back_knots: Vec<String>,
 }
 
 pub struct SyncService<'a> {
@@ -124,21 +128,33 @@ impl<'a> SyncService<'a> {
         )?;
 
         let known = self.known_workflow_ids();
+        let machine_id = crate::machine::machine_id(&self.store_paths.root);
+        let locally_leased = crate::db::local_leased_knot_ids(self.conn, &machine_id)?;
         let mut applier = IncrementalApplier::new(
             self.conn,
             worktree.path().to_path_buf(),
             self.git.clone(),
             known,
+            locally_leased,
         );
         let summary = applier.apply_to_head(&target_head)?;
+        let held_back_note = if summary.held_back_knots.is_empty() {
+            String::new()
+        } else {
+            format!(
+                ", held back (locally leased): {}",
+                summary.held_back_knots.join(", ")
+            )
+        };
         emit_progress(
             reporter,
             ProgressKind::Success,
             format!(
-                "pull complete at {} (index={}, full={})",
+                "pull complete at {} (index={}, full={}){}",
                 short_commit(&summary.target_head),
                 summary.index_files,
-                summary.full_files
+                summary.full_files,
+                held_back_note
             ),
         )?;
         Ok(summary)
@@ -173,7 +189,6 @@ pub enum SyncError {
     SnapshotLoad {
         message: String,
     },
-    ActiveLeasesExist(i64),
 }
 
 impl SyncError {
@@ -199,11 +214,6 @@ impl SyncError {
             }
             _ => false,
         }
-    }
-
-    #[allow(dead_code)]
-    pub fn is_active_leases(&self) -> bool {
-        matches!(self, SyncError::ActiveLeasesExist(_))
     }
 
     pub fn is_non_fast_forward(&self) -> bool {
@@ -267,15 +277,6 @@ impl fmt::Display for SyncError {
             SyncError::SnapshotLoad { message } => {
                 write!(f, "snapshot load failed: {}", message)
             }
-            SyncError::ActiveLeasesExist(count) => {
-                write!(
-                    f,
-                    "{} active lease(s) found; \
-                     terminate leases before pulling \
-                     (push is never blocked by leases)",
-                    count
-                )
-            }
         }
     }
 }
@@ -292,7 +293,6 @@ impl Error for SyncError {
             SyncError::FileConflict { .. } => None,
             SyncError::MergeConflictEscalation { .. } => None,
             SyncError::SnapshotLoad { .. } => None,
-            SyncError::ActiveLeasesExist(_) => None,
         }
     }
 }

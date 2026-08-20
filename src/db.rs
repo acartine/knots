@@ -16,19 +16,23 @@ use crate::domain::metadata::MetadataEntry;
 use crate::domain::scope::ScopeData;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 19;
+pub const CURRENT_SCHEMA_VERSION: i64 = 20;
 
 mod catalog;
 mod migrations;
+mod quarantine;
 
 pub use catalog::{
     count_active_leases, count_cold_catalog, count_cold_catalog_shadowed_by_hot, count_knot_hot,
-    count_local_active_leases, count_non_terminal_in_cold, count_stale_terminal_in_hot,
-    delete_cold_catalog, delete_edge, delete_knot_warm, get_cold_catalog, get_hot_window_days,
-    get_knot_warm, get_pull_drift_warn_threshold, get_sync_fetch_blob_limit_kb, insert_edge,
-    list_cold_catalog, list_edges, list_edges_by_kind, list_knot_warm, list_non_terminal_in_cold,
+    count_non_terminal_in_cold, count_stale_terminal_in_hot, delete_cold_catalog, delete_edge,
+    delete_knot_warm, get_cold_catalog, get_hot_window_days, get_knot_warm,
+    get_pull_drift_warn_threshold, get_sync_fetch_blob_limit_kb, insert_edge, list_cold_catalog,
+    list_edges, list_edges_by_kind, list_knot_warm, list_non_terminal_in_cold,
     list_stale_terminal_in_hot, prune_cold_catalog_shadowed_by_hot, search_cold_catalog,
     update_lease_expiry_ts, upsert_cold_catalog, upsert_knot_warm, EdgeDirection, EdgeRecord,
+};
+pub use quarantine::{
+    list_quarantined_knots, local_leased_knot_ids, quarantine_knot_if_absent, remove_quarantine,
 };
 
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
