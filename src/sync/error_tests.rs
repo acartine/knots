@@ -100,7 +100,10 @@ fn sync_error_display_source_and_from_cover_all_variants() {
     assert!(active_leases.to_string().contains("2 active lease(s)"));
     assert!(active_leases
         .to_string()
-        .contains("terminate leases before syncing"));
+        .contains("terminate leases before pulling"));
+    assert!(active_leases
+        .to_string()
+        .contains("push is never blocked by leases"));
     assert!(active_leases.source().is_none());
     assert!(active_leases.is_active_leases());
 }

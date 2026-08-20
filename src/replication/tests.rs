@@ -379,7 +379,7 @@ fn push_propagates_missing_remote_errors_after_local_reset_fallback() {
 }
 
 #[test]
-fn push_blocks_with_active_leases() {
+fn push_succeeds_with_active_leases_but_pull_blocks() {
     let root = unique_workspace();
     let (_origin, dev1) = setup_origin_and_dev1(&root);
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
@@ -429,34 +429,49 @@ fn push_blocks_with_active_leases() {
     .expect("expiry update should succeed");
 
     let service = ReplicationService::new(&conn, dev1.clone());
-    let err = service
-        .push()
-        .expect_err("push should fail with active leases");
-    assert!(
-        matches!(err, SyncError::ActiveLeasesExist(1)),
-        "expected ActiveLeasesExist(1), got {:?}",
-        err
-    );
 
+    // Push publishes immutable event files, so an active lease no longer
+    // stops it.
+    service
+        .push()
+        .expect("push should succeed with active leases");
+
+    // Pull still refuses: it can move a knot out from under the claim.
     let pull_err = service
         .pull()
         .expect_err("pull should fail with active leases");
-    assert!(pull_err.is_active_leases());
+    assert!(
+        matches!(pull_err, SyncError::ActiveLeasesExist(1)),
+        "expected ActiveLeasesExist(1), got {:?}",
+        pull_err
+    );
 
+    // `sync` still surfaces the error, now raised by its pull half.
     let sync_err = service
         .sync()
         .expect_err("sync should fail with active leases");
     assert!(sync_err.is_active_leases());
 
-    // sync_or_defer returns Deferred instead of erroring
+    // sync_or_defer defers only the pull half and reports what it pushed.
     let mut reporter = None;
     let outcome = service
         .sync_or_defer_with_progress(&mut reporter)
         .expect("sync_or_defer should succeed");
-    assert_eq!(outcome, super::SyncOutcome::Deferred { active_leases: 1 });
+    let super::SyncOutcome::Deferred {
+        active_leases,
+        push,
+    } = outcome
+    else {
+        panic!("expected Deferred, got {:?}", outcome);
+    };
+    assert_eq!(active_leases, 1);
+    assert_eq!(push.local_event_files, 0, "no events authored in this test");
 
     let _ = std::fs::remove_dir_all(root);
 }
 
 #[path = "tests_lease_owner.rs"]
 mod lease_owner;
+
+#[path = "tests_push_unblocked.rs"]
+mod push_unblocked;
