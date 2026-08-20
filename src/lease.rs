@@ -18,7 +18,7 @@ pub fn create_lease(
         agent_info,
         timeout_seconds: Some(timeout_seconds),
         owner: Some(LeaseOwner {
-            machine_id: app.machine_id(),
+            machine_id: app.machine_id()?,
             pid: std::process::id(),
         }),
     };
@@ -93,7 +93,7 @@ pub fn list_active_leases(app: &App) -> Result<Vec<KnotView>, AppError> {
 /// them. A lease with no recorded owner predates owner tracking and is
 /// treated as local.
 pub fn list_local_active_leases(app: &App) -> Result<Vec<KnotView>, AppError> {
-    let machine_id = app.machine_id();
+    let machine_id = app.machine_id()?;
     Ok(list_active_leases(app)?
         .into_iter()
         .filter(|k| {

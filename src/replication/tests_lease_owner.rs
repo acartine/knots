@@ -131,7 +131,8 @@ fn pulled_foreign_lease_survives_sync_and_does_not_block_it() {
     db::update_lease_expiry_ts(&conn2, LEASE_ID, compute_expiry_ts(600))
         .expect("expiry update should succeed");
 
-    let local_machine = crate::machine::machine_id(&dev2.join(".knots"));
+    let local_machine =
+        crate::machine::machine_id(&dev2.join(".knots")).expect("machine id should resolve");
     assert_ne!(local_machine, "machine-a");
     assert_eq!(
         db::count_active_leases(&conn2).expect("count should succeed"),
@@ -173,7 +174,8 @@ fn lease_owned_by_this_machine_no_longer_blocks_the_pull_half() {
     // Re-stamp the pulled lease with dev2's own machine id: this is the
     // "an agent here holds it" case, which must now be filtered per knot
     // instead of blocking the whole pull.
-    let local_machine = crate::machine::machine_id(&dev2.join(".knots"));
+    let local_machine =
+        crate::machine::machine_id(&dev2.join(".knots")).expect("machine id should resolve");
     let owned = format!(
         r#"{{"lease_type":"agent","nickname":"local","owner":{{"machine_id":"{}","pid":7}}}}"#,
         local_machine

@@ -128,7 +128,7 @@ impl<'a> SyncService<'a> {
         )?;
 
         let known = self.known_workflow_ids();
-        let machine_id = crate::machine::machine_id(&self.store_paths.root);
+        let machine_id = crate::machine::machine_id(&self.store_paths.root)?;
         let locally_leased = crate::db::local_leased_knot_ids(self.conn, &machine_id)?;
         let mut applier = IncrementalApplier::new(
             self.conn,

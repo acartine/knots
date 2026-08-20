@@ -155,7 +155,7 @@ impl App {
         // alone would terminate work still running elsewhere and leave two
         // machines driving one knot, so ownership -- not expiry -- is what
         // gates recovery.
-        if !lease.lease_data.is_owned_by(&self.machine_id()) {
+        if !lease.lease_data.is_owned_by(&self.machine_id()?) {
             return Ok(false);
         }
         self.recover_bound_action_locked(&knot, &lease)
