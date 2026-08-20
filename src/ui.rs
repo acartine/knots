@@ -43,6 +43,31 @@ pub fn trim_json_metadata(value: &mut serde_json::Value, knot: &KnotView) {
         }
     }
 }
+/// One `kno lease list` row. Surfaces the owning machine so a lease pulled
+/// from another machine is distinguishable from one held here.
+pub fn format_lease_row(lease: &KnotView, local_machine_id: &str, p: &Palette) -> String {
+    let row = format!(
+        "{} {} {}",
+        p.id(&lease.id),
+        p.state(&lease.state),
+        lease.title
+    );
+    let Some(owner) = lease.lease.as_ref().and_then(|l| l.owner.as_ref()) else {
+        return row;
+    };
+    let held = if owner.machine_id == local_machine_id {
+        "this machine"
+    } else {
+        "another machine"
+    };
+    let short: String = owner.machine_id.chars().take(8).collect();
+    format!(
+        "{} {}",
+        row,
+        p.dim(&format!("(machine={} pid={} {})", short, owner.pid, held))
+    )
+}
+
 pub fn print_knot_list(knots: &[DisplayKnot], filter: &KnotListFilter) {
     let p = Palette::auto();
     println!("{}", p.heading("Knots"));

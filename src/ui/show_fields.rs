@@ -235,6 +235,9 @@ fn append_gate_fields(f: &mut Vec<ShowField>, knot: &KnotView) {
 }
 
 fn append_lease_agent_fields(f: &mut Vec<ShowField>, knot: &KnotView) {
+    if let Some(owner) = knot.lease.as_ref().and_then(|l| l.owner.as_ref()) {
+        f.push(ShowField::new("lease_owner", owner.to_string()));
+    }
     let Some(agent) = knot.lease_agent.as_ref() else {
         return;
     };

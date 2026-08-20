@@ -280,7 +280,7 @@ impl<'a> ReplicationService<'a> {
         &self,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<SyncOutcome, SyncError> {
-        let count = crate::db::count_active_leases(self.conn)?;
+        let count = self.count_local_active_leases()?;
         if count > 0 {
             return Ok(SyncOutcome::Deferred {
                 active_leases: count,
@@ -453,11 +453,21 @@ impl<'a> ReplicationService<'a> {
         Ok(self.store_paths.root.join(store_relative))
     }
 
+    /// Active leases held by this machine. Leases replicated from elsewhere
+    /// are excluded so a remote agent's lease cannot block local sync.
+    fn count_local_active_leases(&self) -> Result<i64, SyncError> {
+        let machine_id = crate::machine::machine_id(&self.store_paths.root);
+        Ok(crate::db::count_local_active_leases(
+            self.conn,
+            &machine_id,
+        )?)
+    }
+
     fn require_no_active_leases(&self) -> Result<(), SyncError> {
         if std::env::var_os("KNOTS_ALLOW_ACTIVE_LEASE_REPLICATION").is_some() {
             return Ok(());
         }
-        let count = crate::db::count_active_leases(self.conn)?;
+        let count = self.count_local_active_leases()?;
         if count > 0 {
             return Err(SyncError::ActiveLeasesExist(count));
         }

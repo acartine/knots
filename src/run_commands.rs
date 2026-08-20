@@ -456,22 +456,25 @@ pub fn run_lease_read(app: &app::App, args: crate::cli::LeaseArgs) -> Result<(),
                         .filter(|k| k.knot_type == domain::knot_type::KnotType::Lease)
                         .collect::<Vec<_>>())
                 } else {
-                    lease::list_active_leases(app)
+                    lease::list_local_active_leases(app)
                 }
             })?;
             if list.json {
                 print_json(&leases);
             } else if leases.is_empty() {
-                println!("no active leases");
+                println!(
+                    "no {}",
+                    if list.all {
+                        "leases"
+                    } else {
+                        "active leases held by this machine"
+                    }
+                );
             } else {
                 let palette = ui::Palette::auto();
+                let local_machine = app.machine_id();
                 for l in &leases {
-                    println!(
-                        "{} {} {}",
-                        palette.id(&l.id),
-                        palette.state(&l.state),
-                        l.title
-                    );
+                    println!("{}", ui::format_lease_row(l, &local_machine, &palette));
                 }
             }
         }

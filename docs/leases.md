@@ -139,6 +139,31 @@ lease identifiers to prevent external callers from hijacking sessions.
 
 You can inspect leases directly with `kno lease ls` and `kno lease show <id>`.
 
+## Lease ownership
+
+Lease knots replicate like any other knot, so a lease created on one machine can
+land in another machine's cache through a normal pull. Every lease therefore
+records the machine and process that created it:
+
+```
+$ kno lease show <id>
+  lease_owner:  machine=a1fe982a5844ddd1c07e25b9fd9653c1 pid=3898159
+```
+
+The machine id is an opaque digest stored at `.knots/machine-id`. It is local to
+the machine (never synced), stable across processes, and carries no hostname or
+username. Set `KNOTS_MACHINE_ID` to pin it explicitly.
+
+Ownership decides which leases block work here:
+
+- `kno lease ls` lists the active leases held by **this** machine. Use
+  `kno lease ls --all` to see every lease, each labelled with its owner.
+- Sync is blocked only by leases this machine holds. A lease pulled from another
+  machine no longer blocks your push, pull, or sync.
+- A lease with no recorded owner comes from an event written before ownership
+  tracking existed. Those are treated as local, so existing stores keep their
+  previous, conservative behavior.
+
 ## Stuck lease recovery
 
 ```bash

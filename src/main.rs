@@ -58,6 +58,7 @@ mod loom_explore_bundle;
 mod loom_gate_bundle;
 mod loom_lease_bundle;
 mod loom_work_bundle;
+mod machine;
 #[cfg(test)]
 mod main_tests;
 mod managed_skills;
