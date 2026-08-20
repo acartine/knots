@@ -1,15 +1,9 @@
-use std::path::PathBuf;
-
-use uuid::Uuid;
-
 use super::check_nested_caches_at;
 use crate::doctor::DoctorStatus;
 use crate::project::StorePaths;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-nested-cache-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-nested-cache")
 }
 
 fn touch_file(path: &std::path::Path) {
@@ -27,7 +21,8 @@ fn store_paths_for(root: &std::path::Path) -> StorePaths {
 
 #[test]
 fn nested_cache_detected_warns_and_lists_path() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let outer_db = root.join(".knots/cache/state.sqlite");
     let nested_db = root.join(".knots/subdir/.knots/cache/state.sqlite");
     touch_file(&outer_db);
@@ -42,25 +37,23 @@ fn nested_cache_detected_warns_and_lists_path() {
     assert_eq!(nested[0].as_str().unwrap(), nested_dir.to_string_lossy());
     assert!(check.detail.contains("rm -rf "));
     assert!(check.detail.contains(&nested_dir.display().to_string()));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn clean_repo_has_no_warning() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     touch_file(&root.join(".knots/cache/state.sqlite"));
 
     let check = check_nested_caches_at(&store_paths_for(&root)).expect("check runs");
     assert_eq!(check.status, DoctorStatus::Pass);
     assert_eq!(check.detail, "no nested .knots caches detected");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn worktree_internal_knots_not_flagged() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     touch_file(&root.join(".knots/cache/state.sqlite"));
     // _worktree's internal .knots holds only events under index/, not a cache.
     touch_file(&root.join(".knots/_worktree/.knots/index/2026/04/10/0001-idx.knot_head.json"));
@@ -72,35 +65,33 @@ fn worktree_internal_knots_not_flagged() {
         "internal _worktree/.knots (no cache/) must not trip the check; detail={}",
         check.detail
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn missing_outer_cache_passes_when_store_empty() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     std::fs::create_dir_all(root.join(".knots")).expect("root dir");
 
     let check = check_nested_caches_at(&store_paths_for(&root)).expect("check runs");
     assert_eq!(check.status, DoctorStatus::Pass);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn missing_store_root_passes() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let store = StorePaths {
         root: root.join("nonexistent-store"),
     };
     let check = check_nested_caches_at(&store).expect("check runs");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn multiple_nested_caches_all_listed_sorted() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     touch_file(&root.join(".knots/cache/state.sqlite"));
     let nested_a = root.join(".knots/zzz/.knots");
     let nested_b = root.join(".knots/a/b/.knots");
@@ -123,13 +114,12 @@ fn multiple_nested_caches_all_listed_sorted() {
         .detail
         .contains(&format!("rm -rf {}", nested_b.display())));
     assert!(check.detail.starts_with("found 2 nested .knots cache(s)"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn nested_cache_with_only_lock_is_flagged() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     touch_file(&root.join(".knots/cache/state.sqlite"));
     let nested = root.join(".knots/sub/.knots");
     touch_file(&nested.join("cache/cache.lock"));
@@ -138,20 +128,17 @@ fn nested_cache_with_only_lock_is_flagged() {
     assert_eq!(check.status, DoctorStatus::Warn);
     let data = check.data.as_ref().expect("data");
     assert_eq!(data["nested"].as_array().unwrap().len(), 1);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn empty_nested_knots_dir_without_cache_is_ignored() {
     // A bare `.knots/` directory without any cache marker is harmless: it
     // is not a cache, so don't flag it.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     touch_file(&root.join(".knots/cache/state.sqlite"));
     std::fs::create_dir_all(root.join(".knots/sub/.knots")).expect("dir");
 
     let check = check_nested_caches_at(&store_paths_for(&root)).expect("check runs");
     assert_eq!(check.status, DoctorStatus::Pass);
-
-    let _ = std::fs::remove_dir_all(root);
 }

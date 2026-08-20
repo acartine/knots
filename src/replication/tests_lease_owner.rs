@@ -69,8 +69,9 @@ fn write_lease_events(store_root: &Path, machine_id: &str) {
 
 /// Publish a lease owned by `machine_id` from dev1 and pull it into a fresh
 /// dev2 clone. Returns the workspace root and dev2's path.
-fn publish_lease_and_clone(machine_id: &str) -> (PathBuf, PathBuf) {
-    let root = unique_workspace();
+fn publish_lease_and_clone(machine_id: &str) -> (knots_test_support::TestWorkspace, PathBuf) {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (origin, dev1) = setup_origin_and_dev1(&root);
     write_lease_events(&dev1.join(".knots"), machine_id);
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
@@ -90,7 +91,7 @@ fn publish_lease_and_clone(machine_id: &str) -> (PathBuf, PathBuf) {
     );
     run_git(&dev2, &["config", "user.email", "knots@example.com"]);
     run_git(&dev2, &["config", "user.name", "Knots Test"]);
-    (root, dev2)
+    (root_ws, dev2)
 }
 
 fn open_store_db(repo_root: &Path) -> rusqlite::Connection {
@@ -102,7 +103,7 @@ fn open_store_db(repo_root: &Path) -> rusqlite::Connection {
 
 #[test]
 fn pulled_foreign_lease_survives_sync_and_does_not_block_it() {
-    let (root, dev2) = publish_lease_and_clone("machine-a");
+    let (_root_ws, dev2) = publish_lease_and_clone("machine-a");
 
     let conn2 = open_store_db(&dev2);
     db::set_meta(&conn2, "hot_window_days", "365").expect("hot_window_days should be settable");
@@ -158,13 +159,11 @@ fn pulled_foreign_lease_survives_sync_and_does_not_block_it() {
         "expected Completed, got {:?}",
         outcome
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn lease_owned_by_this_machine_no_longer_blocks_the_pull_half() {
-    let (root, dev2) = publish_lease_and_clone("placeholder-machine");
+    let (_root_ws, dev2) = publish_lease_and_clone("placeholder-machine");
 
     let conn2 = open_store_db(&dev2);
     db::set_meta(&conn2, "hot_window_days", "365").expect("hot_window_days should be settable");
@@ -213,6 +212,4 @@ fn lease_owned_by_this_machine_no_longer_blocks_the_pull_half() {
         "expected Completed, got {:?}",
         outcome
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

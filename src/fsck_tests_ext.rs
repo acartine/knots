@@ -1,14 +1,10 @@
 use std::error::Error;
 use std::path::PathBuf;
 
-use uuid::Uuid;
-
 use super::{run_fsck, FsckError};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-fsck-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-fsck-ext")
 }
 
 fn write_file(path: &PathBuf, content: &str) {
@@ -176,7 +172,8 @@ fn assert_has_message(messages: &[&str], needle: &str) {
 
 #[test]
 fn reports_schema_and_reference_issues_for_malformed_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     write_malformed_event_fixtures(&root);
     write_edge_and_index_fixtures(&root);
 
@@ -203,6 +200,4 @@ fn reports_schema_and_reference_issues_for_malformed_events() {
     assert_has_message(&messages, "missing required string field data.state");
     assert_has_message(&messages, "missing required string field data.updated_at");
     assert_has_message(&messages, "edge destination 'K-missing'");
-
-    let _ = std::fs::remove_dir_all(root);
 }

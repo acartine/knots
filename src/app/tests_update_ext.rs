@@ -4,12 +4,9 @@ use crate::domain::execution_plan::{
 };
 use crate::domain::knot_type::KnotType;
 use crate::domain::metadata::MetadataEntryInput;
-use std::path::{Path, PathBuf};
-use uuid::Uuid;
-fn unique_workspace() -> PathBuf {
-    let r = std::env::temp_dir().join(format!("knots-app-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&r).expect("mkdir");
-    r
+use std::path::Path;
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-test")
 }
 fn count_json_files(root: &Path) -> usize {
     if !root.exists() {
@@ -59,7 +56,8 @@ fn empty_patch() -> UpdateKnotPatch {
 }
 #[test]
 fn update_knot_applies_parity_fields_and_metadata_arrays() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("u"), root.clone()).expect("o");
     let c = app
@@ -76,7 +74,6 @@ fn update_knot_applies_parity_fields_and_metadata_arrays() {
     assert_parity_show(&app, &c.id, &u);
     assert_eq!(count_json_files(&root.join(".knots/index")), 2);
     assert!(count_json_files(&root.join(".knots/events")) >= 8);
-    let _ = std::fs::remove_dir_all(root);
 }
 fn build_parity_patch() -> UpdateKnotPatch {
     UpdateKnotPatch {
@@ -149,7 +146,8 @@ fn assert_parity_show(app: &App, id: &str, updated: &KnotView) {
 }
 #[test]
 fn update_knot_can_remove_and_clear_invariants() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("u"), root.clone()).expect("o");
     let c = app
@@ -165,7 +163,6 @@ fn update_knot_can_remove_and_clear_invariants() {
     .expect("b");
     assert_eq!(removed.invariants, vec![si]);
     assert!(clear_all_invariants(&app, &c.id).invariants.is_empty());
-    let _ = std::fs::remove_dir_all(root);
 }
 fn seed_invariants(app: &App, id: &str) -> KnotView {
     let sc = crate::domain::invariant::Invariant::new(
@@ -215,7 +212,8 @@ fn clear_all_invariants(app: &App, id: &str) -> KnotView {
 
 #[test]
 fn update_knot_requires_at_least_one_change() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("u"), root.clone()).expect("o");
     let c = app
@@ -225,12 +223,12 @@ fn update_knot_requires_at_least_one_change() {
         app.update_knot(&c.id, empty_patch()),
         Err(AppError::InvalidArgument(_))
     ));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_knot_persists_execution_plan_and_rehydrates_it() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("u"), root.clone()).expect("o");
     let created = app
@@ -306,13 +304,12 @@ fn update_knot_persists_execution_plan_and_rehydrates_it() {
         rehydrated.execution_plan.as_ref(),
         Some(&execution_plan_data),
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_knot_sets_execution_plan_objective_without_replacing_waves() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("utf8"), root.clone()).expect("app");
     let created = app
@@ -350,13 +347,12 @@ fn update_knot_sets_execution_plan_objective_without_replacing_waves() {
     assert_eq!(plan.objective.as_deref(), Some("New objective"));
     assert_eq!(plan.waves.len(), 1);
     assert_eq!(plan.waves[0].name, "Wave 1");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn create_knot_rejects_execution_plan_without_top_level_objective() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("utf8"), root.clone()).expect("app");
 
@@ -377,13 +373,12 @@ fn create_knot_rejects_execution_plan_without_top_level_objective() {
         err.to_string(),
         "execution_plan knots require a non-empty top-level objective"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_knot_rejects_execution_plan_type_without_top_level_objective() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("utf8"), root.clone()).expect("app");
     let created = app
@@ -403,13 +398,12 @@ fn update_knot_rejects_execution_plan_type_without_top_level_objective() {
         err.to_string(),
         "execution_plan knots require a non-empty top-level objective"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_knot_rejects_stale_if_match() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().expect("u"), root.clone()).expect("o");
     let c = app
@@ -438,11 +432,11 @@ fn update_knot_rejects_stale_if_match() {
         ),
         Err(AppError::StaleWorkflowHead { .. })
     ));
-    let _ = std::fs::remove_dir_all(root);
 }
 #[test]
 fn rehydrate_builds_hot_record_from_warm_and_full_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let ds = db.to_str().expect("u").to_string();
     std::fs::create_dir_all(db.parent().expect("p")).expect("m");
@@ -465,7 +459,6 @@ fn rehydrate_builds_hot_record_from_warm_and_full_events() {
     assert_eq!(r.profile_id, "autopilot");
     assert_eq!(r.workflow_id, "work_sdlc");
     assert_eq!(r.profile_etag.as_deref(), Some("1002"));
-    let _ = std::fs::remove_dir_all(root);
 }
 fn write_rehydrate_events(root: &Path) {
     let fp = root.join(".knots/events/2026/02/24/1001-knot.description_set.json");

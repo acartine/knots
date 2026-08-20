@@ -2,10 +2,8 @@ use super::{rehydrate_from_events, AppError};
 use crate::app::App;
 use crate::db::{self, UpsertKnotHot};
 
-fn unique_root(prefix: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("root should be creatable");
-    root
+fn unique_root(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn write_event(root: &std::path::Path, filename: &str, body: &str) {
@@ -30,7 +28,8 @@ fn open_app(root: &std::path::Path) -> App {
 
 #[test]
 fn rehydrate_from_events_rejects_missing_workflow_id() {
-    let missing_root = unique_root("knots-rehydrate-missing-workflow");
+    let missing_root_ws = unique_root("knots-rehydrate-missing-workflow");
+    let missing_root = missing_root_ws.path().to_path_buf();
     let missing = rehydrate_from_events(
         &[missing_root.as_path()],
         "K-missing",
@@ -41,8 +40,6 @@ fn rehydrate_from_events_rejects_missing_workflow_id() {
     .expect_err("missing workflow id should fail");
     assert!(matches!(missing, AppError::InvalidArgument(message) if
         message.contains("missing workflow_id")));
-
-    let _ = std::fs::remove_dir_all(missing_root);
 }
 
 #[test]
@@ -50,7 +47,8 @@ fn rehydrate_from_events_reads_union_of_local_and_worktree_roots() {
     // Simulates a knot whose events live only under the `_worktree` copy
     // (pulled from origin, never written locally). Before the multi-root
     // fix, rehydrate would fail with "missing workflow_id".
-    let root = unique_root("knots-rehydrate-worktree-only");
+    let root_ws = unique_root("knots-rehydrate-worktree-only");
+    let root = root_ws.path().to_path_buf();
     let worktree_knots = root.join(".knots").join("_worktree").join(".knots");
     let event_dir = worktree_knots
         .join("events")
@@ -89,8 +87,6 @@ fn rehydrate_from_events_reads_union_of_local_and_worktree_roots() {
     .expect("rehydrate should find events under the worktree root");
     assert_eq!(projection.workflow_id, "work_sdlc");
     assert_eq!(projection.profile_id, "autopilot");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -98,7 +94,8 @@ fn rehydrate_from_events_dedupes_events_present_in_both_roots() {
     // After a push, the same event file exists in both `.knots/events/`
     // and `.knots/_worktree/.knots/events/`. Replaying it twice would
     // double-append list fields like tags; the dedupe pass prevents that.
-    let root = unique_root("knots-rehydrate-dedup");
+    let root_ws = unique_root("knots-rehydrate-dedup");
+    let root = root_ws.path().to_path_buf();
     let local_dir = root
         .join(".knots")
         .join("events")
@@ -166,13 +163,12 @@ fn rehydrate_from_events_dedupes_events_present_in_both_roots() {
         1,
         "a tag_add event in both roots should apply exactly once"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rehydrate_from_events_converts_legacy_workflow_id() {
-    let legacy_root = unique_root("knots-rehydrate-legacy-workflow");
+    let legacy_root_ws = unique_root("knots-rehydrate-legacy-workflow");
+    let legacy_root = legacy_root_ws.path().to_path_buf();
     write_event(
         &legacy_root,
         "1000-knot.created.json",
@@ -200,13 +196,12 @@ fn rehydrate_from_events_converts_legacy_workflow_id() {
     )
     .expect("legacy workflow id should be converted, not rejected");
     assert_eq!(projection.workflow_id, "work_sdlc");
-
-    let _ = std::fs::remove_dir_all(legacy_root);
 }
 
 #[test]
 fn rehydrate_from_events_reports_invalid_json() {
-    let root = unique_root("knots-rehydrate-invalid-json");
+    let root_ws = unique_root("knots-rehydrate-invalid-json");
+    let root = root_ws.path().to_path_buf();
     write_event(&root, "bad-knot.created.json", "{");
 
     let bad_full = rehydrate_from_events(
@@ -251,13 +246,12 @@ fn rehydrate_from_events_reports_invalid_json() {
         "2026-02-25T10:00:00Z".to_string(),
     );
     assert!(matches!(bad_index, Err(AppError::InvalidArgument(_))));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn show_knot_fails_when_cache_contains_legacy_workflow_id() {
-    let root = unique_root("knots-show-legacy-workflow");
+    let root_ws = unique_root("knots-show-legacy-workflow");
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     db::upsert_knot_hot(
         &app.conn,
@@ -300,6 +294,4 @@ fn show_knot_fails_when_cache_contains_legacy_workflow_id() {
         view.step_metadata.is_none(),
         "no metadata for unknown profile"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -81,7 +81,8 @@ fn base_update_op(id: &str) -> UpdateOperation {
 
 #[test]
 fn next_stamps_lease_agent_identity_on_step_history() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -116,13 +117,12 @@ fn next_stamps_lease_agent_identity_on_step_history() {
     assert_eq!(step.agent_name.as_deref(), Some("claude"));
     assert_eq!(step.agent_model.as_deref(), Some("opus"));
     assert_eq!(step.agent_version.as_deref(), Some("4.6"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_ignores_bogus_agent_flags_and_uses_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -160,13 +160,12 @@ fn next_ignores_bogus_agent_flags_and_uses_lease() {
             assert_eq!(version, "4.6", "bogus --agent-version must be ignored");
         }
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_without_lease_leaves_agent_fields_unset() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -219,13 +218,12 @@ fn next_without_lease_leaves_agent_fields_unset() {
             "agent_version must be unset when no lease is bound"
         );
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_add_note_uses_lease_not_caller_supplied_note_flags() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -248,13 +246,12 @@ fn update_add_note_uses_lease_not_caller_supplied_note_flags() {
     assert_eq!(note.agentname, "claude");
     assert_eq!(note.model, "opus");
     assert_eq!(note.version, "4.6");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_add_handoff_uses_lease_not_caller_supplied_handoff_flags() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -276,13 +273,12 @@ fn update_add_handoff_uses_lease_not_caller_supplied_handoff_flags() {
     assert_eq!(hc.agentname, "claude");
     assert_eq!(hc.model, "opus");
     assert_eq!(hc.version, "4.6");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rollback_ignores_bogus_agent_flags_and_uses_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -314,13 +310,12 @@ fn rollback_ignores_bogus_agent_flags_and_uses_lease() {
             assert_eq!(name, "claude");
         }
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn step_annotate_uses_lease_not_caller_supplied_agent_flags() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -352,8 +347,6 @@ fn step_annotate_uses_lease_not_caller_supplied_agent_flags() {
     assert_eq!(step.agent_name.as_deref(), Some("claude"));
     assert_eq!(step.agent_model.as_deref(), Some("opus"));
     assert_eq!(step.agent_version.as_deref(), Some("4.6"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -365,7 +358,8 @@ fn gate_evaluate_uses_lease_not_caller_supplied_agent_flags() {
     use crate::domain::knot_type::KnotType;
     use std::collections::BTreeMap;
 
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -440,13 +434,12 @@ fn gate_evaluate_uses_lease_not_caller_supplied_agent_flags() {
             );
         }
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_with_external_lease_stamps_lease_identity_on_claim_step() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -464,6 +457,4 @@ fn claim_with_external_lease_stamps_lease_identity_on_claim_step() {
     assert_eq!(first_step.agent_name.as_deref(), Some("claude"));
     assert_eq!(first_step.agent_model.as_deref(), Some("opus"));
     assert_eq!(first_step.agent_version.as_deref(), Some("4.6"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn knots_binary() -> PathBuf {
@@ -90,8 +87,10 @@ fn first_knot_id(repo_root: &Path, db_path: &Path, home: &Path) -> String {
 
 #[test]
 fn claim_with_e2e_flag_emits_e2e_continuation_workflow_boundary() {
-    let root = unique_workspace("knots-cli-claim-e2e");
-    let home = unique_workspace("knots-cli-claim-e2e-home");
+    let root_ws = unique_workspace("knots-cli-claim-e2e");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-claim-e2e-home");
+    let home = home_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -122,8 +121,10 @@ fn claim_with_e2e_flag_emits_e2e_continuation_workflow_boundary() {
 
 #[test]
 fn claim_without_e2e_flag_keeps_single_action_workflow_boundary() {
-    let root = unique_workspace("knots-cli-claim-default");
-    let home = unique_workspace("knots-cli-claim-default-home");
+    let root_ws = unique_workspace("knots-cli-claim-default");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-claim-default-home");
+    let home = home_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 

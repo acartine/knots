@@ -1,12 +1,9 @@
 use super::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::db;
-use std::path::{Path, PathBuf};
-use uuid::Uuid;
+use std::path::Path;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-test")
 }
 
 fn count_json_files(root: &Path) -> usize {
@@ -36,7 +33,8 @@ fn stripped_id(id: &str) -> &str {
 
 #[test]
 fn create_knot_updates_cache_and_writes_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -75,8 +73,6 @@ fn create_knot_updates_cache_and_writes_events() {
     // create call provided a body).
     assert_eq!(count_json_files(&root.join(".knots/events")), 2);
     assert_eq!(count_json_files(&root.join(".knots/index")), 1);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -85,7 +81,8 @@ fn create_with_description_emits_knot_description_set_event() {
     // only in `knot.created` as `body`, which sync apply on a new host
     // dropped. We now additionally emit `knot.description_set` so the
     // standard apply path picks it up like any other field update.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -125,12 +122,12 @@ fn create_with_description_emits_knot_description_set_event() {
         found,
         "create with description must emit knot.description_set event"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn hierarchical_aliases_are_assigned_and_resolve_to_ids() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -162,13 +159,12 @@ fn hierarchical_aliases_are_assigned_and_resolve_to_ids() {
         .expect("set_state should accept alias id");
     assert_eq!(updated.id, child.id);
     assert_eq!(updated.state, "planning");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn partial_hierarchical_alias_resolves_to_child() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -198,13 +194,12 @@ fn partial_hierarchical_alias_resolves_to_child() {
         .expect("show by partial alias should succeed")
         .expect("child should resolve by partial alias");
     assert_eq!(via_partial.id, child.id);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn partial_alias_invalid_child_index_returns_not_found() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -223,13 +218,12 @@ fn partial_alias_invalid_child_index_returns_not_found() {
     let bad_alias = format!("{}.99", parent_suffix);
     let result = app.show_knot(&bad_alias);
     assert!(result.is_err(), "non-existent partial alias should error");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn partial_alias_unknown_prefix_returns_passthrough() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -241,13 +235,12 @@ fn partial_alias_unknown_prefix_returns_passthrough() {
         "unknown partial alias should not hard-error"
     );
     assert!(result.unwrap().is_none(), "unknown prefix yields no knot");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn stripped_ids_resolve_for_show_state_update_and_edges() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -324,13 +317,12 @@ fn stripped_ids_resolve_for_show_state_update_and_edges() {
         .remove_edge(&src_short, "blocked_by", &dst_short)
         .expect("remove_edge should accept stripped ids");
     assert_eq!(removed.src, src.id);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn stripped_id_collisions_return_ambiguous_error() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let db_path_str = db_path.to_str().expect("utf8 path").to_string();
     std::fs::create_dir_all(
@@ -356,13 +348,12 @@ fn stripped_id_collisions_return_ambiguous_error() {
         }
         other => panic!("unexpected error for ambiguous id: {other}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn set_state_enforces_transition_rules_unless_forced() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -381,13 +372,12 @@ fn set_state_enforces_transition_rules_unless_forced() {
 
     assert_eq!(count_json_files(&root.join(".knots/events")), 2);
     assert_eq!(count_json_files(&root.join(".knots/index")), 2);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn create_knot_uses_default_profile_initial_state_when_state_is_omitted() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -398,13 +388,12 @@ fn create_knot_uses_default_profile_initial_state_when_state_is_omitted() {
 
     assert_eq!(created.profile_id, "autopilot");
     assert_eq!(created.state, "ready_for_planning");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn unknown_workflow_is_rejected() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -413,13 +402,12 @@ fn unknown_workflow_is_rejected() {
         .create_knot("Workflow transition", None, None, Some("triage"))
         .expect_err("unknown workflow should fail");
     assert!(matches!(err, AppError::Workflow(_)));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn edge_commands_update_cache_and_round_trip() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app =
         App::open(db_path.to_str().expect("utf8 path"), root.clone()).expect("app should open");
@@ -459,6 +447,4 @@ fn edge_commands_update_cache_and_round_trip() {
         .list_edges(&src.id, "both")
         .expect("edges should list after removal");
     assert!(after.is_empty());
-
-    let _ = std::fs::remove_dir_all(root);
 }

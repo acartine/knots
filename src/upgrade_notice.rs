@@ -105,10 +105,10 @@ mod tests {
         state_path as global_state_path, write_last_checked, UpgradeCheckState, CHECK_TIMEOUT_SECS,
     };
 
-    fn state_path(name: &str) -> PathBuf {
-        std::env::temp_dir()
-            .join(format!("knots-upgrade-notice-{}-{name}", Uuid::now_v7()))
-            .join("upgrade-check.json")
+    fn state_path(name: &str) -> (knots_test_support::TestWorkspace, PathBuf) {
+        let ws = knots_test_support::workspace(&format!("knots-upgrade-notice-{name}"));
+        let path = ws.path().join("upgrade-check.json");
+        (ws, path)
     }
 
     fn read_state_file(path: &PathBuf) -> UpgradeCheckState {
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn first_run_checks_and_records_timestamp() {
-        let path = state_path("first-run");
+        let (_state_ws, path) = state_path("first-run");
         let calls = Cell::new(0);
         let banner = maybe_upgrade_banner_at(&path, "0.11.0", 10, |timeout_secs| {
             calls.set(calls.get() + 1);
@@ -131,12 +131,11 @@ mod tests {
         );
         assert_eq!(calls.get(), 1);
         assert_eq!(read_state_file(&path).last_checked_unix_secs, 10);
-        let _ = std::fs::remove_dir_all(path.parent().expect("temp dir should exist"));
     }
 
     #[test]
     fn stale_check_triggers_recheck() {
-        let path = state_path("stale");
+        let (_state_ws, path) = state_path("stale");
         std::fs::create_dir_all(path.parent().expect("temp dir should exist"))
             .expect("temp dir should be creatable");
         std::fs::write(&path, r#"{"last_checked_unix_secs":1}"#)
@@ -153,12 +152,11 @@ mod tests {
             read_state_file(&path).last_checked_unix_secs,
             1 + 24 * 60 * 60
         );
-        let _ = std::fs::remove_dir_all(path.parent().expect("temp dir should exist"));
     }
 
     #[test]
     fn fresh_check_is_skipped() {
-        let path = state_path("fresh");
+        let (_state_ws, path) = state_path("fresh");
         std::fs::create_dir_all(path.parent().expect("temp dir should exist"))
             .expect("temp dir should be creatable");
         std::fs::write(&path, r#"{"last_checked_unix_secs":90}"#)
@@ -172,33 +170,29 @@ mod tests {
         assert_eq!(banner, None);
         assert_eq!(calls.get(), 0);
         assert_eq!(read_state_file(&path).last_checked_unix_secs, 90);
-        let _ = std::fs::remove_dir_all(path.parent().expect("temp dir should exist"));
     }
 
     #[test]
     fn newer_version_available_returns_banner() {
-        let path = state_path("newer");
+        let (_state_ws, path) = state_path("newer");
         let banner = maybe_upgrade_banner_at(&path, "0.11.0", 10, |_| Some("v0.12.0".to_string()));
         assert_eq!(banner, Some(format_banner("0.11.0", "0.12.0")));
-        let _ = std::fs::remove_dir_all(path.parent().expect("temp dir should exist"));
     }
 
     #[test]
     fn up_to_date_version_suppresses_banner_and_records_check() {
-        let path = state_path("current");
+        let (_state_ws, path) = state_path("current");
         let banner = maybe_upgrade_banner_at(&path, "0.11.0", 20, |_| Some("v0.11.0".to_string()));
         assert_eq!(banner, None);
         assert_eq!(read_state_file(&path).last_checked_unix_secs, 20);
-        let _ = std::fs::remove_dir_all(path.parent().expect("temp dir should exist"));
     }
 
     #[test]
     fn network_failure_suppresses_banner_and_records_check() {
-        let path = state_path("network-failure");
+        let (_state_ws, path) = state_path("network-failure");
         let banner = maybe_upgrade_banner_at(&path, "0.11.0", 30, |_| None);
         assert_eq!(banner, None);
         assert_eq!(read_state_file(&path).last_checked_unix_secs, 30);
-        let _ = std::fs::remove_dir_all(path.parent().expect("temp dir should exist"));
     }
 
     #[test]
@@ -209,13 +203,12 @@ mod tests {
         assert!(!should_check(Some(10), 10 + 60));
         assert!(should_check(Some(10), 10 + 24 * 60 * 60));
 
-        let path = state_path("read-last-checked");
+        let (_state_ws, path) = state_path("read-last-checked");
         std::fs::create_dir_all(path.parent().expect("temp dir should exist"))
             .expect("temp dir should be creatable");
         std::fs::write(&path, r#"{"last_checked_unix_secs":42}"#)
             .expect("state file should be writable");
         assert_eq!(read_last_checked(&path), Some(42));
-        let _ = std::fs::remove_dir_all(path.parent().expect("temp dir should exist"));
     }
 
     #[test]
@@ -231,14 +224,13 @@ mod tests {
 
     #[test]
     fn read_last_checked_returns_none_for_missing_or_invalid_state() {
-        let path = state_path("invalid-state");
+        let (_state_ws, path) = state_path("invalid-state");
         assert_eq!(read_last_checked(&path), None);
 
         std::fs::create_dir_all(path.parent().expect("temp dir should exist"))
             .expect("temp dir should be creatable");
         std::fs::write(&path, "not-json").expect("state file should be writable");
         assert_eq!(read_last_checked(&path), None);
-        let _ = std::fs::remove_dir_all(path.parent().expect("temp dir should exist"));
     }
 
     #[test]

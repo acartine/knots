@@ -2,14 +2,12 @@ use crate::domain::gate::GateData;
 use crate::domain::knot_type::KnotType;
 use crate::workflow::ProfileRegistry;
 use crate::workflow_runtime::step_metadata_for_state;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> std::path::PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    crate::installed_workflows::ensure_builtin_workflows_registered(&path)
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    let ws = knots_test_support::workspace(prefix);
+    crate::installed_workflows::ensure_builtin_workflows_registered(ws.path())
         .expect("builtin workflows should register");
-    path
+    ws
 }
 
 const MULTI_OUTPUT_BUNDLE: &str = r#"
@@ -97,7 +95,8 @@ complete = "done"
 
 #[test]
 fn per_action_outputs_resolve_independently() {
-    let workspace = unique_workspace("knots-stepmeta-multi");
+    let workspace_ws = unique_workspace("knots-stepmeta-multi");
+    let workspace = workspace_ws.path().to_path_buf();
     let bundle = workspace.join("multi_out.toml");
     std::fs::write(&bundle, MULTI_OUTPUT_BUNDLE).expect("write bundle");
     crate::installed_workflows::install_bundle(&workspace, &bundle).expect("install bundle");
@@ -142,8 +141,6 @@ fn per_action_outputs_resolve_independently() {
             .expect("metadata");
     assert_eq!(queue.action_state, "shipment");
     assert_eq!(queue.output.as_ref().unwrap().artifact_type, "remote_main");
-
-    let _ = std::fs::remove_dir_all(workspace);
 }
 
 #[test]

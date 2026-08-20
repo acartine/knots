@@ -142,17 +142,18 @@ mod tests {
     use std::os::unix::fs::PermissionsExt;
     use std::path::PathBuf;
     use std::time::Duration;
-    use uuid::Uuid;
 
     use super::{process_alive, reclaim_stale, FileLock, LockError};
 
-    fn lock_path() -> PathBuf {
-        std::env::temp_dir().join(format!("knots-lock-test-{}.lock", Uuid::now_v7()))
+    fn lock_path() -> (knots_test_support::TestWorkspace, PathBuf) {
+        let ws = knots_test_support::workspace("knots-lock-test");
+        let path = ws.path().join("knots.lock");
+        (ws, path)
     }
 
     #[test]
     fn try_lock_is_non_blocking() {
-        let path = lock_path();
+        let (_lock_ws, path) = lock_path();
         let first = FileLock::try_acquire(&path)
             .expect("initial lock should not fail")
             .expect("initial lock should succeed");
@@ -164,7 +165,7 @@ mod tests {
 
     #[test]
     fn acquire_times_out_when_held() {
-        let path = lock_path();
+        let (_lock_ws, path) = lock_path();
         let first = FileLock::try_acquire(&path)
             .expect("initial lock should not fail")
             .expect("initial lock should succeed");
@@ -177,7 +178,7 @@ mod tests {
 
     #[test]
     fn lock_file_contains_pid() {
-        let path = lock_path();
+        let (_lock_ws, path) = lock_path();
         let _guard = FileLock::try_acquire(&path)
             .expect("lock should not fail")
             .expect("lock should succeed");
@@ -191,7 +192,7 @@ mod tests {
 
     #[test]
     fn stale_lock_is_reclaimed() {
-        let path = lock_path();
+        let (_lock_ws, path) = lock_path();
         // Write a PID that doesn't exist (PID 1 is init, use a very
         // high number that almost certainly isn't running).
         if let Some(parent) = path.parent() {
@@ -205,7 +206,7 @@ mod tests {
 
     #[test]
     fn corrupt_lock_is_reclaimed() {
-        let path = lock_path();
+        let (_lock_ws, path) = lock_path();
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).expect("parent dir should be creatable");
         }
@@ -233,7 +234,7 @@ mod tests {
 
     #[test]
     fn stale_lock_is_reclaimed_via_try_acquire() {
-        let path = lock_path();
+        let (_lock_ws, path) = lock_path();
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).expect("parent dir should be creatable");
         }
@@ -248,7 +249,7 @@ mod tests {
 
     #[test]
     fn reclaim_stale_returns_true_for_missing_file() {
-        let path = lock_path();
+        let (_lock_ws, path) = lock_path();
         // File doesn't exist — reclaim should return true.
         let reclaimed = reclaim_stale(&path).expect("reclaim should not fail");
         assert!(reclaimed);
@@ -256,21 +257,20 @@ mod tests {
 
     #[test]
     fn io_error_paths_surface_as_lock_errors() {
-        let path = std::env::temp_dir().join(format!("knots-lock-dir-{}", Uuid::now_v7()));
-        std::fs::create_dir_all(&path).expect("directory path should be creatable");
+        let path_ws = knots_test_support::workspace("knots-lock-dir");
+        let path = path_ws.path().to_path_buf();
 
         let converted = LockError::from(std::io::Error::other("boom"));
         assert!(converted.to_string().contains("boom"));
 
         assert!(!reclaim_stale(&path).expect("directory should not be reclaimed as stale"));
-        let _ = std::fs::remove_dir_all(path);
     }
 
     #[cfg(unix)]
     #[test]
     fn try_acquire_reports_open_errors_from_read_only_directories() {
-        let parent = std::env::temp_dir().join(format!("knots-lock-readonly-{}", Uuid::now_v7()));
-        std::fs::create_dir_all(&parent).expect("parent dir should be creatable");
+        let parent_ws = knots_test_support::workspace("knots-lock-readonly");
+        let parent = parent_ws.path().to_path_buf();
         let original = std::fs::metadata(&parent)
             .expect("metadata should be readable")
             .permissions();
@@ -283,6 +283,5 @@ mod tests {
         assert!(err.to_string().contains("lock I/O error"));
 
         std::fs::set_permissions(&parent, original).expect("permissions should restore");
-        let _ = std::fs::remove_dir_all(parent);
     }
 }

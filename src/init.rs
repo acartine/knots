@@ -267,22 +267,13 @@ fn contains_knots_ignore(contents: &str) -> bool {
 mod tests {
     use std::path::PathBuf;
     use std::process::Command;
-    use uuid::Uuid;
 
     use crate::db;
 
     use super::{init_all, init_local_store, uninit_all, uninit_local_store, KNOTS_IGNORE_RULE};
 
-    fn unique_dir() -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("knots-init-test-{}", Uuid::now_v7()));
-        std::fs::create_dir_all(&dir).expect("temp directory should be creatable");
-        dir
-    }
-
-    fn remove_dir_if_exists(root: &PathBuf) {
-        if root.exists() {
-            let _ = std::fs::remove_dir_all(root);
-        }
+    fn unique_dir() -> knots_test_support::TestWorkspace {
+        knots_test_support::workspace("knots-init-test")
     }
 
     fn run_git(cwd: &PathBuf, args: &[&str]) {
@@ -300,8 +291,9 @@ mod tests {
         );
     }
 
-    fn setup_repo_with_remote() -> (PathBuf, PathBuf) {
-        let root = unique_dir();
+    fn setup_repo_with_remote() -> (knots_test_support::TestWorkspace, PathBuf) {
+        let root_ws = unique_dir();
+        let root = root_ws.path().to_path_buf();
         let remote = root.join("remote.git");
         let local = root.join("local");
 
@@ -339,12 +331,13 @@ mod tests {
             String::from_utf8_lossy(&output.stderr)
         );
 
-        (root, local)
+        (root_ws, local)
     }
 
     #[test]
     fn init_local_store_writes_expected_artifacts() {
-        let root = unique_dir();
+        let root_ws = unique_dir();
+        let root = root_ws.path().to_path_buf();
         let db_path = root.join(".knots/cache/state.sqlite");
 
         init_local_store(&root, db_path.to_str().expect("utf8 path"))
@@ -355,12 +348,12 @@ mod tests {
         let gitignore =
             std::fs::read_to_string(root.join(".gitignore")).expect("gitignore should be readable");
         assert!(gitignore.lines().any(|line| line == KNOTS_IGNORE_RULE));
-        remove_dir_if_exists(&root);
     }
 
     #[test]
     fn init_local_store_is_idempotent_with_gitignore() {
-        let root = unique_dir();
+        let root_ws = unique_dir();
+        let root = root_ws.path().to_path_buf();
         let db_path = root.join(".knots/cache/state.sqlite");
 
         init_local_store(&root, db_path.to_str().expect("utf8 path"))
@@ -375,12 +368,11 @@ mod tests {
             .filter(|line| *line == KNOTS_IGNORE_RULE)
             .count();
         assert_eq!(ignore_count, 1);
-        remove_dir_if_exists(&root);
     }
 
     #[test]
     fn init_all_bootstraps_local_store_and_remote_branch() {
-        let (root, local) = setup_repo_with_remote();
+        let (_root_ws, local) = setup_repo_with_remote();
         let db_path = local.join(".knots/cache/state.sqlite");
 
         init_all(&local, db_path.to_str().expect("utf8 path")).expect("init should succeed");
@@ -398,12 +390,12 @@ mod tests {
         let gitignore = std::fs::read_to_string(local.join(".gitignore"))
             .expect("gitignore should be readable");
         assert!(gitignore.lines().any(|line| line == KNOTS_IGNORE_RULE));
-        remove_dir_if_exists(&root);
     }
 
     #[test]
     fn init_all_pulls_knots_when_remote_branch_already_exists() {
-        let (root, local) = setup_repo_with_remote();
+        let (root_ws, local) = setup_repo_with_remote();
+        let root = root_ws.path().to_path_buf();
         let local_db_path = local.join(".knots/cache/state.sqlite");
         init_all(&local, local_db_path.to_str().expect("utf8 path"))
             .expect("first init should succeed");
@@ -443,13 +435,12 @@ mod tests {
             .expect("knot should be pulled into clone");
         assert_eq!(knot.title, "Bootstrap knot");
         assert_eq!(knot.state, "ready_for_planning");
-
-        remove_dir_if_exists(&root);
     }
 
     #[test]
     fn uninit_local_store_cleans_local_artifacts_and_gitignore() {
-        let root = unique_dir();
+        let root_ws = unique_dir();
+        let root = root_ws.path().to_path_buf();
         let db_path = root.join(".knots/cache/state.sqlite");
         let gitignore_path = root.join(".gitignore");
 
@@ -468,12 +459,11 @@ mod tests {
                 std::fs::read_to_string(&gitignore_path).expect("gitignore should be readable");
             assert!(!gitignore.lines().any(|line| line == KNOTS_IGNORE_RULE));
         }
-        remove_dir_if_exists(&root);
     }
 
     #[test]
     fn uninit_all_removes_remote_and_local_store() {
-        let (root, local) = setup_repo_with_remote();
+        let (_root_ws, local) = setup_repo_with_remote();
         let db_path = local.join(".knots/cache/state.sqlite");
 
         init_all(&local, db_path.to_str().expect("utf8 path")).expect("init should succeed");
@@ -489,7 +479,6 @@ mod tests {
         assert!(output.status.success());
         let stdout = String::from_utf8_lossy(&output.stdout);
         assert!(!stdout.contains("refs/heads/knots"));
-        remove_dir_if_exists(&root);
     }
 }
 

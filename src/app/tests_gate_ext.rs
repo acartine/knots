@@ -1,7 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
-
-use uuid::Uuid;
+use std::path::Path;
 
 use super::{
     App, AppError, CreateKnotOptions, GateDecision, KnotView, StateActorMetadata, UpdateKnotPatch,
@@ -10,10 +8,8 @@ use crate::domain::gate::{GateData, GateOwnerKind};
 use crate::domain::invariant::{Invariant, InvariantType};
 use crate::domain::knot_type::KnotType;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-gate-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-gate-ext")
 }
 
 fn open_app(root: &Path) -> App {
@@ -35,7 +31,8 @@ fn add_invariants(app: &App, knot: &KnotView, invariants: Vec<Invariant>) -> Kno
 
 #[test]
 fn evaluate_gate_yes_ships_without_reopening() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let gate = app
         .create_knot_with_options(
@@ -73,13 +70,12 @@ fn evaluate_gate_yes_ships_without_reopening() {
     assert_eq!(result.gate.state, "shipped");
     assert!(result.reopened.is_empty());
     assert!(result.invariant.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn evaluate_gate_no_covers_missing_invariant_and_failure_mode_errors() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let gate = app
         .create_knot_with_options(
@@ -146,13 +142,12 @@ fn evaluate_gate_no_covers_missing_invariant_and_failure_mode_errors() {
     assert!(missing_failure_mode
         .to_string()
         .contains("has no failure mode"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn gate_metadata_updates_round_trip_and_work_knots_reject_them() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let target = app
         .create_knot("Blocked work", None, Some("idea"), Some("default"))
@@ -228,13 +223,12 @@ fn gate_metadata_updates_round_trip_and_work_knots_reject_them() {
         )
         .expect_err("work knot should reject gate metadata");
     assert!(err.to_string().contains("require knot type 'gate'"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn evaluate_gate_no_reopens_targets_and_appends_metadata() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let target_a = app
@@ -317,13 +311,12 @@ fn evaluate_gate_no_reopens_targets_and_appends_metadata() {
     assert_eq!(reloaded_b.state, "ready_for_planning");
     assert_eq!(reloaded_b.notes.len(), 1);
     assert_eq!(reloaded_b.handoff_capsules.len(), 1);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn evaluate_gate_no_skips_transition_for_already_ready_target() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let target = app
@@ -390,13 +383,12 @@ fn evaluate_gate_no_skips_transition_for_already_ready_target() {
     assert_eq!(reloaded.notes.len(), 1);
     assert!(reloaded.notes[0].content.contains(&gate.id));
     assert_eq!(reloaded.handoff_capsules.len(), 1);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn evaluate_gate_rejects_non_gate_and_wrong_state() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let work = app
@@ -435,6 +427,4 @@ fn evaluate_gate_rejects_non_gate_and_wrong_state() {
         )
         .expect_err("gate not in evaluating should fail");
     assert!(err.to_string().contains("must be in"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

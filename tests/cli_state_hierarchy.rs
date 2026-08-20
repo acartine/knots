@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(cwd: &Path, args: &[&str]) {
@@ -142,7 +139,8 @@ fn add_parent_edge(root: &Path, db: &Path, parent: &str, child: &str) {
 
 #[test]
 fn state_rejection_reports_code_and_blocking_child() {
-    let root = unique_workspace("knots-cli-hierarchy-state");
+    let root_ws = unique_workspace("knots-cli-hierarchy-state");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -186,7 +184,8 @@ fn state_rejection_reports_code_and_blocking_child() {
 
 #[test]
 fn update_status_rejection_reports_code_and_blocking_child() {
-    let root = unique_workspace("knots-cli-hierarchy-update");
+    let root_ws = unique_workspace("knots-cli-hierarchy-update");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -234,7 +233,8 @@ fn update_status_rejection_reports_code_and_blocking_child() {
 
 #[test]
 fn next_rejection_reports_code_and_blocking_child() {
-    let root = unique_workspace("knots-cli-hierarchy-next");
+    let root_ws = unique_workspace("knots-cli-hierarchy-next");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -281,7 +281,8 @@ fn next_rejection_reports_code_and_blocking_child() {
 
 #[test]
 fn terminal_state_requires_flag_and_state_flag_cascades_descendants() {
-    let root = unique_workspace("knots-cli-hierarchy-terminal");
+    let root_ws = unique_workspace("knots-cli-hierarchy-terminal");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -358,7 +359,8 @@ fn terminal_state_requires_flag_and_state_flag_cascades_descendants() {
 
 #[test]
 fn next_terminal_requires_flag_and_cascades_descendants() {
-    let root = unique_workspace("knots-cli-hierarchy-next-terminal");
+    let root_ws = unique_workspace("knots-cli-hierarchy-next-terminal");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -420,7 +422,8 @@ fn next_terminal_requires_flag_and_cascades_descendants() {
 
 #[test]
 fn deferred_child_blocks_state_and_reports_provenance() {
-    let root = unique_workspace("knots-cli-hierarchy-deferred");
+    let root_ws = unique_workspace("knots-cli-hierarchy-deferred");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -448,7 +451,8 @@ fn deferred_child_blocks_state_and_reports_provenance() {
 
 #[test]
 fn update_terminal_cascade_flag_cascades_descendants() {
-    let root = unique_workspace("knots-cli-hierarchy-update-cascade");
+    let root_ws = unique_workspace("knots-cli-hierarchy-update-cascade");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 

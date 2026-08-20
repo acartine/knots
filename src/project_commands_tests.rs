@@ -1,7 +1,4 @@
 use std::fs;
-use std::path::PathBuf;
-
-use uuid::Uuid;
 
 use crate::cli::{
     ProjectArgs, ProjectCreateArgs, ProjectDeleteArgs, ProjectListArgs, ProjectSubcommands,
@@ -10,15 +7,16 @@ use crate::cli::{
 use crate::project::{config_dir, create_named_project, read_global_config, NamedProjectRecord};
 use crate::project_commands::{run_project_command, run_project_command_with_select_prompt};
 
-fn temp_home(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    fs::create_dir_all(&path).expect("temp home should be creatable");
-    path
+fn temp_home(prefix: &str) -> knots_test_support::TestWorkspace {
+    let path_ws = knots_test_support::workspace(prefix);
+    let _path = path_ws.path().to_path_buf();
+    path_ws
 }
 
 #[test]
 fn run_project_command_handles_create_use_clear_and_delete() {
-    let home = temp_home("knots-project-command");
+    let home_ws = temp_home("knots-project-command");
+    let home = home_ws.path().to_path_buf();
     let repo_root = home.join("workspace");
     fs::create_dir_all(&repo_root).expect("workspace should exist");
 
@@ -83,13 +81,12 @@ fn run_project_command_handles_create_use_clear_and_delete() {
         .expect("config dir should resolve")
         .join("projects/demo.toml")
         .exists());
-
-    let _ = fs::remove_dir_all(home);
 }
 
 #[test]
 fn run_project_command_lists_empty_and_populated_projects() {
-    let home = temp_home("knots-project-command-list");
+    let home_ws = temp_home("knots-project-command-list");
+    let home = home_ws.path().to_path_buf();
     let repo_root = home.join("repo");
     fs::create_dir_all(&repo_root).expect("repo root should exist");
 
@@ -143,13 +140,12 @@ fn run_project_command_lists_empty_and_populated_projects() {
         None,
     )
     .expect("text list should succeed");
-
-    let _ = fs::remove_dir_all(home);
 }
 
 #[test]
 fn run_project_command_handles_select_with_stub_prompt() {
-    let home = temp_home("knots-project-command-select");
+    let home_ws = temp_home("knots-project-command-select");
+    let home = home_ws.path().to_path_buf();
     let repo_root = home.join("repo");
     fs::create_dir_all(&repo_root).expect("repo root should exist");
     create_named_project(Some(&home), "beta", None).expect("beta should be creatable");
@@ -179,6 +175,4 @@ fn run_project_command_handles_select_with_stub_prompt() {
             .as_deref(),
         Some("beta")
     );
-
-    let _ = fs::remove_dir_all(home);
 }

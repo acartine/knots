@@ -1,12 +1,8 @@
 use super::{App, StateActorMetadata};
 use crate::domain::step_history::{StepActorInfo, StepStatus};
-use std::path::PathBuf;
 
-fn unique_workspace() -> PathBuf {
-    let root =
-        std::env::temp_dir().join(format!("knots-step-history-test-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-step-history-test")
 }
 
 fn open_app(root: &std::path::Path) -> App {
@@ -25,7 +21,8 @@ fn agent_actor() -> StateActorMetadata {
 
 #[test]
 fn claim_creates_step_record_with_agent_metadata() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let created = app
         .create_knot("Step test", None, None, None)
@@ -54,13 +51,12 @@ fn claim_creates_step_record_with_agent_metadata() {
     assert_eq!(step.agent_version.as_deref(), Some("0.1.0"));
     assert!(!step.started_at.is_empty());
     assert!(step.ended_at.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_finalizes_active_step_record() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let created = app
         .create_knot("Next test", None, None, None)
@@ -91,13 +87,12 @@ fn next_finalizes_active_step_record() {
     assert_eq!(step.status, StepStatus::Completed);
     assert_eq!(step.to_state.as_deref(), Some("ready_for_plan_review"));
     assert!(step.ended_at.is_some());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn repeated_action_review_cycles_produce_multiple_records() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let created = app
         .create_knot("Cycle test", None, None, None)
@@ -165,13 +160,12 @@ fn repeated_action_review_cycles_produce_multiple_records() {
     assert_eq!(v.step_history[1].status, StepStatus::Completed);
     assert_eq!(v.step_history[2].step, "implementation");
     assert_eq!(v.step_history[2].status, StepStatus::Started);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn show_json_returns_step_history_field() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let created = app
         .create_knot("Show test", None, None, None)
@@ -198,13 +192,12 @@ fn show_json_returns_step_history_field() {
     assert_eq!(history.len(), 1);
     assert_eq!(history[0]["step"], "planning");
     assert_eq!(history[0]["status"], "started");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn show_json_includes_empty_step_history_field() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let created = app
         .create_knot("Show empty history test", None, None, None)
@@ -225,13 +218,12 @@ fn show_json_includes_empty_step_history_field() {
             .len(),
         0
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn step_annotate_changes_agent_on_active_step() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let created = app
         .create_knot("Annotate test", None, None, None)
@@ -271,13 +263,12 @@ fn step_annotate_changes_agent_on_active_step() {
     assert_eq!(new_step.agent_name.as_deref(), Some("different-agent"));
     assert_eq!(new_step.agent_model.as_deref(), Some("sonnet-4.6"));
     assert_eq!(new_step.step, "planning");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn step_annotate_fails_when_no_active_step() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let created = app
         .create_knot("No active", None, None, None)
@@ -286,13 +277,12 @@ fn step_annotate_fails_when_no_active_step() {
     let actor = StepActorInfo::default();
     let result = app.step_annotate(&created.id, &actor);
     assert!(result.is_err());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn step_history_persists_across_show_calls() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let created = app
         .create_knot("Persist test", None, None, None)
@@ -312,6 +302,4 @@ fn step_history_persists_across_show_calls() {
 
     assert_eq!(first.step_history, second.step_history);
     assert_eq!(first.step_history.len(), 1);
-
-    let _ = std::fs::remove_dir_all(root);
 }

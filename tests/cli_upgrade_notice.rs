@@ -1,12 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use uuid::Uuid;
-
-fn unique_home(name: &str) -> PathBuf {
-    let home = std::env::temp_dir().join(format!("knots-upgrade-cli-{}-{name}", Uuid::now_v7()));
-    std::fs::create_dir_all(&home).expect("temp home should be creatable");
-    home
+fn unique_home(name: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(&format!("knots-upgrade-cli-{name}"))
 }
 
 fn knots_binary() -> PathBuf {
@@ -79,7 +75,8 @@ fn install_stub_curl(bin_dir: &Path, latest_tag: &str) {
 
 #[test]
 fn fresh_cached_upgrade_check_suppresses_banner() {
-    let home = unique_home("fresh");
+    let home_ws = unique_home("fresh");
+    let home = home_ws.path().to_path_buf();
     let state_path = upgrade_state_path(&home);
     std::fs::create_dir_all(state_path.parent().expect("state dir should exist"))
         .expect("state dir should be creatable");
@@ -93,13 +90,12 @@ fn fresh_cached_upgrade_check_suppresses_banner() {
     assert!(output.status.success(), "help command should succeed");
     assert!(!String::from_utf8_lossy(&output.stderr).contains("Upgrade available"));
     assert!(String::from_utf8_lossy(&output.stdout).contains("Commands:"));
-
-    let _ = std::fs::remove_dir_all(home);
 }
 
 #[test]
 fn stale_upgrade_check_prints_banner_when_stub_reports_newer_version() {
-    let home = unique_home("stale");
+    let home_ws = unique_home("stale");
+    let home = home_ws.path().to_path_buf();
     let bin_dir = home.join("bin");
     install_stub_curl(&bin_dir, "v9.9.9");
 
@@ -117,6 +113,4 @@ fn stale_upgrade_check_prints_banner_when_stub_reports_newer_version() {
     );
     assert!(stderr.contains("kno upgrade"));
     assert!(String::from_utf8_lossy(&output.stdout).contains("Commands:"));
-
-    let _ = std::fs::remove_dir_all(home);
 }

@@ -4,7 +4,8 @@ use crate::domain::step_history::StepStatus;
 
 #[test]
 fn failed_claim_compensation_requeues_and_fails_open_step() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let work = app
         .create_knot(
@@ -34,13 +35,12 @@ fn failed_claim_compensation_requeues_and_fails_open_step() {
         recovered.step_history.last().map(|step| &step.status),
         Some(&StepStatus::Failed)
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_with_active_external_lease_rejects() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -84,6 +84,4 @@ fn claim_with_active_external_lease_rejects() {
         work_after.lease_id.is_none(),
         "claim should not bind the lease"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

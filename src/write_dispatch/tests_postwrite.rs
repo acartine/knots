@@ -43,7 +43,8 @@ fn corrupt_profile(app: &App, knot_id: &str) {
 
 #[test]
 fn next_succeeds_when_unrelated_bound_knot_has_unresolvable_profile() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -87,7 +88,8 @@ fn next_succeeds_when_unrelated_bound_knot_has_unresolvable_profile() {
 
 #[test]
 fn next_succeeds_and_warns_when_lease_release_fails() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -132,7 +134,8 @@ fn next_succeeds_and_warns_when_lease_release_fails() {
 
 #[test]
 fn next_success_line_prints_when_write_succeeds() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -155,7 +158,8 @@ fn next_success_line_prints_when_write_succeeds() {
 
 #[test]
 fn next_without_lease_flag_names_bound_lease_id() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -180,7 +184,8 @@ fn next_without_lease_flag_names_bound_lease_id() {
 
 #[test]
 fn release_bound_lease_is_noop_without_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -193,7 +198,8 @@ fn release_bound_lease_is_noop_without_lease() {
 
 #[test]
 fn release_bound_lease_rejects_non_lease_binding() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 

@@ -57,7 +57,8 @@ fn claim_actor_kind() -> Option<String> {
 
 #[test]
 fn update_with_matching_lease_succeeds_without_rebinding() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -90,13 +91,12 @@ fn update_with_matching_lease_succeeds_without_rebinding() {
     let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
     assert_eq!(updated.title, "Updated with matching lease");
     assert_eq!(updated.lease_id.as_deref(), Some(lease_id.as_str()));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_with_wrong_lease_fails_without_mutating() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -134,8 +134,6 @@ fn update_with_wrong_lease_fails_without_mutating() {
     let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
     assert_eq!(updated.title, "Wrong lease update");
     assert_eq!(updated.lease_id.as_deref(), Some(lease_id.as_str()));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -144,7 +142,8 @@ fn unleased_knot_rejects_update_with_lease_flag() {
     // lease" path we claim, terminate the auto-created lease, and then try
     // to attach a different lease via `kno update --lease` (which is not
     // a claim operation and must be rejected).
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -187,6 +186,4 @@ fn unleased_knot_rejects_update_with_lease_flag() {
     let updated = app.show_knot(&knot.id).expect("show").expect("knot exists");
     assert_eq!(updated.title, "Unleased claim update");
     assert!(updated.lease_id.is_none(), "update should not bind a lease");
-
-    let _ = std::fs::remove_dir_all(root);
 }

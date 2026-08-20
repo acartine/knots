@@ -6,14 +6,11 @@ use crate::write_queue::{
 
 use clap::Parser;
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -39,7 +36,8 @@ fn setup_repo(root: &Path) {
 
 #[test]
 fn execute_queued_request_returns_failure_when_app_open_fails() {
-    let root = unique_workspace("knots-write-dispatch-open-fail");
+    let root_ws = unique_workspace("knots-write-dispatch-open-fail");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let bad_db_dir = root.join("db-directory");
     std::fs::create_dir_all(&bad_db_dir).expect("bad db directory should be creatable");
@@ -81,7 +79,8 @@ fn execute_queued_request_returns_failure_when_app_open_fails() {
 
 #[test]
 fn execute_operation_poll_claim_empty_and_json() {
-    let root = unique_workspace("knots-write-dispatch-poll-claim");
+    let root_ws = unique_workspace("knots-write-dispatch-poll-claim");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
@@ -124,7 +123,8 @@ fn execute_operation_poll_claim_empty_and_json() {
 
 #[test]
 fn execute_operation_next_rejects_mismatched_state() {
-    let root = unique_workspace("knots-write-dispatch-next-mismatch");
+    let root_ws = unique_workspace("knots-write-dispatch-next-mismatch");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app should open");
@@ -363,7 +363,8 @@ fn exploration_op() -> NewOperation {
 
 #[test]
 fn execute_new_json_returns_created_knot_view() {
-    let root = unique_workspace("knots-wd-new-json");
+    let root_ws = unique_workspace("knots-wd-new-json");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root).unwrap();
@@ -381,7 +382,8 @@ fn execute_new_json_returns_created_knot_view() {
 
 #[test]
 fn exploration_rejects_combined_fast_flag() {
-    let root = unique_workspace("knots-wd-explore-fast");
+    let root_ws = unique_workspace("knots-wd-explore-fast");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
@@ -390,12 +392,12 @@ fn exploration_rejects_combined_fast_flag() {
     let err = execute_operation(&app, &WriteOperation::New(op))
         .expect_err("fast+exploration should fail");
     assert!(err.to_string().contains("cannot combine"));
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_rejects_combined_profile_flag() {
-    let root = unique_workspace("knots-wd-explore-profile");
+    let root_ws = unique_workspace("knots-wd-explore-profile");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
@@ -404,12 +406,12 @@ fn exploration_rejects_combined_profile_flag() {
     let err = execute_operation(&app, &WriteOperation::New(op))
         .expect_err("profile+exploration should fail");
     assert!(err.to_string().contains("cannot combine"));
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_rejects_combined_workflow_flag() {
-    let root = unique_workspace("knots-wd-explore-workflow");
+    let root_ws = unique_workspace("knots-wd-explore-workflow");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
@@ -418,12 +420,12 @@ fn exploration_rejects_combined_workflow_flag() {
     let err = execute_operation(&app, &WriteOperation::New(op))
         .expect_err("workflow+exploration should fail");
     assert!(err.to_string().contains("cannot combine"));
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_new_creates_knot_with_explore_type() {
-    let root = unique_workspace("knots-wd-explore-new");
+    let root_ws = unique_workspace("knots-wd-explore-new");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
@@ -437,5 +439,4 @@ fn exploration_new_creates_knot_with_explore_type() {
         knots[0].knot_type,
         crate::domain::knot_type::KnotType::Explore
     );
-    let _ = std::fs::remove_dir_all(&root);
 }

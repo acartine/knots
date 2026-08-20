@@ -1,17 +1,14 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use rusqlite::Connection;
-use uuid::Uuid;
 
 use super::{check_workflow_id_parity_at, fix_workflow_id_parity};
 use crate::db;
 use crate::doctor::DoctorStatus;
 use crate::project::StorePaths;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-workflow-parity-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-workflow-parity")
 }
 
 fn open_db(root: &Path) -> Connection {
@@ -150,18 +147,19 @@ fn count_local_repair_events(root: &Path) -> usize {
 
 #[test]
 fn check_passes_when_no_stale_events_in_worktree() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let store_paths = StorePaths {
         root: root.join(".knots"),
     };
     let check = check_workflow_id_parity_at(&store_paths).expect("check should run");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_passes_when_all_latest_events_have_workflow_id() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     write_worktree_event(&root, 1, "K-1", "2026-03-12T10:00:00Z", true);
     write_worktree_event(&root, 2, "K-2", "2026-03-12T10:01:00Z", true);
     let store_paths = StorePaths {
@@ -169,12 +167,12 @@ fn check_passes_when_all_latest_events_have_workflow_id() {
     };
     let check = check_workflow_id_parity_at(&store_paths).expect("check should run");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_warns_when_latest_event_missing_workflow_id() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     write_worktree_event(&root, 1, "K-1", "2026-03-12T10:00:00Z", false);
     write_worktree_event(&root, 2, "K-2", "2026-03-12T10:01:00Z", true);
     let store_paths = StorePaths {
@@ -184,12 +182,12 @@ fn check_warns_when_latest_event_missing_workflow_id() {
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains("1 knot"));
     assert!(check.detail.contains("doctor --fix"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_warn_data_names_stale_head_event_and_path() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     write_worktree_event_with_type(&root, 1, "K-1", "2026-03-12T10:00:00Z", false, None, true);
     let store_paths = StorePaths {
         root: root.join(".knots"),
@@ -213,12 +211,12 @@ fn check_warn_data_names_stale_head_event_and_path() {
     );
     assert!(check.detail.contains("K-1"));
     assert!(check.detail.contains("0001-idx.knot_head.json"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_only_considers_latest_event_per_knot() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     write_worktree_event(&root, 1, "K-1", "2026-03-12T10:00:00Z", false);
     write_worktree_event(&root, 2, "K-1", "2026-03-12T10:01:00Z", true);
     let store_paths = StorePaths {
@@ -230,12 +228,12 @@ fn check_only_considers_latest_event_per_knot() {
         DoctorStatus::Pass,
         "a newer event with workflow_id should supersede an older legacy event"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_emits_repair_event_for_stale_knot_in_db() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_db(&root);
     insert_hot(&conn, "K-1", "My knot", "work_sdlc");
     drop(conn);
@@ -258,12 +256,12 @@ fn fix_emits_repair_event_for_stale_knot_in_db() {
         DoctorStatus::Warn,
         "worktree still has the stale event until the next sync push"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_repairs_cache_absent_stale_head_with_legacy_type_inference() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let _conn = open_db(&root);
     write_worktree_event_with_type(
         &root,
@@ -287,12 +285,12 @@ fn fix_repairs_cache_absent_stale_head_with_legacy_type_inference() {
     assert_eq!(payload["data"]["workflow_id"], "work_sdlc");
     assert_eq!(payload["data"]["type"], "work");
     assert_eq!(payload["data"]["state"], "implementation");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_does_not_duplicate_pending_local_repair_before_sync() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let _conn = open_db(&root);
     write_worktree_event_with_type(
         &root,
@@ -315,12 +313,12 @@ fn fix_does_not_duplicate_pending_local_repair_before_sync() {
         1,
         "the second run should reuse the pending local repair event"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_reports_precise_skip_when_stale_head_cannot_build_payload() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let _conn = open_db(&root);
     write_worktree_event_with_type(
         &root,
@@ -340,12 +338,12 @@ fn fix_reports_precise_skip_when_stale_head_cannot_build_payload() {
     assert!(summary.messages[0].contains("event 1"));
     assert!(summary.messages[0].contains("lacks title, state, or updated_at"));
     assert_eq!(count_local_repair_events(&root), 0);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_skips_knot_with_empty_workflow_id_in_db() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_db(&root);
     insert_hot(&conn, "K-1", "My knot", "");
     drop(conn);
@@ -357,12 +355,12 @@ fn fix_skips_knot_with_empty_workflow_id_in_db() {
         0,
         "no repair event when DB has empty workflow_id"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_emits_repair_event_for_cold_knot_via_cold_catalog() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_db(&root);
     db::upsert_cold_catalog(
         &conn,
@@ -387,8 +385,6 @@ fn fix_emits_repair_event_for_cold_knot_via_cold_catalog() {
     assert_eq!(payload["data"]["workflow_id"], "work_sdlc");
     assert_eq!(payload["data"]["profile_id"], "autopilot");
     assert_eq!(payload["data"]["terminal"], true);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn read_single_repair_payload(root: &Path) -> serde_json::Value {

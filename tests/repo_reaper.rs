@@ -97,7 +97,10 @@ fn reaps_stale_temp_workspaces_and_keeps_fresh_ones() {
     let output = run_reaper(&temp_root, "24");
 
     assert!(output.status.success(), "stderr: {}", stderr_of(&output));
-    assert!(!stale.exists(), "a stale knots-* workspace should be reaped");
+    assert!(
+        !stale.exists(),
+        "a stale knots-* workspace should be reaped"
+    );
     assert!(fresh.exists(), "a fresh knots-* workspace should survive");
     assert!(
         stdout_of(&output).contains("Reaping stale artifact tree:"),
@@ -120,7 +123,10 @@ fn still_reaps_stale_build_artifacts_under_target() {
     let output = run_reaper(&temp_root, "24");
 
     assert!(output.status.success(), "stderr: {}", stderr_of(&output));
-    assert!(!stale.exists(), "a stale target subtree should still be reaped");
+    assert!(
+        !stale.exists(),
+        "a stale target subtree should still be reaped"
+    );
     assert!(fresh.exists(), "a fresh target subtree should survive");
     assert!(
         stdout_of(&output).contains("Reaping stale artifact tree: target/debug"),
@@ -206,7 +212,10 @@ fn does_not_reap_its_own_cutoff_stamp_file() {
     let output = run_reaper(&temp_root, "24");
 
     assert!(output.status.success(), "stderr: {}", stderr_of(&output));
-    assert!(leftover.exists(), "a stale stamp file is not an artifact tree");
+    assert!(
+        leftover.exists(),
+        "a stale stamp file is not an artifact tree"
+    );
     assert!(
         stdout_of(&output).contains("No stale build artifacts older than 24h."),
         "stdout: {}",

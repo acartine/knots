@@ -5,7 +5,8 @@ use serde_json::Value;
 
 #[test]
 fn poll_returns_highest_priority_agent_owned_knot() {
-    let root = unique_workspace("knots-cli-poll");
+    let root_ws = unique_workspace("knots-cli-poll");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -63,13 +64,12 @@ fn poll_returns_highest_priority_agent_owned_knot() {
     assert!(stdout.contains("## Completion"), "completion: {stdout}");
     assert!(stdout.contains("kno next"), "next cmd: {stdout}");
     assert!(stdout.contains("--actor-kind agent"), "actor: {stdout}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn poll_with_stage_filter() {
-    let root = unique_workspace("knots-cli-poll-stage");
+    let root_ws = unique_workspace("knots-cli-poll-stage");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -94,13 +94,12 @@ fn poll_with_stage_filter() {
     assert_success(&poll_plan);
     let stdout = String::from_utf8_lossy(&poll_plan.stdout);
     assert!(stdout.contains("Plan me"), "planning: {stdout}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn poll_returns_nothing_when_queue_empty() {
-    let root = unique_workspace("knots-cli-poll-empty");
+    let root_ws = unique_workspace("knots-cli-poll-empty");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -111,13 +110,12 @@ fn poll_returns_nothing_when_queue_empty() {
         stderr.contains("no claimable knots found"),
         "empty: {stderr}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_transitions_and_returns_prompt() {
-    let root = unique_workspace("knots-cli-claim");
+    let root_ws = unique_workspace("knots-cli-claim");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -160,13 +158,12 @@ fn claim_transitions_and_returns_prompt() {
 
     let claim2 = run_knots(&root, &db, &["claim", &knot_id]);
     assert_failure(&claim2);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_json_output() {
-    let root = unique_workspace("knots-cli-claim-json");
+    let root_ws = unique_workspace("knots-cli-claim-json");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -198,13 +195,12 @@ fn claim_json_output() {
         !stderr.contains("deprecated"),
         "claim without agent metadata should not warn: {stderr}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_accepts_actor_metadata_and_validates_actor_kind() {
-    let root = unique_workspace("knots-cli-next-actor");
+    let root_ws = unique_workspace("knots-cli-next-actor");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -271,13 +267,12 @@ fn next_accepts_actor_metadata_and_validates_actor_kind() {
     assert_failure(&next_bad);
     assert!(String::from_utf8_lossy(&next_bad.stderr)
         .contains("--actor-kind must be one of: human, agent"),);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn next_json_flag_emits_structured_output() {
-    let root = unique_workspace("knots-cli-next-json");
+    let root_ws = unique_workspace("knots-cli-next-json");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -308,13 +303,12 @@ fn next_json_flag_emits_structured_output() {
     assert_eq!(parsed["state"], "plan_review");
     assert!(parsed["id"].is_string());
     assert_eq!(parsed["owner_kind"], "agent");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn poll_claim_flag_atomically_grabs() {
-    let root = unique_workspace("knots-cli-poll-claim");
+    let root_ws = unique_workspace("knots-cli-poll-claim");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -346,13 +340,12 @@ fn poll_claim_flag_atomically_grabs() {
 
     let poll_empty = run_knots(&root, &db, &["poll"]);
     assert_failure(&poll_empty);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn poll_filters_human_owned_stages() {
-    let root = unique_workspace("knots-cli-poll-human");
+    let root_ws = unique_workspace("knots-cli-poll-human");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -377,13 +370,12 @@ fn poll_filters_human_owned_stages() {
     assert_success(&poll_human);
     let stdout = String::from_utf8_lossy(&poll_human.stdout);
     assert!(stdout.contains("Human gate"), "human: {stdout}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn skill_command_accepts_state_name_as_fallback() {
-    let root = unique_workspace("knots-cli-skill-state");
+    let root_ws = unique_workspace("knots-cli-skill-state");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -401,6 +393,4 @@ fn skill_command_accepts_state_name_as_fallback() {
     assert_failure(&skill_nonsense);
     assert!(String::from_utf8_lossy(&skill_nonsense.stderr)
         .contains("is not a knot id or skill state name"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -119,43 +119,44 @@ fn claim_and_assert_loom(
 
 #[test]
 fn loom_regression_autopilot_all_action_states() {
-    let root = unique_workspace("knots-e2e-loom-autopilot");
+    let root_ws = unique_workspace("knots-e2e-loom-autopilot");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
     for (queue, action) in QUEUE_ACTION_PAIRS {
         claim_and_assert_loom(&root, &db, "autopilot", queue, action);
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn loom_regression_autopilot_with_pr_all_action_states() {
-    let root = unique_workspace("knots-e2e-loom-pr");
+    let root_ws = unique_workspace("knots-e2e-loom-pr");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
     for (queue, action) in QUEUE_ACTION_PAIRS {
         claim_and_assert_loom(&root, &db, "autopilot_with_pr", queue, action);
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn loom_regression_semiauto_all_action_states() {
-    let root = unique_workspace("knots-e2e-loom-semi");
+    let root_ws = unique_workspace("knots-e2e-loom-semi");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
     for (queue, action) in QUEUE_ACTION_PAIRS {
         claim_and_assert_loom(&root, &db, "semiauto", queue, action);
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn loom_regression_no_planning_profiles_skip_planning() {
-    let root = unique_workspace("knots-e2e-loom-noplan");
+    let root_ws = unique_workspace("knots-e2e-loom-noplan");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -171,14 +172,14 @@ fn loom_regression_no_planning_profiles_skip_planning() {
             claim_and_assert_loom(&root, &db, profile, queue, action);
         }
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 // ── Text output validates Loom headings ────────────────────
 
 #[test]
 fn poll_text_output_contains_loom_heading() {
-    let root = unique_workspace("knots-e2e-loom-poll-text");
+    let root_ws = unique_workspace("knots-e2e-loom-poll-text");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -206,12 +207,12 @@ fn poll_text_output_contains_loom_heading() {
         stdout.contains("## Completion"),
         "poll text should include completion command section"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_text_output_contains_loom_heading() {
-    let root = unique_workspace("knots-e2e-loom-claim-text");
+    let root_ws = unique_workspace("knots-e2e-loom-claim-text");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -235,12 +236,12 @@ fn claim_text_output_contains_loom_heading() {
     let stdout = String::from_utf8_lossy(&claim.stdout);
 
     assert_builtin_implementation_prompt(&stdout, "autopilot");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn default_shipped_workflow_claim_uses_loom_defined_implementation_prompt() {
-    let root = unique_workspace("knots-e2e-loom-default-impl");
+    let root_ws = unique_workspace("knots-e2e-loom-default-impl");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -265,14 +266,14 @@ fn default_shipped_workflow_claim_uses_loom_defined_implementation_prompt() {
     let prompt = json["prompt"].as_str().expect("prompt should exist");
 
     assert_builtin_implementation_prompt(prompt, "autopilot");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 // ── Skill command resolves Loom body ───────────────────────
 
 #[test]
 fn skill_command_returns_loom_body_content() {
-    let root = unique_workspace("knots-e2e-loom-skill");
+    let root_ws = unique_workspace("knots-e2e-loom-skill");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -288,14 +289,14 @@ fn skill_command_returns_loom_body_content() {
             excerpt = &stdout[..stdout.len().min(300)]
         );
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 // ── Loom acceptance criteria in claim output ───────────────
 
 #[test]
 fn claim_json_includes_loom_acceptance_criteria() {
-    let root = unique_workspace("knots-e2e-loom-accept");
+    let root_ws = unique_workspace("knots-e2e-loom-accept");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -329,5 +330,4 @@ fn claim_json_includes_loom_acceptance_criteria() {
         prompt.contains("All tests passing with coverage threshold met"),
         "Loom-defined acceptance criterion should be present"
     );
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -1,7 +1,6 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde_json::json;
-use uuid::Uuid;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::step_history::StepStatus;
@@ -10,10 +9,8 @@ use crate::sync::GitAdapter;
 
 use super::IncrementalApplier;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-step-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-step")
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -60,7 +57,8 @@ fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
 
 #[test]
 fn apply_full_event_state_set_replays_step_history() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     seed_hot_knot(&conn, "K-STEP");
     let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -107,6 +105,4 @@ fn apply_full_event_state_set_replays_step_history() {
     assert_eq!(record.agent_name.as_deref(), Some("sandbox-probe"));
     assert_eq!(record.agent_model.as_deref(), Some("sandbox-probe"));
     assert_eq!(record.agent_version.as_deref(), Some("1.0.0"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

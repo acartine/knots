@@ -1,8 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use serde_json::{json, Map, Value};
-use uuid::Uuid;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::events::WorkflowPrecondition;
@@ -13,10 +12,8 @@ use super::{
     required_workflow_id, IncrementalApplier, WorkflowIdResolution,
 };
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-apply-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-apply-ext")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -34,15 +31,16 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# apply\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -99,7 +97,7 @@ fn helper_functions_cover_optional_and_error_paths() {
     assert_eq!(optional_i64(Some(&json!(7))), Some(7));
     assert_eq!(optional_i64(Some(&json!("7"))), None);
 
-    let err = invalid_event(Path::new("/tmp/event.json"), "bad payload");
+    let err = invalid_event(Path::new("/example/event.json"), "bad payload");
     assert!(matches!(err, SyncError::InvalidEvent { .. }));
 }
 
@@ -114,13 +112,13 @@ fn parse_metadata_entry_requires_all_string_fields() {
     valid.insert("model".to_string(), json!("gpt-5"));
     valid.insert("version".to_string(), json!("1"));
 
-    let parsed =
-        parse_metadata_entry(&valid, Path::new("/tmp/entry.json")).expect("metadata should parse");
+    let parsed = parse_metadata_entry(&valid, Path::new("/example/entry.json"))
+        .expect("metadata should parse");
     assert_eq!(parsed.entry_id, "n1");
 
     let mut missing = valid.clone();
     missing.remove("agentname");
-    let err = parse_metadata_entry(&missing, Path::new("/tmp/entry.json"))
+    let err = parse_metadata_entry(&missing, Path::new("/example/entry.json"))
         .expect_err("missing field should fail");
     assert!(matches!(err, SyncError::InvalidEvent { .. }));
 }
@@ -129,7 +127,7 @@ fn parse_metadata_entry_requires_all_string_fields() {
 fn required_workflow_id_defaults_to_work_when_workflow_and_type_missing() {
     let object = Map::<String, Value>::new();
 
-    let resolved = required_workflow_id(&object, Path::new("/tmp/event.json"))
+    let resolved = required_workflow_id(&object, Path::new("/example/event.json"))
         .expect("legacy events without workflow_id or type should default to work_sdlc");
     assert_eq!(resolved.id, "work_sdlc");
     assert!(matches!(
@@ -143,7 +141,7 @@ fn required_workflow_id_converts_legacy_builtin_workflow_id() {
     let mut object = Map::<String, Value>::new();
     object.insert("workflow_id".to_string(), json!("knots_sdlc"));
 
-    let resolved = required_workflow_id(&object, Path::new("/tmp/event.json"))
+    let resolved = required_workflow_id(&object, Path::new("/example/event.json"))
         .expect("legacy workflow should convert, not fail");
     assert_eq!(resolved.id, "work_sdlc");
     assert!(matches!(
@@ -157,7 +155,7 @@ fn required_workflow_id_converts_compatibility_workflow_id() {
     let mut object = Map::<String, Value>::new();
     object.insert("workflow_id".to_string(), json!("compatibility"));
 
-    let resolved = required_workflow_id(&object, Path::new("/tmp/event.json"))
+    let resolved = required_workflow_id(&object, Path::new("/example/event.json"))
         .expect("compatibility workflow should convert, not fail");
     assert_eq!(resolved.id, "work_sdlc");
     assert!(matches!(
@@ -171,7 +169,7 @@ fn required_workflow_id_infers_from_knot_type_when_missing() {
     let mut object = Map::<String, Value>::new();
     object.insert("type".to_string(), json!("work"));
 
-    let resolved = required_workflow_id(&object, Path::new("/tmp/event.json"))
+    let resolved = required_workflow_id(&object, Path::new("/example/event.json"))
         .expect("missing workflow_id with known type should resolve via knot type");
     assert_eq!(resolved.id, "work_sdlc");
     assert!(matches!(
@@ -182,7 +180,8 @@ fn required_workflow_id_infers_from_knot_type_when_missing() {
 
 #[test]
 fn apply_index_event_converts_legacy_workflow_id_to_work_sdlc() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -219,13 +218,12 @@ fn apply_index_event_converts_legacy_workflow_id_to_work_sdlc() {
         .expect("hot lookup should succeed")
         .expect("converted knot should exist in hot cache");
     assert_eq!(record.workflow_id, "work_sdlc");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn precondition_checks_cover_none_match_and_mismatch() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     seed_hot_knot(&conn, "K-1");
 
@@ -252,13 +250,12 @@ fn precondition_checks_cover_none_match_and_mismatch() {
     )
     .expect("stale precondition check should succeed");
     assert!(stale);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_index_event_ignores_missing_and_non_head_files() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     let git = GitAdapter::new();
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), git);
@@ -311,13 +308,12 @@ fn apply_index_event_ignores_missing_and_non_head_files() {
         .apply_index_event(Path::new(".knots/index/2026/02/25/1001-idx.knot_head.json"))
         .expect_err("invalid index data should fail");
     assert!(matches!(err, SyncError::InvalidEvent { .. }));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_to_head_reports_snapshot_load_errors_during_bootstrap() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     let snapshots = root.join(".knots/snapshots");
     std::fs::create_dir_all(&snapshots).expect("snapshot directory should be creatable");
@@ -332,13 +328,12 @@ fn apply_to_head_reports_snapshot_load_errors_during_bootstrap() {
         .apply_to_head("HEAD")
         .expect_err("invalid bootstrap snapshot should fail");
     assert!(matches!(err, SyncError::SnapshotLoad { .. }));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn changed_files_falls_back_to_scan_when_base_revision_is_unknown() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
 
     let idx_path = root.join(".knots/index/2026/02/25/3000-idx.knot_head.json");
@@ -390,13 +385,12 @@ fn changed_files_falls_back_to_scan_when_base_revision_is_unknown() {
         .apply_to_head("missing_target_revision")
         .expect("unknown base revision should fall back to scanning files");
     assert_eq!(summary.index_files, 1);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_index_event_keeps_old_non_terminal_knots_in_hot_cache() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
 
@@ -438,6 +432,4 @@ fn apply_index_event_keeps_old_non_terminal_knots_in_hot_cache() {
     assert!(hot.is_some());
     let warm = db::get_knot_warm(&conn, "K-hot").expect("warm lookup should succeed");
     assert!(warm.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }

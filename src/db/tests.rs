@@ -6,20 +6,13 @@ use rusqlite::params;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-use uuid::Uuid;
 
-pub(super) fn unique_db_path() -> String {
-    std::env::temp_dir()
-        .join(format!("knots-pragmas-{}.sqlite", Uuid::now_v7()))
-        .display()
-        .to_string()
-}
-
-pub(super) fn cleanup_db_files(path: &str) {
-    for suffix in ["", "-wal", "-shm"] {
-        let candidate = format!("{path}{suffix}");
-        let _ = std::fs::remove_file(candidate);
-    }
+/// A database inside its own workspace, so the `-wal` and `-shm` siblings the
+/// connection creates are reclaimed with it.
+pub(super) fn unique_db_path() -> (knots_test_support::TestWorkspace, String) {
+    let ws = knots_test_support::workspace("knots-pragmas");
+    let path = ws.path().join("state.sqlite").display().to_string();
+    (ws, path)
 }
 
 fn table_exists(conn: &rusqlite::Connection, table_name: &str) -> bool {
@@ -72,7 +65,7 @@ fn column_default(
 
 #[test]
 fn configures_connection_pragmas() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     let journal_mode: String = conn
@@ -99,13 +92,11 @@ fn configures_connection_pragmas() {
         .query_row("PRAGMA busy_timeout;", [], |row| row.get(0))
         .expect("busy_timeout pragma should be readable");
     assert_eq!(busy_timeout, 5000);
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn initializes_required_tables_and_schema_version() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     let tables = [
@@ -186,13 +177,11 @@ fn initializes_required_tables_and_schema_version() {
         column_default(&conn, "knot_hot", "verification_steps_json").as_deref(),
         Some("'[]'")
     );
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn reapplies_migrations_idempotently() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn_first = open_connection(&path).expect("first open should initialize schema");
     drop(conn_first);
 
@@ -212,13 +201,11 @@ fn reapplies_migrations_idempotently() {
         )
         .expect("schema version should be queryable");
     assert_eq!(schema_version, CURRENT_SCHEMA_VERSION.to_string());
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn migrations_add_parity_columns_and_backfill_profile_defaults() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = rusqlite::Connection::open(&path).expect("pre-migration connection should open");
     conn.execute_batch(
         r#"
@@ -314,13 +301,11 @@ CREATE TABLE cold_catalog (
         column_default(&upgraded, "knot_hot", "workflow_id").as_deref(),
         Some("'work_sdlc'")
     );
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn reads_optional_fetch_blob_limit_from_meta() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     let initial = get_sync_fetch_blob_limit_kb(&conn).expect("fetch blob limit should read");
@@ -329,13 +314,11 @@ fn reads_optional_fetch_blob_limit_from_meta() {
     set_meta(&conn, "sync_fetch_blob_limit_kb", "4").expect("meta update should succeed");
     let configured = get_sync_fetch_blob_limit_kb(&conn).expect("fetch blob limit should read");
     assert_eq!(configured, Some(4));
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn reads_pull_drift_warn_threshold_from_meta() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     let initial =
@@ -346,13 +329,11 @@ fn reads_pull_drift_warn_threshold_from_meta() {
     let configured =
         get_pull_drift_warn_threshold(&conn).expect("drift warning threshold should read");
     assert_eq!(configured, 5);
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn open_connection_stays_readable_when_writer_lock_is_held() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let initialized = open_connection(&path).expect("initial connection should open");
     drop(initialized);
 
@@ -377,12 +358,11 @@ fn open_connection_stays_readable_when_writer_lock_is_held() {
     lock_conn
         .execute_batch("ROLLBACK;")
         .expect("write lock should release");
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn set_meta_retries_when_database_is_temporarily_locked() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let seeded = open_connection(&path).expect("seed connection should open");
     drop(seeded);
 
@@ -417,8 +397,6 @@ fn set_meta_retries_when_database_is_temporarily_locked() {
         )
         .expect("sync_policy row should be readable");
     assert_eq!(value, "always");
-
-    cleanup_db_files(&path);
 }
 
 #[cfg(test)]

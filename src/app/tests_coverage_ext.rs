@@ -2,7 +2,6 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 
 use serde_json::Value;
-use uuid::Uuid;
 
 use super::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 use crate::db::{self, EdgeDirection};
@@ -59,10 +58,8 @@ body = "Do work"
 complete = "done"
 "#;
 
-pub(super) fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-coverage-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+pub(super) fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-coverage-ext")
 }
 
 pub(super) fn open_app(root: &Path) -> (App, String) {
@@ -129,7 +126,8 @@ pub(super) fn default_update_patch() -> UpdateKnotPatch {
 
 #[test]
 fn update_knot_rejects_blank_title_and_bad_priority() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let knot = app
         .create_knot("Coverage", None, Some("idea"), Some("default"))
@@ -150,12 +148,12 @@ fn update_knot_rejects_blank_title_and_bad_priority() {
         },
     );
     assert!(matches!(bad, Err(AppError::InvalidArgument(_))));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_knot_tag_normalization_branches() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let knot = app
         .create_knot("Coverage", None, Some("idea"), Some("default"))
@@ -191,25 +189,24 @@ fn update_knot_tag_normalization_branches() {
         )
         .expect("tag remove should succeed");
     assert!(!removed.tags.contains(&"alpha".to_string()));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn add_edge_rejects_blank_arguments() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
 
     let err = app
         .add_edge("   ", "blocked_by", "K-2")
         .expect_err("blank src should fail");
     assert!(matches!(err, AppError::InvalidArgument(_)));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn cold_search_maps_cold_catalog_fields() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, db_path) = open_app(&root);
     let conn = db::open_connection(&db_path).expect("db should open");
     db::set_meta(&conn, "sync_policy", "never").expect("sync policy should set");
@@ -227,13 +224,12 @@ fn cold_search_maps_cold_catalog_fields() {
     assert_eq!(matches[0].id, "K-cold");
     assert_eq!(matches[0].title, "Cold Knot");
     assert_eq!(matches[0].state, "shipped");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn set_state_with_if_match_writes_preconditions() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _db_path) = open_app(&root);
     let created = app
         .create_knot("State precondition", None, Some("idea"), Some("default"))
@@ -271,8 +267,6 @@ fn set_state_with_if_match_writes_preconditions() {
         }
     }
     assert!(saw_precondition);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -282,7 +276,7 @@ fn app_error_source_covers_wrapped_error_variants() {
             "event",
         ))),
         AppError::Sync(SyncError::GitUnavailable),
-        AppError::Lock(LockError::Busy(PathBuf::from("/tmp/lock"))),
+        AppError::Lock(LockError::Busy(PathBuf::from("/example/lock"))),
         AppError::RemoteInit(RemoteInitError::NotGitRepository),
         AppError::Fsck(FsckError::Io(std::io::Error::other("fsck"))),
         AppError::Doctor(DoctorError::Io(std::io::Error::other("doctor"))),
@@ -313,7 +307,8 @@ fn app_error_source_covers_wrapped_error_variants() {
 
 #[test]
 fn set_profile_switches_profile_and_state_atomically_and_supports_noop() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let created = app
         .create_knot("Profile switch", None, Some("idea"), Some("default"))
@@ -356,13 +351,12 @@ fn set_profile_switches_profile_and_state_atomically_and_supports_noop() {
             .and_then(Value::as_str),
         Some("autopilot_no_planning")
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn set_state_with_actor_records_actor_and_deferred_provenance() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let created = app
         .create_knot("Actor metadata", None, Some("idea"), Some("default"))
@@ -456,13 +450,12 @@ fn set_state_with_actor_records_actor_and_deferred_provenance() {
             .and_then(Value::as_str),
         Some("planning")
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn set_profile_covers_stale_etag_and_unknown_state_paths() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let created = app
         .create_knot("Profile errors", None, Some("idea"), Some("default"))
@@ -483,6 +476,4 @@ fn set_profile_covers_stale_etag_and_unknown_state_paths() {
         created.profile_etag.as_deref(),
     );
     assert!(matches!(unknown_state, Err(AppError::Workflow(_))));
-
-    let _ = std::fs::remove_dir_all(root);
 }

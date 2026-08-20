@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(cwd: &Path, args: &[&str]) {
@@ -150,7 +147,8 @@ fn show_state(root: &Path, db: &Path, knot_id: &str) -> String {
 
 #[test]
 fn doctor_warns_and_fix_resolves_terminal_parents_recursively() {
-    let root = unique_workspace("knots-cli-doctor-terminal-parents");
+    let root_ws = unique_workspace("knots-cli-doctor-terminal-parents");
+    let root = root_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -211,7 +209,8 @@ fn doctor_warns_and_fix_resolves_terminal_parents_recursively() {
 
 #[test]
 fn doctor_ignores_deferred_children_when_checking_terminal_parents() {
-    let root = unique_workspace("knots-cli-doctor-deferred-passive");
+    let root_ws = unique_workspace("knots-cli-doctor-deferred-passive");
+    let root = root_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);

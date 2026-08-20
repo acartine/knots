@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::action_prompt;
 use crate::installed_workflows::builtin;
@@ -98,12 +98,11 @@ approved = "done"
 changes = "ready_for_work"
 "#;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    installed_workflows::ensure_builtin_workflows_registered(&path)
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    let ws = knots_test_support::workspace(prefix);
+    installed_workflows::ensure_builtin_workflows_registered(ws.path())
         .expect("builtin workflows should register");
-    path
+    ws
 }
 
 fn install_custom_workflow(root: &Path) {
@@ -123,7 +122,8 @@ fn install_custom_workflow(root: &Path) {
 
 #[test]
 fn builtin_compat_profiles_resolve_planning_from_loom_body() {
-    let root = unique_workspace("knots-compat-prompt-planning");
+    let root_ws = unique_workspace("knots-compat-prompt-planning");
+    let root = root_ws.path().to_path_buf();
     let registry = ProfileRegistry::load_for_repo(&root).expect("registry");
     let loom_body = loom_compat_bundle::prompt_body_for_state("planning")
         .expect("loom bundle should have planning");
@@ -142,12 +142,12 @@ fn builtin_compat_profiles_resolve_planning_from_loom_body() {
             "{profile_id}: resolved prompt should contain Loom body content"
         );
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn builtin_compat_profiles_resolve_implementation_from_loom_body() {
-    let root = unique_workspace("knots-compat-prompt-impl");
+    let root_ws = unique_workspace("knots-compat-prompt-impl");
+    let root = root_ws.path().to_path_buf();
     let registry = ProfileRegistry::load_for_repo(&root).expect("registry");
 
     for profile_id in ["autopilot", "semiauto", "autopilot_no_planning"] {
@@ -160,12 +160,12 @@ fn builtin_compat_profiles_resolve_implementation_from_loom_body() {
             "{profile_id}: resolved should contain Loom heading"
         );
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn builtin_compat_all_action_states_have_loom_sourced_prompts() {
-    let root = unique_workspace("knots-compat-all-states");
+    let root_ws = unique_workspace("knots-compat-all-states");
+    let root = root_ws.path().to_path_buf();
     let registry = ProfileRegistry::load_for_repo(&root).expect("registry");
     let profile = registry.require("autopilot").expect("autopilot");
 
@@ -194,12 +194,12 @@ fn builtin_compat_all_action_states_have_loom_sourced_prompts() {
             "{state}: loom body should contain heading"
         );
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn builtin_render_for_profile_returns_loom_body_content() {
-    let root = unique_workspace("knots-compat-render-profile");
+    let root_ws = unique_workspace("knots-compat-render-profile");
+    let root = root_ws.path().to_path_buf();
     let registry = ProfileRegistry::load_for_repo(&root).expect("registry");
     let profile = registry.require("autopilot").expect("autopilot");
 
@@ -213,12 +213,12 @@ fn builtin_render_for_profile_returns_loom_body_content() {
         !rendered.contains("{{ output }}"),
         "output-specific sections should be resolved for branch profiles"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn builtin_pr_profile_render_for_profile_includes_pr_content() {
-    let root = unique_workspace("knots-compat-render-pr");
+    let root_ws = unique_workspace("knots-compat-render-pr");
+    let root = root_ws.path().to_path_buf();
     let registry = ProfileRegistry::load_for_repo(&root).expect("registry");
     let profile = registry.require("autopilot_with_pr").expect("pr profile");
 
@@ -232,7 +232,6 @@ fn builtin_pr_profile_render_for_profile_includes_pr_content() {
         rendered.contains("pull request"),
         "PR profile should resolve output-specific PR content"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -271,7 +270,8 @@ fn gate_evaluate_render_for_profile_contains_required_evaluation_guidance() {
 
 #[test]
 fn compat_harness_peek_resolves_loom_body_for_builtin_profile() {
-    let root = unique_workspace("knots-compat-peek-loom");
+    let root_ws = unique_workspace("knots-compat-peek-loom");
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = crate::app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
 
@@ -285,12 +285,12 @@ fn compat_harness_peek_resolves_loom_body_for_builtin_profile() {
         "peeked skill should contain Loom heading: got {}",
         &peeked.skill[..peeked.skill.len().min(200)]
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn compat_harness_claim_resolves_loom_body_for_builtin_profile() {
-    let root = unique_workspace("knots-compat-claim-loom");
+    let root_ws = unique_workspace("knots-compat-claim-loom");
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = crate::app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
 
@@ -305,14 +305,14 @@ fn compat_harness_claim_resolves_loom_body_for_builtin_profile() {
         claimed.skill.contains("# Implementation"),
         "claimed skill should contain Loom heading"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 // ── Custom workflow compat: prompts resolve from Loom body ────
 
 #[test]
 fn custom_workflow_compat_prompt_resolves_from_loom_body() {
-    let root = unique_workspace("knots-compat-custom-loom");
+    let root_ws = unique_workspace("knots-compat-custom-loom");
+    let root = root_ws.path().to_path_buf();
     install_custom_workflow(&root);
 
     let installed = InstalledWorkflowRegistry::load(&root).expect("registry");
@@ -329,12 +329,12 @@ fn custom_workflow_compat_prompt_resolves_from_loom_body() {
         prompt.accept.contains(&"Built output".to_string()),
         "acceptance criteria should come from Loom bundle"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn custom_workflow_peek_resolves_loom_body_through_compat() {
-    let root = unique_workspace("knots-compat-custom-peek");
+    let root_ws = unique_workspace("knots-compat-custom-peek");
+    let root = root_ws.path().to_path_buf();
     install_custom_workflow(&root);
     let db_path = root.join(".knots/cache/state.sqlite");
     let app = crate::app::App::open(db_path.to_str().expect("utf8"), root.clone()).expect("app");
@@ -356,12 +356,12 @@ fn custom_workflow_peek_resolves_loom_body_through_compat() {
         peeked.skill.contains("Built output"),
         "custom workflow peek should include acceptance criteria"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn compat_profiles_coexist_after_custom_workflow_installed() {
-    let root = unique_workspace("knots-compat-coexist");
+    let root_ws = unique_workspace("knots-compat-coexist");
+    let root = root_ws.path().to_path_buf();
     install_custom_workflow(&root);
     let registry = ProfileRegistry::load_for_repo(&root).expect("registry");
 
@@ -384,12 +384,12 @@ fn compat_profiles_coexist_after_custom_workflow_installed() {
         custom_work.contains("# Custom Work"),
         "custom profile should resolve its own Loom body"
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn no_planning_profiles_resolve_implementation_from_loom_body() {
-    let root = unique_workspace("knots-compat-no-plan");
+    let root_ws = unique_workspace("knots-compat-no-plan");
+    let root = root_ws.path().to_path_buf();
     let registry = ProfileRegistry::load_for_repo(&root).expect("registry");
 
     for profile_id in ["autopilot_no_planning", "autopilot_with_pr_no_planning"] {
@@ -406,7 +406,6 @@ fn no_planning_profiles_resolve_implementation_from_loom_body() {
             "{profile_id}: should still resolve implementation from Loom"
         );
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]

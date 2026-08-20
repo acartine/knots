@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn knots_binary() -> PathBuf {
@@ -174,8 +171,10 @@ fn setup_repo_with_remote(root: &Path) {
 
 #[test]
 fn skills_install_and_uninstall_round_trip_for_codex() {
-    let root = unique_workspace("knots-cli-skills-codex");
-    let home = unique_workspace("knots-cli-skills-home");
+    let root_ws = unique_workspace("knots-cli-skills-codex");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-skills-home");
+    let home = home_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -248,8 +247,10 @@ fn skills_install_and_uninstall_round_trip_for_codex() {
 
 #[test]
 fn skills_install_for_opencode_uses_agents_root_and_cleans_legacy_locations() {
-    let root = unique_workspace("knots-cli-skills-opencode");
-    let home = unique_workspace("knots-cli-skills-home");
+    let root_ws = unique_workspace("knots-cli-skills-opencode");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-skills-home");
+    let home = home_ws.path().to_path_buf();
     std::fs::create_dir_all(root.join(".opencode/skills/knots")).expect("legacy project root");
     std::fs::write(root.join(".opencode/skills/knots/SKILL.md"), "legacy")
         .expect("legacy project skill");
@@ -271,8 +272,10 @@ fn skills_install_for_opencode_uses_agents_root_and_cleans_legacy_locations() {
 
 #[test]
 fn skills_install_prefers_project_root_for_claude() {
-    let root = unique_workspace("knots-cli-skills-claude");
-    let home = unique_workspace("knots-cli-skills-home");
+    let root_ws = unique_workspace("knots-cli-skills-claude");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-skills-home");
+    let home = home_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     std::fs::create_dir_all(root.join(".claude")).expect("project root should exist");
     let db = root.join(".knots/cache/state.sqlite");
@@ -305,8 +308,10 @@ fn skills_install_prefers_project_root_for_claude() {
 
 #[test]
 fn skills_update_fails_non_interactively_when_install_is_required() {
-    let root = unique_workspace("knots-cli-skills-update");
-    let home = unique_workspace("knots-cli-skills-home");
+    let root_ws = unique_workspace("knots-cli-skills-update");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-skills-home");
+    let home = home_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
 
     let update = run_knots(&root, &db, &home, &["skills", "update", "opencode"]);
@@ -317,8 +322,10 @@ fn skills_update_fails_non_interactively_when_install_is_required() {
 
 #[test]
 fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
-    let root = unique_workspace("knots-cli-skills-doctor");
-    let home = unique_workspace("knots-cli-skills-home");
+    let root_ws = unique_workspace("knots-cli-skills-doctor");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-skills-home");
+    let home = home_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let project_claude = root.join(".claude");
     std::fs::create_dir_all(&project_claude).expect("project root should exist");
@@ -358,8 +365,10 @@ fn doctor_reports_missing_skills_and_fix_installs_for_preferred_root() {
 
 #[test]
 fn skills_install_for_claude_ignores_user_level_home_root() {
-    let root = unique_workspace("knots-cli-skills-claude-project-only");
-    let home = unique_workspace("knots-cli-skills-home");
+    let root_ws = unique_workspace("knots-cli-skills-claude-project-only");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-skills-home");
+    let home = home_ws.path().to_path_buf();
     std::fs::create_dir_all(home.join(".claude")).expect("user root should exist");
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -372,8 +381,10 @@ fn skills_install_for_claude_ignores_user_level_home_root() {
 
 #[test]
 fn doctor_reports_drifted_skills_and_update_reconciles_them() {
-    let root = unique_workspace("knots-cli-skills-doctor-drift");
-    let home = unique_workspace("knots-cli-skills-home");
+    let root_ws = unique_workspace("knots-cli-skills-doctor-drift");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-skills-home");
+    let home = home_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db, &home);
@@ -408,8 +419,10 @@ fn doctor_reports_drifted_skills_and_update_reconciles_them() {
 
 #[test]
 fn doctor_skips_codex_when_agents_root_is_absent() {
-    let root = unique_workspace("knots-cli-skills-doctor-fix-root");
-    let home = unique_workspace("knots-cli-skills-home");
+    let root_ws = unique_workspace("knots-cli-skills-doctor-fix-root");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-skills-home");
+    let home = home_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db, &home);
@@ -435,8 +448,10 @@ fn doctor_skips_codex_when_agents_root_is_absent() {
 
 #[test]
 fn knots_e2e_skill_documents_invocation_precedence() {
-    let root = unique_workspace("knots-cli-skills-e2e-doc");
-    let home = unique_workspace("knots-cli-skills-home");
+    let root_ws = unique_workspace("knots-cli-skills-e2e-doc");
+    let root = root_ws.path().to_path_buf();
+    let home_ws = unique_workspace("knots-cli-skills-home");
+    let home = home_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 

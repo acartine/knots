@@ -26,7 +26,8 @@ fn new_with_lease(title: &str, lease_id: &str) -> WriteOperation {
 
 #[test]
 fn new_with_lease_flag_binds_lease_for_handoff_authorship() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let lease_id = create_test_lease(&app);
@@ -101,13 +102,12 @@ fn new_with_lease_flag_binds_lease_for_handoff_authorship() {
         .expect("handoff capsule should exist");
     assert_eq!(capsule.agentname, "claude");
     assert_ne!(capsule.agentname, "unknown");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn new_with_lease_flag_rejects_missing_non_lease_and_terminated_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -130,6 +130,4 @@ fn new_with_lease_flag_rejects_missing_non_lease_and_terminated_lease() {
         .expect_err("terminated lease should fail")
         .to_string();
     assert!(terminated.contains("expected 'lease_ready' or 'lease_active'"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

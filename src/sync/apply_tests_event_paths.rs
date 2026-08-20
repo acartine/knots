@@ -1,17 +1,13 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-
-use uuid::Uuid;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::sync::{GitAdapter, SyncError};
 
 use super::{read_json_file, IncrementalApplier};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-apply-evpaths-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-apply-evpaths")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -29,15 +25,16 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# apply\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -84,14 +81,13 @@ fn seed_hot_knot(conn: &rusqlite::Connection, knot_id: &str) {
 
 #[test]
 fn read_json_file_reports_invalid_payloads() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let path = root.join("bad.json");
     std::fs::write(&path, "{").expect("fixture should write");
 
     let err = read_json_file::<serde_json::Value>(&path).expect_err("invalid JSON should fail");
     assert!(matches!(err, SyncError::InvalidEvent { .. }));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn write_event_file(events_dir: &Path, filename: &str, content: &str) {
@@ -270,7 +266,8 @@ fn apply_full_event_legacy_knot_created_populates_description_from_body() {
     // inline as `body` and emitted no separate `knot.description_set`.
     // Sync apply on a host that didn't yet have the knot used to drop the
     // description entirely. This test pins the backward-compat read.
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     seed_hot_knot(&conn, "K-LEGACY");
     let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -309,15 +306,14 @@ fn apply_full_event_legacy_knot_created_populates_description_from_body() {
         Some("Pre-fix description in body"),
     );
     assert_eq!(updated.body.as_deref(), Some("Pre-fix description in body"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_full_event_knot_created_does_not_overwrite_existing_description() {
     // If a `knot.description_set` has already populated the description,
     // re-applying `knot.created` (e.g. in a repair pass) must not clobber it.
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::upsert_knot_hot(
         &conn,
@@ -386,13 +382,12 @@ fn apply_full_event_knot_created_does_not_overwrite_existing_description() {
         updated.description.as_deref(),
         Some("Authoritative description")
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_full_event_covers_priority_type_tag_remove_note_and_handoff() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     seed_hot_knot(&conn, "K-1");
     let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -416,13 +411,12 @@ fn apply_full_event_covers_priority_type_tag_remove_note_and_handoff() {
         updated.verification_steps,
         vec!["cargo test".to_string(), "make sanity".to_string()]
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_full_event_preserves_tag_casing_and_removes_case_insensitively() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     seed_hot_knot(&conn, "K-1");
     let applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -473,6 +467,4 @@ fn apply_full_event_preserves_tag_casing_and_removes_case_insensitively() {
         .expect("hot lookup should succeed")
         .expect("hot knot should remain present");
     assert!(removed.tags.is_empty());
-
-    let _ = std::fs::remove_dir_all(root);
 }

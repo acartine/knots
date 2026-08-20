@@ -1,7 +1,5 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-
-use uuid::Uuid;
 
 use crate::doctor::DoctorStatus;
 use crate::git_hooks::{
@@ -9,10 +7,8 @@ use crate::git_hooks::{
     install_hooks, resolve_hooks_dir, uninstall_hooks, HookInstallOutcome, KNOTS_HOOK_MARKER,
 };
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-git-hooks-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-git-hooks")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -41,28 +37,30 @@ fn make_executable(path: &Path) {
     std::fs::set_permissions(path, perms).expect("fixture should be executable");
 }
 
-fn setup_git_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_git_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# test\n").expect("readme should write");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 #[test]
 fn resolve_hooks_dir_defaults_to_git_hooks() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let dir = resolve_hooks_dir(&root);
     assert_eq!(dir, root.join(".git").join("hooks"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn resolve_hooks_dir_respects_core_hooks_path() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let custom = root.join("custom-hooks");
     std::fs::create_dir_all(&custom).expect("custom hooks dir");
     run_git(
@@ -71,12 +69,12 @@ fn resolve_hooks_dir_respects_core_hooks_path() {
     );
     let dir = resolve_hooks_dir(&root);
     assert_eq!(dir, custom);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn install_hooks_creates_managed_hooks() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let summary = install_hooks(&root).expect("install should succeed");
     assert_eq!(summary.outcomes.len(), 1);
     for (name, outcome) in &summary.outcomes {
@@ -89,23 +87,23 @@ fn install_hooks_creates_managed_hooks() {
         assert!(contents.contains("\"$KNO_BIN\" pull"));
         assert!(contents.contains("kno pull"));
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn install_hooks_is_idempotent() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     install_hooks(&root).expect("first install");
     let summary = install_hooks(&root).expect("second install");
     for (_, outcome) in &summary.outcomes {
         assert_eq!(*outcome, HookInstallOutcome::AlreadyManaged);
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn install_hooks_preserves_existing_to_local() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let hooks_dir = root.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks_dir).unwrap();
     std::fs::write(hooks_dir.join("post-merge"), "#!/bin/sh\necho user hook\n").unwrap();
@@ -125,12 +123,12 @@ fn install_hooks_preserves_existing_to_local() {
 
     let managed = std::fs::read_to_string(hooks_dir.join("post-merge")).unwrap();
     assert!(managed.contains(KNOTS_HOOK_MARKER));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn uninstall_hooks_removes_managed_and_restores_local() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let hooks_dir = root.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks_dir).unwrap();
     std::fs::write(hooks_dir.join("post-merge"), "#!/bin/sh\necho user hook\n").unwrap();
@@ -148,58 +146,57 @@ fn uninstall_hooks_removes_managed_and_restores_local() {
     let restored = std::fs::read_to_string(hooks_dir.join("post-merge")).unwrap();
     assert!(restored.contains("echo user hook"));
     assert!(!hooks_dir.join("post-merge.local").exists());
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn uninstall_hooks_noop_when_not_installed() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let summary = uninstall_hooks(&root).expect("uninstall");
     for (_, outcome) in &summary.outcomes {
         assert_eq!(*outcome, HookInstallOutcome::AlreadyManaged);
     }
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_hooks_warns_when_missing() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let check = check_hooks(&root);
     assert_eq!(check.name, "hooks");
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains("missing sync hooks"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_hooks_passes_when_installed() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     install_hooks(&root).expect("install");
     let check = check_hooks(&root);
     assert_eq!(check.status, DoctorStatus::Pass);
     assert!(check.detail.contains("sync hooks installed"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_hooks_warns_for_non_git_directory() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let check = check_hooks(&root);
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains("not a git repository"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn hooks_status_reports_installation_state() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let before = hooks_status(&root);
     assert!(before.hooks.iter().all(|(_, managed)| !managed));
 
     install_hooks(&root).expect("install");
     let after = hooks_status(&root);
     assert!(after.hooks.iter().all(|(_, managed)| *managed));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -217,7 +214,8 @@ fn hook_template_contains_marker_and_sync() {
 #[cfg(unix)]
 #[test]
 fn hook_template_uses_installed_binary_when_path_is_stripped() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let tools_dir = root.join("tools");
     let hooks_dir = root.join("hooks");
     std::fs::create_dir_all(&tools_dir).expect("tools dir should be creatable");
@@ -256,12 +254,12 @@ fn hook_template_uses_installed_binary_when_path_is_stripped() {
     let invoked = std::fs::read_to_string(tools_dir.join("invoked"))
         .expect("fake kno should record invocation");
     assert_eq!(invoked, "pull\n");
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn install_preserves_existing_to_backup_when_local_exists() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let hooks_dir = root.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks_dir).unwrap();
     std::fs::write(hooks_dir.join("post-merge"), "#!/bin/sh\necho original\n").unwrap();
@@ -292,12 +290,12 @@ fn install_preserves_existing_to_backup_when_local_exists() {
         })
         .collect();
     assert_eq!(backups.len(), 1);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_hooks_warns_on_stale_content() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     install_hooks(&root).expect("install");
     let hooks_dir = root.join(".git").join("hooks");
     let old_template = format!(
@@ -310,12 +308,12 @@ fn check_hooks_warns_on_stale_content() {
     let check = check_hooks(&root);
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains("stale hook content"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_hooks_warns_on_legacy_hook() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     install_hooks(&root).expect("install");
     let hooks_dir = root.join(".git").join("hooks");
     let legacy = format!(
@@ -328,12 +326,12 @@ fn check_hooks_warns_on_legacy_hook() {
     let check = check_hooks(&root);
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains("orphaned legacy hooks"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn cleanup_legacy_hooks_removes_orphaned_hook() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let hooks_dir = root.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks_dir).unwrap();
     let legacy = format!(
@@ -345,12 +343,12 @@ fn cleanup_legacy_hooks_removes_orphaned_hook() {
 
     cleanup_legacy_hooks(&root);
     assert!(!hooks_dir.join("post-commit").exists());
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn cleanup_legacy_hooks_restores_local() {
-    let root = setup_git_repo();
+    let root_ws = setup_git_repo();
+    let root = root_ws.path().to_path_buf();
     let hooks_dir = root.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks_dir).unwrap();
     let legacy = format!(
@@ -369,5 +367,4 @@ fn cleanup_legacy_hooks_restores_local() {
     let restored = std::fs::read_to_string(hooks_dir.join("post-commit")).unwrap();
     assert!(restored.contains("echo original"));
     assert!(!hooks_dir.join("post-commit.local").exists());
-    let _ = std::fs::remove_dir_all(root);
 }

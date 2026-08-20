@@ -129,7 +129,6 @@ mod tests {
     use super::{normalize_ref, SyncRefConfig, DIFFINITE_REMOTE_REF, LEGACY_REMOTE_REF};
     use std::path::Path;
     use std::process::Command;
-    use uuid::Uuid;
 
     #[test]
     fn normalizes_short_branch_to_heads_ref() {
@@ -139,7 +138,8 @@ mod tests {
 
     #[test]
     fn diffinite_origin_defaults_to_work_ref() {
-        let repo = temp_repo();
+        let repo_ws = temp_repo();
+        let repo = repo_ws.path().to_path_buf();
         git(
             &repo,
             &["remote", "add", "origin", "git@diffinite.sneka.ai:o/r.git"],
@@ -155,7 +155,8 @@ mod tests {
 
     #[test]
     fn github_origin_defaults_to_legacy_branch() {
-        let repo = temp_repo();
+        let repo_ws = temp_repo();
+        let repo = repo_ws.path().to_path_buf();
         git(
             &repo,
             &["remote", "add", "origin", "git@github.com:o/r.git"],
@@ -164,11 +165,11 @@ mod tests {
         assert_eq!(config.remote_ref(), LEGACY_REMOTE_REF);
     }
 
-    fn temp_repo() -> std::path::PathBuf {
-        let repo = std::env::temp_dir().join(format!("knots-sync-ref-{}", Uuid::now_v7()));
-        std::fs::create_dir_all(&repo).expect("create temp repo");
+    fn temp_repo() -> knots_test_support::TestWorkspace {
+        let repo_ws = knots_test_support::workspace("knots-sync-ref");
+        let repo = repo_ws.path().to_path_buf();
         git(&repo, &["init"]);
-        repo
+        repo_ws
     }
 
     fn git(repo: &Path, args: &[&str]) {

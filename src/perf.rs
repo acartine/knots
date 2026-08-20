@@ -73,8 +73,18 @@ impl From<rusqlite::Error> for PerfError {
 }
 
 pub fn run_perf_harness(iterations: u32) -> Result<PerfReport, PerfError> {
-    let iterations = iterations.max(1);
-    let root = setup_workspace()?;
+    let (root, local) = setup_workspace()?;
+    let report = measure_workspace(&local, iterations.max(1));
+    // Remove the whole tree rather than just the clone. `origin.git` is a
+    // sibling of `local` under the same root, so removing only the clone left
+    // the root behind on every run. Cleanup also has to survive the error
+    // paths below, which is why the measurement work moved into its own
+    // function.
+    let _ = std::fs::remove_dir_all(&root);
+    report
+}
+
+fn measure_workspace(root: &Path, iterations: u32) -> Result<PerfReport, PerfError> {
     let db_path = root.join(".knots/cache/state.sqlite");
     std::fs::create_dir_all(
         db_path
@@ -82,7 +92,7 @@ pub fn run_perf_harness(iterations: u32) -> Result<PerfReport, PerfError> {
             .expect("db parent should exist for perf harness"),
     )?;
 
-    let app = App::open(db_path.to_str().expect("utf8 path"), root.clone())
+    let app = App::open(db_path.to_str().expect("utf8 path"), root.to_path_buf())
         .map_err(|err| PerfError::Other(err.to_string()))?;
     let conn = db::open_connection(db_path.to_str().expect("utf8 path"))?;
     db::set_meta(&conn, "sync_policy", "never")?;
@@ -106,8 +116,6 @@ pub fn run_perf_harness(iterations: u32) -> Result<PerfReport, PerfError> {
         measurement("write_avg", write_elapsed, 150.0),
         measurement("sync", sync_elapsed, 1000.0),
     ];
-
-    let _ = std::fs::remove_dir_all(root);
 
     Ok(PerfReport {
         iterations,
@@ -185,7 +193,11 @@ fn benchmark_hot_reads(app: &App, iterations: u32) -> Result<f64, PerfError> {
     Ok((start.elapsed().as_secs_f64() * 1000.0) / iterations as f64)
 }
 
-fn setup_workspace() -> Result<PathBuf, PerfError> {
+/// Build the harness workspace, returning `(root, local)`.
+///
+/// The caller needs the root, not just the clone: `origin.git` lives beside
+/// `local`, so only the root reclaims the whole tree.
+fn setup_workspace() -> Result<(PathBuf, PathBuf), PerfError> {
     let root = std::env::temp_dir().join(format!("knots-perf-test-{}", Uuid::now_v7()));
     std::fs::create_dir_all(&root)?;
 
@@ -218,7 +230,7 @@ fn setup_workspace() -> Result<PathBuf, PerfError> {
     run_git(&local, &["push", "-u", "origin", "main"])?;
     set_bare_head_to_main(&origin)?;
 
-    Ok(local)
+    Ok((root, local))
 }
 
 fn set_bare_head_to_main(origin: &Path) -> Result<(), PerfError> {

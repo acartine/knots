@@ -1,12 +1,8 @@
-use std::path::PathBuf;
-
 use super::App;
 use crate::project::{DistributionMode, GlobalConfig, ProjectContext, StorePaths};
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn local_only_app(root: &std::path::Path) -> App {
@@ -25,7 +21,8 @@ fn local_only_app(root: &std::path::Path) -> App {
 
 #[test]
 fn open_with_context_bootstraps_builtin_workflows_for_local_only_store() {
-    let root = unique_workspace("knots-app-local-only");
+    let root_ws = unique_workspace("knots-app-local-only");
+    let root = root_ws.path().to_path_buf();
     let app = local_only_app(&root);
 
     let workflows_root = crate::installed_workflows::workflows_root(&root);
@@ -49,13 +46,12 @@ fn open_with_context_bootstraps_builtin_workflows_for_local_only_store() {
             .expect("execution plan default profile"),
         "execution_plan_sdlc/autopilot"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn home_override_round_trips_user_config_without_real_home() {
-    let root = unique_workspace("knots-app-home-override");
+    let root_ws = unique_workspace("knots-app-home-override");
+    let root = root_ws.path().to_path_buf();
     let home = root.join("home");
     std::fs::create_dir_all(&home).expect("home should be creatable");
     let app = local_only_app(&root).with_home_override(Some(home.clone()));
@@ -76,13 +72,12 @@ fn home_override_round_trips_user_config_without_real_home() {
         Some("autopilot_no_planning")
     );
     assert_eq!(loaded.active_project.as_deref(), Some("demo"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn home_override_none_rejects_writes_and_unknown_profiles_do_not_resolve() {
-    let root = unique_workspace("knots-app-home-none");
+    let root_ws = unique_workspace("knots-app-home-none");
+    let root = root_ws.path().to_path_buf();
     let app = local_only_app(&root).with_home_override(None);
 
     let err = app
@@ -97,13 +92,12 @@ fn home_override_none_rejects_writes_and_unknown_profiles_do_not_resolve() {
         app.resolve_config_profile(&Some("missing".to_string())),
         None
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn home_override_none_reads_default_user_config() {
-    let root = unique_workspace("knots-app-home-none-default-read");
+    let root_ws = unique_workspace("knots-app-home-none-default-read");
+    let root = root_ws.path().to_path_buf();
     let app = local_only_app(&root).with_home_override(None);
 
     let loaded = app
@@ -112,13 +106,12 @@ fn home_override_none_reads_default_user_config() {
     assert!(loaded.default_profile.is_none());
     assert!(loaded.default_quick_profile.is_none());
     assert!(loaded.active_project.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn require_git_distribution_rejects_local_only_actions() {
-    let root = unique_workspace("knots-app-local-only-guard");
+    let root_ws = unique_workspace("knots-app-local-only-guard");
+    let root = root_ws.path().to_path_buf();
     let app = local_only_app(&root);
 
     let err = app
@@ -129,6 +122,4 @@ fn require_git_distribution_rejects_local_only_actions() {
         err,
         crate::app::AppError::UnsupportedDistribution { .. }
     ));
-
-    let _ = std::fs::remove_dir_all(root);
 }

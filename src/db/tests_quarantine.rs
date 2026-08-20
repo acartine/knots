@@ -1,6 +1,6 @@
 //! Quarantine table CRUD and the local-leased knot-id set.
 
-use super::{cleanup_db_files, unique_db_path};
+use super::unique_db_path;
 use crate::db::{
     list_quarantined_knots, local_leased_knot_ids, open_connection, quarantine_knot_if_absent,
     remove_quarantine, update_lease_expiry_ts, upsert_knot_hot, UpsertKnotHot,
@@ -92,7 +92,7 @@ fn insert_bound_work_knot(conn: &rusqlite::Connection, id: &str, lease_id: &str)
 
 #[test]
 fn quarantine_row_persists_and_can_be_removed() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     quarantine_knot_if_absent(&conn, "K-1", "commit-a").expect("quarantine insert should succeed");
@@ -105,13 +105,11 @@ fn quarantine_row_persists_and_can_be_removed() {
     assert!(list_quarantined_knots(&conn)
         .expect("list should succeed")
         .is_empty());
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn quarantine_records_the_base_commit_once() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     quarantine_knot_if_absent(&conn, "K-1", "commit-a").expect("first skip should insert");
@@ -124,13 +122,11 @@ fn quarantine_records_the_base_commit_once() {
         "the earliest base commit must survive repeated skips, or events between \
          commit-a and commit-b would never be replayed"
     );
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn quarantine_rows_persist_across_a_reopened_connection() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     {
         let conn = open_connection(&path).expect("connection should open");
         quarantine_knot_if_absent(&conn, "K-1", "commit-a")
@@ -140,13 +136,11 @@ fn quarantine_rows_persist_across_a_reopened_connection() {
     let rows = list_quarantined_knots(&conn).expect("list should succeed");
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].knot_id, "K-1");
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn local_leased_knot_ids_includes_the_lease_knot_and_its_bound_knot() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     insert_active_lease(&conn, "K-lease", &owned_by("machine-x"));
@@ -162,13 +156,11 @@ fn local_leased_knot_ids_includes_the_lease_knot_and_its_bound_knot() {
         "the knot bound to the lease must be held back"
     );
     assert_eq!(leased.len(), 2);
-
-    cleanup_db_files(&path);
 }
 
 #[test]
 fn local_leased_knot_ids_excludes_leases_owned_by_another_machine() {
-    let path = unique_db_path();
+    let (_db_ws, path) = unique_db_path();
     let conn = open_connection(&path).expect("connection should open");
 
     insert_active_lease(&conn, "K-lease-remote", &owned_by("machine-a"));
@@ -180,6 +172,4 @@ fn local_leased_knot_ids_excludes_leases_owned_by_another_machine() {
         "a remote-held lease must never cause a local skip, got {:?}",
         leased
     );
-
-    cleanup_db_files(&path);
 }

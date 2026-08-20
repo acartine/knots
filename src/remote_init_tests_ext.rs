@@ -7,10 +7,8 @@ use super::{
     should_retry_push_without_verify, uninit_remote_knots_branch, RemoteInitError,
 };
 
-fn unique_dir(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{}-{}", prefix, uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("temp dir should be creatable");
-    path
+fn unique_dir(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(cwd: &Path, args: &[&str]) {
@@ -28,8 +26,9 @@ fn run_git(cwd: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo_with_remote() -> (PathBuf, PathBuf) {
-    let root = unique_dir("knots-remote-init-ext");
+fn setup_repo_with_remote() -> (knots_test_support::TestWorkspace, PathBuf) {
+    let root_ws = unique_dir("knots-remote-init-ext");
+    let root = root_ws.path().to_path_buf();
     let remote = root.join("remote.git");
     let local = root.join("local");
 
@@ -54,7 +53,7 @@ fn setup_repo_with_remote() -> (PathBuf, PathBuf) {
         ],
     );
 
-    (root, local)
+    (root_ws, local)
 }
 
 #[test]
@@ -89,7 +88,7 @@ fn remote_init_error_display_and_source_cover_variants() {
 
 #[test]
 fn remote_branch_exists_and_uninit_cover_present_and_missing_paths() {
-    let (root, local) = setup_repo_with_remote();
+    let (_root_ws, local) = setup_repo_with_remote();
 
     let missing = remote_branch_exists(&local, "origin", "knots")
         .expect("missing branch check should succeed");
@@ -107,13 +106,11 @@ fn remote_branch_exists_and_uninit_cover_present_and_missing_paths() {
     let already_missing = uninit_remote_knots_branch(&local, "origin", "knots")
         .expect("uninit should succeed when branch is missing");
     assert!(!already_missing);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn init_remote_knots_branch_uses_configured_full_remote_ref() {
-    let (root, local) = setup_repo_with_remote();
+    let (_root_ws, local) = setup_repo_with_remote();
     run_git(&local, &["config", "knots.remoteRef", "refs/work/knots"]);
 
     init_remote_knots_branch(&local).expect("remote work ref init should succeed");
@@ -134,20 +131,19 @@ fn init_remote_knots_branch_uses_configured_full_remote_ref() {
         .output()
         .expect("git ls-remote should run");
     assert_eq!(heads.status.code(), Some(2));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn uninit_reports_not_repo_or_missing_remote_and_hooks_path_is_respected() {
-    let root = unique_dir("knots-remote-init-not-repo");
+    let root_ws = unique_dir("knots-remote-init-not-repo");
+    let root = root_ws.path().to_path_buf();
     assert!(matches!(
         uninit_remote_knots_branch(&root, "origin", "knots"),
         Err(RemoteInitError::NotGitRepository)
     ));
-    let _ = std::fs::remove_dir_all(root);
 
-    let repo = unique_dir("knots-remote-init-no-remote");
+    let repo_ws = unique_dir("knots-remote-init-no-remote");
+    let repo = repo_ws.path().to_path_buf();
     run_git(&repo, &["init"]);
     run_git(&repo, &["config", "user.email", "knots@example.com"]);
     run_git(&repo, &["config", "user.name", "Knots Test"]);
@@ -165,13 +161,11 @@ fn uninit_reports_not_repo_or_missing_remote_and_hooks_path_is_respected() {
     assert!(!report.is_empty());
     assert!(report.hooks_dir.ends_with(".custom-hooks"));
     assert!(report.hook_files.contains(&pre_push));
-
-    let _ = std::fs::remove_dir_all(repo);
 }
 
 #[test]
 fn init_remote_branch_retries_push_without_verify_when_beads_hook_fails() {
-    let (root, local) = setup_repo_with_remote();
+    let (_root_ws, local) = setup_repo_with_remote();
     let hooks = local.join(".git").join("hooks");
     std::fs::create_dir_all(&hooks).expect("hooks dir should be creatable");
     let pre_push = hooks.join("pre-push");
@@ -196,13 +190,12 @@ fn init_remote_branch_retries_push_without_verify_when_beads_hook_fails() {
     let present = remote_branch_exists(&local, "origin", "knots")
         .expect("branch existence check should succeed");
     assert!(present);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn detect_beads_hooks_respects_absolute_core_hooks_path() {
-    let (root, local) = setup_repo_with_remote();
+    let (root_ws, local) = setup_repo_with_remote();
+    let root = root_ws.path().to_path_buf();
     let absolute_hooks = root.join("custom-hooks");
     std::fs::create_dir_all(&absolute_hooks).expect("custom hooks should be creatable");
     run_git(
@@ -222,13 +215,12 @@ fn detect_beads_hooks_respects_absolute_core_hooks_path() {
     assert_eq!(report.hooks_dir, absolute_hooks);
     assert!(report.hook_files.contains(&pre_push));
     assert!(!report.hook_files.contains(&unreadable));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn remote_branch_exists_returns_git_command_failure_for_unreachable_remote() {
-    let root = unique_dir("knots-remote-exists-failure");
+    let root_ws = unique_dir("knots-remote-exists-failure");
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -243,8 +235,6 @@ fn remote_branch_exists_returns_git_command_failure_for_unreachable_remote() {
     let err =
         remote_branch_exists(&root, "origin", "knots").expect_err("unreachable remote should fail");
     assert!(matches!(err, RemoteInitError::GitCommandFailed { .. }));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -252,19 +242,20 @@ fn helper_paths_cover_io_conversion_and_non_git_detection() {
     let converted: RemoteInitError = std::io::Error::other("disk").into();
     assert!(matches!(converted, RemoteInitError::Io(_)));
 
-    let non_git = unique_dir("knots-remote-non-git-init");
+    let non_git_ws = unique_dir("knots-remote-non-git-init");
+    let non_git = non_git_ws.path().to_path_buf();
     let report = detect_beads_hooks(&non_git);
     assert!(report.is_empty());
     assert!(matches!(
         init_remote_branch(&non_git, "origin", "knots"),
         Err(RemoteInitError::NotGitRepository)
     ));
-    let _ = std::fs::remove_dir_all(non_git);
 }
 
 #[test]
 fn init_remote_branch_reports_unreachable_remote_as_git_command_failure() {
-    let root = unique_dir("knots-remote-unreachable");
+    let root_ws = unique_dir("knots-remote-unreachable");
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
@@ -283,6 +274,4 @@ fn init_remote_branch_reports_unreachable_remote_as_git_command_failure() {
     let no_retry =
         should_retry_push_without_verify(&RemoteInitError::MissingRemote("origin".to_string()));
     assert!(!no_retry);
-
-    let _ = std::fs::remove_dir_all(root);
 }

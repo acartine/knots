@@ -1,14 +1,9 @@
-use std::path::PathBuf;
-
 use serde_json::Value;
-use uuid::Uuid;
 
 use super::{App, AppError, StateActorMetadata, UpdateKnotPatch};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-hierarchy-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-hierarchy")
 }
 
 fn open_app(root: &std::path::Path) -> App {
@@ -48,7 +43,8 @@ fn read_state_events(root: &std::path::Path) -> Vec<Value> {
 
 #[test]
 fn parent_cannot_advance_past_direct_child_state() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("idea"), Some("default"))
@@ -95,13 +91,12 @@ fn parent_cannot_advance_past_direct_child_state() {
         matches!(forced, Err(AppError::HierarchyProgressBlocked { .. })),
         "--force must not bypass hierarchy progress checks"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn deferred_child_blocks_using_deferred_from_state_progress() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -157,13 +152,12 @@ fn deferred_child_blocks_using_deferred_from_state_progress() {
         }
         other => panic!("unexpected error: {other}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminal_transition_requires_approval_when_descendants_exist() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -206,13 +200,12 @@ fn terminal_transition_requires_approval_when_descendants_exist() {
         }
         other => panic!("unexpected error: {other}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn approved_terminal_cascade_updates_descendants_and_marks_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -281,13 +274,12 @@ fn approved_terminal_cascade_updates_descendants_and_marks_events() {
         })
         .count();
     assert_eq!(cascade_events, 3);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn reconcile_terminal_parent_state_updates_only_parent() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -314,13 +306,12 @@ fn reconcile_terminal_parent_state_updates_only_parent() {
             .state,
         "deferred"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_knot_terminal_cascade_with_approval_succeeds() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -375,6 +366,4 @@ fn update_knot_terminal_cascade_with_approval_succeeds() {
         app.show_knot(&child.id).unwrap().unwrap().state,
         "abandoned"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

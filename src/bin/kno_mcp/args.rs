@@ -121,10 +121,10 @@ mod tests {
 
     #[test]
     fn defaults_to_stdio() {
-        let cli = Cli::parse_from(["kno-mcp", "--repo", "/tmp/repo"]);
+        let cli = Cli::parse_from(["kno-mcp", "--repo", "/example/repo"]);
         let config = cli.into_config().expect("config should parse");
         assert!(matches!(config.mode, CommandMode::Stdio));
-        assert_eq!(config.server.repo, PathBuf::from("/tmp/repo"));
+        assert_eq!(config.server.repo, PathBuf::from("/example/repo"));
     }
 
     #[test]
@@ -145,14 +145,14 @@ mod tests {
 
     #[test]
     fn serve_reads_token_file_and_interval() {
-        let token_file =
-            std::env::temp_dir().join(format!("kno-mcp-token-{}-{}", std::process::id(), "serve"));
+        let token_ws = knots_test_support::workspace("knots-kno-mcp-token-serve");
+        let token_file = token_ws.path().join("token");
         fs::write(&token_file, " secret \n").expect("write token file");
 
         let cli = Cli::parse_from([
             "kno-mcp",
             "--repo",
-            "/tmp/repo",
+            "/example/repo",
             "serve",
             "--bind",
             "127.0.0.1:8888",
@@ -179,7 +179,7 @@ mod tests {
         let cli = Cli::parse_from([
             "kno-mcp",
             "--repo",
-            "/tmp/repo",
+            "/example/repo",
             "serve",
             "--token-env",
             "KNO_MCP_TEST_EMPTY_TOKEN",

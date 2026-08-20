@@ -1,17 +1,14 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use rusqlite::Connection;
-use uuid::Uuid;
 
 use super::{check_knot_type_backfill_at, fix_knot_type_backfill};
 use crate::db;
 use crate::doctor::DoctorStatus;
 use crate::project::StorePaths;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-knot-type-backfill-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-knot-type-backfill")
 }
 
 fn open_db(root: &Path) -> Connection {
@@ -104,7 +101,8 @@ fn read_knot_type(conn: &Connection, id: &str) -> Option<String> {
 
 #[test]
 fn check_passes_when_no_empty_knot_types() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_db(&root);
     insert_hot_with_type(&conn, "K-1", Some("execution_plan"));
     insert_hot_with_type(&conn, "K-2", Some("work"));
@@ -115,12 +113,12 @@ fn check_passes_when_no_empty_knot_types() {
     };
     let check = check_knot_type_backfill_at(&store_paths).expect("check should run");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_warns_when_hot_rows_have_empty_knot_type() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_db(&root);
     insert_hot_with_type(&conn, "K-empty", Some(""));
     insert_hot_with_type(&conn, "K-null", None);
@@ -134,12 +132,12 @@ fn check_warns_when_hot_rows_have_empty_knot_type() {
     assert_eq!(check.status, DoctorStatus::Warn);
     assert!(check.detail.contains("2 hot cache row"), "{}", check.detail);
     assert!(check.detail.contains("doctor --fix"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_backfills_knot_type_from_latest_worktree_event() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_db(&root);
     insert_hot_with_type(&conn, "K-plan", None);
     drop(conn);
@@ -158,12 +156,12 @@ fn fix_backfills_knot_type_from_latest_worktree_event() {
         read_knot_type(&conn, "K-plan").as_deref(),
         Some("execution_plan")
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_uses_newest_event_when_multiple_exist_per_knot() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_db(&root);
     insert_hot_with_type(&conn, "K-evolved", None);
     drop(conn);
@@ -185,12 +183,12 @@ fn fix_uses_newest_event_when_multiple_exist_per_knot() {
         read_knot_type(&conn, "K-evolved").as_deref(),
         Some("execution_plan")
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_leaves_row_untouched_when_no_event_names_the_type() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_db(&root);
     insert_hot_with_type(&conn, "K-unknown", None);
     drop(conn);
@@ -200,12 +198,12 @@ fn fix_leaves_row_untouched_when_no_event_names_the_type() {
 
     let conn = open_db(&root);
     assert_eq!(read_knot_type(&conn, "K-unknown"), None);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_ignores_knots_without_empty_knot_type() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let conn = open_db(&root);
     insert_hot_with_type(&conn, "K-ok", Some("work"));
     drop(conn);
@@ -223,5 +221,4 @@ fn fix_ignores_knots_without_empty_knot_type() {
 
     let conn = open_db(&root);
     assert_eq!(read_knot_type(&conn, "K-ok").as_deref(), Some("work"));
-    let _ = std::fs::remove_dir_all(root);
 }

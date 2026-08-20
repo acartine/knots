@@ -1,15 +1,9 @@
-use std::path::PathBuf;
-
-use uuid::Uuid;
-
 use super::apply_fixes_with_progress;
 use crate::doctor::{DoctorCheck, DoctorStatus};
 use crate::progress::{ProgressKind, ProgressReporter};
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-doctor-fix-progress-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-doctor-fix-progress")
 }
 
 fn sample_check(name: &str, status: DoctorStatus) -> DoctorCheck {
@@ -35,7 +29,8 @@ impl ProgressReporter for CapturingReporter {
 
 #[test]
 fn apply_fixes_with_progress_emits_line_per_non_pass_check() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let checks = vec![
         sample_check("lock_health", DoctorStatus::Pass),
         sample_check("hooks", DoctorStatus::Warn),
@@ -64,25 +59,24 @@ fn apply_fixes_with_progress_emits_line_per_non_pass_check() {
     for (kind, _) in &reporter.events {
         assert_eq!(*kind, ProgressKind::Info);
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_fixes_with_progress_none_matches_silent_apply_fixes() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let checks = vec![sample_check("unknown_check", DoctorStatus::Warn)];
     let progress = apply_fixes_with_progress(&root, &checks, &mut None);
     assert!(!progress.outcome.event_log_touched);
     assert_eq!(progress.summary.fixed, 0);
     assert_eq!(progress.summary.skipped, 1);
     assert_eq!(progress.summary.failed, 0);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn workflow_id_parity_noop_is_skipped_not_counted_fixed() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let checks = vec![sample_check("workflow_id_parity", DoctorStatus::Warn)];
     let progress = apply_fixes_with_progress(&root, &checks, &mut None);
 
@@ -90,5 +84,4 @@ fn workflow_id_parity_noop_is_skipped_not_counted_fixed() {
     assert_eq!(progress.summary.fixed, 0);
     assert_eq!(progress.summary.skipped, 1);
     assert_eq!(progress.summary.failed, 0);
-    let _ = std::fs::remove_dir_all(root);
 }

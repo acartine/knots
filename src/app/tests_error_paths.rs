@@ -350,7 +350,7 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
     let sync: AppError = SyncError::GitUnavailable.into();
     assert!(sync.to_string().contains("sync error"));
 
-    let lock: AppError = LockError::Busy(PathBuf::from("/tmp/lock")).into();
+    let lock: AppError = LockError::Busy(PathBuf::from("/example/lock")).into();
     assert!(lock.to_string().contains("lock error"));
 
     let remote: AppError = RemoteInitError::NotGitRepository.into();
@@ -415,10 +415,8 @@ fn app_error_display_source_and_from_conversions_cover_variants() {
     );
 }
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-errpath-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-errpath")
 }
 
 fn open_app(root: &Path) -> App {
@@ -428,7 +426,8 @@ fn open_app(root: &Path) -> App {
 
 #[test]
 fn default_quick_profile_id_falls_back_to_skipped_planning_profile() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root).with_home_override(Some(root.clone()));
 
     // No quick profile configured; should fall back to first profile
@@ -437,13 +436,12 @@ fn default_quick_profile_id_falls_back_to_skipped_planning_profile() {
         .default_quick_profile_id()
         .expect("fallback quick profile should resolve");
     assert_eq!(quick, "autopilot_no_planning");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn open_returns_not_initialized_when_knots_dir_missing() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     assert!(!root.join(".knots").exists());
 
     let result = App::open(".knots/cache/state.sqlite", root.clone());
@@ -451,22 +449,21 @@ fn open_returns_not_initialized_when_knots_dir_missing() {
 
     // No .knots directory created as a side effect
     assert!(!root.join(".knots").exists());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn open_succeeds_when_knots_dir_exists() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     std::fs::create_dir_all(root.join(".knots")).expect("create .knots");
     let result = App::open(".knots/cache/state.sqlite", root.clone());
     assert!(result.is_ok());
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn open_with_custom_db_path_skips_init_check() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db_path = root.join("custom/state.sqlite");
     let db_str = db_path.to_str().expect("utf8 path");
     let result = App::open(db_str, root.clone());
@@ -474,5 +471,4 @@ fn open_with_custom_db_path_skips_init_check() {
         result.is_ok(),
         "custom db path should auto-register builtins and succeed"
     );
-    let _ = std::fs::remove_dir_all(root);
 }

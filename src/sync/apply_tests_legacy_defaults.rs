@@ -8,18 +8,14 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use uuid::Uuid;
-
 use crate::db;
 use crate::domain::scope::ScopeData;
 use crate::sync::GitAdapter;
 
 use super::IncrementalApplier;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-legacy-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-legacy")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -37,15 +33,16 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# legacy\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -75,7 +72,8 @@ fn recent_ts() -> String {
 fn apply_index_event_defaults_missing_profile_id_to_autopilot() {
     // Pre-2026-04-09 event shape: no profile_id field at all. Must apply
     // and land in the cache with profile_id="autopilot".
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -110,13 +108,12 @@ fn apply_index_event_defaults_missing_profile_id_to_autopilot() {
         .expect("knot should be cached");
     assert_eq!(record.profile_id, "autopilot");
     assert_eq!(record.scope_data, ScopeData::default());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_index_event_reads_scope_payload_into_hot_projection() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -160,15 +157,14 @@ fn apply_index_event_reads_scope_payload_into_hot_projection() {
     assert_eq!(record.scope_data.scale.as_deref(), Some("fib_v1"));
     assert_eq!(record.scope_data.reliability, Some(88));
     assert_eq!(record.scope_data.reliability_band.as_deref(), Some("high"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_index_event_converts_legacy_default_workflow_id_to_work_sdlc() {
     // The pre-workflow-registry name "default" must be translated the
     // same way "compatibility" and "knots_sdlc" already are.
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -203,8 +199,6 @@ fn apply_index_event_converts_legacy_default_workflow_id_to_work_sdlc() {
         .expect("hot lookup should succeed")
         .expect("knot should be cached");
     assert_eq!(record.workflow_id, "work_sdlc");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -212,7 +206,8 @@ fn apply_index_event_accepts_foolery_style_event_with_both_legacy_markers() {
     // Reproduces the foolery-ajv event exactly (both legacy markers,
     // terminal=true). Must apply cleanly — under the old strict code
     // path this hard-failed bootstrap.
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -243,6 +238,4 @@ fn apply_index_event_accepts_foolery_style_event_with_both_legacy_markers() {
         .expect("cold lookup should succeed")
         .expect("terminal knot should land in cold catalog");
     assert_eq!(cold.state, "shipped");
-
-    let _ = std::fs::remove_dir_all(root);
 }

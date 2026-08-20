@@ -1,17 +1,13 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use uuid::Uuid;
-
 use crate::db;
 use crate::sync::GitAdapter;
 
 use super::IncrementalApplier;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-unknown-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-unknown")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -29,15 +25,16 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# apply\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -77,7 +74,8 @@ fn write_unknown_workflow_head(root: &Path, knot_id: &str, filename: &str) -> Pa
 
 #[test]
 fn apply_index_event_skips_unknown_workflow_with_import_warning() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -93,13 +91,12 @@ fn apply_index_event_skips_unknown_workflow_with_import_warning() {
             .is_none(),
         "skipped knot should not be imported"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_full_event_skips_knot_after_unknown_workflow_head() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -138,6 +135,4 @@ fn apply_full_event_skips_knot_after_unknown_workflow_head() {
             .len(),
         0
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

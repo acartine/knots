@@ -337,15 +337,9 @@ mod tests {
         IndexEvent, IndexEventKind,
     };
     use serde_json::json;
-    use std::path::PathBuf;
-    use std::time::{SystemTime, UNIX_EPOCH};
 
-    fn unique_tmp_dir() -> PathBuf {
-        let nanos = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("system clock before UNIX_EPOCH")
-            .as_nanos();
-        std::env::temp_dir().join(format!("knots-events-{}", nanos))
+    fn unique_tmp_dir() -> knots_test_support::TestWorkspace {
+        knots_test_support::workspace("knots-events")
     }
 
     #[test]
@@ -396,7 +390,8 @@ mod tests {
 
     #[test]
     fn writes_append_only_full_event_file() {
-        let root = unique_tmp_dir();
+        let root_ws = unique_tmp_dir();
+        let root = root_ws.path().to_path_buf();
         let writer = EventWriter::new(&root);
         let event = EventRecord::full(FullEvent::with_identity(
             "018f4f7f-7dc7-7f4e-954b-64f8a2273ec8",
@@ -430,8 +425,6 @@ mod tests {
                 err
             );
         }
-
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
@@ -447,7 +440,8 @@ mod tests {
 
     #[test]
     fn writes_index_event() {
-        let root = unique_tmp_dir();
+        let root_ws = unique_tmp_dir();
+        let root = root_ws.path().to_path_buf();
         let writer = EventWriter::new(&root);
         let event = EventRecord::index(IndexEvent::with_identity(
             "018f4f7f-7dc7-7f4e-954b-64f8a2273ec8",
@@ -466,8 +460,6 @@ mod tests {
             relative.to_string_lossy(),
             "index/2026/02/22/018f4f7f-7dc7-7f4e-954b-64f8a2273ec8-idx.knot_head.json"
         );
-
-        let _ = std::fs::remove_dir_all(root);
     }
 }
 

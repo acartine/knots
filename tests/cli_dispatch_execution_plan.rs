@@ -49,7 +49,8 @@ fn assert_round_trip_plan(plan: &Value, work_a_id: &str, work_b_id: &str) {
 
 #[test]
 fn execution_plan_file_round_trips_through_show_json() {
-    let root = unique_workspace("knots-cli-exec-plan-file");
+    let root_ws = unique_workspace("knots-cli-exec-plan-file");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -130,13 +131,12 @@ fn execution_plan_file_round_trips_through_show_json() {
         .cloned()
         .expect("execution_plan field should be present");
     assert_round_trip_plan(&plan, &work_a_id, &work_b_id);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execution_plan_file_survives_rehydrate_after_hot_eviction() {
-    let root = unique_workspace("knots-cli-exec-plan-rehydrate");
+    let root_ws = unique_workspace("knots-cli-exec-plan-rehydrate");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -205,13 +205,12 @@ fn execution_plan_file_survives_rehydrate_after_hot_eviction() {
     assert_eq!(waves.len(), 1);
     assert_eq!(waves[0]["name"], "Foundations");
     assert_eq!(waves[0]["objective"], "Land payload");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn updating_work_knot_to_execution_plan_re_roots_workflow() {
-    let root = unique_workspace("knots-cli-exec-plan-type-update");
+    let root_ws = unique_workspace("knots-cli-exec-plan-type-update");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -245,13 +244,12 @@ fn updating_work_knot_to_execution_plan_re_roots_workflow() {
         view["execution_plan"]["objective"],
         "Coordinate the execution plan"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn creating_execution_plan_without_objective_fails() {
-    let root = unique_workspace("knots-cli-exec-plan-create-fail");
+    let root_ws = unique_workspace("knots-cli-exec-plan-create-fail");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -267,13 +265,12 @@ fn creating_execution_plan_without_objective_fails() {
         stderr.contains("execution_plan knots require a non-empty top-level objective"),
         "stderr should mention missing objective: {stderr}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execution_plan_objective_update_preserves_existing_waves() {
-    let root = unique_workspace("knots-cli-exec-plan-objective-update");
+    let root_ws = unique_workspace("knots-cli-exec-plan-objective-update");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -325,13 +322,12 @@ fn execution_plan_objective_update_preserves_existing_waves() {
         .expect("waves should remain present");
     assert_eq!(waves.len(), 1);
     assert_eq!(waves[0]["name"], "Wave 1");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn updating_work_knot_to_execution_plan_without_objective_fails() {
-    let root = unique_workspace("knots-cli-exec-plan-type-fail");
+    let root_ws = unique_workspace("knots-cli-exec-plan-type-fail");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -351,13 +347,12 @@ fn updating_work_knot_to_execution_plan_without_objective_fails() {
         stderr.contains("execution_plan knots require a non-empty top-level objective"),
         "stderr should mention missing objective: {stderr}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execution_plan_next_advances_from_design_queue() {
-    let root = unique_workspace("knots-cli-exec-plan-next");
+    let root_ws = unique_workspace("knots-cli-exec-plan-next");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_builtin_workflows(&root, &db);
@@ -388,6 +383,4 @@ fn execution_plan_next_advances_from_design_queue() {
     assert_eq!(shown_json["workflow_id"], "execution_plan_sdlc");
     assert_eq!(shown_json["profile_id"], "autopilot");
     assert_eq!(shown_json["state"], "design");
-
-    let _ = std::fs::remove_dir_all(root);
 }

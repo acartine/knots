@@ -1,18 +1,14 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use uuid::Uuid;
-
 use crate::db;
 use crate::remote_init::init_remote_knots_branch;
 use crate::sync::SyncError;
 
 use super::ReplicationService;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-repl-policy-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-repl-policy")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -119,7 +115,8 @@ fn make_executable(path: &Path) {
 
 #[test]
 fn push_to_work_ref_succeeds_with_diffinite_persona_policy() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (origin, dev1) = setup_origin_and_dev1(&root);
     install_persona_ref_policy_hook(&origin);
     run_git(&dev1, &["config", "knots.remoteRef", "refs/work/knots"]);
@@ -138,13 +135,12 @@ fn push_to_work_ref_succeeds_with_diffinite_persona_policy() {
         .expect("git ls-remote should run");
     assert!(output.status.success());
     assert!(String::from_utf8_lossy(&output.stdout).contains("refs/work/knots"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn push_ref_policy_rejection_is_not_retried() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (origin, dev1) = setup_origin_and_dev1(&root);
     run_git(&dev1, &["config", "knots.remoteRef", "refs/heads/knots"]);
     init_remote_knots_branch(&dev1).expect("legacy remote ref should initialize");
@@ -169,13 +165,12 @@ fn push_ref_policy_rejection_is_not_retried() {
         }
         other => panic!("expected raw git policy failure, got {other:?}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn push_non_fast_forward_still_retries() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (origin, dev1) = setup_origin_and_dev1(&root);
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
     install_always_non_fast_forward_hook(&origin);
@@ -193,8 +188,6 @@ fn push_non_fast_forward_still_retries() {
     let retry_count = std::fs::read_to_string(origin.join("retry-count"))
         .expect("hook retry count should be written");
     assert_eq!(retry_count.lines().count(), 3);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn open_test_db(repo_root: &Path) -> rusqlite::Connection {

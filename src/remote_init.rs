@@ -360,14 +360,10 @@ mod tests {
     use std::path::{Path, PathBuf};
     use std::process::Command;
 
-    use uuid::Uuid;
-
     use super::{detect_beads_hooks, init_remote_branch, RemoteInitError};
 
-    fn unique_dir(prefix: &str) -> PathBuf {
-        let path = std::env::temp_dir().join(format!("{}-{}", prefix, Uuid::now_v7()));
-        std::fs::create_dir_all(&path).expect("temp dir should be creatable");
-        path
+    fn unique_dir(prefix: &str) -> knots_test_support::TestWorkspace {
+        knots_test_support::workspace(prefix)
     }
 
     fn run_git(cwd: &Path, args: &[&str]) {
@@ -385,8 +381,9 @@ mod tests {
         );
     }
 
-    fn setup_repo_with_remote() -> (PathBuf, PathBuf) {
-        let root = unique_dir("knots-init-remote-test");
+    fn setup_repo_with_remote() -> (knots_test_support::TestWorkspace, PathBuf) {
+        let root_ws = unique_dir("knots-init-remote-test");
+        let root = root_ws.path().to_path_buf();
         let remote = root.join("remote.git");
         let local = root.join("local");
 
@@ -412,12 +409,12 @@ mod tests {
             ],
         );
 
-        (root, local)
+        (root_ws, local)
     }
 
     #[test]
     fn creates_remote_branch_when_missing() {
-        let (root, local) = setup_repo_with_remote();
+        let (_root_ws, local) = setup_repo_with_remote();
 
         init_remote_branch(&local, "origin", "knots").expect("init remote should succeed");
 
@@ -430,13 +427,11 @@ mod tests {
         assert!(output.status.success());
         let stdout = String::from_utf8_lossy(&output.stdout);
         assert!(stdout.contains("refs/heads/knots"));
-
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn fails_if_remote_branch_exists() {
-        let (root, local) = setup_repo_with_remote();
+        let (_root_ws, local) = setup_repo_with_remote();
         init_remote_branch(&local, "origin", "knots").expect("first init should succeed");
 
         let second = init_remote_branch(&local, "origin", "knots");
@@ -444,13 +439,11 @@ mod tests {
             second,
             Err(RemoteInitError::RemoteBranchExists { .. })
         ));
-
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn detects_beads_hook_in_hook_file() {
-        let (root, local) = setup_repo_with_remote();
+        let (_root_ws, local) = setup_repo_with_remote();
         let hooks = local.join(".git").join("hooks");
         std::fs::create_dir_all(&hooks).expect("hooks dir should be creatable");
 
@@ -461,18 +454,14 @@ mod tests {
         assert!(!report.hook_files.is_empty());
         assert!(report.hook_files.contains(&pre_push));
         assert!(!report.has_beads_config);
-
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn detects_beads_config() {
-        let (root, local) = setup_repo_with_remote();
+        let (_root_ws, local) = setup_repo_with_remote();
         run_git(&local, &["config", "beads.role", "maintainer"]);
         let report = detect_beads_hooks(&local);
         assert!(report.has_beads_config);
-
-        let _ = std::fs::remove_dir_all(root);
     }
 }
 

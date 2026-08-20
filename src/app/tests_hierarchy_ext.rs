@@ -1,14 +1,9 @@
 use super::{App, AppError, StateActorMetadata};
 
-use std::path::PathBuf;
-
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-hierarchy-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-hierarchy-ext")
 }
 
 fn open_app(root: &std::path::Path) -> App {
@@ -48,7 +43,8 @@ fn read_state_events(root: &std::path::Path) -> Vec<Value> {
 
 #[test]
 fn deferred_descendant_is_cascaded_in_terminal_transition() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -79,13 +75,12 @@ fn deferred_descendant_is_cascaded_in_terminal_transition() {
         "abandoned",
         "deferred child should be cascaded to abandoned"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn recursive_cascade_reaches_great_grandchildren() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -138,13 +133,12 @@ fn recursive_cascade_reaches_great_grandchildren() {
         cascade_events, 4,
         "parent + 3 descendants = 4 cascade events"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn only_behind_children_appear_as_blockers() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("idea"), Some("default"))
@@ -179,6 +173,4 @@ fn only_behind_children_appear_as_blockers() {
         }
         other => panic!("unexpected error: {other}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }

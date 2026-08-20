@@ -1,16 +1,12 @@
-use std::path::{Path, PathBuf};
-
-use uuid::Uuid;
+use std::path::Path;
 
 use super::{claim_knot, list_queue_candidates, run_poll};
 use crate::app::App;
 use crate::cli::PollArgs;
 use crate::domain::knot_type::KnotType;
 
-pub(super) fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-poll-lease-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+pub(super) fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-poll-lease-ext")
 }
 
 pub(super) fn open_app(root: &Path) -> App {
@@ -20,7 +16,8 @@ pub(super) fn open_app(root: &Path) -> App {
 
 #[test]
 fn lease_excluded_from_queue_candidates() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     // Create a lease knot (starts in lease_ready which is a queue state)
@@ -51,13 +48,12 @@ fn lease_excluded_from_queue_candidates() {
         candidates.iter().any(|k| k.knot_type == KnotType::Work),
         "work item should be in queue candidates"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_rejects_lease_knot() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let lease = crate::lease::create_lease(
@@ -78,13 +74,12 @@ fn claim_rejects_lease_knot() {
         err.contains("is a lease and cannot be claimed"),
         "error should mention lease rejection: {err}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_creates_lease_on_claim() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let work = app
@@ -111,8 +106,6 @@ fn claim_creates_lease_on_claim() {
         .expect("lease knot should exist");
     assert_eq!(lease.knot_type, KnotType::Lease);
     assert_eq!(lease.state, "lease_active");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -120,7 +113,8 @@ fn claim_without_external_lease_always_auto_creates_one() {
     // With lease-declared identity, `kno claim` (no `--lease`) must always
     // auto-create a lease. The CLI no longer has a path for declaring
     // agent_name, so the auto-created lease simply has an empty agent_info.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let work = app
@@ -138,13 +132,12 @@ fn claim_without_external_lease_always_auto_creates_one() {
         knot.lease_id.is_some(),
         "claim without --lease should auto-create one"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn run_poll_with_claim_creates_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     app.create_knot("Poll claim work", None, Some("work_item"), Some("default"))
@@ -164,8 +157,6 @@ fn run_poll_with_claim_creates_lease() {
     };
 
     run_poll(&app, args).expect("run_poll with claim should succeed");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 pub(super) fn setup_repo(root: &std::path::Path) {
@@ -200,7 +191,8 @@ pub(super) fn create_agent_info() -> crate::domain::lease::AgentInfo {
 
 #[test]
 fn claim_with_external_lease_binds_it() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let work = app
@@ -233,13 +225,12 @@ fn claim_with_external_lease_binds_it() {
 
     // Verify the external lease is bound (not a new one)
     assert_eq!(result.knot.lease_id.as_deref(), Some(lease.id.as_str()));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_with_terminated_lease_rejects() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let work = app
@@ -274,13 +265,12 @@ fn claim_with_terminated_lease_rejects() {
         result.is_err(),
         "claiming with terminated lease should fail"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_without_lease_creates_one() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let work = app
@@ -299,13 +289,12 @@ fn claim_without_lease_creates_one() {
         result.knot.lease_id.is_some(),
         "should have auto-created a lease"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn completion_command_includes_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
 
     let work = app
@@ -344,13 +333,12 @@ fn completion_command_includes_lease() {
         result.completion_cmd.contains(&lease.id),
         "completion command should include the lease ID"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_with_non_lease_knot_as_lease_rejects() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -384,13 +372,12 @@ fn claim_with_non_lease_knot_as_lease_rejects() {
         err.contains("does not point to a lease knot"),
         "error should mention not a lease: {err}"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_with_ready_lease_activates_it() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -431,13 +418,12 @@ fn claim_with_ready_lease_activates_it() {
         .expect("show")
         .expect("lease exists");
     assert_eq!(lease_after.state, "lease_active");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn claim_with_nonexistent_lease_rejects() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -462,6 +448,4 @@ fn claim_with_nonexistent_lease_rejects() {
         result.is_err(),
         "claiming with nonexistent lease should fail"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

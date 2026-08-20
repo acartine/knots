@@ -1,9 +1,7 @@
 use super::rehydrate_from_events;
 
-fn unique_root(prefix: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("root should be creatable");
-    root
+fn unique_root(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn write_event(root: &std::path::Path, subdir: &str, filename: &str, body: &str) {
@@ -21,7 +19,8 @@ fn write_event(root: &std::path::Path, subdir: &str, filename: &str, body: &str)
 
 #[test]
 fn rehydrate_full_execution_plan_snapshot_wins_over_sparse_index() {
-    let root = unique_root("knots-rehydrate-plan-snapshot");
+    let root_ws = unique_root("knots-rehydrate-plan-snapshot");
+    let root = root_ws.path().to_path_buf();
     write_event(
         &root,
         "events",
@@ -104,6 +103,4 @@ fn rehydrate_full_execution_plan_snapshot_wins_over_sparse_index() {
     assert_eq!(projection.execution_plan_data.waves.len(), 1);
     assert_eq!(projection.execution_plan_data.waves[0].wave_index, 5);
     assert_eq!(projection.execution_plan_data.waves[0].steps.len(), 1);
-
-    let _ = std::fs::remove_dir_all(root);
 }

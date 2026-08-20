@@ -2,20 +2,16 @@
 //! instead of applied, and replay in order once it is no longer leased.
 
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-
-use uuid::Uuid;
 
 use crate::db;
 use crate::sync::GitAdapter;
 
 use super::IncrementalApplier;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-apply-quarantine-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-apply-quarantine")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -33,15 +29,16 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# apply\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -129,7 +126,8 @@ fn leased(ids: &[&str]) -> HashSet<String> {
 
 #[test]
 fn quarantine_holds_a_leased_knot_across_several_pulls_then_replays_it_once_unlocked() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
 
@@ -234,13 +232,12 @@ fn quarantine_holds_a_leased_knot_across_several_pulls_then_replays_it_once_unlo
     assert!(db::list_quarantined_knots(&conn)
         .expect("list should succeed")
         .is_empty());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn full_events_for_a_leased_knot_are_quarantined_too() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
 
@@ -300,6 +297,4 @@ fn full_events_for_a_leased_knot_are_quarantined_too() {
         .expect("C should still exist");
     assert_eq!(record.notes.len(), 1);
     assert_eq!(record.notes[0].content, "in progress");
-
-    let _ = std::fs::remove_dir_all(root);
 }

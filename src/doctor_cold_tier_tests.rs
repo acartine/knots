@@ -1,19 +1,16 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use rusqlite::Connection;
 use time::format_description::well_known::Rfc3339;
 use time::{Duration, OffsetDateTime};
-use uuid::Uuid;
 
 use super::{check_cold_tier_imbalance, check_cold_tier_imbalance_at, fix_cold_tier_imbalance};
 use crate::db;
 use crate::doctor::DoctorStatus;
 use crate::project::StorePaths;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-cold-tier-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-cold-tier")
 }
 
 fn open_db(root: &Path) -> (String, Connection) {
@@ -125,7 +122,8 @@ fn check_passes_when_cold_holds_only_old_terminal_knots() {
     // The exact configuration the user reported: small hot, lots of legitimately-old
     // cold rows. Today's check warns. The new check passes — this is the regression
     // lock.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_, conn) = open_db(&root);
     for i in 0..5 {
         insert_hot(&conn, &format!("H-{i:03}"), "hot");
@@ -142,13 +140,12 @@ fn check_passes_when_cold_holds_only_old_terminal_knots() {
     assert_eq!(data["shadow"], 0);
     assert_eq!(data["non_terminal_cold"], 0);
     assert_eq!(data["stale_terminal_hot"], 0);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_passes_with_only_recently_terminated_hot_knots() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_, conn) = open_db(&root);
     insert_hot_with_state(
         &conn,
@@ -159,12 +156,12 @@ fn check_passes_with_only_recently_terminated_hot_knots() {
     );
     let check = check_cold_tier_imbalance(&conn).expect("check should run");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_warns_on_shadow_rows() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_, conn) = open_db(&root);
     insert_hot(&conn, "DUP", "shared");
     insert_old_terminal_cold(&conn, "DUP");
@@ -174,12 +171,12 @@ fn check_warns_on_shadow_rows() {
     let data = check.data.as_ref().expect("data");
     assert_eq!(data["shadow"], 1);
     assert!(check.detail.contains("shadow=1"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_warns_on_non_terminal_cold_rows() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_, conn) = open_db(&root);
     insert_cold_with_state(
         &conn,
@@ -194,12 +191,12 @@ fn check_warns_on_non_terminal_cold_rows() {
     let data = check.data.as_ref().expect("data");
     assert_eq!(data["non_terminal_cold"], 1);
     assert!(check.detail.contains("non_terminal_cold=1"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_warns_on_stale_terminal_hot_rows() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_, conn) = open_db(&root);
     // 100h ago > 72h cutoff → stale terminal in hot.
     insert_hot_with_state(
@@ -215,12 +212,12 @@ fn check_warns_on_stale_terminal_hot_rows() {
     let data = check.data.as_ref().expect("data");
     assert_eq!(data["stale_terminal_hot"], 1);
     assert!(check.detail.contains("stale_terminal_hot=1"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_warns_with_combined_violations_and_reports_all_counts() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_, conn) = open_db(&root);
     // shadow
     insert_hot(&conn, "DUP", "shared");
@@ -251,32 +248,31 @@ fn check_warns_with_combined_violations_and_reports_all_counts() {
     assert!(check.detail.contains("shadow=1"));
     assert!(check.detail.contains("non_terminal_cold=1"));
     assert!(check.detail.contains("stale_terminal_hot=1"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn check_at_handles_missing_db_as_pass() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let store_paths = StorePaths {
         root: root.join(".knots"),
     };
     let check = check_cold_tier_imbalance_at(&store_paths).expect("check should run");
     assert_eq!(check.status, DoctorStatus::Pass);
     assert!(check.detail.contains("no cache database found"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_noop_when_db_missing() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     fix_cold_tier_imbalance(&root);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_prunes_shadow_rows_and_clears_warn() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     {
         let (_, conn) = open_db(&root);
         insert_hot(&conn, "DUP", "shared");
@@ -292,12 +288,12 @@ fn fix_prunes_shadow_rows_and_clears_warn() {
     assert_eq!(hot, 1, "hot row untouched by shadow prune");
     let check = check_cold_tier_imbalance(&conn).expect("check");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_rehydrates_non_terminal_cold_rows() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     {
         let (_, conn) = open_db(&root);
         insert_cold_with_state(
@@ -319,14 +315,14 @@ fn fix_rehydrates_non_terminal_cold_rows() {
     assert_eq!(hot, 1, "knot moved into hot");
     let check = check_cold_tier_imbalance(&conn).expect("check");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_drops_cold_pointer_when_rehydrate_events_missing() {
     // Non-terminal cold row, no events on disk to rebuild from. The fix
     // must drop the cold pointer (not loop forever). Warm row stays.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     {
         let (_, conn) = open_db(&root);
         insert_cold_with_state(
@@ -349,12 +345,12 @@ fn fix_drops_cold_pointer_when_rehydrate_events_missing() {
     assert!(warm, "warm catalog entry should remain");
     let check = check_cold_tier_imbalance(&conn).expect("check");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_demotes_stale_terminal_hot_rows_to_cold() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     {
         let (_, conn) = open_db(&root);
         insert_hot_with_state(
@@ -375,12 +371,12 @@ fn fix_demotes_stale_terminal_hot_rows_to_cold() {
     assert_eq!(cold, 1, "demoted row should land in cold");
     let check = check_cold_tier_imbalance(&conn).expect("check");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn fix_is_idempotent_after_clearing_violations() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     {
         let (_, conn) = open_db(&root);
         insert_hot(&conn, "DUP", "shared");
@@ -417,7 +413,6 @@ fn fix_is_idempotent_after_clearing_violations() {
     let (_, conn) = open_db(&root);
     let check = check_cold_tier_imbalance(&conn).expect("check");
     assert_eq!(check.status, DoctorStatus::Pass);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -425,7 +420,8 @@ fn fix_passes_again_after_simulated_steady_state_cycle() {
     // Captures the user's bug: after --fix, normal flows that re-archive
     // (sweep moving stale-terminal hot -> cold; sync re-applying terminal
     // events into cold) must not re-introduce the warning.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     {
         let (_, conn) = open_db(&root);
         for i in 0..5 {
@@ -481,5 +477,4 @@ fn fix_passes_again_after_simulated_steady_state_cycle() {
         "doctor should remain pass through normal sweep + sync activity, got: {}",
         check.detail
     );
-    let _ = std::fs::remove_dir_all(root);
 }

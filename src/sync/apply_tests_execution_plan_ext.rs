@@ -1,7 +1,4 @@
-use std::path::PathBuf;
 use std::process::Command;
-
-use uuid::Uuid;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::execution_plan::{ExecutionPlanData, ExecutionPlanStep, ExecutionPlanWave};
@@ -11,10 +8,8 @@ use crate::sync::GitAdapter;
 
 use super::IncrementalApplier;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-plan-ext-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-plan-ext")
 }
 
 fn run_git(root: &std::path::Path, args: &[&str]) {
@@ -32,15 +27,16 @@ fn run_git(root: &std::path::Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# apply\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &std::path::Path) -> rusqlite::Connection {
@@ -98,7 +94,8 @@ fn seed_plan_with_waves(
 
 #[test]
 fn full_event_with_stale_precondition_is_ignored_and_preserves_existing_waves() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
 
@@ -158,6 +155,4 @@ fn full_event_with_stale_precondition_is_ignored_and_preserves_existing_waves() 
         "stale full event must not wipe existing waves"
     );
     assert_eq!(record.execution_plan_data.waves[0].wave_index, 3);
-
-    let _ = std::fs::remove_dir_all(root);
 }

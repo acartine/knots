@@ -1,11 +1,8 @@
 use super::ProfileRegistry;
 use crate::installed_workflows;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 const CUSTOM_BUNDLE: &str = r#"
@@ -95,7 +92,8 @@ fn load_includes_builtin_profiles_from_all_workflow_bundles() {
 
 #[test]
 fn load_for_repo_keeps_non_work_builtin_profiles_alongside_installed_workflows() {
-    let root = unique_workspace("knots-profile-installed-workflows");
+    let root_ws = unique_workspace("knots-profile-installed-workflows");
+    let root = root_ws.path().to_path_buf();
     let bundle_path = root.join("custom-flow.toml");
     std::fs::write(&bundle_path, CUSTOM_BUNDLE).expect("bundle should write");
     installed_workflows::install_bundle(&root, &bundle_path).expect("bundle should install");
@@ -127,6 +125,4 @@ fn load_for_repo_keeps_non_work_builtin_profiles_alongside_installed_workflows()
             .workflow_id,
         "execution_plan_sdlc"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

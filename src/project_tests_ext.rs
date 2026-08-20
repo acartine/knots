@@ -1,9 +1,7 @@
 use std::fs;
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-
-use uuid::Uuid;
 
 use crate::project::{
     canonical_or_original, clear_active_project, config_dir, config_path, create_named_project,
@@ -13,15 +11,16 @@ use crate::project::{
     NamedProjectRecord, StorePaths,
 };
 
-fn temp_home(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    fs::create_dir_all(&path).expect("temp home should be creatable");
-    path
+fn temp_home(prefix: &str) -> knots_test_support::TestWorkspace {
+    let path_ws = knots_test_support::workspace(prefix);
+    let _path = path_ws.path().to_path_buf();
+    path_ws
 }
 
 #[test]
 fn store_paths_and_config_paths_cover_expected_locations() {
-    let home = temp_home("knots-project-paths");
+    let home_ws = temp_home("knots-project-paths");
+    let home = home_ws.path().to_path_buf();
     let data_root = data_dir(Some(&home)).expect("data dir should resolve");
     let config_root = config_dir(Some(&home)).expect("config dir should resolve");
     let config_file = config_path(Some(&home)).expect("config path should resolve");
@@ -44,13 +43,12 @@ fn store_paths_and_config_paths_cover_expected_locations() {
         .write_queue_worker_lock_path()
         .ends_with(Path::new("locks/write_queue_worker.lock")));
     assert!(store.worktree_path().ends_with(Path::new("_worktree")));
-
-    let _ = fs::remove_dir_all(home);
 }
 
 #[test]
 fn global_config_round_trips_and_active_project_can_be_cleared() {
-    let home = temp_home("knots-project-config");
+    let home_ws = temp_home("knots-project-config");
+    let home = home_ws.path().to_path_buf();
     let config = GlobalConfig {
         default_profile: Some("autopilot".to_string()),
         default_quick_profile: Some("quick".to_string()),
@@ -63,13 +61,12 @@ fn global_config_round_trips_and_active_project_can_be_cleared() {
     clear_active_project(Some(&home)).expect("active project should clear");
     let cleared = read_global_config(Some(&home)).expect("config should reload");
     assert_eq!(cleared.active_project, None);
-
-    let _ = fs::remove_dir_all(home);
 }
 
 #[test]
 fn list_and_load_named_projects_cover_empty_stem_fallback_and_errors() {
-    let home = temp_home("knots-project-list");
+    let home_ws = temp_home("knots-project-list");
+    let home = home_ws.path().to_path_buf();
     let projects_root = config_dir(Some(&home))
         .expect("config dir should resolve")
         .join("projects");
@@ -87,13 +84,12 @@ fn list_and_load_named_projects_cover_empty_stem_fallback_and_errors() {
     fs::write(projects_root.join("broken.toml"), "{").expect("broken project should write");
     let err = list_named_projects(Some(&home)).expect_err("invalid project file should fail");
     assert!(err.contains("invalid project file"));
-
-    let _ = fs::remove_dir_all(home);
 }
 
 #[test]
 fn create_delete_and_resolve_context_cover_error_paths() {
-    let home = temp_home("knots-project-context");
+    let home_ws = temp_home("knots-project-context");
+    let home = home_ws.path().to_path_buf();
     let repo = home.join("repo");
     fs::create_dir_all(repo.join(".git")).expect("git dir should exist");
     fs::write(repo.join(".git/HEAD"), "ref: refs/heads/main\n").expect("git HEAD should exist");
@@ -123,13 +119,12 @@ fn create_delete_and_resolve_context_cover_error_paths() {
 
     delete_named_project(Some(&home), "demo").expect("delete project");
     assert!(load_named_project(Some(&home), "demo").is_err());
-
-    let _ = fs::remove_dir_all(home);
 }
 
 #[test]
 fn prompt_selection_helper_selects_existing_and_creates_new_projects() {
-    let home = temp_home("knots-project-prompt");
+    let home_ws = temp_home("knots-project-prompt");
+    let home = home_ws.path().to_path_buf();
     create_named_project(Some(&home), "alpha", None).expect("alpha should be created");
     create_named_project(Some(&home), "beta", None).expect("beta should be created");
     let projects = list_named_projects(Some(&home)).expect("projects should list");
@@ -163,13 +158,12 @@ fn prompt_selection_helper_selects_existing_and_creates_new_projects() {
         created.repo_root.as_deref(),
         Some(canonical_or_original(&repo).as_path())
     );
-
-    let _ = fs::remove_dir_all(home);
 }
 
 #[test]
 fn prompt_selection_validates_input_and_non_tty_behavior() {
-    let home = temp_home("knots-project-prompt-errors");
+    let home_ws = temp_home("knots-project-prompt-errors");
+    let home = home_ws.path().to_path_buf();
     let mut output = Vec::new();
     let projects = vec![NamedProjectRecord {
         id: "alpha".to_string(),
@@ -209,13 +203,12 @@ fn prompt_selection_validates_input_and_non_tty_behavior() {
     )
     .expect_err("non-tty should fail");
     assert!(err.contains("requires a TTY"));
-
-    let _ = fs::remove_dir_all(home);
 }
 
 #[test]
 fn prompt_selection_from_io_accepts_tty_streams() {
-    let home = temp_home("knots-project-prompt-tty");
+    let home_ws = temp_home("knots-project-prompt-tty");
+    let home = home_ws.path().to_path_buf();
     create_named_project(Some(&home), "alpha", None).expect("alpha should be created");
     let projects = list_named_projects(Some(&home)).expect("projects should list");
 
@@ -230,13 +223,12 @@ fn prompt_selection_from_io_accepts_tty_streams() {
     )
     .expect("tty-backed selection should succeed");
     assert_eq!(selected.id, "alpha");
-
-    let _ = fs::remove_dir_all(home);
 }
 
 #[test]
 fn project_id_validation_and_git_root_search_cover_edge_cases() {
-    let home = temp_home("knots-project-validate");
+    let home_ws = temp_home("knots-project-validate");
+    let home = home_ws.path().to_path_buf();
     let nested = home.join("a/b/c");
     fs::create_dir_all(&nested).expect("nested path should exist");
     fs::create_dir_all(home.join(".git")).expect("git marker should exist");
@@ -249,36 +241,32 @@ fn project_id_validation_and_git_root_search_cover_edge_cases() {
     let git_root = find_git_root(&nested).expect("git root should be found");
     assert_eq!(git_root, canonical_or_original(&home));
     assert!(find_git_root(Path::new("/definitely/not/a/repo")).is_none());
-
-    let _ = fs::remove_dir_all(git_root);
 }
 
 #[test]
 fn find_git_root_skips_knots_worktree() {
-    let root = temp_home("knots-project-worktree-skip");
+    let root_ws = temp_home("knots-project-worktree-skip");
+    let root = root_ws.path().to_path_buf();
     let repo = root.join("repo");
     fs::create_dir_all(repo.join(".git")).expect("repo .git");
     fs::write(repo.join(".git/HEAD"), "ref: refs/heads/main\n").expect("repo HEAD");
     let worktree = repo.join(".knots").join("_worktree");
     fs::create_dir_all(&worktree).expect("worktree dir");
-    fs::write(worktree.join(".git"), "gitdir: /tmp/fake").expect(".git file");
+    fs::write(worktree.join(".git"), "gitdir: /example/fake").expect(".git file");
 
     let found = find_git_root(&worktree);
     let expected = canonical_or_original(&repo);
     assert_eq!(found.as_deref(), Some(expected.as_path()));
-
-    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
 fn find_git_root_ignores_empty_git_marker() {
-    let root = temp_home("knots-project-empty-git");
+    let root_ws = temp_home("knots-project-empty-git");
+    let root = root_ws.path().to_path_buf();
     let nested = root.join("nested");
     fs::create_dir_all(root.join(".git")).expect("empty .git dir");
     fs::create_dir_all(&nested).expect("nested path");
     assert!(find_git_root(&nested).is_none());
-
-    let _ = fs::remove_dir_all(root);
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -298,7 +286,8 @@ fn run_git(root: &Path, args: &[&str]) {
 
 #[test]
 fn resolve_context_in_linked_worktree_uses_primary_store() {
-    let workspace = temp_home("knots-linked-worktree-store");
+    let workspace_ws = temp_home("knots-linked-worktree-store");
+    let workspace = workspace_ws.path().to_path_buf();
     let primary = workspace.join("primary");
     fs::create_dir_all(&primary).expect("primary dir");
     run_git(&primary, &["init"]);
@@ -325,6 +314,4 @@ fn resolve_context_in_linked_worktree_uses_primary_store() {
     let expected_store = canonical_or_original(&primary).join(".knots");
     assert_eq!(context.repo_root, expected_repo);
     assert_eq!(context.store_paths.root, expected_store);
-
-    let _ = fs::remove_dir_all(workspace);
 }

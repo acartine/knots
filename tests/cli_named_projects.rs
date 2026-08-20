@@ -4,12 +4,9 @@ use std::process::{Command, Output, Stdio};
 
 #[cfg(unix)]
 use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
-use uuid::Uuid;
 
-fn unique_dir(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("temp dir should be creatable");
-    path
+fn unique_dir(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn knots_binary() -> PathBuf {
@@ -163,8 +160,10 @@ fn parse_created_id(output: &Output) -> String {
 
 #[test]
 fn init_project_creates_app_data_without_workspace_knots_dir() {
-    let home = unique_dir("knots-home");
-    let workspace = unique_dir("knots-workspace");
+    let home_ws = unique_dir("knots-home");
+    let home = home_ws.path().to_path_buf();
+    let workspace_ws = unique_dir("knots-workspace");
+    let workspace = workspace_ws.path().to_path_buf();
 
     let output = run_knots(&home, &workspace, &["--project", "demo", "init"]);
     assert_success(&output);
@@ -180,9 +179,12 @@ fn init_project_creates_app_data_without_workspace_knots_dir() {
 
 #[test]
 fn active_project_allows_commands_outside_workspace() {
-    let home = unique_dir("knots-home-active");
-    let workspace = unique_dir("knots-workspace-active");
-    let outside = unique_dir("knots-outside-active");
+    let home_ws = unique_dir("knots-home-active");
+    let home = home_ws.path().to_path_buf();
+    let workspace_ws = unique_dir("knots-workspace-active");
+    let workspace = workspace_ws.path().to_path_buf();
+    let outside_ws = unique_dir("knots-outside-active");
+    let outside = outside_ws.path().to_path_buf();
 
     assert_success(&run_knots(
         &home,
@@ -216,8 +218,10 @@ fn active_project_allows_commands_outside_workspace() {
 
 #[test]
 fn explicit_project_rejects_unknown_id() {
-    let home = unique_dir("knots-home-missing");
-    let cwd = unique_dir("knots-cwd-missing");
+    let home_ws = unique_dir("knots-home-missing");
+    let home = home_ws.path().to_path_buf();
+    let cwd_ws = unique_dir("knots-cwd-missing");
+    let cwd = cwd_ws.path().to_path_buf();
 
     let output = run_knots(&home, &cwd, &["--project", "missing", "ls"]);
     assert_failure(&output);
@@ -226,8 +230,10 @@ fn explicit_project_rejects_unknown_id() {
 
 #[test]
 fn sync_is_rejected_for_local_only_projects() {
-    let home = unique_dir("knots-home-sync");
-    let workspace = unique_dir("knots-workspace-sync");
+    let home_ws = unique_dir("knots-home-sync");
+    let home = home_ws.path().to_path_buf();
+    let workspace_ws = unique_dir("knots-workspace-sync");
+    let workspace = workspace_ws.path().to_path_buf();
 
     assert_success(&run_knots(
         &home,
@@ -241,9 +247,12 @@ fn sync_is_rejected_for_local_only_projects() {
 
 #[test]
 fn explicit_c_repo_overrides_active_named_project() {
-    let home = unique_dir("knots-home-override");
-    let workspace = unique_dir("knots-workspace-override");
-    let repo = unique_dir("knots-repo-override");
+    let home_ws = unique_dir("knots-home-override");
+    let home = home_ws.path().to_path_buf();
+    let workspace_ws = unique_dir("knots-workspace-override");
+    let workspace = workspace_ws.path().to_path_buf();
+    let repo_ws = unique_dir("knots-repo-override");
+    let repo = repo_ws.path().to_path_buf();
     setup_repo(&repo);
 
     assert_success(&run_knots(
@@ -293,8 +302,10 @@ fn explicit_c_repo_overrides_active_named_project() {
 
 #[test]
 fn project_delete_requires_matching_confirmation() {
-    let home = unique_dir("knots-home-delete-confirm");
-    let workspace = unique_dir("knots-workspace-delete-confirm");
+    let home_ws = unique_dir("knots-home-delete-confirm");
+    let home = home_ws.path().to_path_buf();
+    let workspace_ws = unique_dir("knots-workspace-delete-confirm");
+    let workspace = workspace_ws.path().to_path_buf();
 
     assert_success(&run_knots(
         &home,
@@ -312,8 +323,10 @@ fn project_delete_requires_matching_confirmation() {
 
 #[test]
 fn project_delete_removes_store_and_project_record() {
-    let home = unique_dir("knots-home-delete");
-    let workspace = unique_dir("knots-workspace-delete");
+    let home_ws = unique_dir("knots-home-delete");
+    let home = home_ws.path().to_path_buf();
+    let workspace_ws = unique_dir("knots-workspace-delete");
+    let workspace = workspace_ws.path().to_path_buf();
 
     assert_success(&run_knots(
         &home,
@@ -333,8 +346,10 @@ fn project_delete_removes_store_and_project_record() {
 
 #[test]
 fn project_delete_yes_skips_confirmation_prompt() {
-    let home = unique_dir("knots-home-delete-yes");
-    let workspace = unique_dir("knots-workspace-delete-yes");
+    let home_ws = unique_dir("knots-home-delete-yes");
+    let home = home_ws.path().to_path_buf();
+    let workspace_ws = unique_dir("knots-workspace-delete-yes");
+    let workspace = workspace_ws.path().to_path_buf();
 
     assert_success(&run_knots(
         &home,
@@ -350,8 +365,10 @@ fn project_delete_yes_skips_confirmation_prompt() {
 #[cfg(unix)]
 #[test]
 fn project_select_works_interactively_with_a_tty() {
-    let home = unique_dir("knots-home-select");
-    let workspace = unique_dir("knots-workspace-select");
+    let home_ws = unique_dir("knots-home-select");
+    let home = home_ws.path().to_path_buf();
+    let workspace_ws = unique_dir("knots-workspace-select");
+    let workspace = workspace_ws.path().to_path_buf();
 
     assert_success(&run_knots(
         &home,

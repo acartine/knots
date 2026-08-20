@@ -318,21 +318,17 @@ fn issue(path: &Path, message: &str) -> FsckIssue {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
-    use uuid::Uuid;
 
     use super::run_fsck;
 
-    fn unique_workspace() -> PathBuf {
-        let root = std::env::temp_dir().join(format!("knots-fsck-test-{}", Uuid::now_v7()));
-        std::fs::create_dir_all(&root).expect("workspace should be creatable");
-        root
+    fn unique_workspace() -> knots_test_support::TestWorkspace {
+        knots_test_support::workspace("knots-fsck-test")
     }
 
     #[test]
     fn reports_duplicate_event_ids() {
-        let root = unique_workspace();
+        let root_ws = unique_workspace();
+        let root = root_ws.path().to_path_buf();
         let idx_path = root
             .join(".knots")
             .join("index")
@@ -398,13 +394,12 @@ mod tests {
             .issues
             .iter()
             .any(|issue| issue.message.contains("duplicate event_id")));
-
-        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn reports_missing_edge_destination_reference() {
-        let root = unique_workspace();
+        let root_ws = unique_workspace();
+        let root = root_ws.path().to_path_buf();
         let idx_path = root
             .join(".knots")
             .join("index")
@@ -473,8 +468,6 @@ mod tests {
             .issues
             .iter()
             .any(|issue| issue.message.contains("destination")));
-
-        let _ = std::fs::remove_dir_all(root);
     }
 }
 

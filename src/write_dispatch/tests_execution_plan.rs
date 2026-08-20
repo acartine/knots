@@ -3,14 +3,11 @@ use crate::app::App;
 use crate::write_queue::{UpdateOperation, WriteOperation};
 
 use clap::Parser;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -77,7 +74,8 @@ fn operation_from_command_maps_execution_plan_objective() {
 
 #[test]
 fn execute_operation_update_loads_execution_plan_file() {
-    let root = unique_workspace("knots-wd-execution-plan-file");
+    let root_ws = unique_workspace("knots-wd-execution-plan-file");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
@@ -164,13 +162,12 @@ fn execute_operation_update_loads_execution_plan_file() {
     let plan = serialized.as_object().expect("plan should be object");
     assert_eq!(plan.get("repo_path"), None);
     assert_eq!(plan.get("knot_ids"), None);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execute_operation_update_objective_preserves_existing_waves() {
-    let root = unique_workspace("knots-wd-execution-plan-objective");
+    let root_ws = unique_workspace("knots-wd-execution-plan-objective");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let app = App::open(db.to_str().unwrap(), root.clone()).unwrap();
@@ -250,6 +247,4 @@ fn execute_operation_update_objective_preserves_existing_waves() {
     assert_eq!(execution_plan.objective.as_deref(), Some("New objective"));
     assert_eq!(execution_plan.waves.len(), 1);
     assert_eq!(execution_plan.waves[0].name, "Wave 1");
-
-    let _ = std::fs::remove_dir_all(root);
 }

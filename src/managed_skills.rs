@@ -364,5 +364,11 @@ fn tool_for_check_name(name: &str) -> Option<SkillTool> {
 #[path = "managed_skills_tests.rs"]
 mod tests;
 #[cfg(test)]
+#[path = "managed_skills_tests_codex.rs"]
+mod tests_codex;
+#[cfg(test)]
 #[path = "managed_skills_tests_ext.rs"]
 mod tests_ext;
+#[cfg(test)]
+#[path = "managed_skills_tests_gitignore.rs"]
+mod tests_gitignore;

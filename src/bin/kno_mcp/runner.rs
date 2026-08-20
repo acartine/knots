@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn runner_executes_successful_json_command() {
-        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/tmp/repo"));
+        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/example/repo"));
         let value = runner.run("show", &["k1".to_string()]).expect("show json");
         assert_eq!(value["id"], "k1");
 
@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn runner_can_allow_active_lease_replication() {
-        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/tmp/repo"));
+        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/example/repo"));
         let value = runner
             .run_allowing_active_leases("push", &[])
             .expect("push json");
@@ -179,15 +179,15 @@ mod tests {
 
     #[test]
     fn runner_maps_command_and_json_parse_failures() {
-        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/tmp/repo"));
+        let runner = KnoRunner::new(fixture_kno(), PathBuf::from("/example/repo"));
         let err = runner
             .run("show", &["MISSING".to_string()])
             .expect_err("missing knot should fail");
         assert_eq!(err.exit_code, Some(1));
         assert!(err.stderr.contains("not found"));
 
-        let script = temp_script("bad-json", "printf 'not-json\\n'\n");
-        let runner = KnoRunner::new(script.clone(), PathBuf::from("/tmp/repo"));
+        let (_script_ws, script) = temp_script("bad-json", "printf 'not-json\\n'\n");
+        let runner = KnoRunner::new(script.clone(), PathBuf::from("/example/repo"));
         let err = runner
             .run("show", &[])
             .expect_err("invalid json should fail");
@@ -199,8 +199,8 @@ mod tests {
     #[test]
     fn runner_maps_spawn_failures() {
         let runner = KnoRunner::new(
-            PathBuf::from("/tmp/kno-mcp-missing-binary"),
-            PathBuf::from("/tmp/repo"),
+            PathBuf::from("/example/kno-mcp-missing-binary"),
+            PathBuf::from("/example/repo"),
         );
         let err = runner
             .run("show", &[])
@@ -220,8 +220,8 @@ mod tests {
 
     #[test]
     fn sibling_resolver_prefers_kno_then_knots_then_path() {
-        let dir = std::env::temp_dir().join(format!("kno-mcp-bin-{}", std::process::id()));
-        fs::create_dir_all(&dir).expect("temp dir");
+        let dir_ws = knots_test_support::workspace("knots-kno-mcp-bin");
+        let dir = dir_ws.path().to_path_buf();
         assert_eq!(resolve_sibling_kno_bin(&dir), PathBuf::from("kno"));
 
         fs::write(dir.join("knots"), "").expect("write knots");
@@ -229,19 +229,15 @@ mod tests {
 
         fs::write(dir.join("kno"), "").expect("write kno");
         assert_eq!(resolve_sibling_kno_bin(&dir), dir.join("kno"));
-        let _ = fs::remove_dir_all(dir);
     }
 
     fn fixture_kno() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/kno-stub.sh")
     }
 
-    fn temp_script(name: &str, body: &str) -> PathBuf {
-        let path = std::env::temp_dir().join(format!(
-            "kno-mcp-{name}-{}-{}",
-            std::process::id(),
-            "runner"
-        ));
+    fn temp_script(name: &str, body: &str) -> (knots_test_support::TestWorkspace, PathBuf) {
+        let ws = knots_test_support::workspace(&format!("knots-kno-mcp-{name}"));
+        let path = ws.path().join("script.sh");
         fs::write(
             &path,
             format!("#!/usr/bin/env bash\nset -euo pipefail\n{body}"),
@@ -253,6 +249,6 @@ mod tests {
             permissions.set_mode(0o755);
             fs::set_permissions(&path, permissions).expect("chmod");
         }
-        path
+        (ws, path)
     }
 }

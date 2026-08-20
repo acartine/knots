@@ -223,7 +223,7 @@ mod tests {
 
     #[test]
     fn completions_install_path_for_known_shells() {
-        let home = PathBuf::from("/tmp/test-home");
+        let home = PathBuf::from("/example/test-home");
         let bash = completions_install_path_for_home(Shell::Bash, &home);
         assert!(bash.unwrap().to_str().unwrap().contains("bash-completion"));
         let zsh = completions_install_path_for_home(Shell::Zsh, &home);
@@ -257,8 +257,8 @@ mod tests {
 
     #[test]
     fn install_completions_with_zshrc_patching() {
-        let dir = std::env::temp_dir().join(format!("knots-comp-all-{}", uuid::Uuid::now_v7()));
-        std::fs::create_dir_all(&dir).expect("dir should be creatable");
+        let dir_ws = knots_test_support::workspace("knots-comp-all");
+        let dir = dir_ws.path().to_path_buf();
 
         // Bash install writes file
         let path = install_completions_to(Shell::Bash, &dir).expect("bash install should succeed");
@@ -303,8 +303,6 @@ mod tests {
         assert!(run_completions_command_with_home(Some("bash"), true, Some(&dir)).is_ok());
         assert!(run_completions_command_with_home(Some("zsh"), true, Some(&dir)).is_ok());
         assert!(run_completions_command_with_home(Some("fish"), true, Some(&dir)).is_ok());
-
-        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]
@@ -323,7 +321,7 @@ mod tests {
 
     #[test]
     fn completions_install_path_returns_none_for_unsupported_shell() {
-        let home = PathBuf::from("/tmp/test-home");
+        let home = PathBuf::from("/example/test-home");
         assert!(completions_install_path_for_home(Shell::Elvish, &home).is_none());
         assert!(completions_install_path_for_home(Shell::PowerShell, &home).is_none());
     }

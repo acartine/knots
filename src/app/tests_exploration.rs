@@ -1,12 +1,9 @@
 use super::{App, AppError, CreateKnotOptions};
 use crate::domain::knot_type::KnotType;
-use std::path::{Path, PathBuf};
-use uuid::Uuid;
+use std::path::Path;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-exploration-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-exploration-test")
 }
 
 fn open_app(root: &Path) -> App {
@@ -31,18 +28,19 @@ fn create_explore_knot(app: &App, title: &str, body: Option<&str>) -> crate::app
 
 #[test]
 fn create_exploration_knot_sets_ready_for_exploration() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = create_explore_knot(&app, "Investigate caching", None);
     assert_eq!(knot.state, "ready_for_exploration");
     assert_eq!(knot.knot_type, KnotType::Explore);
     assert_eq!(knot.profile_id, "explore");
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_transitions_to_exploration_state() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = create_explore_knot(&app, "Investigate caching", None);
     assert_eq!(knot.state, "ready_for_exploration");
@@ -51,12 +49,12 @@ fn exploration_transitions_to_exploration_state() {
         .set_state(&knot.id, "exploration", false, None)
         .expect("transition should succeed");
     assert_eq!(updated.state, "exploration");
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_transitions_to_abandoned() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = create_explore_knot(&app, "Investigate caching", None);
 
@@ -69,12 +67,12 @@ fn exploration_transitions_to_abandoned() {
         .set_state(&updated.id, "abandoned", false, None)
         .expect("abandon should succeed");
     assert_eq!(abandoned.state, "abandoned");
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_shipped_rejected_without_edges() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = create_explore_knot(&app, "Investigate caching", None);
     let knot = app
@@ -93,12 +91,12 @@ fn exploration_shipped_rejected_without_edges() {
         }
         other => panic!("expected InvalidArgument, got: {other:?}"),
     }
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_shipped_succeeds_with_edge() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = create_explore_knot(&app, "Investigate caching", None);
     let knot = app
@@ -125,12 +123,12 @@ fn exploration_shipped_succeeds_with_edge() {
         .set_state(&knot.id, "shipped", false, None)
         .expect("shipped should succeed with edge");
     assert_eq!(shipped.state, "shipped");
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_abandoned_from_ready_for_exploration() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = create_explore_knot(&app, "Investigate caching", None);
     assert_eq!(knot.state, "ready_for_exploration");
@@ -139,12 +137,12 @@ fn exploration_abandoned_from_ready_for_exploration() {
         .set_state(&knot.id, "abandoned", false, None)
         .expect("abandon from ready_for_exploration should succeed");
     assert_eq!(abandoned.state, "abandoned");
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_knot_appears_in_list_and_show() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = create_explore_knot(
         &app,
@@ -164,12 +162,12 @@ fn exploration_knot_appears_in_list_and_show() {
         .expect("knot should exist");
     assert_eq!(shown.title, "Investigate caching");
     assert_eq!(shown.state, "ready_for_exploration");
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_invalid_transition_rejected() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = create_explore_knot(&app, "Investigate caching", None);
 
@@ -182,12 +180,12 @@ fn exploration_invalid_transition_rejected() {
         matches!(err, AppError::Workflow(_)),
         "expected workflow/transition error, got: {err:?}"
     );
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn exploration_shipped_succeeds_with_incoming_edge() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = create_explore_knot(&app, "Investigate caching", None);
     let knot = app
@@ -215,5 +213,4 @@ fn exploration_shipped_succeeds_with_incoming_edge() {
         .set_state(&knot.id, "shipped", false, None)
         .expect("shipped should succeed with incoming edge");
     assert_eq!(shipped.state, "shipped");
-    let _ = std::fs::remove_dir_all(&root);
 }

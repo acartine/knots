@@ -94,7 +94,8 @@ mod tests {
     fn drop_removes_the_tree_including_contents() {
         let path = {
             let ws = workspace("knots-test-support-drop");
-            std::fs::create_dir_all(ws.path().join("nested")).expect("nested dir should be created");
+            std::fs::create_dir_all(ws.path().join("nested"))
+                .expect("nested dir should be created");
             std::fs::write(ws.path().join("nested").join("file"), b"contents")
                 .expect("file should be written");
             ws.path().to_path_buf()
@@ -122,7 +123,10 @@ mod tests {
             .expect("sink should not be poisoned")
             .clone()
             .expect("workspace path should have been recorded");
-        assert!(!path.exists(), "workspace should be removed despite the panic");
+        assert!(
+            !path.exists(),
+            "workspace should be removed despite the panic"
+        );
     }
 
     #[test]

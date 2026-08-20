@@ -5,12 +5,9 @@ use rusqlite::Connection;
 use serde_json::Value;
 use time::format_description::well_known::Rfc3339;
 use time::{Duration, OffsetDateTime};
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(cwd: &Path, args: &[&str]) {
@@ -214,7 +211,8 @@ fn doctor_passes_when_cold_holds_only_old_terminal_knots() {
     // The exact configuration the user reported as a permanent warn: a small
     // hot tier and a non-empty cold tier of legitimately-old terminal knots.
     // Under the invariant-based check this is healthy steady state.
-    let root = unique_workspace("knots-cli-cold-tier-healthy");
+    let root_ws = unique_workspace("knots-cli-cold-tier-healthy");
+    let root = root_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_workflows(&root, &db);
@@ -249,7 +247,8 @@ fn doctor_passes_when_cold_holds_only_old_terminal_knots() {
 
 #[test]
 fn doctor_fix_demotes_stale_terminal_hot_to_cold() {
-    let root = unique_workspace("knots-cli-cold-tier-stale-hot");
+    let root_ws = unique_workspace("knots-cli-cold-tier-stale-hot");
+    let root = root_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_workflows(&root, &db);
@@ -287,7 +286,8 @@ fn doctor_fix_demotes_stale_terminal_hot_to_cold() {
 
 #[test]
 fn doctor_fix_rehydrates_recent_terminal_cold_rows() {
-    let root = unique_workspace("knots-cli-cold-tier-recent-cold");
+    let root_ws = unique_workspace("knots-cli-cold-tier-recent-cold");
+    let root = root_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_workflows(&root, &db);
@@ -355,7 +355,8 @@ fn insert_shadow_cold(db: &Path, id: &str, title: &str, updated_at: &str) {
 
 #[test]
 fn doctor_fix_prunes_cold_row_shadowed_by_hot() {
-    let root = unique_workspace("knots-cli-cold-tier-shadow");
+    let root_ws = unique_workspace("knots-cli-cold-tier-shadow");
+    let root = root_ws.path().to_path_buf();
     setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
     bootstrap_workflows(&root, &db);

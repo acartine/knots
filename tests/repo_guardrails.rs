@@ -1,12 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-use uuid::Uuid;
-
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(cwd: &Path, args: &[&str]) -> Output {
@@ -47,7 +43,8 @@ fn init_repo(root: &Path) {
 fn hook_installer_is_idempotent() {
     let source_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let installer = source_root.join("scripts/repo/install-hooks.sh");
-    let repo = unique_workspace("knots-hooks-idempotent");
+    let repo_ws = unique_workspace("knots-hooks-idempotent");
+    let repo = repo_ws.path().to_path_buf();
     init_repo(&repo);
 
     let first = run_script(&repo, &installer, &[]);
@@ -71,15 +68,14 @@ fn hook_installer_is_idempotent() {
     let second_contents =
         std::fs::read_to_string(&managed).expect("managed hook should still be readable");
     assert_eq!(first_contents, second_contents);
-
-    let _ = std::fs::remove_dir_all(repo);
 }
 
 #[test]
 fn hook_installer_preserves_existing_local_hook() {
     let source_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let installer = source_root.join("scripts/repo/install-hooks.sh");
-    let repo = unique_workspace("knots-hooks-preserve");
+    let repo_ws = unique_workspace("knots-hooks-preserve");
+    let repo = repo_ws.path().to_path_buf();
     init_repo(&repo);
 
     let original_hook = repo.join(".git/hooks/pre-push");
@@ -106,15 +102,14 @@ fn hook_installer_preserves_existing_local_hook() {
     let managed = std::fs::read_to_string(repo.join(".git/hooks/pre-push"))
         .expect("managed pre-push hook should be readable");
     assert!(managed.contains("pre-push.local"));
-
-    let _ = std::fs::remove_dir_all(repo);
 }
 
 #[test]
 fn managed_hook_blocks_push_when_sanity_fails() {
     let source_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let installer = source_root.join("scripts/repo/install-hooks.sh");
-    let root = unique_workspace("knots-hooks-block-push");
+    let root_ws = unique_workspace("knots-hooks-block-push");
+    let root = root_ws.path().to_path_buf();
     let remote = root.join("remote.git");
     let repo = root.join("repo");
 
@@ -177,8 +172,6 @@ fn managed_hook_blocks_push_when_sanity_fails() {
         String::from_utf8_lossy(&push.stdout),
         String::from_utf8_lossy(&push.stderr)
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -196,7 +189,8 @@ fn managed_pre_push_script_runs_full_sanity() {
 fn threshold_regression_script_fails_on_lower_value() {
     let source_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let checker = source_root.join("scripts/repo/check-coverage-threshold.sh");
-    let repo = unique_workspace("knots-threshold-check");
+    let repo_ws = unique_workspace("knots-threshold-check");
+    let repo = repo_ws.path().to_path_buf();
     init_repo(&repo);
 
     std::fs::create_dir_all(repo.join(".ci")).expect(".ci should be creatable");
@@ -225,8 +219,6 @@ fn threshold_regression_script_fails_on_lower_value() {
         String::from_utf8_lossy(&fail.stdout),
         String::from_utf8_lossy(&fail.stderr)
     );
-
-    let _ = std::fs::remove_dir_all(repo);
 }
 
 #[test]

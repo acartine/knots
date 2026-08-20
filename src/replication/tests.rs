@@ -1,8 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use uuid::Uuid;
-
 use crate::db;
 use crate::project::StorePaths;
 use crate::remote_init::init_remote_knots_branch;
@@ -10,10 +8,8 @@ use crate::sync::SyncError;
 
 use super::ReplicationService;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-repl-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-repl-test")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -185,7 +181,8 @@ fn write_conflicting_local_index(repo_root: &Path) {
 
 #[test]
 fn push_then_pull_shares_knots_between_clones() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (origin, dev1) = setup_origin_and_dev1(&root);
 
     write_local_knot_events(&dev1);
@@ -227,13 +224,12 @@ fn push_then_pull_shares_knots_between_clones() {
         .expect("knot should be present after pull");
     assert_eq!(knot.title, "Published knot");
     assert_eq!(knot.description.as_deref(), Some("published details"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn push_uses_configured_store_root_for_local_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_origin, dev1) = setup_origin_and_dev1(&root);
     let store_root = root.join("named-store");
     let store_paths = StorePaths {
@@ -256,13 +252,12 @@ fn push_uses_configured_store_root_for_local_events() {
         .worktree_path()
         .join(".knots/events/2026/02/24/9002-knot.description_set.json")
         .exists());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn push_returns_noop_when_no_local_event_files_exist() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_origin, dev1) = setup_origin_and_dev1(&root);
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
 
@@ -278,13 +273,12 @@ fn push_returns_noop_when_no_local_event_files_exist() {
     assert!(!summary.committed);
     assert!(!summary.pushed);
     assert!(summary.commit.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn second_push_is_noop_when_remote_already_matches_local_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_origin, dev1) = setup_origin_and_dev1(&root);
     write_local_knot_events(&dev1);
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
@@ -301,13 +295,12 @@ fn second_push_is_noop_when_remote_already_matches_local_events() {
     assert!(!second.committed);
     assert!(!second.pushed);
     assert!(second.commit.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn count_unpushed_event_files_tracks_remote_alignment() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_origin, dev1) = setup_origin_and_dev1(&root);
     write_local_knot_events(&dev1);
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
@@ -331,13 +324,12 @@ fn count_unpushed_event_files_tracks_remote_alignment() {
         .count_unpushed_event_files()
         .expect("unpushed count should be readable");
     assert_eq!(after_push, 0);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn push_reports_conflict_when_remote_file_content_differs() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_origin, dev1) = setup_origin_and_dev1(&root);
     write_local_knot_events(&dev1);
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
@@ -354,13 +346,12 @@ fn push_reports_conflict_when_remote_file_content_differs() {
     write_conflicting_local_index(&dev1);
     let err = service.push().expect_err("conflicting push should fail");
     assert!(matches!(err, SyncError::FileConflict { .. }));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn push_propagates_missing_remote_errors_after_local_reset_fallback() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let local = setup_repo_without_remote(&root);
     write_local_knot_events(&local);
 
@@ -374,13 +365,12 @@ fn push_propagates_missing_remote_errors_after_local_reset_fallback() {
         .push()
         .expect_err("push should fail without configured remote");
     assert!(matches!(err, SyncError::GitCommandFailed { .. }));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn push_succeeds_with_active_leases_but_pull_blocks() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (_origin, dev1) = setup_origin_and_dev1(&root);
     init_remote_knots_branch(&dev1).expect("remote knots branch should initialize");
 
@@ -456,8 +446,6 @@ fn push_succeeds_with_active_leases_but_pull_blocks() {
         summary.push.local_event_files, 0,
         "no events authored in this test"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[path = "tests_lease_owner.rs"]

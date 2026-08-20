@@ -116,7 +116,8 @@ INSERT INTO knot_hot (
 
 #[test]
 fn repo_config_round_trips_through_disk() {
-    let root = unique_workspace("knots-installed-workflows-config");
+    let root_ws = unique_workspace("knots-installed-workflows-config");
+    let root = root_ws.path().to_path_buf();
     let mut config = WorkflowRepoConfig::default();
     config.register_workflow_for_knot_type(
         KnotType::Work,
@@ -127,7 +128,6 @@ fn repo_config_round_trips_through_disk() {
     write_repo_config(&root, &config).expect("config should write");
     let loaded = read_repo_config(&root).expect("config should load");
     assert_eq!(loaded, config.normalize());
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -165,7 +165,8 @@ fn current_profile_is_none_without_workflow() {
 
 #[test]
 fn read_repo_config_rejects_legacy_current_profile() {
-    let root = unique_workspace("knots-installed-workflows-legacy-config");
+    let root_ws = unique_workspace("knots-installed-workflows-legacy-config");
+    let root = root_ws.path().to_path_buf();
     let path = repo_config_path(&root);
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).expect("config dir should exist");
@@ -180,12 +181,12 @@ fn read_repo_config_rejects_legacy_current_profile() {
 
     let err = read_repo_config(&root).expect_err("legacy config should fail");
     assert!(err.to_string().contains("requires migration"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn ensure_builtin_workflows_registered_migrates_legacy_workflow_id_and_writes_back() {
-    let root = unique_workspace("knots-installed-workflows-repair-builtin");
+    let root_ws = unique_workspace("knots-installed-workflows-repair-builtin");
+    let root = root_ws.path().to_path_buf();
     let path = repo_config_path(&root);
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).expect("config dir should exist");
@@ -215,12 +216,12 @@ fn ensure_builtin_workflows_registered_migrates_legacy_workflow_id_and_writes_ba
     let repaired = std::fs::read_to_string(&path).expect("repaired config should read");
     assert!(repaired.contains("work_sdlc"));
     assert!(!repaired.contains("compatibility"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn ensure_builtin_workflows_registered_migrates_legacy_cache_db() {
-    let root = unique_workspace("knots-installed-workflows-repair-cache-db");
+    let root_ws = unique_workspace("knots-installed-workflows-repair-cache-db");
+    let root = root_ws.path().to_path_buf();
     seed_legacy_cache_db(&root);
 
     ensure_builtin_registry(&root);
@@ -236,13 +237,12 @@ fn ensure_builtin_workflows_registered_migrates_legacy_cache_db() {
         )
         .expect("legacy row should be present");
     assert_eq!(workflow_id, "work_sdlc");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn install_bundle_writes_registry_without_switching() {
-    let root = unique_workspace("knots-installed-workflows-install");
+    let root_ws = unique_workspace("knots-installed-workflows-install");
+    let root = root_ws.path().to_path_buf();
     let source = root.join("custom-flow.toml");
     std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
 
@@ -273,12 +273,12 @@ fn install_bundle_writes_registry_without_switching() {
     assert_eq!(workflow.id, "custom_flow");
     assert_eq!(registry.current_workflow_id(), builtin_workflow_id());
     assert_eq!(registry.current_profile_id(), Some("autopilot".to_string()));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn set_selection_keeps_builtin_unscoped() {
-    let root = unique_workspace("knots-installed-workflows-builtin");
+    let root_ws = unique_workspace("knots-installed-workflows-builtin");
+    let root = root_ws.path().to_path_buf();
     let config = set_current_workflow_selection(&root, &builtin_workflow_id(), Some(1), None)
         .expect("builtin workflow should select");
     assert_eq!(
@@ -288,12 +288,12 @@ fn set_selection_keeps_builtin_unscoped() {
         Some(builtin_workflow_id())
     );
     assert_eq!(config.current_profile_id(), Some("autopilot"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn set_default_profile_keeps_builtin_unscoped() {
-    let root = unique_workspace("knots-installed-workflows-builtin-default");
+    let root_ws = unique_workspace("knots-installed-workflows-builtin-default");
+    let root = root_ws.path().to_path_buf();
     let config = set_workflow_default_profile(&root, &builtin_workflow_id(), Some("semiauto"))
         .expect("builtin default profile should persist");
     assert_eq!(
@@ -306,12 +306,12 @@ fn set_default_profile_keeps_builtin_unscoped() {
         registry.default_profile_id_for_workflow(&builtin_workflow_id()),
         Some("semiauto".to_string())
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn set_default_profile_none_returns_existing_config() {
-    let root = unique_workspace("knots-installed-workflows-default-profile-none");
+    let root_ws = unique_workspace("knots-installed-workflows-default-profile-none");
+    let root = root_ws.path().to_path_buf();
     ensure_builtin_registry(&root);
     set_workflow_default_profile(&root, &builtin_workflow_id(), Some("semiauto"))
         .expect("builtin default profile should persist");
@@ -322,12 +322,12 @@ fn set_default_profile_none_returns_existing_config() {
         config.default_profile_id_for_workflow(&builtin_workflow_id()),
         Some("semiauto")
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn resolve_source_path_finds_candidates_and_errors() {
-    let root = unique_workspace("knots-installed-workflows-resolve");
+    let root_ws = unique_workspace("knots-installed-workflows-resolve");
+    let root = root_ws.path().to_path_buf();
     let candidate_dir = root.join("bundle-dir");
     std::fs::create_dir_all(candidate_dir.join("dist")).expect("dist should exist");
     std::fs::write(candidate_dir.join("dist/bundle.toml"), SAMPLE_BUNDLE)
@@ -339,12 +339,12 @@ fn resolve_source_path_finds_candidates_and_errors() {
     std::fs::create_dir_all(&missing_dir).expect("missing dir should exist");
     let err = resolve_bundle_source_path(&missing_dir).expect_err("empty dir should fail");
     assert!(err.to_string().contains("no Loom bundle found"));
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn installed_bundle_path_prefers_json() {
-    let root = unique_workspace("knots-installed-workflows-installed-path");
+    let root_ws = unique_workspace("knots-installed-workflows-installed-path");
+    let root = root_ws.path().to_path_buf();
     let wf_dir = root.join("custom_flow/3");
     std::fs::create_dir_all(&wf_dir).expect("workflow dir should exist");
     assert_eq!(installed_bundle_path(&wf_dir), None);
@@ -353,12 +353,12 @@ fn installed_bundle_path_prefers_json() {
         installed_bundle_path(&wf_dir),
         Some(wf_dir.join("bundle.json"))
     );
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn registry_helpers_cover_lookup_and_sorting() {
-    let root = unique_workspace("knots-installed-workflows-registry");
+    let root_ws = unique_workspace("knots-installed-workflows-registry");
+    let root = root_ws.path().to_path_buf();
     ensure_builtin_registry(&root);
     assert_eq!(
         InstalledWorkflowRegistry::load(&root)
@@ -409,12 +409,12 @@ fn registry_helpers_cover_lookup_and_sorting() {
     assert_eq!(workflow.display_description(), None);
     assert_eq!(workflow.list_profiles().len(), 1);
     assert!(workflow.require_profile("missing").is_err());
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn registry_exposes_builtin_defaults_for_each_knot_type() {
-    let root = unique_workspace("knots-installed-workflows-knot-types");
+    let root_ws = unique_workspace("knots-installed-workflows-knot-types");
+    let root = root_ws.path().to_path_buf();
     ensure_builtin_registry(&root);
     let registry = InstalledWorkflowRegistry::load(&root).expect("registry should load");
 
@@ -440,13 +440,12 @@ fn registry_exposes_builtin_defaults_for_each_knot_type() {
         assert_eq!(registered.len(), 1);
         assert_eq!(registered[0].id, workflow_id);
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn bundle_defaults_for_custom_workflows() {
-    let root = unique_workspace("knots-installed-workflows-default-profiles");
+    let root_ws = unique_workspace("knots-installed-workflows-default-profiles");
+    let root = root_ws.path().to_path_buf();
     let source = root.join("custom-flow.toml");
     std::fs::write(&source, SAMPLE_BUNDLE).expect("bundle should write");
     install_bundle(&root, &source).expect("bundle should install");
@@ -461,12 +460,12 @@ fn bundle_defaults_for_custom_workflows() {
         Some("autopilot".to_string())
     );
     assert_eq!(registry.default_profile_id_for_workflow("missing"), None);
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn read_bundle_source_supports_file_and_dir() {
-    let root = unique_workspace("knots-installed-workflows-read-source");
+    let root_ws = unique_workspace("knots-installed-workflows-read-source");
+    let root = root_ws.path().to_path_buf();
     let toml_path = root.join("bundle.toml");
     std::fs::write(&toml_path, SAMPLE_BUNDLE).expect("bundle should write");
     let (raw, format) = read_bundle_source(&toml_path).expect("toml bundle should load");
@@ -483,5 +482,4 @@ fn read_bundle_source_supports_file_and_dir() {
 
     let err = read_bundle_source(&root.join("does-not-exist")).expect_err("missing source");
     assert!(err.to_string().contains("does not exist"));
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -1,16 +1,13 @@
-use std::path::PathBuf;
-
 use super::*;
 
-fn unique_store_root() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-machine-test-{}", uuid::Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("store root should be creatable");
-    root
+fn unique_store_root() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-machine-test")
 }
 
 #[test]
 fn persisted_machine_id_is_stable_across_calls() {
-    let root = unique_store_root();
+    let root_ws = unique_store_root();
+    let root = root_ws.path().to_path_buf();
 
     let first = persisted_machine_id(&root).expect("first resolution should succeed");
     let second = persisted_machine_id(&root).expect("second resolution should succeed");
@@ -23,7 +20,8 @@ fn persisted_machine_id_is_stable_across_calls() {
 
 #[test]
 fn persisted_machine_id_writes_the_store_local_file() {
-    let root = unique_store_root();
+    let root_ws = unique_store_root();
+    let root = root_ws.path().to_path_buf();
 
     let id = persisted_machine_id(&root).expect("resolution should succeed");
 
@@ -35,7 +33,8 @@ fn persisted_machine_id_writes_the_store_local_file() {
 
 #[test]
 fn persisted_machine_id_reuses_an_existing_file() {
-    let root = unique_store_root();
+    let root_ws = unique_store_root();
+    let root = root_ws.path().to_path_buf();
     std::fs::write(root.join(MACHINE_ID_FILE), "  preexisting-id  \n")
         .expect("machine id file should be writable");
 
@@ -48,7 +47,8 @@ fn persisted_machine_id_reuses_an_existing_file() {
 
 #[test]
 fn persisted_machine_id_never_rewrites_an_existing_file() {
-    let root = unique_store_root();
+    let root_ws = unique_store_root();
+    let root = root_ws.path().to_path_buf();
     let path = root.join(MACHINE_ID_FILE);
     std::fs::write(&path, "  preexisting-id  \n").expect("machine id file should be writable");
     let before = std::fs::metadata(&path)
@@ -73,7 +73,8 @@ fn persisted_machine_id_never_rewrites_an_existing_file() {
 
 #[test]
 fn persisted_machine_id_replaces_a_blank_file() {
-    let root = unique_store_root();
+    let root_ws = unique_store_root();
+    let root = root_ws.path().to_path_buf();
     std::fs::write(root.join(MACHINE_ID_FILE), "   \n").expect("file should be writable");
 
     let id = persisted_machine_id(&root).expect("resolution should succeed");
@@ -92,7 +93,8 @@ fn derived_machine_id_is_not_the_raw_system_id() {
 
 #[test]
 fn env_override_wins_over_the_persisted_file() {
-    let root = unique_store_root();
+    let root_ws = unique_store_root();
+    let root = root_ws.path().to_path_buf();
     std::fs::write(root.join(MACHINE_ID_FILE), "file-id\n").expect("file should be writable");
 
     let overridden = resolve_machine_id(Some("  env-id  ".to_string()), &root)
@@ -104,7 +106,8 @@ fn env_override_wins_over_the_persisted_file() {
 
 #[test]
 fn blank_or_absent_env_override_falls_back_to_the_file() {
-    let root = unique_store_root();
+    let root_ws = unique_store_root();
+    let root = root_ws.path().to_path_buf();
     std::fs::write(root.join(MACHINE_ID_FILE), "file-id\n").expect("file should be writable");
 
     assert_eq!(
@@ -120,7 +123,8 @@ fn blank_or_absent_env_override_falls_back_to_the_file() {
 
 #[test]
 fn machine_id_reads_the_process_environment() {
-    let root = unique_store_root();
+    let root_ws = unique_store_root();
+    let root = root_ws.path().to_path_buf();
     std::fs::write(root.join(MACHINE_ID_FILE), "file-id\n").expect("file should be writable");
 
     // Read (never mutate) the real KNOTS_MACHINE_ID so this test is correct
@@ -146,7 +150,8 @@ fn machine_id_reads_the_process_environment() {
 /// with what that racer already used (e.g. stamped into a lease).
 #[test]
 fn persisted_machine_id_converges_under_concurrent_first_use() {
-    let root = unique_store_root();
+    let root_ws = unique_store_root();
+    let root = root_ws.path().to_path_buf();
     let threads = 16;
 
     let handles: Vec<_> = (0..threads)
@@ -184,10 +189,8 @@ fn persisted_machine_id_converges_under_concurrent_first_use() {
 /// re-randomized id.
 #[test]
 fn persist_failure_surfaces_as_an_error() {
-    let obstruction = std::env::temp_dir().join(format!(
-        "knots-machine-obstruction-{}",
-        uuid::Uuid::now_v7()
-    ));
+    let obstruction_ws = knots_test_support::workspace("knots-machine-obstruction");
+    let obstruction = obstruction_ws.path().join("not-a-directory");
     std::fs::write(&obstruction, b"not a directory").expect("obstruction file should be writable");
     // The store root sits *under* a path that is itself a plain file, so
     // `create_dir_all` for the store root can never succeed.

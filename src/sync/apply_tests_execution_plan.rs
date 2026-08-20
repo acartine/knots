@@ -1,8 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use serde_json::{Map, Value};
-use uuid::Uuid;
 
 use crate::db::{self, UpsertKnotHot};
 use crate::domain::execution_plan::{
@@ -12,10 +11,8 @@ use crate::sync::GitAdapter;
 
 use super::IncrementalApplier;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-sync-apply-plan-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-sync-apply-plan")
 }
 
 fn run_git(root: &Path, args: &[&str]) {
@@ -33,15 +30,16 @@ fn run_git(root: &Path, args: &[&str]) {
     );
 }
 
-fn setup_repo() -> PathBuf {
-    let root = unique_workspace();
+fn setup_repo() -> knots_test_support::TestWorkspace {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     run_git(&root, &["init"]);
     run_git(&root, &["config", "user.email", "knots@example.com"]);
     run_git(&root, &["config", "user.name", "Knots Test"]);
     std::fs::write(root.join("README.md"), "# apply\n").expect("readme should be writable");
     run_git(&root, &["add", "README.md"]);
     run_git(&root, &["commit", "-m", "init"]);
-    root
+    root_ws
 }
 
 fn open_conn(root: &Path) -> rusqlite::Connection {
@@ -61,7 +59,8 @@ fn legacy_unassigned_ids_key() -> &'static str {
 
 #[test]
 fn apply_index_event_reads_execution_plan_payload() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -149,13 +148,12 @@ fn apply_index_event_reads_execution_plan_payload() {
         }],
     };
     assert_eq!(record.execution_plan_data, expected);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn bootstrap_full_execution_plan_snapshot_wins_over_sparse_index_payload() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
 
@@ -234,13 +232,12 @@ fn bootstrap_full_execution_plan_snapshot_wins_over_sparse_index_payload() {
         .expect("record should still exist");
     assert_eq!(record.execution_plan_data.waves.len(), 1);
     assert_eq!(record.execution_plan_data.waves[0].steps[0].step_index, 4);
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn apply_index_event_ignores_removed_top_level_fields_and_legacy_ids() {
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -321,8 +318,6 @@ fn apply_index_event_ignores_removed_top_level_fields_and_legacy_ids() {
     assert_eq!(plan.get("repo_path"), None);
     assert_eq!(plan.get("knot_ids"), None);
     assert!(!plan.contains_key(legacy_ids_key()));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn seed_hot_knot_empty_type(conn: &rusqlite::Connection, knot_id: &str) {
@@ -367,7 +362,8 @@ fn apply_index_event_populates_knot_type_from_event_data_for_new_knot() {
     // pulled from origin had `knot_type = NULL`, which made
     // `kno ls --type execution_plan` (and similar filters) silently
     // drop the knot.
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     let mut applier = IncrementalApplier::new_with_builtins(&conn, root.clone(), GitAdapter::new());
@@ -406,8 +402,6 @@ fn apply_index_event_populates_knot_type_from_event_data_for_new_knot() {
         Some("execution_plan"),
         "knot_type must be taken from the event when no prior row exists"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -416,7 +410,8 @@ fn apply_index_event_prefers_event_knot_type_over_stale_cached_value() {
     // by a version that didn't populate it at all), a later idx.knot_head
     // event carrying the correct `type` must override the cached value —
     // otherwise the empty knot_type sticks forever.
-    let root = setup_repo();
+    let root_ws = setup_repo();
+    let root = root_ws.path().to_path_buf();
     let conn = open_conn(&root);
     db::set_meta(&conn, "hot_window_days", "365").expect("hot window should be configurable");
     seed_hot_knot_empty_type(&conn, "K-reapply");
@@ -455,6 +450,4 @@ fn apply_index_event_prefers_event_knot_type_over_stale_cached_value() {
         Some("execution_plan"),
         "later event's knot_type must override the empty cached value"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -2,12 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace(prefix: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("{prefix}-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&path).expect("workspace should be creatable");
-    path
+fn unique_workspace(prefix: &str) -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace(prefix)
 }
 
 fn run_git(cwd: &Path, args: &[&str]) {
@@ -134,7 +131,8 @@ fn read_event_payloads(root: &Path, event_type: &str) -> Vec<Value> {
 
 #[test]
 fn next_rejects_stale_expected_state() {
-    let root = unique_workspace("knots-next-optimistic");
+    let root_ws = unique_workspace("knots-next-optimistic");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -199,8 +197,6 @@ fn next_rejects_stale_expected_state() {
         1,
         "stale optimistic next should not create another state_set event"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 fn setup_knot_with_first_agent_lease(root: &Path, db: &Path) -> (String, String) {
@@ -308,7 +304,8 @@ fn next_preserves_first_metadata_when_followup_request_is_stale() {
     // `--agent-name` flag. The test creates a lease with agent_name
     // "first-agent", binds it to the knot via `kno claim`, runs `next`, and
     // verifies the event carries "first-agent" from the lease.
-    let root = unique_workspace("knots-next-metadata");
+    let root_ws = unique_workspace("knots-next-metadata");
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
@@ -352,6 +349,4 @@ fn next_preserves_first_metadata_when_followup_request_is_stale() {
     );
 
     assert_state_events_carry_lease_identity(&root, &knot_id);
-
-    let _ = std::fs::remove_dir_all(root);
 }

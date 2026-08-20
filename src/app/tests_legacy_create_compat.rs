@@ -1,11 +1,7 @@
 use super::App;
-use std::path::PathBuf;
-use uuid::Uuid;
 
-fn unique_workspace() -> PathBuf {
-    let r = std::env::temp_dir().join(format!("knots-app-test-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&r).expect("mkdir");
-    r
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-test")
 }
 
 #[test]
@@ -13,7 +9,8 @@ fn rehydrate_uses_body_from_legacy_knot_created_when_no_description_set() {
     // Regression: pre-fix `knot.created` events embedded the description
     // inline as `body` and did not emit a separate `knot.description_set`.
     // Rehydrate must read body so old events still recover the description.
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let db = root.join(".knots/cache/state.sqlite");
     let ds = db.to_str().expect("u").to_string();
     std::fs::create_dir_all(db.parent().expect("p")).expect("m");
@@ -63,5 +60,4 @@ fn rehydrate_uses_body_from_legacy_knot_created_when_no_description_set() {
     assert_eq!(r.id, "K-LEGACY");
     assert_eq!(r.description.as_deref(), Some("legacy inline description"));
     assert_eq!(r.body.as_deref(), Some("legacy inline description"));
-    let _ = std::fs::remove_dir_all(root);
 }

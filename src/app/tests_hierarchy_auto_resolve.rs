@@ -1,12 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use super::{App, StateActorMetadata, UpdateKnotPatch};
-use uuid::Uuid;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-auto-resolve-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-auto-resolve")
 }
 
 fn open_app(root: &Path) -> App {
@@ -20,7 +17,8 @@ fn open_app(root: &Path) -> App {
 
 #[test]
 fn set_state_terminal_transition_resolves_parent_chain() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let grandparent = app
         .create_knot("Grandparent", None, Some("implementation"), Some("default"))
@@ -52,13 +50,12 @@ fn set_state_terminal_transition_resolves_parent_chain() {
         app.show_knot(&grandparent.id).unwrap().unwrap().state,
         "shipped"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_terminal_transition_resolves_parent_when_last_child_finishes() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -88,13 +85,12 @@ fn update_terminal_transition_resolves_parent_when_last_child_finishes() {
         .expect("child update should ship");
 
     assert_eq!(app.show_knot(&parent.id).unwrap().unwrap().state, "shipped");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn cascade_terminal_transition_resolves_other_parent_of_descendant() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let root_parent = app
         .create_knot("Root parent", None, Some("implementation"), Some("default"))
@@ -134,6 +130,4 @@ fn cascade_terminal_transition_resolves_other_parent_of_descendant() {
         app.show_knot(&other_parent.id).unwrap().unwrap().state,
         "abandoned"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }

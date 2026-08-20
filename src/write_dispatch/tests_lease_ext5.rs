@@ -74,7 +74,8 @@ fn claim_work_knot(app: &crate::app::App, timeout: u64) -> (String, String) {
 
 #[test]
 fn heartbeat_preserves_configured_timeout() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -114,13 +115,12 @@ fn heartbeat_preserves_configured_timeout() {
          for 1800s timeout",
         now + 1000
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn heartbeat_uses_default_for_legacy_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -146,13 +146,12 @@ fn heartbeat_uses_default_for_legacy_lease() {
     // Expiry should be approximately now+600 (within a small window)
     let delta = (after.lease_expiry_ts - now - 600).abs();
     assert!(delta < 5, "expiry should be ~now+600; delta={delta}");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn materialize_expired_lease_terminates_and_rolls_back() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -194,13 +193,12 @@ fn materialize_expired_lease_terminates_and_rolls_back() {
         Some(&StepStatus::Failed),
         "expired work must not be recorded as completed"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminating_bound_lease_requeues_only_its_action_and_allows_reclaim() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -235,13 +233,12 @@ fn terminating_bound_lease_requeues_only_its_action_and_allows_reclaim() {
         reclaimed.knot.lease_id.as_deref(),
         Some(first_lease.as_str())
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminating_short_lease_id_recovers_legacy_short_binding() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let work = app
@@ -271,13 +268,12 @@ fn terminating_short_lease_id_recovers_legacy_short_binding() {
     let recovered = app.show_knot(&work.id).expect("show").expect("work exists");
     assert_eq!(recovered.state, "ready_for_implementation");
     assert!(recovered.lease_id.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn materialize_expired_lease_skips_non_expired() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -291,13 +287,12 @@ fn materialize_expired_lease_skips_non_expired() {
     let knot = app.show_knot(&knot_id).expect("show").expect("knot exists");
     assert_eq!(knot.state, "implementation");
     assert_eq!(knot.lease_id.as_deref(), Some(lease_id.as_str()));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn materialize_expired_lease_skips_unbound_work() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let work = app
@@ -306,13 +301,12 @@ fn materialize_expired_lease_skips_unbound_work() {
 
     let result = materialize_expired_lease(&app, &work).expect("materialize should succeed");
     assert!(!result, "unbound work has no expired lease to recover");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminating_lease_rejects_multiple_action_bindings() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let (first_knot, lease_id) = claim_work_knot(&app, 600);
@@ -330,13 +324,12 @@ fn terminating_lease_rejects_multiple_action_bindings() {
             .state,
         "implementation"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminating_non_lease_knot_is_rejected() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
     let work = app
@@ -346,13 +339,12 @@ fn terminating_non_lease_knot_is_rejected() {
     let error =
         crate::lease::terminate_lease(&app, &work.id).expect_err("work knot must be rejected");
     assert!(error.to_string().contains("specified knot is not a lease"));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn execute_update_materializes_expired_before_validation() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -382,8 +374,6 @@ fn execute_update_materializes_expired_before_validation() {
         knot.state, "ready_for_implementation",
         "knot should be rolled back"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 /// Re-stamp the workspace's only lease so it looks like another machine's.
@@ -420,7 +410,8 @@ fn clear_lease_owner(root: &std::path::Path) {
 
 #[test]
 fn materialize_expired_lease_leaves_another_machines_lease_alone() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -458,13 +449,12 @@ fn materialize_expired_lease_leaves_another_machines_lease_alone() {
         Some(lease_id.as_str()),
         "the knot must stay bound to the other machine's lease"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn materialize_expired_lease_still_recovers_an_owner_less_lease() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     setup_repo(&root);
     let app = open_app(&root);
 
@@ -482,6 +472,4 @@ fn materialize_expired_lease_still_recovers_an_owner_less_lease() {
     let knot = app.show_knot(&knot_id).expect("show").expect("knot exists");
     assert_eq!(knot.state, "ready_for_implementation");
     assert!(knot.lease_id.is_none());
-
-    let _ = std::fs::remove_dir_all(root);
 }

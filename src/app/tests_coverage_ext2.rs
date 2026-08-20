@@ -12,7 +12,8 @@ use super::tests_coverage_ext::{
 
 #[test]
 fn set_state_actor_validation_and_deferred_resume_rules() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let app = app.with_home_override(Some(root.clone()));
     let created = app
@@ -63,13 +64,12 @@ fn set_state_actor_validation_and_deferred_resume_rules() {
         )
         .expect("forced resume should succeed");
     assert_eq!(forced_resume.state, "ready_for_implementation");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_knot_state_change_writes_actor_metadata() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let created = app
         .create_knot("Update actor", None, Some("idea"), Some("default"))
@@ -133,13 +133,12 @@ fn update_knot_state_change_writes_actor_metadata() {
             .and_then(Value::as_str),
         Some("agent")
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn default_profile_resolution_covers_config_and_fallback_paths() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let app = app.with_home_override(Some(root.clone()));
 
@@ -171,13 +170,12 @@ fn default_profile_resolution_covers_config_and_fallback_paths() {
 
     app.set_default_profile_id("autopilot")
         .expect("repo default profile should persist without HOME");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn workflow_specific_defaults_and_create_knot_resolve_custom_workflows() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let bundle = root.join("custom-flow.toml");
     std::fs::write(&bundle, CUSTOM_WORKFLOW_BUNDLE).expect("bundle should write");
     crate::installed_workflows::install_bundle(&root, &bundle).expect("bundle should install");
@@ -213,13 +211,12 @@ fn workflow_specific_defaults_and_create_knot_resolve_custom_workflows() {
     let wrong_profile = wrong_profile.expect("default should resolve within explicit workflow");
     assert_eq!(wrong_profile.workflow_id, "custom_flow");
     assert_eq!(wrong_profile.profile_id, "custom_flow/autopilot");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn create_knot_with_namespaced_profile_uses_profile_workflow_without_explicit_workflow() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let bundle = root.join("custom-flow.toml");
     std::fs::write(&bundle, CUSTOM_WORKFLOW_BUNDLE).expect("bundle should write");
     crate::installed_workflows::install_bundle(&root, &bundle).expect("bundle should install");
@@ -236,13 +233,12 @@ fn create_knot_with_namespaced_profile_uses_profile_workflow_without_explicit_wo
         .expect("create should resolve workflow from namespaced profile");
     assert_eq!(created.workflow_id, "custom_flow");
     assert_eq!(created.profile_id, "custom_flow/autopilot");
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn default_profile_for_workflow_falls_back_to_first_available_profile() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let bundle = root.join("custom-flow.toml");
     let no_default_bundle = CUSTOM_WORKFLOW_BUNDLE
         .replace("default_profile = \"autopilot\"\n", "")
@@ -266,13 +262,12 @@ fn default_profile_for_workflow_falls_back_to_first_available_profile() {
             .expect("default workflow profile should resolve"),
         "custom_flow/alpha"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn resolve_profile_id_and_default_quick_profile_cover_custom_workflow_paths() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let bundle = root.join("custom-flow.toml");
     std::fs::write(&bundle, CUSTOM_WORKFLOW_BUNDLE).expect("bundle should write");
     crate::installed_workflows::install_bundle(&root, &bundle).expect("bundle should install");
@@ -306,13 +301,12 @@ fn resolve_profile_id_and_default_quick_profile_cover_custom_workflow_paths() {
             .expect("configured custom quick profile should resolve"),
         "custom_flow/autopilot"
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn evaluate_gate_failure_reopens_linked_knots_and_adds_metadata() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let target = app
         .create_knot("Target work", None, Some("shipped"), Some("default"))
@@ -408,6 +402,4 @@ fn evaluate_gate_failure_reopens_linked_knots_and_adds_metadata() {
         .expect("handoff should be added")
         .content
         .contains("reopened this knot for planning"));
-
-    let _ = std::fs::remove_dir_all(root);
 }

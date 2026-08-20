@@ -1,12 +1,9 @@
 use super::{rehydrate_from_events, App, CreateKnotOptions, UpdateKnotPatch};
 use crate::db;
 use serde_json::Value;
-use uuid::Uuid;
 
-fn unique_workspace() -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-app-verification-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-app-verification")
 }
 
 fn open_app(root: &std::path::Path) -> (App, String) {
@@ -45,7 +42,8 @@ fn verification_events(root: &std::path::Path) -> Vec<Value> {
 
 #[test]
 fn create_with_verification_steps_round_trips_and_serializes() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, db_path) = open_app(&root);
     let created = app
         .create_knot_with_options(
@@ -81,13 +79,12 @@ fn create_with_verification_steps_round_trips_and_serializes() {
         json.get("verification_steps"),
         Some(&serde_json::json!(["cargo test", "kno show --json"]))
     );
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn update_add_remove_clear_and_empty_noop_verification_steps() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let created = app
         .create_knot(
@@ -168,13 +165,12 @@ fn update_add_remove_clear_and_empty_noop_verification_steps() {
         )
         .expect("clear should succeed");
     assert!(cleared.verification_steps.is_empty());
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn rehydrate_restores_verification_steps_from_events() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let (app, _) = open_app(&root);
     let created = app
         .create_knot_with_options(
@@ -209,6 +205,4 @@ fn rehydrate_restores_verification_steps_from_events() {
     )
     .expect("rehydrate should succeed");
     assert_eq!(projection.verification_steps, updated.verification_steps);
-
-    let _ = std::fs::remove_dir_all(root);
 }

@@ -3,13 +3,10 @@ use crate::app::{App, CreateKnotOptions};
 use crate::db::KnotCacheRecord;
 use crate::domain::gate::GateData;
 use crate::domain::knot_type::KnotType;
-use std::path::{Path, PathBuf};
-use uuid::Uuid;
+use std::path::Path;
 
-fn unique_workspace() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("knots-state-hierarchy-{}", Uuid::now_v7()));
-    std::fs::create_dir_all(&root).expect("temp workspace should be creatable");
-    root
+fn unique_workspace() -> knots_test_support::TestWorkspace {
+    knots_test_support::workspace("knots-state-hierarchy")
 }
 
 fn open_app(root: &Path) -> App {
@@ -108,7 +105,8 @@ fn format_hierarchy_knots_lists_each_knot_and_display_state() {
 
 #[test]
 fn plan_state_transition_blocks_direct_children_that_are_behind() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let parent = app
@@ -128,13 +126,12 @@ fn plan_state_transition_blocks_direct_children_that_are_behind() {
     let err = plan_state_transition(&conn, &parent, "ready_for_plan_review", false, false, false)
         .expect_err("direct child should block parent");
     assert!(matches!(err, AppError::HierarchyProgressBlocked { .. }));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn gate_parent_transition_blocks_work_child_with_lower_effective_rank() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let parent = app
@@ -172,13 +169,12 @@ fn gate_parent_transition_blocks_work_child_with_lower_effective_rank() {
         }
         other => panic!("unexpected error: {other}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn plan_state_transition_returns_sorted_descendants_for_terminal_cascade() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let parent = app
@@ -212,13 +208,12 @@ fn plan_state_transition_returns_sorted_descendants_for_terminal_cascade() {
         }
         other => panic!("unexpected plan: {other:?}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn no_op_transition_is_allowed() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let knot = app
         .create_knot("Parent", None, Some("planning"), Some("default"))
@@ -233,13 +228,12 @@ fn no_op_transition_is_allowed() {
     let plan =
         plan_state_transition(&conn, &knot, "planning", false, false, false).expect("plan works");
     assert!(matches!(plan, TransitionPlan::Allowed));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminal_plan_without_descendants_is_allowed() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Solo", None, Some("implementation"), Some("default"))
@@ -254,13 +248,12 @@ fn terminal_plan_without_descendants_is_allowed() {
     let plan =
         plan_state_transition(&conn, &parent, "abandoned", true, false, false).expect("plan works");
     assert!(matches!(plan, TransitionPlan::Allowed));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn terminal_plan_requires_approval_when_descendants_exist() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let parent = app
         .create_knot("Parent", None, Some("implementation"), Some("default"))
@@ -286,8 +279,6 @@ fn terminal_plan_requires_approval_when_descendants_exist() {
         }
         other => panic!("unexpected error: {other}"),
     }
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
@@ -363,7 +354,8 @@ fn effective_state_rank_assigns_unique_ranks_to_gate_states() {
 
 #[test]
 fn terminal_plan_allowed_when_all_descendants_already_in_target_state() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let parent = app
@@ -388,13 +380,12 @@ fn terminal_plan_allowed_when_all_descendants_already_in_target_state() {
     let plan = plan_state_transition(&conn, &parent, "shipped", true, false, false)
         .expect("should be allowed without cascade approval");
     assert!(matches!(plan, TransitionPlan::Allowed));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn skip_progress_check_allows_parent_claim_despite_behind_children() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let parent = app
@@ -414,13 +405,12 @@ fn skip_progress_check_allows_parent_claim_despite_behind_children() {
     let plan = plan_state_transition(&conn, &parent, "ready_for_plan_review", false, false, true)
         .expect("skip_progress_check should bypass blocker");
     assert!(matches!(plan, TransitionPlan::Allowed));
-
-    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
 fn skip_progress_check_still_enforces_terminal_cascade() {
-    let root = unique_workspace();
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
     let app = open_app(&root);
     let db = root.join(".knots/cache/state.sqlite");
     let parent = app
@@ -443,6 +433,4 @@ fn skip_progress_check_still_enforces_terminal_cascade() {
         err,
         AppError::TerminalCascadeApprovalRequired { .. }
     ));
-
-    let _ = std::fs::remove_dir_all(root);
 }
