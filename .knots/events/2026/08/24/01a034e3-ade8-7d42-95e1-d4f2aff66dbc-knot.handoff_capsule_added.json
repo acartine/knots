@@ -1,0 +1,15 @@
+{
+  "event_id": "01a034e3-ade8-7d42-95e1-d4f2aff66dbc",
+  "occurred_at": "2026-08-24T17:48:51.560354Z",
+  "knot_id": "knots-5271",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Observed 2026-08-24 on /Users/cartine/quilt: 50,921 full events (201 MiB), 32,754 index events (128 MiB), zero snapshot files, and 83,675 files scanned by every push. Recent full-event churn is commonly 1,000-2,500/day; 2026-08-18 produced 4,834 across 627 knots, led by state_set, tag_add, lease_id_set, created, and lease_data_set. Current compact --write-snapshots only appends active/cold snapshots. Critical trap: replication.collect_local_event_files scans all local files and copy_files_into_worktree would resurrect remotely pruned history from any stale machine. Incremental pull watermarks are Git commits, and lease quarantine retains per-knot base commits, so cutoff compatibility and unreachable ancestors need explicit design. Preliminary sizing: exploration/design effort 2; aggregate implementation effort 4, expected to split into manifest/schema, safe publisher/pruner, pull/bootstrap compatibility, and fixture/performance leaves.",
+    "datetime": "2026-08-24T17:48:51.560354Z",
+    "entry_id": "01a034e3-ade8-7d42-95e1-d4e48fa6d656",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "event_id": "01a034e3-ae0f-7153-864c-85c0dc3910ec",
+  "occurred_at": "2026-08-24T17:48:51.594562Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-c466",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "abandoned",
+    "terminal": true,
+    "title": "event compaction snapshot pruning sync performance",
+    "type": "work",
+    "updated_at": "2026-08-24T17:48:51.594562Z",
+    "workflow_id": "work_sdlc"
+  }
+}

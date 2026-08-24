@@ -1,0 +1,9 @@
+{
+  "event_id": "01a034e3-6391-70b2-ad25-967cf0ac9918",
+  "occurred_at": "2026-08-24T17:48:32.518869Z",
+  "knot_id": "knots-5271",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. docs/event-log-compaction.md contains measured Quilt-scale baseline data and identifies the current O(total historical files) push path.\n2. The design specifies an explicit versioned checkpoint/compaction manifest, safe cutoff, atomic publication sequence, local-store pruning rule, stale-writer rejection, and rollback/recovery behavior.\n3. Fresh bootstrap, pre-cutoff incremental watermarks, lease quarantine, concurrent writers, interrupted compaction, and mixed-version clients each have a stated invariant and an executable test plan.\n4. A checked-in benchmark or deterministic fixture models at least 80,000 event/index files and defines measurable post-compaction file-count and no-op sync targets.\n5. The report recommends whether Git history rewrite is necessary and explains the compatibility and repository-size consequences.\n6. Implementation is decomposed into independently shippable effort-1/2 knots with ranks, dependencies, and a justified aggregate effort level."
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "event_id": "01a034e3-ca13-7892-a4af-e09da99f6277",
+  "occurred_at": "2026-08-24T17:48:58.771161Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-473e",
+    "lease_expiry_ts": 1787594251,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-event-compaction-scope",
+    "type": "lease",
+    "updated_at": "2026-08-24T17:48:58.771161Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "01a034e1-8813-7d10-b439-8022002fe6f3",
+  "occurred_at": "2026-08-24T17:46:30.803758Z",
+  "knot_id": "knots-c466",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "event compaction snapshot pruning sync performance",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}
