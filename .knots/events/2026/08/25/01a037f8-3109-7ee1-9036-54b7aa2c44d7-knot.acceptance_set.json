@@ -1,0 +1,9 @@
+{
+  "event_id": "01a037f8-3109-7ee1-9036-54b7aa2c44d7",
+  "occurred_at": "2026-08-25T08:10:07.494103475Z",
+  "knot_id": "knots-5728",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "Push reads the active generation before scanning; stale and legacy writers cannot add pre-cutoff paths; compaction publication is atomic under concurrent writers; local pruning preserves unpushed eligible events."
+  }
+}

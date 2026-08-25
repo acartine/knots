@@ -1,0 +1,9 @@
+{
+  "event_id": "01a037f8-5deb-7751-9e2a-c81836e1011c",
+  "occurred_at": "2026-08-25T08:10:18.983865052Z",
+  "knot_id": "knots-246b",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "The 80k fixture reports reproducible counts, bytes, rates, and timings; post-compaction HEAD has 2,003 JSON files; median no-op sync is at most 1 second and at most 25 percent of baseline; all safety scenarios pass."
+  }
+}

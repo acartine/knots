@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03813-699f-7bb1-8032-38b32048e044",
+  "occurred_at": "2026-08-25T08:39:51.45502937Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-e4cf",
+    "lease_expiry_ts": 1787647791,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: codex-5271-e2e-blocker",
+    "type": "lease",
+    "updated_at": "2026-08-25T08:39:40.669617256Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

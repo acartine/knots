@@ -1,0 +1,17 @@
+{
+  "event_id": "01a037f8-5de7-70c3-a745-2f336ed0ceb8",
+  "occurred_at": "2026-08-25T08:10:18.983865052Z",
+  "knot_id": "knots-246b",
+  "type": "knot.created",
+  "data": {
+    "body": "Add the deterministic 80k-file fixture, inventory benchmark, end-to-end compaction tests, operator documentation, and rollout checks. Depends on generation fencing and checkpoint-aware pull.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Verify event-log compaction at Quilt scale",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

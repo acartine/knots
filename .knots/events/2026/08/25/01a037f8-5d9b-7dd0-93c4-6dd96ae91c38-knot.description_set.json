@@ -1,0 +1,9 @@
+{
+  "event_id": "01a037f8-5d9b-7dd0-93c4-6dd96ae91c38",
+  "occurred_at": "2026-08-25T08:10:18.905726668Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Implement hash-verified checkpoint bootstrap, pre-cutoff watermark rebasing, and lease-quarantine migration for compacted generations. Depends on the manifest/schema knot."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "01a037f8-309d-7d32-92e5-ca6b0224de37",
+  "occurred_at": "2026-08-25T08:10:07.387986122Z",
+  "knot_id": "knots-5807",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Define the versioned immutable checkpoint and compaction-manifest schema, validation rules, generation identity, snapshot hashes/counts, cutoff semantics, and pure protocol model. This is follow-on implementation from knot 5271."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03813-698f-7172-856a-49b5bf501564",
+  "occurred_at": "2026-08-25T08:39:51.439644881Z",
+  "knot_id": "knots-5271",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Completed implementation is preserved on local branch worktree-knots-5271-event-log-compaction at 3cd62f5a96fc. make sanity passed at 95.21% coverage. Resume by configuring an approved non-GitHub remote, then push, review, merge, and continue the e2e workflow.",
+    "datetime": "2026-08-25T08:39:51.439644881Z",
+    "entry_id": "01a03813-698f-7172-856a-49a41c26530f",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

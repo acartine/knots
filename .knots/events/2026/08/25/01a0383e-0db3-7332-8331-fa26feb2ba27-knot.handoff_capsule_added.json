@@ -1,0 +1,15 @@
+{
+  "event_id": "01a0383e-0db3-7332-8331-fa26feb2ba27",
+  "occurred_at": "2026-08-25T09:26:25.971215331Z",
+  "knot_id": "knots-5271",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review approved. Local and origin/main both resolve to 52f6dac10a0d; every implementation and merge commit is tagged and reachable from main; CI, Release, Repo Hygiene, and Changesets Version PR all completed successfully.",
+    "datetime": "2026-08-25T09:26:25.971215331Z",
+    "entry_id": "01a0383e-0db3-7332-8331-fa1b4cb078b6",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

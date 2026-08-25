@@ -1,0 +1,9 @@
+{
+  "event_id": "01a037f8-5de9-7ec1-af7b-dbb0e60b49cf",
+  "occurred_at": "2026-08-25T08:10:18.983865052Z",
+  "knot_id": "knots-246b",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Add the deterministic 80k-file fixture, inventory benchmark, end-to-end compaction tests, operator documentation, and rollout checks. Depends on generation fencing and checkpoint-aware pull."
+  }
+}

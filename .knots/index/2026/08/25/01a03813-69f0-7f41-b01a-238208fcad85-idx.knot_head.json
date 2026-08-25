@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03813-69f0-7f41-b01a-238208fcad85",
+  "occurred_at": "2026-08-25T08:39:51.536295712Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": "ready_for_implementation",
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5271",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "blocked",
+    "terminal": false,
+    "title": "Design safe event-log compaction",
+    "type": "work",
+    "updated_at": "2026-08-25T08:39:51.536295712Z",
+    "workflow_id": "work_sdlc"
+  }
+}

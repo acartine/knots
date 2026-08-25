@@ -1,0 +1,15 @@
+{
+  "event_id": "01a037f9-1918-7782-b2d7-94f107d48c73",
+  "occurred_at": "2026-08-25T08:11:06.90432926Z",
+  "knot_id": "knots-5271",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan complete. Build docs/event-log-compaction.md, deterministic 80k Node fixture/inventory tooling, small script tests, and an executable protocol safety oracle. The key decision is a frozen legacy replication namespace plus a protected generation-two namespace; manifests alone cannot fence old writers. Four ranked follow-on knots were created: 5807, 5728, 2af8, and 246b.",
+    "datetime": "2026-08-25T08:11:06.90432926Z",
+    "entry_id": "01a037f9-1918-7782-b2d7-94ee3f8b1fe5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "event_id": "01a037f9-9a34-7512-a8fa-7962629c2d9a",
+  "occurred_at": "2026-08-25T08:11:39.956269163Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-f6c2",
+    "lease_expiry_ts": 1787646099,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: codex-5271-e2e-implementation",
+    "type": "lease",
+    "updated_at": "2026-08-25T08:11:39.943574985Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

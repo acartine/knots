@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03813-19bb-78a1-aaad-9da75b3ea796",
+  "occurred_at": "2026-08-25T08:39:31.003252151Z",
+  "knot_id": "knots-5271",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "All implementation and validation work is complete. The required remote_main artifact cannot be created: the only configured remote is GitHub, publication there is explicitly forbidden, and no existing Diffinite knots repository or project ship rail exists. Local branch worktree-knots-5271-event-log-compaction is clean at 3cd62f5a96fc.",
+    "datetime": "2026-08-25T08:39:31.003252151Z",
+    "entry_id": "01a03813-19bb-78a1-aaad-9d901fbfd4ba",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

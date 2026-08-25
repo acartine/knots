@@ -1,0 +1,9 @@
+{
+  "event_id": "01a037f8-3107-7950-9be7-2a1ae94465ad",
+  "occurred_at": "2026-08-25T08:10:07.494103475Z",
+  "knot_id": "knots-5728",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Implement generation-aware push and compaction publication using a new replication namespace while freezing the legacy namespace, so mixed-version clients cannot resurrect compacted paths. Depends on the manifest/schema knot."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a037f9-8667-7120-85cb-50650012140f",
+  "occurred_at": "2026-08-25T08:11:34.887149953Z",
+  "knot_id": "knots-5271",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review approved. The plan covers every acceptance criterion, keeps production compaction out of the design knot, and provides reproducible measurements plus executable safety cases. The generation-two namespace is feasible only with a hosting push-policy capability; the report must state that as a rollout prerequisite and must not claim current init-remote installs it. The test oracle must model exact cutoff membership rather than timestamps, transactional checkpoint application, and unchanged watermarks/quarantine on validation failure. The related follow-on knots avoid making this design artifact depend on implementing the protocol. No repository, database, or infrastructure mutation is planned.",
+    "datetime": "2026-08-25T08:11:34.887149953Z",
+    "entry_id": "01a037f9-8667-7120-85cb-5052fe21e477",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

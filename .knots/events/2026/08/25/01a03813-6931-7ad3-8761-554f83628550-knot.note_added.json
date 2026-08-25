@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03813-6931-7ad3-8761-554f83628550",
+  "occurred_at": "2026-08-25T08:39:51.345190809Z",
+  "knot_id": "knots-5271",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Blocked only at publication. The verified branch cannot become remote_main because origin is GitHub and repository policy forbids publishing there; the authenticated Diffinite repository list contains no knots repository. Local commits f0063a311039 and 3cd62f5a96fc remain clean and recoverable.",
+    "datetime": "2026-08-25T08:39:51.345190809Z",
+    "entry_id": "01a03813-6931-7ad3-8761-553a27078341",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

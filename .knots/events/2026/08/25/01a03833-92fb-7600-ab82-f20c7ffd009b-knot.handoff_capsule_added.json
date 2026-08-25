@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03833-92fb-7600-ab82-f20c7ffd009b",
+  "occurred_at": "2026-08-25T09:14:59.195429623Z",
+  "knot_id": "knots-5271",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation review approved. The remote branch diff satisfies all six acceptance criteria, introduces no production behavior, passes diff checks and the 10-case protocol oracle, and the full sanity gate passes at 95.22% coverage.",
+    "datetime": "2026-08-25T09:14:59.195429623Z",
+    "entry_id": "01a03833-92fb-7600-ab82-f1f82603f4c7",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03813-69fa-7ea2-8188-0a09473a5dab",
+  "occurred_at": "2026-08-25T08:39:51.546971722Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-e4cf",
+    "lease_expiry_ts": 1787647791,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-5271-e2e-blocker",
+    "type": "lease",
+    "updated_at": "2026-08-25T08:39:51.546971722Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

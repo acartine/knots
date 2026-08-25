@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03813-196d-7da2-bca7-5213c62578b3",
+  "occurred_at": "2026-08-25T08:39:30.92534057Z",
+  "knot_id": "knots-5271",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation is complete locally on branch worktree-knots-5271-event-log-compaction at commits f0063a311039 and 3cd62f5a96fc. Added the measured design report, deterministic 80k fixture/inventory tools, 10-case executable protocol oracle, documentation indexes, and task records. make sanity passed with 95.21% coverage; the 80k run measured 80,000 files, 18,197,788 bytes, 533.977 ms median scan, and 1,581.668 ms median no-op sync model. Shipment is blocked because origin is GitHub, which repository instructions prohibit, and the authenticated Diffinite account has no knots repository or configured remote. No branch was published.",
+    "datetime": "2026-08-25T08:39:30.92534057Z",
+    "entry_id": "01a03813-196d-7da2-bca7-5209917c2eee",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

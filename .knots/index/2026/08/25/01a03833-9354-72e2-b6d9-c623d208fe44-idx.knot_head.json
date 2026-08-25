@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03833-9354-72e2-b6d9-c623d208fe44",
+  "occurred_at": "2026-08-25T09:14:59.284272766Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-43ea",
+    "lease_expiry_ts": 1787652899,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-5271-e2e-implementation-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T09:14:59.284272766Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

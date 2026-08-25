@@ -1,0 +1,22 @@
+{
+  "event_id": "01a037f9-86ea-77a2-b34f-2ca2eea008d6",
+  "occurred_at": "2026-08-25T08:11:35.018657844Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-073a",
+    "lease_expiry_ts": 1787646094,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-5271-e2e-plan-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T08:11:35.018657844Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

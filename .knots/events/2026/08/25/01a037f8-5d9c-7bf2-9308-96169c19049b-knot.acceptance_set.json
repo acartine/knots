@@ -1,0 +1,9 @@
+{
+  "event_id": "01a037f8-5d9c-7bf2-9308-96169c19049b",
+  "occurred_at": "2026-08-25T08:10:18.905726668Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "Fresh bootstrap and existing pre-cutoff clients converge from a checkpoint plus retained delta; quarantined knots remain correct; interrupted or unknown generations fail safely."
+  }
+}

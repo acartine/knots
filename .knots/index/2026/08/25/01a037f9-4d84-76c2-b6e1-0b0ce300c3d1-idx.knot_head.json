@@ -1,0 +1,48 @@
+{
+  "event_id": "01a037f9-4d84-76c2-b6e1-0b0ce300c3d1",
+  "occurred_at": "2026-08-25T08:11:20.324366388Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-073a",
+    "lease_expiry_ts": 1787646080,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: codex-5271-e2e-plan-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T08:11:20.311582839Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

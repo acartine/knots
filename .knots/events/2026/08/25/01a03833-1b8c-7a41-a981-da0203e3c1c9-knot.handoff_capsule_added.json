@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03833-1b8c-7a41-a981-da0203e3c1c9",
+  "occurred_at": "2026-08-25T09:14:28.620509628Z",
+  "knot_id": "knots-5271",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation published and verified. Branch: worktree-knots-5271-event-log-compaction. Head: 44009017f1a2. Full make sanity and managed pre-push gate passed with 95.22% coverage; attribution notes are published.",
+    "datetime": "2026-08-25T09:14:28.620509628Z",
+    "entry_id": "01a03833-1b8c-7a41-a981-d9fa1004484f",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

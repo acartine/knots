@@ -1,0 +1,15 @@
+{
+  "event_id": "01a0383d-8ff6-74c2-b0e3-7b7f002a5edc",
+  "occurred_at": "2026-08-25T09:25:53.782317405Z",
+  "knot_id": "knots-5271",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment complete. Merged branch worktree-knots-5271-event-log-compaction to main at 52f6dac10a0d and pushed origin/main. Managed pre-push sanity passed at 95.33% coverage; GitHub CI, Release, and Repo Hygiene are green.",
+    "datetime": "2026-08-25T09:25:53.782317405Z",
+    "entry_id": "01a0383d-8ff6-74c2-b0e3-7b6c998d050f",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}
