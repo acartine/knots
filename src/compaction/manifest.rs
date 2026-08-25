@@ -50,6 +50,7 @@ pub(crate) struct EventPack {
     pub path: String,
     pub sha256: String,
     pub bytes: u64,
+    pub decoded_bytes: u64,
     pub events: Vec<EventIndexEntry>,
 }
 
@@ -85,6 +86,7 @@ pub(crate) struct CompactionManifest {
     pub source: SourceCheckpoint,
     pub writer_heads: Vec<WriterHead>,
     pub snapshots: SnapshotSet,
+    pub projections: SnapshotDescriptor,
     pub packs: Vec<EventPack>,
     pub compatibility: Compatibility,
 }
@@ -97,6 +99,7 @@ struct CanonicalIdentity<'a> {
     source: &'a SourceCheckpoint,
     writer_heads: &'a [WriterHead],
     snapshots: &'a SnapshotSet,
+    projections: &'a SnapshotDescriptor,
     packs: &'a [EventPack],
     compatibility: &'a Compatibility,
 }
@@ -110,6 +113,7 @@ impl CompactionManifest {
             source: &self.source,
             writer_heads: &self.writer_heads,
             snapshots: &self.snapshots,
+            projections: &self.projections,
             packs: &self.packs,
             compatibility: &self.compatibility,
         };

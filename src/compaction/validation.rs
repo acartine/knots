@@ -23,6 +23,7 @@ pub(crate) struct SourceFacts<'a> {
 pub(crate) struct ValidationContext<'a> {
     pub active_snapshot: Option<&'a [u8]>,
     pub cold_snapshot: Option<&'a [u8]>,
+    pub projections: Option<&'a [u8]>,
     pub packs: &'a [(&'a str, &'a [u8])],
     pub source: SourceFacts<'a>,
     pub expected_predecessor: Option<&'a str>,
@@ -47,6 +48,7 @@ pub(crate) enum ValidationError {
     InvalidSnapshotJson(&'static str),
     SnapshotSchemaMismatch(&'static str),
     SnapshotCountMismatch(&'static str),
+    ProjectionIncomplete,
     PredecessorMismatch,
     ControlEpochMismatch,
     InvalidWriterHead,
@@ -88,6 +90,7 @@ pub(crate) fn validate(
         context.active_snapshot,
         &["hot", "warm"],
     )?;
+    validate_projections(&manifest.projections, context.projections)?;
     validate_snapshot(
         "cold",
         &manifest.snapshots.cold,
@@ -101,6 +104,44 @@ pub(crate) fn validate(
     }
     if manifest.predecessor_control_epoch != context.expected_control_epoch {
         return Err(ValidationError::ControlEpochMismatch);
+    }
+    Ok(())
+}
+
+fn validate_projections(
+    descriptor: &SnapshotDescriptor,
+    bytes: Option<&[u8]>,
+) -> Result<(), ValidationError> {
+    if !valid_v2_path(&descriptor.path, ".projections.json") {
+        return Err(ValidationError::InvalidV2Path("projections"));
+    }
+    let bytes = bytes.ok_or(ValidationError::MissingSnapshot("projections"))?;
+    validate_bytes("projections", &descriptor.sha256, descriptor.bytes, bytes)?;
+    let value: Value = serde_json::from_slice(bytes)
+        .map_err(|_| ValidationError::InvalidSnapshotJson("projections"))?;
+    if value.get("schema_version").and_then(Value::as_u64) != Some(1) {
+        return Err(ValidationError::SnapshotSchemaMismatch("projections"));
+    }
+    let fields = [
+        "hot",
+        "warm",
+        "cold",
+        "edges",
+        "leases",
+        "workflows",
+        "metadata",
+        "conflicts",
+    ];
+    let mut records = 0u64;
+    for field in fields {
+        records += value
+            .get(field)
+            .and_then(Value::as_array)
+            .ok_or(ValidationError::ProjectionIncomplete)?
+            .len() as u64;
+    }
+    if records != descriptor.records {
+        return Err(ValidationError::SnapshotCountMismatch("projections"));
     }
     Ok(())
 }
@@ -221,8 +262,8 @@ fn validate_pack(
     event_ids: &mut HashSet<String>,
 ) -> Result<(), ValidationError> {
     if pack.pack_id != pack.expected_pack_id()
-        || !valid_v2_path(&pack.path, ".pack")
-        || !pack.path.ends_with(&format!("{}.pack", pack.pack_id))
+        || !valid_v2_path(&pack.path, ".pack.zst")
+        || !pack.path.ends_with(&format!("{}.pack.zst", pack.pack_id))
     {
         return Err(ValidationError::InvalidPackId);
     }
@@ -231,6 +272,11 @@ fn validate_pack(
         .find_map(|(id, bytes)| (*id == pack.pack_id).then_some(*bytes))
         .ok_or(ValidationError::MissingPack)?;
     validate_bytes("pack", &pack.sha256, pack.bytes, bytes)?;
+    let decoded =
+        zstd::stream::decode_all(bytes).map_err(|_| ValidationError::InvalidEventIndex)?;
+    if decoded.len() as u64 != pack.decoded_bytes {
+        return Err(ValidationError::InvalidEventIndex);
+    }
     for event in &pack.events {
         if event.event_id.is_empty() || !event_ids.insert(event.event_id.clone()) {
             return Err(ValidationError::DuplicateEvent);
@@ -242,7 +288,7 @@ fn validate_pack(
             .ok_or(ValidationError::InvalidEventIndex)?;
         let start =
             usize::try_from(event.offset).map_err(|_| ValidationError::InvalidEventIndex)?;
-        let raw = bytes
+        let raw = decoded
             .get(start..end)
             .ok_or(ValidationError::InvalidEventIndex)?;
         if !valid_digest(&event.content_sha256)
