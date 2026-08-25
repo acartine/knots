@@ -166,7 +166,7 @@ fn validate_prepared(
         && prepared.inbox_ref == writer.inbox_ref
         && prepared.expected_inbox_oid == writer.expected_inbox_oid
         && prepared.expected_control_oid.as_deref() == expected_control
-        && prepared.includes_control_registration == !writer.registered
+        && prepared.includes_control_registration != writer.registered
         && prepared.event_ids == event_ids
         && !prepared.proposed_oid.is_empty();
     if !valid {
