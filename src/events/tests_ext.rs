@@ -3,10 +3,54 @@ use std::error::Error;
 use serde_json::json;
 
 use super::{
-    relative_path_for_event, EventRecord, EventStream, EventWriteError, FullEvent, FullEventKind,
-    IndexEvent, IndexEventKind,
+    relative_path_for_event, EventRecord, EventStream, EventWriteError, EventWriter, FullEvent,
+    FullEventKind, IndexEvent, IndexEventKind,
 };
 use crate::domain::scope::{ScopeData, ScopeFloat};
+
+#[test]
+fn durable_receipt_precedes_compatibility_file_creation() {
+    let workspace = knots_test_support::workspace("knots-event-outbox");
+    let root = workspace.path().join(".knots");
+    let db_path = root.join("cache/state.sqlite");
+    std::fs::create_dir_all(db_path.parent().expect("cache parent"))
+        .expect("create cache directory");
+    crate::db::open_connection(&db_path.to_string_lossy()).expect("migrate database");
+    let writer = EventWriter::with_db_path(&root, &db_path);
+    let event = EventRecord::full(FullEvent::with_identity(
+        "018f4f7f-7dc7-7f4e-954b-64f8a2273ec8",
+        "2026-02-22T17:00:00Z",
+        "K-123",
+        FullEventKind::KnotCreated.as_str(),
+        json!({"title":"Build cache"}),
+    ));
+    let relative = relative_path_for_event(
+        event.stream(),
+        event.occurred_at(),
+        event.event_id(),
+        event.event_type(),
+    )
+    .expect("event path");
+    let absolute = root.join(relative);
+    std::fs::create_dir_all(absolute.parent().expect("event parent"))
+        .expect("create event directory");
+    std::fs::write(&absolute, b"collision").expect("seed collision");
+
+    assert!(writer.write(&event).is_err());
+    let conn = crate::db::open_connection(&db_path.to_string_lossy()).expect("open database");
+    let receipts: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM v2_outbox WHERE event_id = ?1",
+            [event.event_id()],
+            |row| row.get(0),
+        )
+        .expect("count receipt");
+    assert_eq!(receipts, 1);
+    assert_eq!(
+        std::fs::read(absolute).expect("read collision"),
+        b"collision"
+    );
+}
 
 #[test]
 fn full_event_kind_strings_cover_remaining_variants() {

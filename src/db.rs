@@ -16,10 +16,12 @@ use crate::domain::metadata::MetadataEntry;
 use crate::domain::scope::ScopeData;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 20;
+pub const CURRENT_SCHEMA_VERSION: i64 = 21;
 
 mod catalog;
+mod migration_sql;
 mod migrations;
+mod outbox;
 mod quarantine;
 
 pub use catalog::{
@@ -30,6 +32,14 @@ pub use catalog::{
     list_edges, list_edges_by_kind, list_knot_warm, list_non_terminal_in_cold,
     list_stale_terminal_in_hot, prune_cold_catalog_shadowed_by_hot, search_cold_catalog,
     update_lease_expiry_ts, upsert_cold_catalog, upsert_knot_warm, EdgeDirection, EdgeRecord,
+};
+pub(crate) use outbox::{
+    acknowledge_outbox, assign_pending_outbox, ensure_writer_epoch, inventory_legacy_files,
+    mark_outbox_proposed, record_outbox_event, OutboxRecord, WriterEpoch,
+};
+#[cfg(test)]
+pub(crate) use outbox::{
+    list_pending_outbox, record_legacy_quarantine, rotate_writer_epoch, LegacyQuarantineRecord,
 };
 pub use quarantine::{
     list_quarantined_knots, local_leased_knot_ids, quarantine_knot_if_absent, remove_quarantine,

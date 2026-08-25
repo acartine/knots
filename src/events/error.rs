@@ -13,6 +13,7 @@ pub enum EventWriteError {
     },
     Io(std::io::Error),
     Serialize(serde_json::Error),
+    Database(rusqlite::Error),
 }
 
 impl fmt::Display for EventWriteError {
@@ -35,6 +36,9 @@ impl fmt::Display for EventWriteError {
             EventWriteError::Serialize(err) => {
                 write!(f, "failed to serialize event as JSON: {}", err)
             }
+            EventWriteError::Database(err) => {
+                write!(f, "failed to record durable outbox receipt: {}", err)
+            }
         }
     }
 }
@@ -45,6 +49,7 @@ impl Error for EventWriteError {
             EventWriteError::InvalidTimestamp { source, .. } => Some(source),
             EventWriteError::Io(err) => Some(err),
             EventWriteError::Serialize(err) => Some(err),
+            EventWriteError::Database(err) => Some(err),
             EventWriteError::InvalidFileComponent { .. } => None,
         }
     }
@@ -59,6 +64,12 @@ impl From<std::io::Error> for EventWriteError {
 impl From<serde_json::Error> for EventWriteError {
     fn from(value: serde_json::Error) -> Self {
         EventWriteError::Serialize(value)
+    }
+}
+
+impl From<rusqlite::Error> for EventWriteError {
+    fn from(value: rusqlite::Error) -> Self {
+        EventWriteError::Database(value)
     }
 }
 
@@ -91,5 +102,14 @@ mod tests {
         assert!(msg.contains("invalid knot_id"));
         assert!(msg.contains("has spaces"));
         assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn database_errors_display_source_and_conversion() {
+        let e = EventWriteError::from(rusqlite::Error::InvalidQuery);
+        assert!(e
+            .to_string()
+            .contains("failed to record durable outbox receipt"));
+        assert!(e.source().is_some());
     }
 }

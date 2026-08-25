@@ -7,6 +7,7 @@ use crate::project::StorePaths;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError, SyncService, SyncSummary};
 
 mod generation;
+mod outbox;
 mod summary;
 
 pub use summary::{PushSummary, ReplicationSummary, SyncOutcome};

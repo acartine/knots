@@ -20,3 +20,13 @@
 - [x] Prove immutable-first publication, exact control CAS, and recovery epochs.
 - [x] Run focused compaction tests and `make sanity`.
 - [x] Publish the attributed branch for implementation review.
+
+## Wave 2 durable outboxes
+
+- [x] Add the local durable outbox, writer epoch, and legacy quarantine schema.
+- [x] Record every App-authored event receipt before compatibility files and cache mutation.
+- [x] Publish only pending receipts to a credential-scoped inbox with exact ref leases.
+- [x] Confirm remote inbox OIDs before acknowledgement and recover lost acknowledgements.
+- [x] Prove writer rotation, two-clone isolation, and legacy retention with focused tests.
+- [x] Run the released v0.17.6 fixture and full repository sanity gates.
+- [ ] Publish through GitHub and verify merged main, CI, attribution, and terminal Knot state.

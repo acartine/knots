@@ -1,16 +1,7 @@
 use rusqlite::{params, Connection, OptionalExtension, Result};
 
+use super::migration_sql::{PROTOCOL_V2_OUTBOX, REQUIRED_META_DEFAULT_KEYS};
 use super::{get_meta, now_utc_rfc3339, CURRENT_SCHEMA_VERSION};
-
-const REQUIRED_META_DEFAULT_KEYS: [&str; 7] = [
-    "hot_window_days",
-    "sync_policy",
-    "sync_auto_budget_ms",
-    "sync_try_lock_ms",
-    "push_retry_budget_ms",
-    "sync_fetch_blob_limit_kb",
-    "pull_drift_warn_threshold",
-];
 
 struct Migration {
     version: i64,
@@ -18,7 +9,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 20] = [
+const MIGRATIONS: [Migration; 21] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -356,6 +347,11 @@ CREATE TABLE IF NOT EXISTS knot_sync_quarantine (
     quarantined_at TEXT NOT NULL
 );
 "#,
+    },
+    Migration {
+        version: 21,
+        name: "protocol_v2_durable_outbox_v1",
+        sql: PROTOCOL_V2_OUTBOX,
     },
 ];
 

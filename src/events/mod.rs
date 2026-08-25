@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -248,12 +249,24 @@ impl EventRecord {
 #[derive(Debug, Clone)]
 pub struct EventWriter {
     store_root: PathBuf,
+    db_path: Option<PathBuf>,
 }
 
 impl EventWriter {
     pub fn new(store_root: impl Into<PathBuf>) -> Self {
         Self {
             store_root: store_root.into(),
+            db_path: None,
+        }
+    }
+
+    pub(crate) fn with_db_path(
+        store_root: impl Into<PathBuf>,
+        db_path: impl Into<PathBuf>,
+    ) -> Self {
+        Self {
+            store_root: store_root.into(),
+            db_path: Some(db_path.into()),
         }
     }
 
@@ -264,6 +277,20 @@ impl EventWriter {
             event.event_id(),
             event.event_type(),
         )?;
+        let mut payload = serde_json::to_vec_pretty(event)?;
+        payload.push(b'\n');
+        if let Some(db_path) = self.db_path.as_deref() {
+            let conn = crate::db::open_connection(&db_path.to_string_lossy())?;
+            let hash = format!("{:x}", Sha256::digest(&payload));
+            crate::db::record_outbox_event(
+                &conn,
+                event.event_id(),
+                event.stream().root_dir(),
+                &rel_path.to_string_lossy(),
+                &hash,
+                &payload,
+            )?;
+        }
         let abs_path = self.store_root.join(&rel_path);
         if let Some(parent) = abs_path.parent() {
             fs::create_dir_all(parent)?;
@@ -273,8 +300,7 @@ impl EventWriter {
             .create_new(true)
             .write(true)
             .open(&abs_path)?;
-        serde_json::to_writer_pretty(&mut file, event)?;
-        file.write_all(b"\n")?;
+        file.write_all(&payload)?;
         file.sync_all()?;
 
         Ok(rel_path)
