@@ -44,6 +44,10 @@ impl KnotsWorktree {
         self.config.remote()
     }
 
+    pub fn is_generation_two(&self) -> bool {
+        self.config.is_generation_two()
+    }
+
     pub fn fetch_refspec(&self) -> String {
         self.config.fetch_refspec()
     }

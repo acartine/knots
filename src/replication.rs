@@ -6,6 +6,7 @@ use crate::progress::{emit_progress, ProgressKind, ProgressReporter};
 use crate::project::StorePaths;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError, SyncService, SyncSummary};
 
+mod generation;
 mod summary;
 
 pub use summary::{PushSummary, ReplicationSummary, SyncOutcome};
@@ -91,30 +92,8 @@ impl<'a> ReplicationService<'a> {
         emit_progress(reporter, ProgressKind::Info, "preparing knots worktree")?;
         worktree.ensure_exists(&self.git)?;
 
-        emit_progress(
-            reporter,
-            ProgressKind::Info,
-            "scanning local knots event files",
-        )?;
-        let local_files = self.collect_local_event_files()?;
-        let local_event_files = local_files.len() as u64;
-        if local_event_files == 0 {
-            emit_progress(
-                reporter,
-                ProgressKind::Success,
-                "no local knots events found; nothing to push",
-            )?;
-            return Ok(PushSummary {
-                local_event_files,
-                copied_files: 0,
-                committed: false,
-                pushed: false,
-                commit: None,
-            });
-        }
-
         for attempt in 0..MAX_ATTEMPTS {
-            match self.attempt_push(&worktree, &local_files, local_event_files, reporter)? {
+            match self.attempt_push(&worktree, reporter)? {
                 PushAttemptResult::Success(summary) => return Ok(summary),
                 PushAttemptResult::AlreadySynced(summary) => return Ok(summary),
                 PushAttemptResult::Retry(err) if attempt + 1 < MAX_ATTEMPTS => {
@@ -149,12 +128,24 @@ impl<'a> ReplicationService<'a> {
     fn attempt_push(
         &self,
         worktree: &KnotsWorktree,
-        local_files: &[PathBuf],
-        local_event_files: u64,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<PushAttemptResult, SyncError> {
-        self.reset_worktree_to_remote_or_local(worktree, reporter)?;
-        worktree.ensure_clean(&self.git)?;
+        let local_files = self.prepare_push_files(worktree, reporter)?;
+        let local_event_files = local_files.len() as u64;
+        if local_event_files == 0 {
+            emit_progress(
+                reporter,
+                ProgressKind::Success,
+                "no eligible local knots events found; nothing to push",
+            )?;
+            return Ok(PushAttemptResult::AlreadySynced(PushSummary {
+                local_event_files,
+                copied_files: 0,
+                committed: false,
+                pushed: false,
+                commit: None,
+            }));
+        }
 
         emit_progress(
             reporter,
@@ -164,7 +155,7 @@ impl<'a> ReplicationService<'a> {
                  against the publish worktree"
             ),
         )?;
-        let copied_files = self.copy_files_into_worktree(worktree.path(), local_files)?;
+        let copied_files = self.copy_files_into_worktree(worktree.path(), &local_files)?;
         if copied_files > 0 {
             emit_progress(
                 reporter,
@@ -239,6 +230,35 @@ impl<'a> ReplicationService<'a> {
         }
     }
 
+    fn prepare_push_files(
+        &self,
+        worktree: &KnotsWorktree,
+        reporter: &mut Option<&mut dyn ProgressReporter>,
+    ) -> Result<Vec<PathBuf>, SyncError> {
+        let active_head = self.reset_worktree_to_remote_or_local(worktree, reporter)?;
+        worktree.ensure_clean(&self.git)?;
+        if worktree.is_generation_two() {
+            emit_progress(
+                reporter,
+                ProgressKind::Info,
+                "validating the active compaction generation",
+            )?;
+            generation::fence_local_store(
+                &self.git,
+                &self.repo_root,
+                &self.store_paths,
+                worktree.path(),
+                &active_head,
+            )?;
+        }
+        emit_progress(
+            reporter,
+            ProgressKind::Info,
+            "scanning local knots event files",
+        )?;
+        self.collect_local_event_files()
+    }
+
     pub fn sync(&self) -> Result<ReplicationSummary, SyncError> {
         let mut reporter = None;
         self.sync_with_progress(&mut reporter)
@@ -302,7 +322,7 @@ impl<'a> ReplicationService<'a> {
         &self,
         worktree: &KnotsWorktree,
         reporter: &mut Option<&mut dyn ProgressReporter>,
-    ) -> Result<(), SyncError> {
+    ) -> Result<String, SyncError> {
         emit_progress(
             reporter,
             ProgressKind::Info,
@@ -327,7 +347,7 @@ impl<'a> ReplicationService<'a> {
                     .git
                     .rev_parse(&self.repo_root, &worktree.tracking_rev())?;
                 self.git.reset_hard(worktree.path(), &head)?;
-                Ok(())
+                Ok(head)
             }
             Err(err) if err.is_missing_remote() || err.is_unknown_revision() => {
                 emit_progress(
@@ -340,7 +360,7 @@ impl<'a> ReplicationService<'a> {
                 )?;
                 let head = self.git.rev_parse(worktree.path(), "HEAD")?;
                 self.git.reset_hard(worktree.path(), &head)?;
-                Ok(())
+                Ok(head)
             }
             Err(err) => Err(err),
         }
