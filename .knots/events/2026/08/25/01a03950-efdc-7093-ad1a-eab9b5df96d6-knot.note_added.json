@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03950-efdc-7093-ad1a-eab9b5df96d6",
+  "occurred_at": "2026-08-25T14:26:40.732685Z",
+  "knot_id": "knots-5807",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation is complete and validated at local commit 7911ec590d9b on branch worktree-knots-5807-compaction-schema. make sanity passed with 95.23% coverage. Publication is blocked because the only configured remote is GitHub, repository policy forbids publishing there, and the authenticated Diffinite repository list has no knots repository. The Sneka attribution note is attached locally but cannot be published for the same reason.",
+    "datetime": "2026-08-25T14:26:40.732685Z",
+    "entry_id": "01a03950-efdc-7093-ad1a-eaa2137bfb25",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03950-efdc-7093-ad1a-ead37855552d",
+  "occurred_at": "2026-08-25T14:26:40.732685Z",
+  "knot_id": "knots-5807",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Complete recoverable implementation: protocol-v2 manifest/checkpoint schema, canonical generation identity, strict snapshot/source/predecessor validation, and prepare/activation/interruption/rollback model. Commit: 7911ec590d9b. Branch: worktree-knots-5807-compaction-schema. make sanity passed at 95.23%. Blocked only on a permitted remote publication rail.",
+    "datetime": "2026-08-25T14:26:40.732685Z",
+    "entry_id": "01a03950-efdc-7093-ad1a-eacab9e3409a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

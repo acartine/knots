@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03941-fef2-7f72-b483-5a34aef5cc14",
+  "occurred_at": "2026-08-25T14:10:21.554134Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-cc66",
+    "lease_expiry_ts": 1787667621,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: compaction-schema-5807-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T14:10:21.554134Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

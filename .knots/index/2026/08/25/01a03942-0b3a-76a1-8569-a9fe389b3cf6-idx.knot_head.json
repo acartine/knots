@@ -1,0 +1,48 @@
+{
+  "event_id": "01a03942-0b3a-76a1-8569-a9fe389b3cf6",
+  "occurred_at": "2026-08-25T14:10:24.698312Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-4c07",
+    "lease_expiry_ts": 1787667624,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: compaction-schema-5807-impl",
+    "type": "lease",
+    "updated_at": "2026-08-25T14:10:24.676072Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

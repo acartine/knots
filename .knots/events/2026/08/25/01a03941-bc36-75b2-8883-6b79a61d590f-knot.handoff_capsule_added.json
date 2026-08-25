@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03941-bc36-75b2-8883-6b79a61d590f",
+  "occurred_at": "2026-08-25T14:10:04.470431Z",
+  "knot_id": "knots-5807",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Effort-1 plan: implement a small standalone protocol-v2 schema/validator/model module, deterministic canonical generation identity, exhaustive malformed/incomplete and interruption/rollback tests, then expose it for the publication and bootstrap knots. Integration with Git publication, pruning, SQLite replacement, watermarks, and quarantine remains explicitly outside knots-5807.",
+    "datetime": "2026-08-25T14:10:04.470431Z",
+    "entry_id": "01a03941-bc36-75b2-8883-6b6650f86baf",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

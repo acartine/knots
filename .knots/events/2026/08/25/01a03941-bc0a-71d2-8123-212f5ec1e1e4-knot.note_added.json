@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03941-bc0a-71d2-8123-212f5ec1e1e4",
+  "occurred_at": "2026-08-25T14:10:04.426335Z",
+  "knot_id": "knots-5807",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan (effort 1): 1. Refresh this implementation worktree to current remote main before code changes, preserving the active claim and using the repository worktree branch. 2. Add a focused compaction protocol module with public version-2 manifest/checkpoint types, strict path/digest/count/object-id/cutoff validation inputs, deterministic canonical generation identity, predecessor-chain validation, and pure publication-state transitions. 3. Keep snapshot database loading and remote publication integration outside this knot; expose validated data and protocol decisions for knots-5728 and knots-2af8. 4. Add unit tests for valid prepared/active generations, malformed or incomplete snapshot pairs, unsupported protocol/state, bad hashes/lengths/counts/paths/object IDs, generation-id mismatch, invalid cutoff ancestry/tree resolution, predecessor cycles/skips, interrupted prepare, activation races, and rollback to the verified predecessor. 5. Run focused tests, formatting/lint, then make sanity without lowering coverage; commit, attribute, and ship through the repository rail. Risks: canonical serialization drift and confusing Git resolution with pure schema checks. Mitigation: a documented fixed field order, identity test vectors, and injected source/cutoff facts so tests remain deterministic.",
+    "datetime": "2026-08-25T14:10:04.426335Z",
+    "entry_id": "01a03941-bc0a-71d2-8123-211278e292bb",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

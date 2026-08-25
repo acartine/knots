@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03950-f019-7f40-aaff-3512b43db178",
+  "occurred_at": "2026-08-25T14:26:40.793185Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": "ready_for_implementation",
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5807",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "blocked",
+    "terminal": false,
+    "title": "Define compaction manifest and checkpoint schema",
+    "type": "work",
+    "updated_at": "2026-08-25T14:26:40.793185Z",
+    "workflow_id": "work_sdlc"
+  }
+}

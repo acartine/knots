@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03941-feaf-7f43-8b98-f8719ae9f3c9",
+  "occurred_at": "2026-08-25T14:10:21.487862Z",
+  "knot_id": "knots-5807",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review approved. Scope matches the design boundary and acceptance criteria; sha2 and serde_json are already dependencies; deterministic injected Git facts keep the protocol validator pure. The test matrix covers malformed and incomplete generations, identity, cutoff/tree facts, interruption, races, and rollback. Publication, pruning, and cache integration remain correctly delegated to dependent knots.",
+    "datetime": "2026-08-25T14:10:21.487862Z",
+    "entry_id": "01a03941-feaf-7f43-8b98-f869ccd79a7a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
