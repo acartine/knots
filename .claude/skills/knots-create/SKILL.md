@@ -23,6 +23,16 @@ be recorded as `[unknown <date>]`.
 Do not copy legacy `--*-agentname/model/version` identity flags from telemetry
 or command history. They are deprecated and ignored by current `kno`.
 
+## Lease lifecycle
+
+A lease used with `kno new` is for creation and handoff attribution. It does
+not give future workers a reusable claim lease. When a worker later claims the
+knot, that worker must create or receive a claim lease.
+
+When the worker finishes or abandons the claimed action, `kno next` and
+`kno rollback` release that claim lease: Knots unbinds it from the knot and
+marks it `lease_terminated`.
+
 ## Outcome
 
 Create one well-defined knot. Keep the title short and action-oriented. Put the
