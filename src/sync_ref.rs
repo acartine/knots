@@ -5,6 +5,8 @@ pub const DEFAULT_REMOTE: &str = "origin";
 pub const DEFAULT_LOCAL_BRANCH: &str = "knots";
 pub const LEGACY_REMOTE_REF: &str = "refs/heads/knots";
 pub const DIFFINITE_REMOTE_REF: &str = "refs/work/knots";
+pub const GENERATION_TWO_REMOTE_REF: &str = "refs/heads/knots-v2";
+pub const DIFFINITE_GENERATION_TWO_REMOTE_REF: &str = "refs/work/knots-v2";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SyncRefConfig {
@@ -39,6 +41,13 @@ impl SyncRefConfig {
 
     pub fn remote_ref(&self) -> &str {
         &self.remote_ref
+    }
+
+    pub fn is_generation_two(&self) -> bool {
+        matches!(
+            self.remote_ref.as_str(),
+            GENERATION_TWO_REMOTE_REF | DIFFINITE_GENERATION_TWO_REMOTE_REF
+        )
     }
 
     pub fn tracking_ref(&self) -> String {
@@ -126,7 +135,10 @@ fn git_output(repo_root: &Path, args: &[&str]) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_ref, SyncRefConfig, DIFFINITE_REMOTE_REF, LEGACY_REMOTE_REF};
+    use super::{
+        normalize_ref, SyncRefConfig, DIFFINITE_GENERATION_TWO_REMOTE_REF, DIFFINITE_REMOTE_REF,
+        GENERATION_TWO_REMOTE_REF, LEGACY_REMOTE_REF,
+    };
     use std::path::Path;
     use std::process::Command;
 
@@ -163,6 +175,34 @@ mod tests {
         );
         let config = SyncRefConfig::for_repo(&repo);
         assert_eq!(config.remote_ref(), LEGACY_REMOTE_REF);
+        assert!(!config.is_generation_two());
+    }
+
+    #[test]
+    fn recognizes_only_generation_two_replication_refs() {
+        let repo_ws = temp_repo();
+        let repo = repo_ws.path().to_path_buf();
+        git(
+            &repo,
+            &["config", "knots.remoteRef", GENERATION_TWO_REMOTE_REF],
+        );
+        assert!(SyncRefConfig::for_repo(&repo).is_generation_two());
+
+        git(
+            &repo,
+            &[
+                "config",
+                "knots.remoteRef",
+                DIFFINITE_GENERATION_TWO_REMOTE_REF,
+            ],
+        );
+        assert!(SyncRefConfig::for_repo(&repo).is_generation_two());
+
+        git(
+            &repo,
+            &["config", "knots.remoteRef", "refs/heads/knots-v20"],
+        );
+        assert!(!SyncRefConfig::for_repo(&repo).is_generation_two());
     }
 
     fn temp_repo() -> knots_test_support::TestWorkspace {

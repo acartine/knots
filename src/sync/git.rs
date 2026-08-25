@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -35,6 +36,67 @@ impl GitAdapter {
 
     pub fn rev_parse(&self, cwd: &Path, rev: &str) -> Result<String, SyncError> {
         self.run_checked(cwd, vec!["rev-parse".to_string(), rev.to_string()])
+    }
+
+    pub fn try_rev_parse(&self, cwd: &Path, rev: &str) -> Result<Option<String>, SyncError> {
+        let args = vec![
+            "rev-parse".to_string(),
+            "--verify".to_string(),
+            rev.to_string(),
+        ];
+        let output = self.run_allow_failure(cwd, args.clone())?;
+        if output.status.success() {
+            return Ok(Some(
+                String::from_utf8_lossy(&output.stdout).trim().to_string(),
+            ));
+        }
+        Ok(None)
+    }
+
+    pub fn is_ancestor(&self, cwd: &Path, ancestor: &str, head: &str) -> Result<bool, SyncError> {
+        let args = vec![
+            "merge-base".to_string(),
+            "--is-ancestor".to_string(),
+            ancestor.to_string(),
+            head.to_string(),
+        ];
+        let output = self.run_allow_failure(cwd, args.clone())?;
+        match output.status.code() {
+            Some(0) => Ok(true),
+            Some(1) => Ok(false),
+            _ => Err(command_error(cwd, &args, &output)),
+        }
+    }
+
+    pub fn list_tree_blobs(
+        &self,
+        cwd: &Path,
+        tree: &str,
+    ) -> Result<BTreeMap<PathBuf, String>, SyncError> {
+        let output = self.run_checked(
+            cwd,
+            vec!["ls-tree".to_string(), "-r".to_string(), tree.to_string()],
+        )?;
+        let mut blobs = BTreeMap::new();
+        for line in output.lines() {
+            let Some((metadata, path)) = line.split_once('\t') else {
+                continue;
+            };
+            let mut fields = metadata.split_whitespace();
+            let _mode = fields.next();
+            let kind = fields.next();
+            let object_id = fields.next();
+            if kind == Some("blob") {
+                if let Some(object_id) = object_id {
+                    blobs.insert(PathBuf::from(path), object_id.to_string());
+                }
+            }
+        }
+        Ok(blobs)
+    }
+
+    pub fn hash_object_file(&self, cwd: &Path, path: &Path) -> Result<String, SyncError> {
+        self.run_checked(cwd, vec!["hash-object".to_string(), display_path(path)])
     }
 
     pub fn reset_hard(&self, cwd: &Path, rev: &str) -> Result<(), SyncError> {
@@ -205,6 +267,31 @@ impl GitAdapter {
         Ok(())
     }
 
+    pub fn push_ref_with_lease(
+        &self,
+        cwd: &Path,
+        remote: &str,
+        source: &str,
+        target: &str,
+        expected: Option<&str>,
+    ) -> Result<(), SyncError> {
+        let lease = format!(
+            "--force-with-lease={target}:{}",
+            expected.unwrap_or_default()
+        );
+        self.run_checked(
+            cwd,
+            vec![
+                "push".to_string(),
+                "--no-verify".to_string(),
+                lease,
+                remote.to_string(),
+                format!("{source}:{target}"),
+            ],
+        )?;
+        Ok(())
+    }
+
     fn run_checked(&self, cwd: &Path, args: Vec<String>) -> Result<String, SyncError> {
         let phase_name = trace_name(&args);
         let output =
@@ -268,4 +355,12 @@ fn display_path(path: &Path) -> String {
 
 fn display_command(cwd: &Path, args: &[String]) -> String {
     format!("git -C {} {}", cwd.display(), args.join(" "))
+}
+
+fn command_error(cwd: &Path, args: &[String], output: &Output) -> SyncError {
+    SyncError::GitCommandFailed {
+        command: display_command(cwd, args),
+        code: output.status.code(),
+        stderr: String::from_utf8_lossy(&output.stderr).trim().to_string(),
+    }
 }

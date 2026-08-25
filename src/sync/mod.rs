@@ -189,6 +189,9 @@ pub enum SyncError {
     SnapshotLoad {
         message: String,
     },
+    Compaction {
+        message: String,
+    },
 }
 
 impl SyncError {
@@ -277,6 +280,7 @@ impl fmt::Display for SyncError {
             SyncError::SnapshotLoad { message } => {
                 write!(f, "snapshot load failed: {}", message)
             }
+            SyncError::Compaction { message } => write!(f, "compaction failed: {}", message),
         }
     }
 }
@@ -293,6 +297,7 @@ impl Error for SyncError {
             SyncError::FileConflict { .. } => None,
             SyncError::MergeConflictEscalation { .. } => None,
             SyncError::SnapshotLoad { .. } => None,
+            SyncError::Compaction { .. } => None,
         }
     }
 }

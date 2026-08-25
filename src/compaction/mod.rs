@@ -3,6 +3,7 @@
 
 mod manifest;
 mod protocol;
+mod publication;
 mod validation;
 
 pub(crate) use manifest::{
@@ -10,6 +11,7 @@ pub(crate) use manifest::{
     SourceCheckpoint, PROTOCOL_VERSION,
 };
 pub(crate) use protocol::{ProtocolError, ProtocolModel};
+pub(crate) use publication::{GenerationPublisher, PublicationTarget};
 pub(crate) use validation::{
     parse_and_validate, validate, SourceFacts, ValidationContext, ValidationError,
 };
