@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a18-bb2d-73d3-a485-4b6edc452bcc",
+  "occurred_at": "2026-08-25T18:04:54.44572Z",
+  "knot_id": "knots-5807",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment complete through GitHub PR #101. Rebase-merged commit 2b028bf17ba6 is remote main. PR Sanity and Repo Hygiene passed; main CI run 32881071421 passed in 5m47s; Release run 32881071486 passed detection and correctly skipped build/publish because there was no version bump. Sneka attribution is published on the rewritten main commit at remote notes ref 83e12484.",
+    "datetime": "2026-08-25T18:04:54.44572Z",
+    "entry_id": "01a03a18-bb2d-73d3-a485-4b5fa2d72bdd",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "0.149.0"
+  }
+}

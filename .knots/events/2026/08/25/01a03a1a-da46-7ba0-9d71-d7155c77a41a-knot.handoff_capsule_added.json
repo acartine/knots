@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a1a-da46-7ba0-9d71-d7155c77a41a",
+  "occurred_at": "2026-08-25T18:07:13.478768Z",
+  "knot_id": "knots-5728",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan complete: implement generation-two ref CAS publication, pre-scan active-manifest fencing, and exact cutoff-aware local pruning. Scope excludes bootstrap/watermark/quarantine work owned by knots-2af8. Validate with concurrency and local-unpushed preservation tests plus make sanity and a temporary-remote proof.",
+    "datetime": "2026-08-25T18:07:13.478768Z",
+    "entry_id": "01a03a1a-da46-7ba0-9d71-d7014b598a80",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

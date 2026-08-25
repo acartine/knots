@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03a3f-8666-7091-aba0-c97b34597a18",
+  "occurred_at": "2026-08-25T18:47:16.838351Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5728",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Fence compacted history in generation-two replication",
+    "type": "work",
+    "updated_at": "2026-08-25T18:47:16.838351Z",
+    "workflow_id": "work_sdlc"
+  }
+}

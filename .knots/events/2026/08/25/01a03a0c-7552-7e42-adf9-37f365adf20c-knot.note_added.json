@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a0c-7552-7e42-adf9-37f365adf20c",
+  "occurred_at": "2026-08-25T17:51:30.130677Z",
+  "knot_id": "knots-5807",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "GitHub publication is now operator-authorized. Branch worktree-knots-5807-compaction-schema and Sneka attribution ref are published; managed pre-push make sanity passed at 95.23% coverage (16650/17484).",
+    "datetime": "2026-08-25T17:51:30.130677Z",
+    "entry_id": "01a03a0c-7552-7e42-adf9-37ef8c055d91",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "0.149.0"
+  }
+}

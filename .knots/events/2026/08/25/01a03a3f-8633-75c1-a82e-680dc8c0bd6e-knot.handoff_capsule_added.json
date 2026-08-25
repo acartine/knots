@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a3f-8633-75c1-a82e-680dc8c0bd6e",
+  "occurred_at": "2026-08-25T18:47:16.787529Z",
+  "knot_id": "knots-5728",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment review approved. GitHub PR #102 is MERGED and origin/main is exactly 9237449cf77a. Main contains the approved 10-file implementation with no whitespace errors. Both implementation commit 4ce1dbe5eb7f and rewritten shipped commit 9237449cf77a are tagged. Main CI 32885139540, Repo Hygiene 32885139712, Changesets Version PR 32885139739, and Release detection 32885139801 all completed successfully. Release builds/publish were correctly skipped because no version bump existed; this knot ships source to main, while later rollout work owns a binary/live client release. Attribution note is published.",
+    "datetime": "2026-08-25T18:47:16.787529Z",
+    "entry_id": "01a03a3f-8633-75c1-a82e-67ff4c4afbff",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

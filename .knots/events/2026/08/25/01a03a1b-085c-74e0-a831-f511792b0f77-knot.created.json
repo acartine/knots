@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a1b-085c-74e0-a831-f511792b0f77",
+  "occurred_at": "2026-08-25T18:07:25.276462Z",
+  "knot_id": "knots-6490",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-apply-2af8-impl",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a1a-be0e-7ac0-acf6-f447393b2362",
+  "occurred_at": "2026-08-25T18:07:06.254255Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan (complexity: high, bounded to checkpoint-aware pull): 1. Add a checkpoint reader that discovers exactly one active generation manifest, loads the manifest-bound snapshot pair, validates hashes/schema/counts and source Git facts, and returns a verified checkpoint without accepting incomplete or unknown generations. 2. Replace snapshot application with one SQLite transaction and replace semantics across hot, warm, cold, edges, metadata-dependent tables, quarantine-safe exclusions, and watermark/generation marker writes only after retained-delta replay succeeds. 3. In IncrementalApplier, classify fresh bootstrap, matching generation, pre-cutoff/unreachable watermark, and rollback/new generation. Fresh or stale stores rebase from the verified checkpoint, replay retained remote delta plus eligible local state, while same-generation stores keep the normal diff. 4. Extend quarantine rows with checkpoint generation and a per-knot baseline captured before replacement; preserve locally leased knot materialization during rebase; on release restore that baseline and replay only that knot's post-cutoff events, removing the row only after success. 5. Add focused tests for fresh convergence, pre-cutoff rebasing, leased preservation/drain, corrupt or incomplete generations, unknown/rollback generation, and failure atomicity. Run formatting, targeted tests, size checks, then make sanity. Coordinate by consuming the manifest contract from 5807 and avoiding publication/push/pruning surfaces owned by 5728.",
+    "datetime": "2026-08-25T18:07:06.254255Z",
+    "entry_id": "01a03a1a-be0e-7ac0-acf6-f43d839d80b9",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a31-d66c-7082-bfca-1b51c06900b7",
+  "occurred_at": "2026-08-25T18:32:19.820039Z",
+  "knot_id": "knots-5728",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:codex/knots-5728-generation-publish"
+  }
+}

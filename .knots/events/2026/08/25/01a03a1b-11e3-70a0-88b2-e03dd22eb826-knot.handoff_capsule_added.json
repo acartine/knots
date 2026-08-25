@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a1b-11e3-70a0-88b2-e03dd22eb826",
+  "occurred_at": "2026-08-25T18:07:27.715552Z",
+  "knot_id": "knots-5728",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review approved. The plan covers all four acceptance clauses, uses exact tree/blob membership rather than timestamps, places active-manifest validation before scanning, uses expected-head CAS for remote atomicity, and preserves unique local paths during idempotent pruning. Tests cover stale, legacy, concurrent, conflict, interruption, and unpushed-event cases. The additive shared-contract strategy limits merge risk with knots-2af8.",
+    "datetime": "2026-08-25T18:07:27.715552Z",
+    "entry_id": "01a03a1b-11e3-70a0-88b2-e022170911ea",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

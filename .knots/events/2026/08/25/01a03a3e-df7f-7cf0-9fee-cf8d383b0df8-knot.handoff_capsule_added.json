@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a3e-df7f-7cf0-9fee-cf8d383b0df8",
+  "occurred_at": "2026-08-25T18:46:34.111363Z",
+  "knot_id": "knots-5728",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment complete through GitHub PR #102. PR merged by rebase at 2026-08-25T18:40:32Z; exact origin/main SHA is 9237449cf77a. PR checks passed: Sanity run 32884441171 and Repo Hygiene required-public-files run 32884441101. Post-merge main checks passed: CI run 32885139540, Repo Hygiene run 32885139712, Changesets Version PR run 32885139739. Release run 32885139801 completed detection successfully but skipped builds and publish-release because this commit did not bump a version, so no new binary release/live client rollout was produced by this knot. Attribution note is published on the rewritten main SHA.",
+    "datetime": "2026-08-25T18:46:34.111363Z",
+    "entry_id": "01a03a3e-df7f-7cf0-9fee-cf754a85cef2",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

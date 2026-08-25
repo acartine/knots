@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a32-557b-7ca0-974a-cde6c66f8d55",
+  "occurred_at": "2026-08-25T18:32:52.346435Z",
+  "knot_id": "knots-5728",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation review approved against origin/main 2b028bf17ba6 and acceptance criteria. Push loads and validates the active generation before scanning; generation-two and legacy refs are isolated; staging and activation use force-with-lease CAS; pruning removes only exact cutoff blobs outside the retained delta while preserving absent/unpushed paths and rejecting conflicts. Real Git tests cover competing publishers, legacy isolation, retained and unpushed paths, conflict safety, and idempotence. Diff is clean; lint and three full sanity/pre-push runs passed at 95.11-95.12% coverage. No snapshot schema overlap with knots-2af8.",
+    "datetime": "2026-08-25T18:32:52.346435Z",
+    "entry_id": "01a03a32-557b-7ca0-974a-cdd7ab4e5002",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

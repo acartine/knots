@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a31-d66c-7082-bfca-1b76b025c39b",
+  "occurred_at": "2026-08-25T18:32:19.820039Z",
+  "knot_id": "knots-5728",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation complete at commit 4ce1dbe5eb7f. Added create-only CAS staging, fenced active-generation updates, generation-two ref isolation, push-time active-manifest validation before file scans, and idempotent local pruning preserving unpushed paths while rejecting immutable byte conflicts. make lint and make sanity pass; coverage 95.12% initially and 95.11% on pre-push reruns. Attribution note and feature branch are published to GitHub. No snapshot schema files changed; knots-2af8 owns snapshot edge reconstruction. Branch: codex/knots-5728-generation-publish",
+    "datetime": "2026-08-25T18:32:19.820039Z",
+    "entry_id": "01a03a31-d66c-7082-bfca-1b64d5f56673",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "event_id": "01a03a18-d96a-7d01-9c00-6ee1639d24fc",
+  "occurred_at": "2026-08-25T18:05:02.186758Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5807",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "step_metadata": {
+      "action_kind": "gate",
+      "action_state": "shipment_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Define compaction manifest and checkpoint schema",
+    "type": "work",
+    "updated_at": "2026-08-25T18:05:02.186758Z",
+    "workflow_id": "work_sdlc"
+  },
+  "precondition": {
+    "profile_etag": "01a03a18-bb5f-7703-b220-2d331cc92527"
+  }
+}

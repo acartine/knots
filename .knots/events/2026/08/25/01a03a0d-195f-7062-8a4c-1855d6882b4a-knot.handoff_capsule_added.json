@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a0d-195f-7062-8a4c-1855d6882b4a",
+  "occurred_at": "2026-08-25T17:52:12.127349Z",
+  "knot_id": "knots-5807",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation review approved against the knot acceptance criteria. Commit 7911ec590d9b adds the versioned protocol-v2 manifest/checkpoint schema, deterministic g2 SHA-256 generation identity, strict malformed/incomplete/source/snapshot/predecessor validation, and pure interruption/CAS activation/verified rollback behavior. Ten focused tests cover required failure paths; diff check is clean; managed pre-push make sanity passed with 95.23% coverage (16650/17484).",
+    "datetime": "2026-08-25T17:52:12.127349Z",
+    "entry_id": "01a03a0d-195f-7062-8a4c-18432502576b",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "0.149.0"
+  }
+}

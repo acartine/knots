@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a19-6a54-71f3-9540-1145c3e2ca3f",
+  "occurred_at": "2026-08-25T18:05:39.283723Z",
+  "knot_id": "knots-5807",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment review approved. Remote main is 2b028bf17ba6, whose tree 4ce54595f604 matches the reviewed implementation tree exactly. Both implementation and rewritten shipment commits are tagged. PR and main CI passed, Repo Hygiene passed, Release detection passed with no version bump, and remote Sneka attribution is present. No deployment artifact is applicable to this internal schema contract.",
+    "datetime": "2026-08-25T18:05:39.283723Z",
+    "entry_id": "01a03a19-6a54-71f3-9540-1134f9dc3f9e",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "0.149.0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a1a-f846-77c1-b133-5f97d1a184c5",
+  "occurred_at": "2026-08-25T18:07:21.158721Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review approved. It covers all acceptance paths and keeps 5728 ownership boundaries intact. Implementation should use rusqlite unchecked_transaction or an equivalent connection-local transaction because SyncService holds &Connection; checkpoint discovery must reject zero/multiple active manifests only when compaction metadata exists, preserving legacy stores; tests must prove watermarks, generation marker, cache tiers, and quarantine rows remain unchanged on every validation/replay failure.",
+    "datetime": "2026-08-25T18:07:21.158721Z",
+    "entry_id": "01a03a1a-f846-77c1-b133-5f8055b41922",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

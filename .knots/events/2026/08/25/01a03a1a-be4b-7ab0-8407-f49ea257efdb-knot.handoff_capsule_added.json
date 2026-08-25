@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a1a-be4b-7ab0-8407-f49ea257efdb",
+  "occurred_at": "2026-08-25T18:07:06.315956Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan: implement verified checkpoint reading plus transactional replace/replay in sync; migrate quarantine with generation-bound per-knot baselines; preserve normal same-generation diffs. Scope excludes publication, push fencing, and pruning. High complexity; primary risks are transaction atomicity, stale Git bases, and held local state.",
+    "datetime": "2026-08-25T18:07:06.315956Z",
+    "entry_id": "01a03a1a-be4b-7ab0-8407-f483e733dac5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

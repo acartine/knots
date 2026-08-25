@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03a3f-0777-7613-b363-08679f1df5ad",
+  "occurred_at": "2026-08-25T18:46:44.343471Z",
+  "knot_id": "knots-7a8d",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "Codex",
+        "agent_type": "api",
+        "model": "GPT-5",
+        "model_version": "5",
+        "provider": "OpenAI"
+      },
+      "lease_type": "agent",
+      "nickname": "codex-knots-5728-shipment-review",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 45282
+      },
+      "timeout_seconds": 3600
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a1a-d9e5-7b12-b02a-0a1e64540eb7",
+  "occurred_at": "2026-08-25T18:07:13.381263Z",
+  "knot_id": "knots-5728",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan (effort 2, high-risk replication change): 1. Add a focused compaction publication layer around the shared manifest contract. Resolve and validate the active generation manifest before every generation-two push; derive cutoff membership from the exact Git trees named by the manifest; retain post-cutoff and configured delta paths; reject byte conflicts at immutable cutoff paths. 2. Extend Git/ref and worktree plumbing so preparation and activation use explicit generation-two and staging refs with expected-head compare-and-swap semantics. Freeze legacy publication by keeping protocol-two writes isolated to generation two and fail closed on absent, stale, corrupt, or unsupported active manifests. 3. Implement idempotent local pruning after a fetched active manifest validates. Delete only local event/index files whose path and blob match the cutoff tree and are outside the retained delta. Preserve all paths absent from the cutoff tree, including unique unpushed events, and persist resumable bookkeeping only after validation. 4. Integrate fencing before local collection/copy so retries re-fetch and re-validate the active generation; stage the manifest and snapshot paths together where publication requires them. Keep bootstrap, watermark rebasing, and quarantine migration out of scope for knots-2af8. 5. Add deterministic tests for concurrent source movement, one-winner activation, stale generation-two writers, legacy-ref isolation, cutoff-byte conflicts, interrupted/idempotent pruning, retained delta, and preservation of unique unpushed files. Run focused tests, make lint, make sanity, and exercise a real temporary-remote publication/prune flow before shipment. Shared-contract risk: prefer additive APIs under src/compaction and avoid modifying manifest semantics so the concurrent knots-2af8 work can merge independently.",
+    "datetime": "2026-08-25T18:07:13.381263Z",
+    "entry_id": "01a03a1a-d9e5-7b12-b02a-0a07a4917d17",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

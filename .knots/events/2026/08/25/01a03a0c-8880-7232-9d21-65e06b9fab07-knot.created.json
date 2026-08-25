@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a0c-8880-7232-9d21-65e06b9fab07",
+  "occurred_at": "2026-08-25T17:51:35.040636Z",
+  "knot_id": "knots-5406",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-schema-review",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

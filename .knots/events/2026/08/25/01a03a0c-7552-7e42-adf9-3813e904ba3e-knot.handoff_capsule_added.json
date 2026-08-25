@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a0c-7552-7e42-adf9-3813e904ba3e",
+  "occurred_at": "2026-08-25T17:51:30.130677Z",
+  "knot_id": "knots-5807",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation ready for review: protocol-v2 schema, strict validation, canonical identity, and interruption/rollback model. Branch: worktree-knots-5807-compaction-schema. Commit: 7911ec590d9b.",
+    "datetime": "2026-08-25T17:51:30.130677Z",
+    "entry_id": "01a03a0c-7552-7e42-adf9-3806a983b478",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "0.149.0"
+  }
+}

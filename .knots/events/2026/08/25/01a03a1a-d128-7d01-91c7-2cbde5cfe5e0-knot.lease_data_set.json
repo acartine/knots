@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03a1a-d128-7d01-91c7-2cbde5cfe5e0",
+  "occurred_at": "2026-08-25T18:07:11.144117Z",
+  "knot_id": "knots-d897",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "compaction-apply-2af8-review",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 56303
+      },
+      "timeout_seconds": 600
+    }
+  }
+}
