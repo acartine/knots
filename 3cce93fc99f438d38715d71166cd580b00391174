@@ -1,0 +1,7 @@
+{
+  "spec": "sneka-agents/1",
+  "agent": "claude-code",
+  "created_at": "2026-08-20T12:50:00Z",
+  "model": "claude-sonnet-5",
+  "harness": { "name": "claude-code", "version": "2.1.237" }
+}
