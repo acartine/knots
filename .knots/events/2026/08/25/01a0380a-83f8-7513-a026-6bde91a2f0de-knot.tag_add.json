@@ -1,0 +1,9 @@
+{
+  "event_id": "01a0380a-83f8-7513-a026-6bde91a2f0de",
+  "occurred_at": "2026-08-25T08:30:08.349416Z",
+  "knot_id": "knots-2c76",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "origin:quilt-388b"
+  }
+}
