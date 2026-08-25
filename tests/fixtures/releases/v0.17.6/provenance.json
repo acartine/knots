@@ -1,0 +1,8 @@
+{
+  "release": "v0.17.6",
+  "release_commit": "d67c43d165fb54a3f830a7d455ee72361f4c3a18",
+  "darwin_arm64_archive_sha256": "723ad12dc354a71c1dcf045b163318ae1b617c2430e9db76a2753ade40c805ad",
+  "linux_x86_64_archive_sha256": "f07af55d4ea948ee2eeedbb278ddecb62d31dc9095d889c703e2e62be653847c",
+  "observed_publish_commit": "d6799882a88d",
+  "scenario": "Released client republished its local legacy event and index paths to a ref named knots-v2 after a same-path prune. These byte-identical outputs are the compatibility input."
+}

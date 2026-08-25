@@ -5,389 +5,330 @@ use super::*;
 const COMMIT: &str = "1111111111111111111111111111111111111111";
 const INDEX_TREE: &str = "2222222222222222222222222222222222222222";
 const EVENT_TREE: &str = "3333333333333333333333333333333333333333";
-const OLD_GENERATION: &str = "g2-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const CONTROL_HEAD: &str = "4444444444444444444444444444444444444444";
+const NEXT_CONTROL_HEAD: &str = "5555555555555555555555555555555555555555";
+const OLD_GENERATION: &str = "v2-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 fn active_bytes() -> &'static [u8] {
-    br#"{"schema_version":1,"written_at":"ignored","hot":[{}],"warm":[{}]}"#
+    br#"{"schema_version":1,"hot":[{}],"warm":[{}]}"#
 }
 
 fn cold_bytes() -> &'static [u8] {
-    br#"{"schema_version":1,"written_at":"ignored","cold":[{}]}"#
+    br#"{"schema_version":1,"cold":[{}]}"#
+}
+
+fn pack_bytes() -> &'static [u8] {
+    br#"{"event_id":"event-1","body":"raw bytes retained"}"#
+}
+
+fn digest(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
 }
 
 fn descriptor(path: &str, bytes: &[u8], records: u64) -> SnapshotDescriptor {
     SnapshotDescriptor {
         path: path.to_string(),
-        sha256: format!("{:x}", Sha256::digest(bytes)),
+        sha256: digest(bytes),
         bytes: bytes.len() as u64,
         records,
     }
 }
 
-fn manifest(state: GenerationState, previous_generation: Option<&str>) -> CompactionManifest {
+fn writer(sequence: u64) -> WriterHead {
+    WriterHead {
+        writer_id: "writer-a".to_string(),
+        inbox_ref: V2RefLayout::default().inbox("writer-a"),
+        commit: COMMIT.to_string(),
+        sequence,
+    }
+}
+
+fn manifest(previous: Option<&str>, epoch: u64) -> CompactionManifest {
+    let pack_sha = digest(pack_bytes());
     CompactionManifest {
         protocol_version: PROTOCOL_VERSION,
         generation_id: String::new(),
-        state,
+        predecessor_generation: previous.map(str::to_string),
+        predecessor_control_epoch: epoch,
         source: SourceCheckpoint {
-            remote_ref: "refs/work/knots".to_string(),
+            legacy_ref: LEGACY_REF.to_string(),
             cutoff_commit: COMMIT.to_string(),
             index_tree: INDEX_TREE.to_string(),
             event_tree: EVENT_TREE.to_string(),
         },
+        writer_heads: vec![writer(7)],
         snapshots: SnapshotSet {
             active: descriptor(
-                ".knots/snapshots/checkpoint-active_catalog.snapshot.json",
+                ".knots/v2/generations/current/active.snapshot.json",
                 active_bytes(),
                 2,
             ),
             cold: descriptor(
-                ".knots/snapshots/checkpoint-cold_catalog.snapshot.json",
+                ".knots/v2/generations/current/cold.snapshot.json",
                 cold_bytes(),
                 1,
             ),
         },
-        retention: Retention {
-            max_full_files: 1_000,
-            max_index_files: 1_000,
-        },
+        packs: vec![EventPack {
+            pack_id: format!("pack-{pack_sha}"),
+            path: format!(".knots/v2/packs/pack-{pack_sha}.pack"),
+            sha256: pack_sha,
+            bytes: pack_bytes().len() as u64,
+            events: vec![EventIndexEntry {
+                event_id: "event-1".to_string(),
+                content_sha256: digest(pack_bytes()),
+                offset: 0,
+                bytes: pack_bytes().len() as u64,
+            }],
+        }],
         compatibility: Compatibility {
             minimum_reader_protocol: PROTOCOL_VERSION,
             minimum_writer_protocol: PROTOCOL_VERSION,
         },
-        previous_generation: previous_generation.map(str::to_string),
     }
     .seal()
 }
 
 fn context<'a>(
-    expected_predecessor: Option<&'a str>,
-    predecessor_chain: &'a [&'a str],
+    value: &'a CompactionManifest,
+    pack: &'a [u8],
+    previous: Option<&'a str>,
+    epoch: u64,
 ) -> ValidationContext<'a> {
+    let packs = Box::leak(Box::new([(value.packs[0].pack_id.as_str(), pack)]));
     ValidationContext {
         active_snapshot: Some(active_bytes()),
         cold_snapshot: Some(cold_bytes()),
+        packs,
         source: SourceFacts {
             cutoff_resolves: true,
             cutoff_is_ancestor: true,
             index_tree: Some(INDEX_TREE),
             event_tree: Some(EVENT_TREE),
         },
-        expected_predecessor,
-        predecessor_chain,
+        expected_predecessor: previous,
+        expected_control_epoch: epoch,
     }
 }
 
 #[test]
-fn valid_manifest_round_trips_and_state_does_not_change_identity() {
-    let prepared = manifest(GenerationState::Prepared, Some(OLD_GENERATION));
+fn complete_v2_manifest_round_trips_with_lossless_pack_index() {
+    let value = manifest(Some(OLD_GENERATION), 4);
+    assert!(value.generation_id.starts_with("v2-"));
     assert_eq!(
-        prepared.generation_id,
-        "g2-9a1515ffc32b9543e49b7632b50f5105db39d382a536558d3ea9d978574f2f7d"
+        value.archive_ref(),
+        V2RefLayout::default().archive(&value.generation_id)
     );
-    let mut active = prepared.clone();
-    active.state = GenerationState::Active;
-    assert_eq!(prepared.generation_id, active.expected_generation_id());
-
-    let json = serde_json::to_vec(&active).expect("manifest should serialize");
-    let parsed = parse_and_validate(&json, &context(Some(OLD_GENERATION), &[OLD_GENERATION]))
-        .expect("complete manifest should validate");
-    assert_eq!(parsed, active);
+    let bytes = serde_json::to_vec(&value).expect("serialize manifest");
+    let parsed = parse_and_validate(
+        &bytes,
+        &context(&value, pack_bytes(), Some(OLD_GENERATION), 4),
+    )
+    .expect("complete manifest validates");
+    let event = &parsed.packs[0].events[0];
+    let raw = &pack_bytes()[event.offset as usize..(event.offset + event.bytes) as usize];
+    assert_eq!(
+        raw,
+        pack_bytes(),
+        "raw event bytes remain exactly recoverable"
+    );
 }
 
 #[test]
-fn parser_rejects_incomplete_unknown_and_unsupported_manifests() {
-    let valid = manifest(GenerationState::Active, None);
-    let mut value = serde_json::to_value(&valid).expect("manifest should serialize");
-    value
-        .as_object_mut()
-        .expect("manifest should be an object")
-        .remove("snapshots");
+fn canonical_paths_are_v2_only_and_legacy_paths_are_rejected() {
+    let mut value = manifest(None, 0);
+    value.snapshots.active.path = ".knots/snapshots/legacy.snapshot.json".to_string();
+    value = value.seal();
+    assert_eq!(
+        validate(&value, &context(&value, pack_bytes(), None, 0)),
+        Err(ValidationError::InvalidV2Path("active"))
+    );
+    let refs = V2RefLayout::default();
+    assert_ne!(refs.legacy, refs.control);
+    assert!(!refs
+        .canonical("generation")
+        .starts_with(&format!("{}/", refs.legacy)));
+    assert_ne!(refs.archive("generation"), refs.inbox("writer-a"));
+}
+
+#[test]
+fn pack_tampering_and_duplicate_event_ids_fail_validation() {
+    let value = manifest(None, 0);
+    assert_eq!(
+        validate(&value, &context(&value, b"tampered", None, 0)),
+        Err(ValidationError::LengthMismatch("pack"))
+    );
+    let mut duplicate = value.clone();
+    duplicate.packs.push(duplicate.packs[0].clone());
+    duplicate = duplicate.seal();
+    assert_eq!(
+        validate(&duplicate, &context(&duplicate, pack_bytes(), None, 0)),
+        Err(ValidationError::DuplicatePack)
+    );
+}
+
+#[test]
+fn unknown_fields_and_incomplete_manifests_fail_closed() {
+    let value = manifest(None, 0);
+    let mut json = serde_json::to_value(&value).expect("manifest json");
+    json["unexpected"] = serde_json::json!(true);
     assert!(matches!(
-        parse_and_validate(&serde_json::to_vec(&value).unwrap(), &context(None, &[])),
+        parse_and_validate(
+            &serde_json::to_vec(&json).unwrap(),
+            &context(&value, pack_bytes(), None, 0)
+        ),
         Err(ValidationError::InvalidJson(_))
     ));
+}
 
-    let mut value = serde_json::to_value(&valid).unwrap();
-    value["unexpected"] = serde_json::json!(true);
-    assert!(matches!(
-        parse_and_validate(&serde_json::to_vec(&value).unwrap(), &context(None, &[])),
-        Err(ValidationError::InvalidJson(_))
-    ));
-
-    let unsupported = CompactionManifest {
-        protocol_version: 3,
-        ..valid
+fn marker(policy: &[u8]) -> ProtectionMarker {
+    let refs = V2RefLayout::default();
+    ProtectionMarker {
+        schema_version: 1,
+        repository_id: "repo-1".to_string(),
+        policy_id: "ruleset-1".to_string(),
+        policy_sha256: digest(policy),
+        integrator_id: "actions-integrator".to_string(),
+        control_ref: refs.control.to_string(),
+        canonical_prefix: refs.canonical_prefix.to_string(),
+        archive_prefix: refs.archive_prefix.to_string(),
+        inbox_prefix: refs.inbox_prefix.to_string(),
     }
-    .seal();
-    assert_eq!(
-        validate(&unsupported, &context(None, &[])),
-        Err(ValidationError::UnsupportedProtocol(3))
-    );
 }
 
-#[test]
-fn validation_rejects_identity_compatibility_ref_and_retention_errors() {
-    let mut value = manifest(GenerationState::Active, None);
-    value.generation_id.push('0');
-    assert_eq!(
-        validate(&value, &context(None, &[])),
-        Err(ValidationError::InvalidGenerationId)
-    );
-
-    let mut value = manifest(GenerationState::Active, None);
-    value.compatibility.minimum_writer_protocol = 3;
-    value = value.seal();
-    assert_eq!(
-        validate(&value, &context(None, &[])),
-        Err(ValidationError::UnsupportedCompatibility)
-    );
-
-    let mut value = manifest(GenerationState::Active, None);
-    value.source.remote_ref = "knots-v2".to_string();
-    value = value.seal();
-    assert_eq!(
-        validate(&value, &context(None, &[])),
-        Err(ValidationError::InvalidRemoteRef)
-    );
-
-    for remote_ref in [
-        "refs/work/bad ref",
-        "refs/work/topic.lock",
-        "refs/work/@{bad}",
-        "refs//work",
-    ] {
-        let mut value = manifest(GenerationState::Active, None);
-        value.source.remote_ref = remote_ref.to_string();
-        value = value.seal();
-        assert_eq!(
-            validate(&value, &context(None, &[])),
-            Err(ValidationError::InvalidRemoteRef)
-        );
+fn protection_facts<'a>(policy: &'a [u8]) -> ProviderProtectionFacts<'a> {
+    let refs = V2RefLayout::default();
+    ProviderProtectionFacts {
+        repository_id: "repo-1",
+        policy_id: "ruleset-1",
+        policy_bytes: policy,
+        integrator_id: "actions-integrator",
+        control_ref: refs.control,
+        canonical_prefix: refs.canonical_prefix,
+        archive_prefix: refs.archive_prefix,
+        inbox_prefix: refs.inbox_prefix,
+        control_head: Some(CONTROL_HEAD),
+        control_protected: true,
+        canonical_create_only: true,
+        archives_create_only: true,
+        inboxes_writer_scoped: true,
     }
-
-    let mut value = manifest(GenerationState::Active, None);
-    value.retention.max_full_files = 0;
-    value = value.seal();
-    assert_eq!(
-        validate(&value, &context(None, &[])),
-        Err(ValidationError::InvalidRetention)
-    );
 }
 
 #[test]
-fn validation_rejects_unresolved_or_inconsistent_cutoff_facts() {
-    let value = manifest(GenerationState::Active, None);
-    let mut bad_id = value.clone();
-    bad_id.source.cutoff_commit = "not-an-object".to_string();
-    bad_id = bad_id.seal();
+fn protection_requires_matching_provider_facts_and_enforced_policy() {
+    let policy = b"provider policy bytes";
     assert_eq!(
-        validate(&bad_id, &context(None, &[])),
-        Err(ValidationError::InvalidObjectId("cutoff_commit"))
+        validate_protection(None, None),
+        Err(ProtectionError::Unavailable)
     );
+    let marker = marker(policy);
+    let mut facts = protection_facts(policy);
+    facts.control_protected = false;
+    assert_eq!(
+        validate_protection(Some(&marker), Some(&facts)),
+        Err(ProtectionError::PolicyNotEnforced)
+    );
+    let valid = validate_protection(Some(&marker), Some(&protection_facts(policy)))
+        .expect("provider-backed marker validates");
+    assert_eq!(valid.control_head(), Some(CONTROL_HEAD));
+}
 
-    let mut unresolved = context(None, &[]);
-    unresolved.source.cutoff_resolves = false;
-    assert_eq!(
-        validate(&value, &unresolved),
-        Err(ValidationError::UnresolvedSource)
-    );
-
-    let mut wrong_tree = context(None, &[]);
-    wrong_tree.source.index_tree = Some(EVENT_TREE);
-    assert_eq!(
-        validate(&value, &wrong_tree),
-        Err(ValidationError::TreeMismatch("index_tree"))
-    );
-
-    let mut unrelated = context(None, &[]);
-    unrelated.source.cutoff_is_ancestor = false;
-    assert_eq!(
-        validate(&value, &unrelated),
-        Err(ValidationError::CutoffNotAncestor)
-    );
+fn control(
+    epoch: u64,
+    previous_head: Option<&str>,
+    generation: &str,
+    sequence: u64,
+    action: ControlKind,
+) -> ControlRecord {
+    ControlRecord {
+        schema_version: 1,
+        epoch,
+        previous_control_head: previous_head.map(str::to_string),
+        active_generation_id: generation.to_string(),
+        active_generation_commit: COMMIT.to_string(),
+        archive_ref: V2RefLayout::default().archive(generation),
+        acknowledged_writer_heads: vec![writer(sequence)],
+        protection_policy_sha256: digest(b"provider policy bytes"),
+        action,
+    }
 }
 
 #[test]
-fn validation_rejects_missing_corrupt_and_miscounted_snapshots() {
-    let value = manifest(GenerationState::Active, None);
-    let mut missing = context(None, &[]);
-    missing.active_snapshot = None;
-    assert_eq!(
-        validate(&value, &missing),
-        Err(ValidationError::MissingSnapshot("active"))
-    );
-
-    let mut corrupt = context(None, &[]);
-    corrupt.cold_snapshot = Some(b"different");
-    assert_eq!(
-        validate(&value, &corrupt),
-        Err(ValidationError::SnapshotLengthMismatch("cold"))
-    );
-
-    let mut bad_path = value.clone();
-    bad_path.snapshots.active.path = "../checkpoint.snapshot.json".to_string();
-    bad_path = bad_path.seal();
-    assert_eq!(
-        validate(&bad_path, &context(None, &[])),
-        Err(ValidationError::InvalidSnapshotPath("active"))
-    );
-
-    let mut bad_count = value;
-    bad_count.snapshots.cold.records = 2;
-    bad_count = bad_count.seal();
-    assert_eq!(
-        validate(&bad_count, &context(None, &[])),
-        Err(ValidationError::SnapshotCountMismatch("cold"))
-    );
-}
-
-#[test]
-fn validation_rejects_snapshot_digest_json_and_schema_errors() {
-    let mut malformed_digest = manifest(GenerationState::Active, None);
-    malformed_digest.snapshots.active.sha256 = "ABC".to_string();
-    malformed_digest = malformed_digest.seal();
-    assert_eq!(
-        validate(&malformed_digest, &context(None, &[])),
-        Err(ValidationError::InvalidSnapshotDigest("active"))
-    );
-
-    let mut different = active_bytes().to_vec();
-    different[1] = b'X';
-    let mut wrong_digest = context(None, &[]);
-    wrong_digest.active_snapshot = Some(&different);
-    assert_eq!(
-        validate(&manifest(GenerationState::Active, None), &wrong_digest),
-        Err(ValidationError::InvalidSnapshotDigest("active"))
-    );
-
-    let invalid_json = b"not-json";
-    let mut invalid = manifest(GenerationState::Active, None);
-    invalid.snapshots.active = descriptor(
-        ".knots/snapshots/checkpoint-active_catalog.snapshot.json",
-        invalid_json,
-        0,
-    );
-    invalid = invalid.seal();
-    let mut invalid_context = context(None, &[]);
-    invalid_context.active_snapshot = Some(invalid_json);
-    assert_eq!(
-        validate(&invalid, &invalid_context),
-        Err(ValidationError::InvalidSnapshotJson("active"))
-    );
-
-    let wrong_schema = br#"{"schema_version":2,"hot":[],"warm":[]}"#;
-    let mut unsupported = manifest(GenerationState::Active, None);
-    unsupported.snapshots.active = descriptor(
-        ".knots/snapshots/checkpoint-active_catalog.snapshot.json",
-        wrong_schema,
-        0,
-    );
-    unsupported = unsupported.seal();
-    let mut unsupported_context = context(None, &[]);
-    unsupported_context.active_snapshot = Some(wrong_schema);
-    assert_eq!(
-        validate(&unsupported, &unsupported_context),
-        Err(ValidationError::SnapshotSchemaMismatch("active"))
-    );
-}
-
-#[test]
-fn validation_rejects_predecessor_skips_and_cycles() {
-    let value = manifest(GenerationState::Active, Some(OLD_GENERATION));
-    assert_eq!(
-        validate(&value, &context(None, &[])),
-        Err(ValidationError::PredecessorMismatch)
+fn activation_cas_is_monotonic_and_recovery_publishes_a_higher_epoch() {
+    let initial = control(1, None, OLD_GENERATION, 5, ControlKind::Activation);
+    let mut model = ProtocolModel::with_active(CONTROL_HEAD, initial);
+    let next = manifest(Some(OLD_GENERATION), 1);
+    model
+        .prepare(&next)
+        .expect("immutable generation is staged");
+    let activation = control(
+        2,
+        Some(CONTROL_HEAD),
+        &next.generation_id,
+        7,
+        ControlKind::Activation,
     );
     assert_eq!(
-        validate(
-            &value,
-            &context(Some(OLD_GENERATION), &[OLD_GENERATION, OLD_GENERATION]),
-        ),
-        Err(ValidationError::PredecessorCycle)
-    );
-    assert_eq!(
-        validate(
-            &value,
-            &context(Some(OLD_GENERATION), &[value.generation_id.as_str()]),
-        ),
-        Err(ValidationError::PredecessorCycle)
-    );
-}
-
-#[test]
-fn interrupted_prepare_never_changes_the_active_generation() {
-    let previous = OLD_GENERATION;
-    let prepared = manifest(GenerationState::Prepared, Some(previous));
-    let mut model = ProtocolModel::with_active(previous);
-    model.prepare(&prepared).expect("prepare should stage");
-    assert_eq!(
-        model.prepared_generation(),
-        Some(prepared.generation_id.as_str())
-    );
-
-    model.interrupt_prepare();
-    assert_eq!(model.active_generation(), Some(previous));
-    assert_eq!(model.prepared_generation(), None);
-    let mut active = prepared;
-    active.state = GenerationState::Active;
-    assert_eq!(
-        model.activate(Some(previous), &active),
-        Err(ProtocolError::NoPreparedGeneration)
-    );
-}
-
-#[test]
-fn activation_is_compare_and_swap_and_rollback_uses_verified_history() {
-    let previous = OLD_GENERATION;
-    let prepared = manifest(GenerationState::Prepared, Some(previous));
-    let mut active = prepared.clone();
-    active.state = GenerationState::Active;
-    let mut model = ProtocolModel::with_active(previous);
-    model.prepare(&prepared).unwrap();
-    assert_eq!(
-        model.activate(Some("g2-lost-race"), &active),
+        model.activate(Some("stale"), NEXT_CONTROL_HEAD, activation.clone()),
         Err(ProtocolError::ActiveHeadMoved)
     );
-    model.activate(Some(previous), &active).unwrap();
-    assert_eq!(
-        model.active_generation(),
-        Some(active.generation_id.as_str())
-    );
+    model
+        .activate(Some(CONTROL_HEAD), NEXT_CONTROL_HEAD, activation)
+        .expect("exact control-head CAS wins");
 
-    assert_eq!(
-        model.rollback(active.generation_id.as_str(), "g2-unverified"),
-        Err(ProtocolError::UnknownRollbackTarget)
+    let recovery_head = "6666666666666666666666666666666666666666";
+    let recovery = control(
+        3,
+        Some(NEXT_CONTROL_HEAD),
+        OLD_GENERATION,
+        7,
+        ControlKind::Recovery {
+            rollback_of_epoch: 2,
+        },
     );
     model
-        .rollback(active.generation_id.as_str(), previous)
-        .expect("verified predecessor should be restorable");
-    assert_eq!(model.active_generation(), Some(previous));
+        .recover(NEXT_CONTROL_HEAD, recovery_head, recovery)
+        .expect("rollback is a higher recovery epoch");
+    assert_eq!(model.control_head(), Some(recovery_head));
+    assert_eq!(model.active().map(|record| record.epoch), Some(3));
 }
 
 #[test]
-fn protocol_rejects_wrong_states_duplicate_staging_and_mismatched_activation() {
-    let previous = OLD_GENERATION;
-    let prepared = manifest(GenerationState::Prepared, Some(previous));
-    let mut active = prepared.clone();
-    active.state = GenerationState::Active;
-    let mut model = ProtocolModel::with_active(previous);
-    assert_eq!(model.prepare(&active), Err(ProtocolError::WrongState));
-    model.prepare(&prepared).unwrap();
-    assert_eq!(
-        model.prepare(&prepared),
-        Err(ProtocolError::GenerationAlreadyStaged)
+fn recovery_cannot_regress_acknowledged_writer_heads() {
+    let initial = control(1, None, OLD_GENERATION, 7, ControlKind::Activation);
+    let mut model = ProtocolModel::with_active(CONTROL_HEAD, initial);
+    let recovery = control(
+        2,
+        Some(CONTROL_HEAD),
+        OLD_GENERATION,
+        6,
+        ControlKind::Recovery {
+            rollback_of_epoch: 1,
+        },
     );
+    assert_eq!(
+        model.recover(CONTROL_HEAD, NEXT_CONTROL_HEAD, recovery),
+        Err(ProtocolError::WriterHeadRegressed)
+    );
+}
 
-    let mut other = manifest(GenerationState::Active, Some(previous));
-    other.retention.max_full_files = 999;
-    other = other.seal();
-    assert_eq!(
-        model.activate(Some(previous), &other),
-        Err(ProtocolError::PreparedGenerationMismatch)
+#[test]
+fn control_record_must_bind_archive_commit_and_policy_digest() {
+    let initial = control(1, None, OLD_GENERATION, 5, ControlKind::Activation);
+    let mut model = ProtocolModel::with_active(CONTROL_HEAD, initial);
+    let next = manifest(Some(OLD_GENERATION), 1);
+    model.prepare(&next).expect("stage generation");
+    let mut invalid = control(
+        2,
+        Some(CONTROL_HEAD),
+        &next.generation_id,
+        7,
+        ControlKind::Activation,
     );
+    invalid.archive_ref = "refs/heads/unprotected".to_string();
     assert_eq!(
-        model.activate(Some(previous), &prepared),
-        Err(ProtocolError::WrongState)
+        model.activate(Some(CONTROL_HEAD), NEXT_CONTROL_HEAD, invalid),
+        Err(ProtocolError::InvalidControlRecord)
     );
 }
