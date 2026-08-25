@@ -38,7 +38,9 @@ pub(crate) use outbox::{
     mark_outbox_proposed, record_outbox_event, OutboxRecord, WriterEpoch,
 };
 #[cfg(test)]
-pub(crate) use outbox::{list_pending_outbox, rotate_writer_epoch};
+pub(crate) use outbox::{
+    list_pending_outbox, record_legacy_quarantine, rotate_writer_epoch, LegacyQuarantineRecord,
+};
 pub use quarantine::{
     list_quarantined_knots, local_leased_knot_ids, quarantine_knot_if_absent, remove_quarantine,
 };

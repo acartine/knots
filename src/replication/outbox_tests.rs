@@ -8,7 +8,8 @@ use crate::compaction::{
     validate_protection, ProtectionMarker, ProviderProtectionFacts, V2RefLayout,
 };
 use crate::db::{
-    inventory_legacy_files, list_pending_outbox, record_outbox_event, rotate_writer_epoch,
+    assign_pending_outbox, inventory_legacy_files, list_pending_outbox, mark_outbox_proposed,
+    record_legacy_quarantine, record_outbox_event, rotate_writer_epoch, LegacyQuarantineRecord,
 };
 
 #[derive(Default)]
@@ -16,6 +17,7 @@ struct FakeTransport {
     remote_oid: RefCell<Option<String>>,
     publish_calls: Cell<usize>,
     fail_after_remote_update: Cell<bool>,
+    skip_remote_update: Cell<bool>,
 }
 
 impl InboxTransport for FakeTransport {
@@ -45,7 +47,9 @@ impl InboxTransport for FakeTransport {
 
     fn publish(&self, prepared: &PreparedInbox) -> Result<(), SyncError> {
         self.publish_calls.set(self.publish_calls.get() + 1);
-        *self.remote_oid.borrow_mut() = Some(prepared.proposed_oid.clone());
+        if !self.skip_remote_update.get() {
+            *self.remote_oid.borrow_mut() = Some(prepared.proposed_oid.clone());
+        }
         if self.fail_after_remote_update.replace(false) {
             return Err(outbox_error("simulated lost acknowledgement"));
         }
@@ -122,6 +126,131 @@ fn exact_event_id_hash_conflicts_fail_closed() {
         b"second",
     );
     assert!(result.is_err());
+}
+
+#[test]
+fn duplicate_receipts_are_idempotent_and_empty_publish_is_a_noop() {
+    let conn = test_connection();
+    record(&conn, "same-id", b"same");
+    record(&conn, "same-id", b"same");
+    let transport = FakeTransport::default();
+    let publisher = OutboxPublisher::new(&conn, &transport);
+
+    publisher
+        .publish_pending("credential-a", &protection(None), 10)
+        .expect("initial publish");
+    assert!(publisher
+        .publish_pending("credential-a", &protection(None), 10)
+        .expect("empty publish")
+        .is_none());
+}
+
+#[test]
+fn credential_rotation_rejects_pending_rows_then_rotates_when_clear() {
+    let conn = test_connection();
+    record(&conn, "pending", b"pending");
+    let writer = ensure_writer_epoch(&conn, "credential-a").expect("writer");
+    assign_pending_outbox(&conn, &writer, 10).expect("assign pending");
+
+    assert!(ensure_writer_epoch(&conn, "credential-b").is_err());
+    conn.execute("DELETE FROM v2_outbox", [])
+        .expect("clear pending");
+    let rotated = ensure_writer_epoch(&conn, "credential-b").expect("rotate writer");
+    assert_ne!(writer.writer_id, rotated.writer_id);
+}
+
+#[test]
+fn proposed_oid_updates_require_exact_pending_writer_rows() {
+    let conn = test_connection();
+    record(&conn, "pending", b"pending");
+    let writer = ensure_writer_epoch(&conn, "credential-a").expect("writer");
+    assign_pending_outbox(&conn, &writer, 10).expect("assign pending");
+    let ids = vec!["pending".to_string()];
+
+    mark_outbox_proposed(&conn, &writer.writer_id, &ids, "oid-a").expect("first proposal");
+    assert!(mark_outbox_proposed(&conn, &writer.writer_id, &ids, "oid-b").is_err());
+    assert!(mark_outbox_proposed(&conn, "wrong-writer", &ids, "oid-a").is_err());
+}
+
+#[test]
+fn quarantine_inventory_is_idempotent_and_hash_changes_fail_closed() {
+    let conn = test_connection();
+    let mut record = LegacyQuarantineRecord {
+        relative_path: "events/legacy.json".to_string(),
+        content_sha256: "hash-a".to_string(),
+    };
+    record_legacy_quarantine(&conn, &record).expect("first inventory");
+    record_legacy_quarantine(&conn, &record).expect("idempotent inventory");
+    record.content_sha256 = "hash-b".to_string();
+    assert!(record_legacy_quarantine(&conn, &record).is_err());
+}
+
+#[test]
+fn stored_proposals_must_be_uniform_and_match_the_remote() {
+    let conn = test_connection();
+    record(&conn, "event-a", b"a");
+    record(&conn, "event-b", b"b");
+    let writer = ensure_writer_epoch(&conn, "credential-a").expect("writer");
+    assign_pending_outbox(&conn, &writer, 10).expect("assign pending");
+    conn.execute("UPDATE v2_outbox SET proposed_inbox_oid = event_id", [])
+        .expect("set mixed proposals");
+    let transport = FakeTransport::default();
+    assert!(OutboxPublisher::new(&conn, &transport)
+        .publish_pending("credential-a", &protection(None), 10)
+        .is_err());
+
+    conn.execute("UPDATE v2_outbox SET proposed_inbox_oid = 'same-oid'", [])
+        .expect("set uniform proposal");
+    assert!(OutboxPublisher::new(&conn, &transport)
+        .publish_pending("credential-a", &protection(None), 10)
+        .is_err());
+}
+
+#[test]
+fn publication_without_exact_remote_oid_remains_pending() {
+    let conn = test_connection();
+    record(&conn, "event-a", b"a");
+    let transport = FakeTransport::default();
+    transport.skip_remote_update.set(true);
+
+    assert!(OutboxPublisher::new(&conn, &transport)
+        .publish_pending("credential-a", &protection(None), 10)
+        .is_err());
+    let pending: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM v2_outbox WHERE acknowledged_at IS NULL",
+            [],
+            |row| row.get(0),
+        )
+        .expect("pending count");
+    assert_eq!(pending, 1);
+}
+
+#[test]
+fn malformed_writer_and_prepared_inputs_fail_closed() {
+    let conn = test_connection();
+    record(&conn, "event-a", b"a");
+    let writer = ensure_writer_epoch(&conn, "credential-a").expect("writer");
+    let events = assign_pending_outbox(&conn, &writer, 10).expect("assign pending");
+    conn.execute(
+        "UPDATE v2_writer_epoch SET credential_id = '' WHERE writer_id = ?1",
+        [&writer.writer_id],
+    )
+    .expect("corrupt writer scope");
+    assert!(OutboxPublisher::new(&conn, &FakeTransport::default())
+        .publish_pending("credential-a", &protection(None), 10)
+        .is_err());
+
+    let prepared = PreparedInbox {
+        writer_id: "wrong-writer".to_string(),
+        inbox_ref: writer.inbox_ref.clone(),
+        proposed_oid: String::new(),
+        expected_inbox_oid: writer.expected_inbox_oid.clone(),
+        expected_control_oid: None,
+        includes_control_registration: true,
+        event_ids: events.iter().map(|event| event.event_id.clone()).collect(),
+    };
+    assert!(validate_prepared(&writer, &events, None, &prepared).is_err());
 }
 
 #[test]

@@ -103,4 +103,13 @@ mod tests {
         assert!(msg.contains("has spaces"));
         assert!(e.source().is_none());
     }
+
+    #[test]
+    fn database_errors_display_source_and_conversion() {
+        let e = EventWriteError::from(rusqlite::Error::InvalidQuery);
+        assert!(e
+            .to_string()
+            .contains("failed to record durable outbox receipt"));
+        assert!(e.source().is_some());
+    }
 }
