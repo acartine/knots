@@ -9,6 +9,7 @@
     "version-packages": "changeset version && node ./scripts/release/sync-cargo-version.mjs",
     "check-cargo-version": "node ./scripts/release/sync-cargo-version.mjs --check",
     "check-changesets": "node ./scripts/release/check-changesets.mjs",
+    "test-event-log-tools": "node --test ./scripts/event-log-tools.test.mjs",
     "test-release": "node --test ./scripts/release/*.test.mjs"
   },
   "devDependencies": {
