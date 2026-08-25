@@ -19,4 +19,4 @@
 - [x] Require projection-complete replay equivalence and durable conflicts.
 - [x] Prove immutable-first publication, exact control CAS, and recovery epochs.
 - [x] Run focused compaction tests and `make sanity`.
-- [ ] Publish the attributed branch for implementation review.
+- [x] Publish the attributed branch for implementation review.
