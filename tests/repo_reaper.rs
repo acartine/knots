@@ -49,13 +49,12 @@ fn aged_tree(root: &Path, name: &str) -> PathBuf {
     std::fs::write(tree.join("nested").join("file"), b"stale").expect("file should be written");
 
     let long_ago = SystemTime::now() - Duration::from_secs(72 * 3600);
-    let stamp = filetime_from(long_ago);
     for path in [
         tree.join("nested").join("file"),
         tree.join("nested"),
         tree.clone(),
     ] {
-        set_mtime(&path, &stamp);
+        set_mtime(&path, long_ago);
     }
     tree
 }
@@ -67,23 +66,10 @@ fn fresh_tree(root: &Path, name: &str) -> PathBuf {
     tree
 }
 
-fn filetime_from(time: SystemTime) -> String {
-    let secs = time
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .expect("timestamp should be after the unix epoch")
-        .as_secs();
-    format!("@{secs}")
-}
-
-fn set_mtime(path: &Path, stamp: &str) {
-    let status = Command::new("touch")
-        .arg("-h")
-        .arg("-d")
-        .arg(stamp)
-        .arg(path)
-        .status()
-        .expect("touch should run");
-    assert!(status.success(), "touch should succeed for {path:?}");
+fn set_mtime(path: &Path, modified: SystemTime) {
+    let file = std::fs::File::open(path).expect("timestamp target should be openable");
+    file.set_modified(modified)
+        .unwrap_or_else(|error| panic!("timestamp should be set for {path:?}: {error}"));
 }
 
 #[test]
@@ -206,7 +192,7 @@ fn does_not_reap_its_own_cutoff_stamp_file() {
     std::fs::write(&leftover, b"").expect("stamp file should be writable");
     set_mtime(
         &leftover,
-        &filetime_from(SystemTime::now() - Duration::from_secs(72 * 3600)),
+        SystemTime::now() - Duration::from_secs(72 * 3600),
     );
 
     let output = run_reaper(&temp_root, "24");
