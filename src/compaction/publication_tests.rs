@@ -5,17 +5,19 @@ use sha2::{Digest, Sha256};
 
 use super::{GenerationPublisher, PublicationTarget};
 use crate::compaction::{
-    CompactionManifest, Compatibility, GenerationState, Retention, SnapshotDescriptor, SnapshotSet,
-    SourceCheckpoint, SourceFacts, ValidationContext, PROTOCOL_VERSION,
+    validate_protection, CompactionManifest, Compatibility, EventIndexEntry, EventPack,
+    ProtectionMarker, ProviderProtectionFacts, SnapshotDescriptor, SnapshotSet, SourceCheckpoint,
+    SourceFacts, V2RefLayout, ValidationContext, WriterHead, LEGACY_REF, PROTOCOL_VERSION,
 };
 
-const ACTIVE_REF: &str = "refs/heads/knots-v2";
-const LEGACY_REF: &str = "refs/heads/knots";
+const COMMIT: &str = "1111111111111111111111111111111111111111";
+const INDEX_TREE: &str = "2222222222222222222222222222222222222222";
+const EVENT_TREE: &str = "3333333333333333333333333333333333333333";
 
 #[test]
-fn staging_and_activation_are_create_only_compare_and_swap() {
-    let remote_ws = knots_test_support::workspace("knots-generation-remote");
-    let repo_ws = knots_test_support::workspace("knots-generation-publisher");
+fn immutable_generation_is_published_before_control_cas() {
+    let remote_ws = knots_test_support::workspace("knots-v2-protected-remote");
+    let repo_ws = knots_test_support::workspace("knots-v2-protected-publisher");
     let remote = remote_ws.path();
     let repo = repo_ws.path();
     git(remote, &["init", "--bare"]);
@@ -30,146 +32,209 @@ fn staging_and_activation_are_create_only_compare_and_swap() {
         &["remote", "add", "origin", &remote.display().to_string()],
     );
     let commit = output(repo, &["rev-parse", "HEAD"]);
-
-    let (prepared, active, active_bytes, cold_bytes) = manifests();
-    let prepared_context = context(&prepared, &active_bytes, &cold_bytes);
+    let (manifest, active, cold, pack) = manifest();
+    let pack_refs = [(manifest.packs[0].pack_id.as_str(), pack.as_slice())];
+    let context = context(&active, &cold, &pack_refs);
+    let protection = protection(None);
     let publisher = GenerationPublisher::new();
-    let staging_ref = format!("refs/heads/knots-v2-staging/{}", prepared.generation_id);
-    publisher
-        .stage(
-            target(repo, &staging_ref, &commit),
-            &prepared,
-            &prepared_context,
-        )
-        .expect("first staging publication wins");
-    std::fs::write(repo.join("racer"), "two").expect("write racing commit");
-    git(repo, &["add", "racer"]);
-    git(repo, &["commit", "-m", "racing publication"]);
-    let competing_commit = output(repo, &["rev-parse", "HEAD"]);
-    assert!(publisher
-        .stage(
-            target(repo, &staging_ref, &competing_commit),
-            &prepared,
-            &prepared_context,
-        )
-        .is_err());
 
-    let active_context = context(&active, &active_bytes, &cold_bytes);
     publisher
-        .activate(
-            target(repo, ACTIVE_REF, &competing_commit),
-            None,
-            &active,
-            &active_context,
+        .publish_immutable(
+            PublicationTarget {
+                repo,
+                remote: "origin",
+                commit: &commit,
+            },
+            &manifest,
+            &context,
+            &protection,
         )
-        .expect("first activation wins");
-    assert!(publisher
-        .activate(
-            target(repo, ACTIVE_REF, &commit),
+        .expect("immutable objects publish create-only");
+
+    let refs = V2RefLayout::default();
+    assert_eq!(
+        output(
+            remote,
+            &["rev-parse", &refs.canonical(&manifest.generation_id)]
+        ),
+        commit
+    );
+    assert_eq!(
+        output(
+            remote,
+            &["rev-parse", &refs.archive(&manifest.generation_id)]
+        ),
+        commit
+    );
+    assert!(!ref_exists(remote, refs.control));
+
+    publisher
+        .activate_control(
+            PublicationTarget {
+                repo,
+                remote: "origin",
+                commit: &commit,
+            },
             None,
-            &active,
-            &active_context,
+            &protection,
         )
-        .is_err());
+        .expect("control CAS is last");
+    assert_eq!(output(remote, &["rev-parse", refs.control]), commit);
 }
 
 #[test]
-fn legacy_writes_cannot_move_the_generation_two_ref() {
-    let remote_ws = knots_test_support::workspace("knots-generation-isolation-remote");
-    let repo_ws = knots_test_support::workspace("knots-generation-isolation-repo");
+fn legacy_push_cannot_change_canonical_v2_ref() {
+    let remote_ws = knots_test_support::workspace("knots-v2-legacy-isolation-remote");
+    let repo_ws = knots_test_support::workspace("knots-v2-legacy-isolation-repo");
     let remote = remote_ws.path();
     let repo = repo_ws.path();
     git(remote, &["init", "--bare"]);
     git(repo, &["init"]);
     git(repo, &["config", "user.email", "test@example.com"]);
     git(repo, &["config", "user.name", "Test"]);
-    std::fs::write(repo.join("seed"), "one").expect("write seed");
+    std::fs::write(repo.join("seed"), "canonical").expect("seed canonical");
     git(repo, &["add", "seed"]);
-    git(repo, &["commit", "-m", "first"]);
+    git(repo, &["commit", "-m", "canonical"]);
     git(
         repo,
         &["remote", "add", "origin", &remote.display().to_string()],
     );
-    git(repo, &["push", "origin", &format!("HEAD:{ACTIVE_REF}")]);
-    let active = output(remote, &["rev-parse", ACTIVE_REF]);
+    let canonical_ref = V2RefLayout::default().canonical("fixture");
+    git(repo, &["push", "origin", &format!("HEAD:{canonical_ref}")]);
+    let before = output(remote, &["rev-parse", &canonical_ref]);
 
-    std::fs::write(repo.join("seed"), "two").expect("advance legacy");
-    git(repo, &["commit", "-am", "legacy write"]);
+    std::fs::write(repo.join("legacy"), "v0.17.6 event").expect("legacy event");
+    git(repo, &["add", "legacy"]);
+    git(repo, &["commit", "-m", "knots: publish local events"]);
     git(repo, &["push", "origin", &format!("HEAD:{LEGACY_REF}")]);
-    assert_eq!(output(remote, &["rev-parse", ACTIVE_REF]), active);
-    assert_ne!(output(remote, &["rev-parse", LEGACY_REF]), active);
+    assert_eq!(output(remote, &["rev-parse", &canonical_ref]), before);
+    assert_ne!(output(remote, &["rev-parse", LEGACY_REF]), before);
 }
 
-fn manifests() -> (CompactionManifest, CompactionManifest, Vec<u8>, Vec<u8>) {
-    let active_bytes = br#"{"schema_version":1,"hot":[],"warm":[]}"#.to_vec();
-    let cold_bytes = br#"{"schema_version":1,"cold":[]}"#.to_vec();
-    let manifest = CompactionManifest {
+fn manifest() -> (CompactionManifest, Vec<u8>, Vec<u8>, Vec<u8>) {
+    let active = br#"{"schema_version":1,"hot":[],"warm":[]}"#.to_vec();
+    let cold = br#"{"schema_version":1,"cold":[]}"#.to_vec();
+    let pack = br#"{"event_id":"event-1"}"#.to_vec();
+    let pack_hash = digest(&pack);
+    let value = CompactionManifest {
         protocol_version: PROTOCOL_VERSION,
         generation_id: String::new(),
-        state: GenerationState::Prepared,
+        predecessor_generation: None,
+        predecessor_control_epoch: 0,
         source: SourceCheckpoint {
-            remote_ref: LEGACY_REF.to_string(),
-            cutoff_commit: "a".repeat(40),
-            index_tree: "b".repeat(40),
-            event_tree: "c".repeat(40),
+            legacy_ref: LEGACY_REF.to_string(),
+            cutoff_commit: COMMIT.to_string(),
+            index_tree: INDEX_TREE.to_string(),
+            event_tree: EVENT_TREE.to_string(),
         },
+        writer_heads: vec![WriterHead {
+            writer_id: "writer-a".to_string(),
+            inbox_ref: V2RefLayout::default().inbox("writer-a"),
+            commit: COMMIT.to_string(),
+            sequence: 1,
+        }],
         snapshots: SnapshotSet {
-            active: descriptor(".knots/snapshots/active.snapshot.json", &active_bytes),
-            cold: descriptor(".knots/snapshots/cold.snapshot.json", &cold_bytes),
+            active: descriptor(
+                ".knots/v2/generations/current/active.snapshot.json",
+                &active,
+            ),
+            cold: descriptor(".knots/v2/generations/current/cold.snapshot.json", &cold),
         },
-        retention: Retention {
-            max_full_files: 1000,
-            max_index_files: 1000,
-        },
+        packs: vec![EventPack {
+            pack_id: format!("pack-{pack_hash}"),
+            path: format!(".knots/v2/packs/pack-{pack_hash}.pack"),
+            sha256: pack_hash,
+            bytes: pack.len() as u64,
+            events: vec![EventIndexEntry {
+                event_id: "event-1".to_string(),
+                content_sha256: digest(&pack),
+                offset: 0,
+                bytes: pack.len() as u64,
+            }],
+        }],
         compatibility: Compatibility {
             minimum_reader_protocol: PROTOCOL_VERSION,
             minimum_writer_protocol: PROTOCOL_VERSION,
         },
-        previous_generation: None,
     }
     .seal();
-    let active = CompactionManifest {
-        state: GenerationState::Active,
-        ..manifest.clone()
-    };
-    (manifest, active, active_bytes, cold_bytes)
-}
-
-fn target<'a>(repo: &'a Path, remote_ref: &'a str, commit: &'a str) -> PublicationTarget<'a> {
-    PublicationTarget {
-        repo,
-        remote: "origin",
-        remote_ref,
-        commit,
-    }
+    (value, active, cold, pack)
 }
 
 fn descriptor(path: &str, bytes: &[u8]) -> SnapshotDescriptor {
     SnapshotDescriptor {
         path: path.to_string(),
-        sha256: format!("{:x}", Sha256::digest(bytes)),
+        sha256: digest(bytes),
         bytes: bytes.len() as u64,
         records: 0,
     }
 }
 
 fn context<'a>(
-    manifest: &'a CompactionManifest,
     active: &'a [u8],
     cold: &'a [u8],
+    packs: &'a [(&'a str, &'a [u8])],
 ) -> ValidationContext<'a> {
     ValidationContext {
         active_snapshot: Some(active),
         cold_snapshot: Some(cold),
+        packs,
         source: SourceFacts {
             cutoff_resolves: true,
             cutoff_is_ancestor: true,
-            index_tree: Some(&manifest.source.index_tree),
-            event_tree: Some(&manifest.source.event_tree),
+            index_tree: Some(INDEX_TREE),
+            event_tree: Some(EVENT_TREE),
         },
         expected_predecessor: None,
-        predecessor_chain: &[],
+        expected_control_epoch: 0,
     }
+}
+
+fn protection(control_head: Option<&str>) -> crate::compaction::ValidatedProtection {
+    let policy = b"enforced provider policy";
+    let refs = V2RefLayout::default();
+    let marker = ProtectionMarker {
+        schema_version: 1,
+        repository_id: "repo-1".to_string(),
+        policy_id: "policy-1".to_string(),
+        policy_sha256: digest(policy),
+        integrator_id: "integrator".to_string(),
+        control_ref: refs.control.to_string(),
+        canonical_prefix: refs.canonical_prefix.to_string(),
+        archive_prefix: refs.archive_prefix.to_string(),
+        inbox_prefix: refs.inbox_prefix.to_string(),
+    };
+    let facts = ProviderProtectionFacts {
+        repository_id: "repo-1",
+        policy_id: "policy-1",
+        policy_bytes: policy,
+        integrator_id: "integrator",
+        control_ref: refs.control,
+        canonical_prefix: refs.canonical_prefix,
+        archive_prefix: refs.archive_prefix,
+        inbox_prefix: refs.inbox_prefix,
+        control_head,
+        control_protected: true,
+        canonical_create_only: true,
+        archives_create_only: true,
+        inboxes_writer_scoped: true,
+    };
+    validate_protection(Some(&marker), Some(&facts)).expect("valid protection")
+}
+
+fn digest(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
+}
+
+fn ref_exists(repo: &Path, reference: &str) -> bool {
+    Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(["rev-parse", "--verify", reference])
+        .output()
+        .expect("run git")
+        .status
+        .success()
 }
 
 fn git(repo: &Path, args: &[&str]) {

@@ -6,7 +6,10 @@ use std::path::{Component, Path};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use super::{CompactionManifest, SnapshotDescriptor, PROTOCOL_VERSION};
+use super::{
+    CompactionManifest, EventPack, SnapshotDescriptor, SourceCheckpoint, V2RefLayout,
+    CANONICAL_ROOT, PROTOCOL_VERSION,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct SourceFacts<'a> {
@@ -20,9 +23,10 @@ pub(crate) struct SourceFacts<'a> {
 pub(crate) struct ValidationContext<'a> {
     pub active_snapshot: Option<&'a [u8]>,
     pub cold_snapshot: Option<&'a [u8]>,
+    pub packs: &'a [(&'a str, &'a [u8])],
     pub source: SourceFacts<'a>,
     pub expected_predecessor: Option<&'a str>,
-    pub predecessor_chain: &'a [&'a str],
+    pub expected_control_epoch: u64,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -31,26 +35,32 @@ pub(crate) enum ValidationError {
     UnsupportedProtocol(u32),
     UnsupportedCompatibility,
     InvalidGenerationId,
-    InvalidRemoteRef,
     InvalidObjectId(&'static str),
+    InvalidLegacyRef,
     UnresolvedSource,
     TreeMismatch(&'static str),
     CutoffNotAncestor,
     MissingSnapshot(&'static str),
-    InvalidSnapshotPath(&'static str),
-    InvalidSnapshotDigest(&'static str),
-    SnapshotLengthMismatch(&'static str),
+    InvalidV2Path(&'static str),
+    InvalidDigest(&'static str),
+    LengthMismatch(&'static str),
     InvalidSnapshotJson(&'static str),
     SnapshotSchemaMismatch(&'static str),
     SnapshotCountMismatch(&'static str),
-    InvalidRetention,
     PredecessorMismatch,
-    PredecessorCycle,
+    ControlEpochMismatch,
+    InvalidWriterHead,
+    DuplicateWriter,
+    MissingPack,
+    InvalidPackId,
+    DuplicatePack,
+    InvalidEventIndex,
+    DuplicateEvent,
 }
 
 impl fmt::Display for ValidationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "invalid compaction manifest: {self:?}")
+        write!(f, "invalid protocol-v2 manifest: {self:?}")
     }
 }
 
@@ -71,7 +81,7 @@ pub(crate) fn validate(
     context: &ValidationContext<'_>,
 ) -> Result<(), ValidationError> {
     validate_header(manifest)?;
-    validate_source(manifest, &context.source)?;
+    validate_source(&manifest.source, &context.source)?;
     validate_snapshot(
         "active",
         &manifest.snapshots.active,
@@ -84,7 +94,14 @@ pub(crate) fn validate(
         context.cold_snapshot,
         &["cold"],
     )?;
-    validate_predecessors(manifest, context)?;
+    validate_writers(manifest)?;
+    validate_packs(manifest, context.packs)?;
+    if manifest.predecessor_generation.as_deref() != context.expected_predecessor {
+        return Err(ValidationError::PredecessorMismatch);
+    }
+    if manifest.predecessor_control_epoch != context.expected_control_epoch {
+        return Err(ValidationError::ControlEpochMismatch);
+    }
     Ok(())
 }
 
@@ -102,23 +119,20 @@ fn validate_header(manifest: &CompactionManifest) -> Result<(), ValidationError>
     if manifest.generation_id != manifest.expected_generation_id() {
         return Err(ValidationError::InvalidGenerationId);
     }
-    if !valid_remote_ref(&manifest.source.remote_ref) {
-        return Err(ValidationError::InvalidRemoteRef);
-    }
-    if manifest.retention.max_full_files == 0 || manifest.retention.max_index_files == 0 {
-        return Err(ValidationError::InvalidRetention);
-    }
     Ok(())
 }
 
 fn validate_source(
-    manifest: &CompactionManifest,
+    source: &SourceCheckpoint,
     facts: &SourceFacts<'_>,
 ) -> Result<(), ValidationError> {
+    if source.legacy_ref != V2RefLayout::default().legacy {
+        return Err(ValidationError::InvalidLegacyRef);
+    }
     for (name, object_id) in [
-        ("cutoff_commit", manifest.source.cutoff_commit.as_str()),
-        ("index_tree", manifest.source.index_tree.as_str()),
-        ("event_tree", manifest.source.event_tree.as_str()),
+        ("cutoff_commit", source.cutoff_commit.as_str()),
+        ("index_tree", source.index_tree.as_str()),
+        ("event_tree", source.event_tree.as_str()),
     ] {
         if !valid_object_id(object_id) {
             return Err(ValidationError::InvalidObjectId(name));
@@ -127,10 +141,10 @@ fn validate_source(
     if !facts.cutoff_resolves {
         return Err(ValidationError::UnresolvedSource);
     }
-    if facts.index_tree != Some(manifest.source.index_tree.as_str()) {
+    if facts.index_tree != Some(source.index_tree.as_str()) {
         return Err(ValidationError::TreeMismatch("index_tree"));
     }
-    if facts.event_tree != Some(manifest.source.event_tree.as_str()) {
+    if facts.event_tree != Some(source.event_tree.as_str()) {
         return Err(ValidationError::TreeMismatch("event_tree"));
     }
     if !facts.cutoff_is_ancestor {
@@ -145,41 +159,23 @@ fn validate_snapshot(
     bytes: Option<&[u8]>,
     record_fields: &[&str],
 ) -> Result<(), ValidationError> {
-    if !valid_snapshot_path(&descriptor.path) {
-        return Err(ValidationError::InvalidSnapshotPath(kind));
-    }
-    if !valid_digest(&descriptor.sha256) {
-        return Err(ValidationError::InvalidSnapshotDigest(kind));
+    if !valid_v2_path(&descriptor.path, ".snapshot.json") {
+        return Err(ValidationError::InvalidV2Path(kind));
     }
     let bytes = bytes.ok_or(ValidationError::MissingSnapshot(kind))?;
-    if descriptor.bytes != bytes.len() as u64 {
-        return Err(ValidationError::SnapshotLengthMismatch(kind));
-    }
-    let digest = format!("{:x}", Sha256::digest(bytes));
-    if descriptor.sha256 != digest {
-        return Err(ValidationError::InvalidSnapshotDigest(kind));
-    }
+    validate_bytes(kind, &descriptor.sha256, descriptor.bytes, bytes)?;
     let value: Value =
         serde_json::from_slice(bytes).map_err(|_| ValidationError::InvalidSnapshotJson(kind))?;
-    validate_snapshot_contents(kind, descriptor, &value, record_fields)
-}
-
-fn validate_snapshot_contents(
-    kind: &'static str,
-    descriptor: &SnapshotDescriptor,
-    value: &Value,
-    record_fields: &[&str],
-) -> Result<(), ValidationError> {
     if value.get("schema_version").and_then(Value::as_u64) != Some(1) {
         return Err(ValidationError::SnapshotSchemaMismatch(kind));
     }
     let mut count = 0u64;
     for field in record_fields {
-        let records = value
+        count += value
             .get(field)
             .and_then(Value::as_array)
-            .ok_or(ValidationError::InvalidSnapshotJson(kind))?;
-        count += records.len() as u64;
+            .ok_or(ValidationError::InvalidSnapshotJson(kind))?
+            .len() as u64;
     }
     if count != descriptor.records {
         return Err(ValidationError::SnapshotCountMismatch(kind));
@@ -187,42 +183,99 @@ fn validate_snapshot_contents(
     Ok(())
 }
 
-fn validate_predecessors(
-    manifest: &CompactionManifest,
-    context: &ValidationContext<'_>,
-) -> Result<(), ValidationError> {
-    if manifest.previous_generation.as_deref() != context.expected_predecessor {
-        return Err(ValidationError::PredecessorMismatch);
-    }
-    let mut seen = HashSet::new();
-    seen.insert(manifest.generation_id.as_str());
-    for generation in context.predecessor_chain {
-        if !seen.insert(*generation) {
-            return Err(ValidationError::PredecessorCycle);
+fn validate_writers(manifest: &CompactionManifest) -> Result<(), ValidationError> {
+    let layout = V2RefLayout::default();
+    let mut writers = HashSet::new();
+    for head in &manifest.writer_heads {
+        if head.writer_id.is_empty()
+            || head.inbox_ref != layout.inbox(&head.writer_id)
+            || !valid_object_id(&head.commit)
+        {
+            return Err(ValidationError::InvalidWriterHead);
         }
-    }
-    if context.predecessor_chain.first().copied() != context.expected_predecessor {
-        return Err(ValidationError::PredecessorMismatch);
+        if !writers.insert(&head.writer_id) {
+            return Err(ValidationError::DuplicateWriter);
+        }
     }
     Ok(())
 }
 
-fn valid_remote_ref(value: &str) -> bool {
-    if !value.starts_with("refs/")
-        || value.ends_with(['/', '.'])
-        || value.contains("..")
-        || value.contains("//")
-        || value.contains("@{")
-        || value
-            .bytes()
-            .any(|byte| byte <= b' ' || b"~^:?*[\\".contains(&byte))
-    {
-        return false;
+fn validate_packs(
+    manifest: &CompactionManifest,
+    pack_bytes: &[(&str, &[u8])],
+) -> Result<(), ValidationError> {
+    let mut pack_ids = HashSet::new();
+    let mut event_ids = HashSet::new();
+    for pack in &manifest.packs {
+        if !pack_ids.insert(&pack.pack_id) {
+            return Err(ValidationError::DuplicatePack);
+        }
+        validate_pack(pack, pack_bytes, &mut event_ids)?;
     }
-    value
-        .split('/')
-        .skip(1)
-        .all(|part| !part.is_empty() && !part.starts_with('.') && !part.ends_with(".lock"))
+    Ok(())
+}
+
+fn validate_pack(
+    pack: &EventPack,
+    pack_bytes: &[(&str, &[u8])],
+    event_ids: &mut HashSet<String>,
+) -> Result<(), ValidationError> {
+    if pack.pack_id != pack.expected_pack_id()
+        || !valid_v2_path(&pack.path, ".pack")
+        || !pack.path.ends_with(&format!("{}.pack", pack.pack_id))
+    {
+        return Err(ValidationError::InvalidPackId);
+    }
+    let bytes = pack_bytes
+        .iter()
+        .find_map(|(id, bytes)| (*id == pack.pack_id).then_some(*bytes))
+        .ok_or(ValidationError::MissingPack)?;
+    validate_bytes("pack", &pack.sha256, pack.bytes, bytes)?;
+    for event in &pack.events {
+        if event.event_id.is_empty() || !event_ids.insert(event.event_id.clone()) {
+            return Err(ValidationError::DuplicateEvent);
+        }
+        let end = event
+            .offset
+            .checked_add(event.bytes)
+            .and_then(|value| usize::try_from(value).ok())
+            .ok_or(ValidationError::InvalidEventIndex)?;
+        let start =
+            usize::try_from(event.offset).map_err(|_| ValidationError::InvalidEventIndex)?;
+        let raw = bytes
+            .get(start..end)
+            .ok_or(ValidationError::InvalidEventIndex)?;
+        if !valid_digest(&event.content_sha256)
+            || event.content_sha256 != format!("{:x}", Sha256::digest(raw))
+        {
+            return Err(ValidationError::InvalidEventIndex);
+        }
+    }
+    Ok(())
+}
+
+fn validate_bytes(
+    kind: &'static str,
+    expected_digest: &str,
+    expected_len: u64,
+    bytes: &[u8],
+) -> Result<(), ValidationError> {
+    if expected_len != bytes.len() as u64 {
+        return Err(ValidationError::LengthMismatch(kind));
+    }
+    if !valid_digest(expected_digest) || expected_digest != format!("{:x}", Sha256::digest(bytes)) {
+        return Err(ValidationError::InvalidDigest(kind));
+    }
+    Ok(())
+}
+
+fn valid_v2_path(value: &str, suffix: &str) -> bool {
+    let path = Path::new(value);
+    path.starts_with(CANONICAL_ROOT)
+        && value.ends_with(suffix)
+        && path
+            .components()
+            .all(|component| matches!(component, Component::Normal(_)))
 }
 
 fn valid_object_id(value: &str) -> bool {
@@ -234,14 +287,4 @@ fn valid_digest(value: &str) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-}
-
-fn valid_snapshot_path(value: &str) -> bool {
-    let path = Path::new(value);
-    let mut components = path.components();
-    components.next() == Some(Component::Normal(".knots".as_ref()))
-        && components.next() == Some(Component::Normal("snapshots".as_ref()))
-        && components.clone().count() == 1
-        && components.all(|component| matches!(component, Component::Normal(_)))
-        && value.ends_with(".snapshot.json")
 }
