@@ -26,3 +26,6 @@ pub(crate) use validation::{
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod protocol_coverage_tests;
