@@ -13,6 +13,7 @@ mod cli_scope;
 mod cli_skills;
 mod cli_sync_ref;
 mod cli_workflow;
+mod compaction;
 mod completions;
 mod db;
 mod dispatch;
