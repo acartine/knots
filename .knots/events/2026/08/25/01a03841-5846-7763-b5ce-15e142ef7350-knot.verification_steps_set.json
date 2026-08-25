@@ -1,0 +1,14 @@
+{
+  "event_id": "01a03841-5846-7763-b5ce-15e142ef7350",
+  "occurred_at": "2026-08-25T09:30:01.652386Z",
+  "knot_id": "knots-abb0",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "A knot with an open blocked_by is refused by claim and peek, and the error names the blocker and the startable chain root.",
+      "The same knot claims normally once the blocker reaches shipped/abandoned/deferred.",
+      "`kno poll` never returns a knot with an open blocked_by.",
+      "A deterministic test covers a two-deep chain (A blocked_by B blocked_by C): claiming A names C as the startable root."
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03841-585a-79e3-ad02-64cb47196649",
+  "occurred_at": "2026-08-25T09:30:01.652386Z",
+  "knot_id": "knots-abb0",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "origin:quilt-coach"
+  }
+}

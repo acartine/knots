@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03841-5834-7cb2-94da-f1d11d768a40",
+  "occurred_at": "2026-08-25T09:30:01.652386Z",
+  "knot_id": "knots-abb0",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\n`kno claim <id>` (and `--peek`) refuses a knot in state `blocked`, but happily serves a knot whose graph carries open `blocked_by` edges. Measured 2026-08-25 in the quilt project: `kno claim quilt-6dae --peek` returned the full action prompt while 6dae had an open blocked_by chain (6dae -> caf0 -> e75d). Dispatched agents then spin up, read the edges, and quit -- wasted spin-ups, and rendered dispatch lists cannot close the gap because the graph churns hourly.\n\nFix: at claim time (claim, poll, poll --claim), resolve the knot's blocked_by edges against live states; refuse when any blocker is non-terminal, with an error naming the open blockers AND the startable root(s) of each chain (follow blocked_by transitively to knots with no open blockers), e.g.: \"refused: blocked by quilt-caf0 (open); chain starts at quilt-e75d\". Peek shows the same refusal. States shipped/abandoned/deferred count as closed blockers.\n\n(Provenance: minted from the quilt execution-coach session 2026-08-25 after quilt-caf0's stale \"unblocked\" dispatch; companion of knots-2c76.)",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "claim and poll must refuse a knot with open blocked_by edges",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}
