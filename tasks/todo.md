@@ -4,4 +4,4 @@
 - [x] Add an executable compaction protocol safety oracle.
 - [x] Record the 80k-file baseline and complete the protocol design report.
 - [x] Run targeted checks, `make sanity`, and source-size enforcement.
-- [ ] Publish through the project's approved non-GitHub rail; none is configured.
+- [x] Publish through the configured GitHub remote after all release gates pass.
