@@ -5,7 +5,8 @@ ARTIFACT_MAX_AGE_HOURS ?= 24
 SANITY_TARGET_DIR ?= target/sanity
 SANITY_COVERAGE_TARGET_DIR ?= target/sanity-coverage
 
-.PHONY: fmt lint test coverage sanity reap-artifacts install-hooks check-threshold loom-bundle demo demo-gif
+.PHONY: fmt lint test coverage sanity reap-artifacts install-hooks check-threshold loom-bundle \
+	event-log-fixture event-log-inventory demo demo-gif
 
 fmt:
 	cargo fmt --all -- --check
@@ -17,6 +18,7 @@ lint: reap-artifacts
 
 test: reap-artifacts
 	CARGO_TARGET_DIR=$(SANITY_TARGET_DIR) cargo test --all-targets --all-features
+	npm run test-event-log-tools
 	npm run test-release
 
 coverage: reap-artifacts
@@ -43,6 +45,14 @@ check-threshold:
 
 loom-bundle:
 	loom build loom/work_sdlc --emit knots-bundle > loom/work_sdlc/dist/bundle.json
+
+event-log-fixture:
+	@test -n "$(EVENT_LOG_ROOT)" || { echo "EVENT_LOG_ROOT is required" >&2; exit 1; }
+	node scripts/event-log-fixture.mjs --root "$(EVENT_LOG_ROOT)" $(EVENT_LOG_FIXTURE_ARGS)
+
+event-log-inventory:
+	@test -n "$(EVENT_LOG_ROOT)" || { echo "EVENT_LOG_ROOT is required" >&2; exit 1; }
+	node scripts/event-log-inventory.mjs --root "$(EVENT_LOG_ROOT)" $(EVENT_LOG_INVENTORY_ARGS)
 
 demo:
 	@echo 'Run: asciinema rec --overwrite -c "bash scripts/demo.sh" assets/demo.cast'

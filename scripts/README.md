@@ -2,6 +2,13 @@
 
 Build automation, release tooling, and git hooks.
 
+## Event-log analysis
+
+- **`event-log-fixture.mjs`** — creates the deterministic 80,000-file compaction fixture
+- **`event-log-inventory.mjs`** — reports store size, event rates, and no-op scan timings
+- Run both through `make event-log-fixture` and `make event-log-inventory` with
+  `EVENT_LOG_ROOT` set to an empty fixture directory.
+
 ## scripts/repo/
 
 - **`pre-push-sanity.sh`** — runs `make coverage` before every push
