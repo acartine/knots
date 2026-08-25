@@ -17,7 +17,7 @@ fn cold_bytes() -> &'static [u8] {
     br#"{"schema_version":1,"cold":[{}]}"#
 }
 
-fn pack_bytes() -> &'static [u8] {
+fn raw_event_bytes() -> &'static [u8] {
     br#"{"event_id":"event-1","body":"raw bytes retained"}"#
 }
 
@@ -44,7 +44,7 @@ fn writer(sequence: u64) -> WriterHead {
 }
 
 fn manifest(previous: Option<&str>, epoch: u64) -> CompactionManifest {
-    let pack_sha = digest(pack_bytes());
+    let pack = fixture_pack();
     CompactionManifest {
         protocol_version: PROTOCOL_VERSION,
         generation_id: String::new(),
@@ -69,18 +69,12 @@ fn manifest(previous: Option<&str>, epoch: u64) -> CompactionManifest {
                 1,
             ),
         },
-        packs: vec![EventPack {
-            pack_id: format!("pack-{pack_sha}"),
-            path: format!(".knots/v2/packs/pack-{pack_sha}.pack"),
-            sha256: pack_sha,
-            bytes: pack_bytes().len() as u64,
-            events: vec![EventIndexEntry {
-                event_id: "event-1".to_string(),
-                content_sha256: digest(pack_bytes()),
-                offset: 0,
-                bytes: pack_bytes().len() as u64,
-            }],
-        }],
+        projections: descriptor(
+            ".knots/v2/generations/current/state.projections.json",
+            fixture_projection_bytes(),
+            0,
+        ),
+        packs: vec![pack.descriptor],
         compatibility: Compatibility {
             minimum_reader_protocol: PROTOCOL_VERSION,
             minimum_writer_protocol: PROTOCOL_VERSION,
@@ -99,6 +93,7 @@ fn context<'a>(
     ValidationContext {
         active_snapshot: Some(active_bytes()),
         cold_snapshot: Some(cold_bytes()),
+        projections: Some(fixture_projection_bytes()),
         packs,
         source: SourceFacts {
             cutoff_resolves: true,
@@ -118,7 +113,10 @@ fn assert_invalid(
     expected: ValidationError,
 ) {
     assert_eq!(
-        validate(value, &context(value, pack_bytes(), previous, epoch)),
+        validate(
+            value,
+            &context(value, &fixture_pack().compressed, previous, epoch)
+        ),
         Err(expected)
     );
 }
@@ -132,16 +130,18 @@ fn complete_v2_manifest_round_trips_with_lossless_pack_index() {
         V2RefLayout::default().archive(&value.generation_id)
     );
     let bytes = serde_json::to_vec(&value).expect("serialize manifest");
+    let pack = fixture_pack();
     let parsed = parse_and_validate(
         &bytes,
-        &context(&value, pack_bytes(), Some(OLD_GENERATION), 4),
+        &context(&value, &pack.compressed, Some(OLD_GENERATION), 4),
     )
     .expect("complete manifest validates");
     let event = &parsed.packs[0].events[0];
-    let raw = &pack_bytes()[event.offset as usize..(event.offset + event.bytes) as usize];
+    let decoded = zstd::stream::decode_all(pack.compressed.as_slice()).expect("pack decodes");
+    let raw = &decoded[event.offset as usize..(event.offset + event.bytes) as usize];
     assert_eq!(
         raw,
-        pack_bytes(),
+        raw_event_bytes(),
         "raw event bytes remain exactly recoverable"
     );
 }
@@ -152,7 +152,10 @@ fn canonical_paths_are_v2_only_and_legacy_paths_are_rejected() {
     value.snapshots.active.path = ".knots/snapshots/legacy.snapshot.json".to_string();
     value = value.seal();
     assert_eq!(
-        validate(&value, &context(&value, pack_bytes(), None, 0)),
+        validate(
+            &value,
+            &context(&value, &fixture_pack().compressed, None, 0)
+        ),
         Err(ValidationError::InvalidV2Path("active"))
     );
     let refs = V2RefLayout::default();
@@ -174,7 +177,10 @@ fn pack_tampering_and_duplicate_event_ids_fail_validation() {
     duplicate.packs.push(duplicate.packs[0].clone());
     duplicate = duplicate.seal();
     assert_eq!(
-        validate(&duplicate, &context(&duplicate, pack_bytes(), None, 0)),
+        validate(
+            &duplicate,
+            &context(&duplicate, &fixture_pack().compressed, None, 0)
+        ),
         Err(ValidationError::DuplicatePack)
     );
 }
@@ -187,7 +193,7 @@ fn unknown_fields_and_incomplete_manifests_fail_closed() {
     assert!(matches!(
         parse_and_validate(
             &serde_json::to_vec(&json).unwrap(),
-            &context(&value, pack_bytes(), None, 0)
+            &context(&value, &fixture_pack().compressed, None, 0)
         ),
         Err(ValidationError::InvalidJson(_))
     ));
@@ -308,7 +314,7 @@ fn manifest_validation_rejects_each_authority_mismatch() {
     let wrong_digest = digest(b"wrong pack bytes");
     value.packs[0].sha256 = wrong_digest.clone();
     value.packs[0].pack_id = format!("pack-{wrong_digest}");
-    value.packs[0].path = format!(".knots/v2/packs/pack-{wrong_digest}.pack");
+    value.packs[0].path = format!(".knots/v2/packs/pack-{wrong_digest}.pack.zst");
     value = value.seal();
     assert_invalid(&value, None, 0, ValidationError::InvalidDigest("pack"));
     assert!(ValidationError::DuplicateEvent

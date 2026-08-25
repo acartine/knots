@@ -5,8 +5,8 @@ use sha2::{Digest, Sha256};
 
 use super::{GenerationPublisher, PublicationTarget};
 use crate::compaction::{
-    validate_protection, CompactionManifest, Compatibility, EventIndexEntry, EventPack,
-    ProtectionMarker, ProviderProtectionFacts, SnapshotDescriptor, SnapshotSet, SourceCheckpoint,
+    build_pack, validate_protection, CompactionManifest, Compatibility, ProtectionMarker,
+    ProviderProtectionFacts, RawEvent, SnapshotDescriptor, SnapshotSet, SourceCheckpoint,
     SourceFacts, V2RefLayout, ValidationContext, WriterHead, LEGACY_REF, PROTOCOL_VERSION,
 };
 
@@ -32,9 +32,9 @@ fn immutable_generation_is_published_before_control_cas() {
         &["remote", "add", "origin", &remote.display().to_string()],
     );
     let commit = output(repo, &["rev-parse", "HEAD"]);
-    let (manifest, active, cold, pack) = manifest();
+    let (manifest, active, cold, projections, pack) = manifest();
     let pack_refs = [(manifest.packs[0].pack_id.as_str(), pack.as_slice())];
-    let context = context(&active, &cold, &pack_refs);
+    let context = context(&active, &cold, &projections, &pack_refs);
     let protection = protection(None);
     let publisher = GenerationPublisher::new();
 
@@ -127,11 +127,16 @@ fn activation_rejects_stale_provider_head() {
     assert!(error.to_string().contains("provider control head"));
 }
 
-fn manifest() -> (CompactionManifest, Vec<u8>, Vec<u8>, Vec<u8>) {
+fn manifest() -> (CompactionManifest, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
     let active = br#"{"schema_version":1,"hot":[],"warm":[]}"#.to_vec();
     let cold = br#"{"schema_version":1,"cold":[]}"#.to_vec();
-    let pack = br#"{"event_id":"event-1"}"#.to_vec();
-    let pack_hash = digest(&pack);
+    let projections = br#"{"schema_version":1,"hot":[],"warm":[],"cold":[],"edges":[],"leases":[],"workflows":[],"metadata":[],"conflicts":[]}"#.to_vec();
+    let pack = build_pack(&[RawEvent {
+        path: ".knots/v2/inbox/events/event-1.json".to_string(),
+        event_id: "event-1".to_string(),
+        bytes: br#"{"event_id":"event-1"}"#.to_vec(),
+    }])
+    .expect("pack builds");
     let value = CompactionManifest {
         protocol_version: PROTOCOL_VERSION,
         generation_id: String::new(),
@@ -156,25 +161,18 @@ fn manifest() -> (CompactionManifest, Vec<u8>, Vec<u8>, Vec<u8>) {
             ),
             cold: descriptor(".knots/v2/generations/current/cold.snapshot.json", &cold),
         },
-        packs: vec![EventPack {
-            pack_id: format!("pack-{pack_hash}"),
-            path: format!(".knots/v2/packs/pack-{pack_hash}.pack"),
-            sha256: pack_hash,
-            bytes: pack.len() as u64,
-            events: vec![EventIndexEntry {
-                event_id: "event-1".to_string(),
-                content_sha256: digest(&pack),
-                offset: 0,
-                bytes: pack.len() as u64,
-            }],
-        }],
+        projections: descriptor(
+            ".knots/v2/generations/current/state.projections.json",
+            &projections,
+        ),
+        packs: vec![pack.descriptor],
         compatibility: Compatibility {
             minimum_reader_protocol: PROTOCOL_VERSION,
             minimum_writer_protocol: PROTOCOL_VERSION,
         },
     }
     .seal();
-    (value, active, cold, pack)
+    (value, active, cold, projections, pack.compressed)
 }
 
 fn descriptor(path: &str, bytes: &[u8]) -> SnapshotDescriptor {
@@ -189,11 +187,13 @@ fn descriptor(path: &str, bytes: &[u8]) -> SnapshotDescriptor {
 fn context<'a>(
     active: &'a [u8],
     cold: &'a [u8],
+    projections: &'a [u8],
     packs: &'a [(&'a str, &'a [u8])],
 ) -> ValidationContext<'a> {
     ValidationContext {
         active_snapshot: Some(active),
         cold_snapshot: Some(cold),
+        projections: Some(projections),
         packs,
         source: SourceFacts {
             cutoff_resolves: true,
