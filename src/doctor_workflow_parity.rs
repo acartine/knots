@@ -150,7 +150,7 @@ pub(crate) fn fix_workflow_id_parity(repo_root: &Path) -> WorkflowParityFixSumma
     let Ok(conn) = db::open_connection(db_str) else {
         return summary;
     };
-    let writer = EventWriter::new(store_paths.root.clone());
+    let writer = EventWriter::with_db_path(store_paths.root.clone(), db_path);
     let local_latest = scan_latest_heads(&store_paths.root);
     for head in stale {
         if local_has_pending_repair(&local_latest, &head) {

@@ -93,6 +93,7 @@ impl App {
         }
         helpers::ensure_parent_dir(db_path)?;
         let conn = crate::trace::measure("db_open", || db::open_connection(db_path))?;
+        db::inventory_legacy_files(&conn, &context.store_paths.root)?;
         let workflow_config_path =
             installed_workflows::workflows_root(context.workflow_root()).join("current");
         if !workflow_config_path.exists()
@@ -104,7 +105,7 @@ impl App {
         let profile_registry = crate::trace::measure("profile_registry", || {
             ProfileRegistry::load_for_repo(context.workflow_root())
         })?;
-        let writer = EventWriter::new(context.store_paths.root.clone());
+        let writer = EventWriter::with_db_path(context.store_paths.root.clone(), db);
         Ok(Self {
             conn,
             writer,
