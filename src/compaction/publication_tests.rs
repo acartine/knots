@@ -111,6 +111,22 @@ fn legacy_push_cannot_change_canonical_v2_ref() {
     assert_ne!(output(remote, &["rev-parse", LEGACY_REF]), before);
 }
 
+#[test]
+fn activation_rejects_stale_provider_head() {
+    let publisher = GenerationPublisher::new();
+    let ws = knots_test_support::workspace("knots-v2-activation-rejections");
+    let target = PublicationTarget {
+        repo: ws.path(),
+        remote: "origin",
+        commit: COMMIT,
+    };
+    let protected = protection(Some(COMMIT));
+    let error = publisher
+        .activate_control(target, None, &protected)
+        .expect_err("stale provider head fails before Git");
+    assert!(error.to_string().contains("provider control head"));
+}
+
 fn manifest() -> (CompactionManifest, Vec<u8>, Vec<u8>, Vec<u8>) {
     let active = br#"{"schema_version":1,"hot":[],"warm":[]}"#.to_vec();
     let cold = br#"{"schema_version":1,"cold":[]}"#.to_vec();

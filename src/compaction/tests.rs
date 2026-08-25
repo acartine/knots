@@ -111,6 +111,18 @@ fn context<'a>(
     }
 }
 
+fn assert_invalid(
+    value: &CompactionManifest,
+    previous: Option<&str>,
+    epoch: u64,
+    expected: ValidationError,
+) {
+    assert_eq!(
+        validate(value, &context(value, pack_bytes(), previous, epoch)),
+        Err(expected)
+    );
+}
+
 #[test]
 fn complete_v2_manifest_round_trips_with_lossless_pack_index() {
     let value = manifest(Some(OLD_GENERATION), 4);
@@ -232,6 +244,76 @@ fn protection_requires_matching_provider_facts_and_enforced_policy() {
     let valid = validate_protection(Some(&marker), Some(&protection_facts(policy)))
         .expect("provider-backed marker validates");
     assert_eq!(valid.control_head(), Some(CONTROL_HEAD));
+
+    let mut invalid = marker.clone();
+    invalid.repository_id.clear();
+    assert_eq!(
+        validate_protection(Some(&invalid), Some(&protection_facts(policy))),
+        Err(ProtectionError::InvalidMarker)
+    );
+    let mut mismatched = protection_facts(policy);
+    mismatched.repository_id = "other-repo";
+    assert_eq!(
+        validate_protection(Some(&marker), Some(&mismatched)),
+        Err(ProtectionError::ProviderMismatch)
+    );
+    assert!(ProtectionError::Unavailable
+        .to_string()
+        .contains("provider protection unavailable"));
+}
+
+#[test]
+fn manifest_validation_rejects_each_authority_mismatch() {
+    let predecessor = manifest(Some(OLD_GENERATION), 4);
+    assert_invalid(&predecessor, None, 4, ValidationError::PredecessorMismatch);
+    assert_invalid(
+        &predecessor,
+        Some(OLD_GENERATION),
+        3,
+        ValidationError::ControlEpochMismatch,
+    );
+
+    let mut value = manifest(None, 0);
+    value.source.legacy_ref = "refs/heads/not-legacy".to_string();
+    value = value.seal();
+    assert_invalid(&value, None, 0, ValidationError::InvalidLegacyRef);
+
+    let mut value = manifest(None, 0);
+    value.writer_heads[0].writer_id.clear();
+    value = value.seal();
+    assert_invalid(&value, None, 0, ValidationError::InvalidWriterHead);
+
+    let mut value = manifest(None, 0);
+    value.writer_heads.push(value.writer_heads[0].clone());
+    value = value.seal();
+    assert_invalid(&value, None, 0, ValidationError::DuplicateWriter);
+
+    let mut value = manifest(None, 0);
+    value.packs[0].path = ".knots/v2/packs/wrong.pack".to_string();
+    value = value.seal();
+    assert_invalid(&value, None, 0, ValidationError::InvalidPackId);
+
+    let mut value = manifest(None, 0);
+    let duplicate_event = value.packs[0].events[0].clone();
+    value.packs[0].events.push(duplicate_event);
+    value = value.seal();
+    assert_invalid(&value, None, 0, ValidationError::DuplicateEvent);
+
+    let mut value = manifest(None, 0);
+    value.packs[0].events[0].content_sha256 = digest(b"wrong event bytes");
+    value = value.seal();
+    assert_invalid(&value, None, 0, ValidationError::InvalidEventIndex);
+
+    let mut value = manifest(None, 0);
+    let wrong_digest = digest(b"wrong pack bytes");
+    value.packs[0].sha256 = wrong_digest.clone();
+    value.packs[0].pack_id = format!("pack-{wrong_digest}");
+    value.packs[0].path = format!(".knots/v2/packs/pack-{wrong_digest}.pack");
+    value = value.seal();
+    assert_invalid(&value, None, 0, ValidationError::InvalidDigest("pack"));
+    assert!(ValidationError::DuplicateEvent
+        .to_string()
+        .contains("invalid protocol-v2 manifest"));
 }
 
 fn control(
@@ -330,5 +412,81 @@ fn control_record_must_bind_archive_commit_and_policy_digest() {
     assert_eq!(
         model.activate(Some(CONTROL_HEAD), NEXT_CONTROL_HEAD, invalid),
         Err(ProtocolError::InvalidControlRecord)
+    );
+}
+
+#[test]
+fn protocol_rejects_invalid_staging_activation_and_recovery_shapes() {
+    let mut empty = ProtocolModel::default();
+    let wrong_epoch = manifest(None, 1);
+    assert_eq!(
+        empty.prepare(&wrong_epoch),
+        Err(ProtocolError::EpochNotMonotonic)
+    );
+
+    let prepared = manifest(None, 0);
+    empty.prepare(&prepared).expect("stage first generation");
+    let recovery = control(
+        1,
+        None,
+        &prepared.generation_id,
+        1,
+        ControlKind::Recovery {
+            rollback_of_epoch: 0,
+        },
+    );
+    assert_eq!(
+        empty.recover("", NEXT_CONTROL_HEAD, recovery),
+        Err(ProtocolError::ActiveHeadMoved)
+    );
+    let recovery = control(
+        1,
+        None,
+        &prepared.generation_id,
+        1,
+        ControlKind::Recovery {
+            rollback_of_epoch: 0,
+        },
+    );
+    assert_eq!(
+        empty.recover(CONTROL_HEAD, NEXT_CONTROL_HEAD, recovery),
+        Err(ProtocolError::ActiveHeadMoved)
+    );
+
+    let initial = control(1, None, OLD_GENERATION, 5, ControlKind::Activation);
+    let mut active = ProtocolModel::with_active(CONTROL_HEAD, initial);
+    let next = manifest(Some(OLD_GENERATION), 1);
+    active.prepare(&next).expect("stage next generation");
+    let invalid_activation = control(
+        2,
+        Some(CONTROL_HEAD),
+        &next.generation_id,
+        7,
+        ControlKind::Recovery {
+            rollback_of_epoch: 1,
+        },
+    );
+    assert_eq!(
+        active.activate(Some(CONTROL_HEAD), NEXT_CONTROL_HEAD, invalid_activation),
+        Err(ProtocolError::InvalidRecovery)
+    );
+
+    let wrong_epoch = control(
+        3,
+        Some(CONTROL_HEAD),
+        &next.generation_id,
+        7,
+        ControlKind::Activation,
+    );
+    assert_eq!(
+        active.activate(Some(CONTROL_HEAD), NEXT_CONTROL_HEAD, wrong_epoch),
+        Err(ProtocolError::EpochNotMonotonic)
+    );
+
+    let unknown = "v2-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+    let unknown_record = control(2, Some(CONTROL_HEAD), unknown, 7, ControlKind::Activation);
+    assert_eq!(
+        active.activate(Some(CONTROL_HEAD), NEXT_CONTROL_HEAD, unknown_record),
+        Err(ProtocolError::UnknownGeneration)
     );
 }
