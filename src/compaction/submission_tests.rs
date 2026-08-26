@@ -111,7 +111,7 @@ fn forged_replayed_and_cross_writer_submissions_fail_closed() {
     let input = candidate(&signed, &payload, None, 1);
 
     let mut forged = signed.clone();
-    forged.signature.replace_range(0..2, "00");
+    corrupt_signature(&mut forged.signature);
     assert!(verify_submission(
         &candidate(&forged, &payload, None, 1),
         RegistrationAuthority::First
@@ -154,6 +154,98 @@ fn forged_replayed_and_cross_writer_submissions_fail_closed() {
 }
 
 #[test]
+fn malformed_submission_shapes_and_keys_fail_closed() {
+    let (conn, writer, events, payload) = fixture("credential-a", "event-a");
+    let signed = sign_submission(&conn, "acartine/knots", &writer, &events, OID_A, None)
+        .expect("sign submission");
+    let public = decode_array::<32>(&signed.public_key).expect("public key");
+
+    let mut wrong_writer = writer.clone();
+    wrong_writer.writer_id = "0".repeat(64);
+    assert_eq!(
+        sign_submission(&conn, "acartine/knots", &wrong_writer, &events, OID_A, None),
+        Err(SubmissionError::InvalidWriter)
+    );
+
+    let mut changed = signed.clone();
+    changed.public_key = hex_encode(&[9_u8; 32]);
+    assert_eq!(
+        verify_submission(
+            &candidate(&changed, &payload, None, 1),
+            RegistrationAuthority::First
+        ),
+        Err(SubmissionError::InvalidWriter)
+    );
+
+    let mut input = candidate(&signed, &payload, None, 1);
+    input.repository_id = "other/repo".to_string();
+    assert_eq!(
+        verify_submission(&input, RegistrationAuthority::First),
+        Err(SubmissionError::InvalidRepository)
+    );
+
+    let stale_head = candidate(&signed, &payload, Some(OID_B), 1);
+    assert_eq!(
+        verify_submission(&stale_head, RegistrationAuthority::First),
+        Err(SubmissionError::InvalidHead)
+    );
+
+    let mut empty = signed.clone();
+    empty.bundle.entries.clear();
+    let mut input = candidate(&signed, &payload, None, 1);
+    input.submission = serde_json::to_vec(&empty).expect("serialize empty submission");
+    assert_eq!(
+        verify_submission(&input, RegistrationAuthority::First),
+        Err(SubmissionError::InvalidEntries)
+    );
+
+    let mut undeclared_rotation = signed.clone();
+    undeclared_rotation.parent_writer_id = Some("parent".to_string());
+    assert_eq!(
+        verify_submission(
+            &candidate(&undeclared_rotation, &payload, None, 1),
+            RegistrationAuthority::Existing {
+                public_key: &public
+            }
+        ),
+        Err(SubmissionError::InvalidKey)
+    );
+
+    let promotion = verify_submission(
+        &candidate(&signed, &payload, None, 1),
+        RegistrationAuthority::Existing {
+            public_key: &public,
+        },
+    )
+    .expect("verify existing registration");
+    assert_eq!(
+        promotion.registration,
+        VerifiedRegistration::Existing { public_key: public }
+    );
+}
+
+#[test]
+fn malformed_rotation_and_decoder_inputs_fail_closed() {
+    let (conn, writer, events, payload) = fixture("credential-a", "event-a");
+    let signed = sign_submission(&conn, "acartine/knots", &writer, &events, OID_A, None)
+        .expect("sign submission");
+    let parent_public = [3_u8; 32];
+    assert_eq!(
+        verify_submission(
+            &candidate(&signed, &payload, None, 1),
+            RegistrationAuthority::Rotation {
+                parent_writer_id: "wrong-parent",
+                parent_public_key: &parent_public,
+            }
+        ),
+        Err(SubmissionError::InvalidRotation)
+    );
+    assert_eq!(signed_entries(&[]), Err(SubmissionError::InvalidEntries));
+    assert_eq!(decode_array::<32>("00"), None);
+    assert_eq!(decode_array::<32>(&"g".repeat(64)), None);
+}
+
+#[test]
 fn rotation_requires_both_the_parent_and_new_key_signatures() {
     let (conn, first, events, _payload) = fixture("credential-a", "event-a");
     let initial = sign_submission(&conn, "acartine/knots", &first, &events, OID_A, None)
@@ -182,11 +274,12 @@ fn rotation_requires_both_the_parent_and_new_key_signatures() {
         .expect("verify rotation");
 
     let mut forged = signed;
-    forged
-        .rotation_signature
-        .as_mut()
-        .expect("rotation signature")
-        .replace_range(0..2, "00");
+    corrupt_signature(
+        forged
+            .rotation_signature
+            .as_mut()
+            .expect("rotation signature"),
+    );
     assert!(verify_submission(&candidate(&forged, &payload, None, 1), authority).is_err());
 }
 
@@ -319,4 +412,9 @@ fn candidate(
 
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+
+fn corrupt_signature(signature: &mut String) {
+    let replacement = if &signature[..2] == "00" { "01" } else { "00" };
+    signature.replace_range(0..2, replacement);
 }

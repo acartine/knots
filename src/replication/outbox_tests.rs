@@ -21,6 +21,7 @@ struct FakeTransport {
     submitted_generations: RefCell<Vec<Option<String>>>,
     fail_after_remote_update: Cell<bool>,
     skip_remote_update: Cell<bool>,
+    prepared_oid_override: RefCell<Option<String>>,
 }
 
 impl InboxTransport for FakeTransport {
@@ -37,6 +38,11 @@ impl InboxTransport for FakeTransport {
             digest.update(event.event_id.as_bytes());
             digest.update(event.content_sha256.as_bytes());
         }
+        let proposed_oid = self
+            .prepared_oid_override
+            .borrow()
+            .clone()
+            .unwrap_or_else(|| format!("{:x}", digest.finalize()));
         Ok(PreparedInbox {
             writer_id: writer.writer_id.clone(),
             inbox_ref: writer.inbox_ref.clone(),
@@ -44,7 +50,7 @@ impl InboxTransport for FakeTransport {
                 &writer.writer_id,
                 events[0].sequence.expect("assigned sequence"),
             ),
-            proposed_oid: format!("{:x}", digest.finalize()),
+            proposed_oid,
             expected_inbox_oid: writer.expected_inbox_oid.clone(),
             expected_control_oid: expected_control_oid.map(str::to_string),
             includes_control_registration: !writer.registered,
