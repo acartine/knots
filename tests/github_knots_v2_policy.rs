@@ -268,3 +268,25 @@ fn every_contents_write_workflow_pins_external_actions() {
         }
     }
 }
+
+#[cfg(unix)]
+#[test]
+fn authority_shell_entrypoints_are_executable() {
+    use std::os::unix::fs::PermissionsExt;
+
+    for path in [
+        "scripts/repo/find-knots-v2-control-epoch.sh",
+        "scripts/repo/inspect-knots-v2-control-epoch.sh",
+        "scripts/repo/verify-knots-v2-control-epoch.sh",
+    ] {
+        let mode = fs::metadata(root().join(path))
+            .expect("authority entrypoint should exist")
+            .permissions()
+            .mode();
+        assert_ne!(
+            mode & 0o111,
+            0,
+            "authority entrypoint is not executable: {path}"
+        );
+    }
+}
