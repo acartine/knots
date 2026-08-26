@@ -32,13 +32,7 @@ function desired(rule) {
     name: rule.name,
     target: "branch",
     enforcement: rule.enforcement || "active",
-    bypass_actors: rule.trusted_bypass
-      ? [{
-          actor_id: policy.trusted_integration_id,
-          actor_type: "Integration",
-          bypass_mode: "always",
-        }]
-      : [],
+    bypass_actors: [],
     conditions: { ref_name: { exclude: [], include: rule.patterns } },
     rules: rule.rules.map((type) => ({ type })),
   };
@@ -79,8 +73,8 @@ function verifyActual(actual, expected) {
   if (canonical(relevant) !== canonical(expected)) {
     fail(`ruleset ${expected.name} does not match the tracked policy`);
   }
-  if (relevant.bypass_actors.some((actor) => actor.actor_type === "RepositoryRole")) {
-    fail(`ruleset ${expected.name} contains a repository-role bypass`);
+  if (relevant.bypass_actors.length !== 0) {
+    fail(`ruleset ${expected.name} contains a bypass actor`);
   }
 }
 
@@ -89,43 +83,32 @@ function requireCanaryEvidence() {
   if (!evidencePath) fail("KNOTS_V2_CANARY_EVIDENCE is required before production apply");
   const evidence = JSON.parse(readFileSync(evidencePath, "utf8"));
   const required = [
-    "ordinary_protected_rejected",
-    "ordinary_inbox_rejected",
-    "ordinary_inbox_fast_forward_rejected",
-    "actions_inbox_creation_succeeded",
-    "actions_inbox_fast_forward_succeeded",
-    "inbox_non_fast_forward_rejected",
-    "inbox_deletion_rejected",
-    "actions_protected_succeeded",
+    "ordinary_creation_succeeded",
+    "ordinary_rewrite_rejected",
+    "ordinary_deletion_rejected",
+    "actions_attestation_verified",
+    "actions_control_rewrite_rejected",
+    "actions_control_deletion_rejected",
+    "unattested_lookalike_rejected",
+    "exact_workflow_head_verified",
   ];
   if (required.some((key) => evidence[key] !== true)) {
     fail("canary evidence does not prove every required policy behavior");
   }
-}
-
-function requireSignedOutboxEvidence() {
-  const evidencePath = process.env.KNOTS_V2_SIGNED_OUTBOX_EVIDENCE;
-  if (!evidencePath) fail("KNOTS_V2_SIGNED_OUTBOX_EVIDENCE is required before production apply");
-  const evidence = JSON.parse(readFileSync(evidencePath, "utf8"));
   const sha = /^[0-9a-f]{40}$/;
   const digest = /^[0-9a-f]{64}$/;
   const runId = /^[1-9][0-9]*$/;
-  if (evidence.signed_writer_verified !== true
-      || evidence.authority_constructed !== true
-      || evidence.trusted_main !== true
-      || !sha.test(evidence.main_sha)
-      || !digest.test(evidence.workflow_sha256)
+  if (!sha.test(evidence.main_sha)
+      || !digest.test(evidence.manifest_sha256)
       || !runId.test(evidence.actions_run_id)
-      || !sha.test(evidence.proposal_oid)
-      || !sha.test(evidence.registry_oid)) {
-    fail("signed-outbox evidence does not prove trusted construction");
+      || !sha.test(evidence.control_oid)) {
+    fail("canary evidence does not bind an exact attested control epoch");
   }
 }
 
 function applyPhase(selected) {
   if (selected === "production") {
     requireCanaryEvidence();
-    requireSignedOutboxEvidence();
   }
   const existing = listRulesets();
   for (const rule of policy.phases[selected]) {
@@ -149,7 +132,8 @@ function verifyPhase(selected) {
   }
 }
 
-const usage = "usage: knots-v2-rulesets.mjs <plan|apply|verify> <canary|production>";
+const usage = "usage: knots-v2-rulesets.mjs <plan|apply|verify> "
+  + "<authority_code|canary|production>";
 if (!policy.phases[phase]) fail(usage);
 if (command === "plan") {
   process.stdout.write(`${JSON.stringify(policy.phases[phase].map(desired), null, 2)}\n`);

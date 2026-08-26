@@ -1,0 +1,120 @@
+name: Knots v2 Control Epoch
+on:
+  workflow_call:
+    inputs:
+      namespace:
+        required: true
+        type: string
+      epoch:
+        required: true
+        type: string
+      generation_ref:
+        required: true
+        type: string
+      generation_oid:
+        required: true
+        type: string
+      writer_vector_base64:
+        required: true
+        type: string
+      archives_base64:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+concurrency:
+  group: knots-v2-control-${{ inputs.namespace }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact immutable authority code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Construct and publish one immutable control epoch
+        id: control
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAMESPACE: ${{ inputs.namespace }}
+          EPOCH: ${{ inputs.epoch }}
+          GENERATION_REF: ${{ inputs.generation_ref }}
+          GENERATION_OID: ${{ inputs.generation_oid }}
+          WRITER_VECTOR_BASE64: ${{ inputs.writer_vector_base64 }}
+          ARCHIVES_BASE64: ${{ inputs.archives_base64 }}
+          MANIFEST_PATH: ${{ runner.temp }}/control-epoch.json
+          PREVIOUS_STATE_PATH: ${{ runner.temp }}/previous-control.json
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "${GITHUB_SHA}" ]]
+          [[ "${GITHUB_REF}" =~ ^refs/heads/knots-v2-authority-code/[0-9a-f]{32}$ ]]
+          observed="$(git ls-remote origin "${GENERATION_REF}" | awk '{print $1}')"
+          [[ "${observed}" == "${GENERATION_OID}" ]]
+          scripts/repo/find-knots-v2-control-epoch.sh \
+            "${NAMESPACE}" "${GITHUB_REPOSITORY}" >"${PREVIOUS_STATE_PATH}"
+          WRITER_VECTOR_JSON="$(printf '%s' "${WRITER_VECTOR_BASE64}" | base64 --decode)"
+          ARCHIVES_JSON="$(printf '%s' "${ARCHIVES_BASE64}" | base64 --decode)"
+          CONTROL_NONCE="$(openssl rand -hex 16)"
+          export WRITER_VECTOR_JSON ARCHIVES_JSON CONTROL_NONCE
+          node scripts/repo/knots-v2-control-epoch.mjs prepare
+          control_ref="$(cat "${GITHUB_OUTPUT}" | sed -n 's/^control_ref=//p' | tail -n 1)"
+          blob="$(git hash-object -w "${MANIFEST_PATH}")"
+          control_index="${RUNNER_TEMP}/control.index"
+          GIT_INDEX_FILE="${control_index}" git read-tree --empty
+          GIT_INDEX_FILE="${control_index}" git update-index \
+            --add --cacheinfo "100644,${blob},.knots/v2/control-epoch.json"
+          tree="$(GIT_INDEX_FILE="${control_index}" git write-tree)"
+          git config user.name "Knots Control Authority"
+          git config user.email "knots-control@users.noreply.github.com"
+          control_oid="$(printf '%s\n' "Publish immutable Knots v2 control epoch" | \
+            git commit-tree "${tree}")"
+          git push origin "${control_oid}:${control_ref}"
+          printf 'control_oid=%s\n' "${control_oid}" >>"${GITHUB_OUTPUT}"
+
+      - name: Attest the exact control manifest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: ${{ runner.temp }}/control-epoch.json
+
+      - name: Verify exact published subject and self-provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTROL_REF: ${{ steps.control.outputs.control_ref }}
+          CONTROL_OID: ${{ steps.control.outputs.control_oid }}
+        run: |
+          set -euo pipefail
+          evidence="$(scripts/repo/inspect-knots-v2-control-epoch.sh \
+            "${CONTROL_REF}" "${GITHUB_REPOSITORY}")"
+          [[ "$(jq -r .control_oid <<<"${evidence}")" == "${CONTROL_OID}" ]]
+          [[ "$(jq -r .manifest.source_sha <<<"${evidence}")" == "${GITHUB_SHA}" ]]
+          subject_path="$(jq -r .subject_path <<<"${evidence}")"
+          gh attestation verify "${subject_path}" --repo "${GITHUB_REPOSITORY}" \
+            --signer-workflow \
+            "${GITHUB_REPOSITORY}/.github/workflows/knots-v2-control-epoch.yml" \
+            --source-ref "${GITHUB_REF}" --source-digest "${GITHUB_SHA}" \
+            --signer-digest "${GITHUB_SHA}" --deny-self-hosted-runners
+
+      - name: Prove Actions cannot rewrite or delete the immutable epoch
+        env:
+          CONTROL_REF: ${{ steps.control.outputs.control_ref }}
+          CONTROL_OID: ${{ steps.control.outputs.control_oid }}
+        run: |
+          set -euo pipefail
+          update="$(printf '%s\n' "Forbidden control rewrite" | \
+            git commit-tree "${CONTROL_OID}^{tree}" -p "${CONTROL_OID}")"
+          if git push origin "${update}:${CONTROL_REF}"; then
+            echo "error: Actions rewrote an immutable control epoch" >&2
+            exit 1
+          fi
+          if git push origin ":${CONTROL_REF}"; then
+            echo "error: Actions deleted an immutable control epoch" >&2
+            exit 1
+          fi

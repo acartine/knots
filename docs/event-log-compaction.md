@@ -12,7 +12,7 @@ manifest in those directories cannot prevent resurrection across offline machine
 Protocol v2 therefore uses two independent boundaries:
 
 - authoritative content lives only under `.knots/v2`
-- provider policy controls which credentials may update each protocol-v2 ref
+- provider policy makes every protocol-v2 ref immutable after its first creation
 
 Legacy paths remain available but are non-authoritative. Protocol v2 never deletes them, prior
 generations, archives, raw packs, refs, or Git objects.
@@ -23,11 +23,15 @@ The default GitHub-compatible layout is:
 
 ```text
 refs/heads/knots                              legacy compatibility
-refs/heads/knots-v2-control                   protected singleton control
-refs/heads/knots-v2-canonical/<generation>    immutable generation
-refs/heads/knots-v2-archive/<generation>      additive immutable archive
-refs/heads/knots-v2-proposals/<writer>/<seq>  immutable untrusted submission
-refs/heads/knots-v2-inbox/<writer-id>         protected Actions-owned writer inbox
+refs/heads/knots-v2-control/epochs/<epoch>/<run>-<nonce>-<digest>
+                                                attested immutable control epoch
+refs/heads/knots-v2-canonical/<generation>/<nonce>
+                                                immutable generation
+refs/heads/knots-v2-archive/<generation>/<nonce>
+                                                additive immutable archive
+refs/heads/knots-v2-proposals/<writer>/<seq>/<oid>
+                                                immutable untrusted submission
+refs/heads/knots-v2-authority-code/<nonce>      immutable reviewed workflow code
 ```
 
 The provider integration must enforce equivalent roles when it maps them to another ref namespace.
@@ -40,10 +44,11 @@ facts returned by the provider:
 
 - repository identity
 - policy/ruleset identity and SHA-256 digest
-- exact control, canonical, archive, and inbox ref patterns
-- trusted integrator identity
-- observed control head
-- protected control, create-only canonical/archive, and writer-scoped inbox behavior
+- exact control-epoch, canonical, archive, and proposal ref patterns
+- zero bypass actors and create-only behavior on every active v2 ruleset
+- GitHub OIDC attestation identity bound to the repository, trusted workflow, immutable authority
+  ref, and reviewed SHA
+- the latest verified control epoch and its dominating canonical writer vector
 
 Neither Git config, environment variables, nor a tracked marker can self-attest. Missing, stale,
 forged, or unenforced provider facts fail closed. Until provider integration supplies live facts,
@@ -56,36 +61,39 @@ validate those inputs before calling it; the cache never treats plain Git metada
 
 ## Signed GitHub submissions
 
-GitHub clients never create or update protected inbox refs. Each installation has an Ed25519 key
+GitHub clients create one immutable proposal ref per sequence. Each installation has an Ed25519 key
 stored transactionally in its mode-0600 local SQLite database. Its `writer_id` is the lowercase
 SHA-256 fingerprint of the public key, so a random UUID cannot claim another writer's identity.
 
-The client first builds one immutable proposal commit per writer sequence, then signs its exact OID.
+The client first builds one immutable proposal commit per writer sequence. Its proposal ref includes
+that exact OID, which is unavailable to competing Git receive sessions before creation. It then
+signs the OID and full ref.
 The domain-separated envelope binds that OID, the repository identity, proposal and target refs,
-exact expected inbox OID, writer sequence, previous head, causal generation, public key, and every
-event path, length, ID, and payload SHA-256. Rotated keys include the previous writer ID and a second
-signature from that parent key. The proposal ref and signed envelope are only inputs to the trusted
-Action; neither gives the client permission to update a protected inbox ref.
+exact expected inbox OID, writer sequence, previous head, causal generation, public key, and
+every event path, length, ID, and payload SHA-256. Rotated keys include the previous writer ID
+and a second signature from that parent key. The proposal is untrusted until the provider
+integrator verifies the complete signed chain against the canonical writer vector.
 
-A trusted default-branch Action reads the exact proposal commit as untrusted data and never checks
-out or executes it. The verifier rejects unknown fields, malformed keys, forged signatures,
-repository/ref substitution, stale OIDs, skipped or replayed sequences, cross-writer keys,
-unapproved rotation, undeclared objects, and payload changes. Only a successful verification
-returns a `PromotionRequest`. The Action atomically advances the protected inbox and a protected
-writer registry with exact compare-and-swap leases. The registry binds the writer fingerprint,
-public key, parent writer, inbox OID, and accepted sequence. Existing-writer and rotation authority
-therefore comes only from protected provider state, never a proposal alias or workflow input.
-Live proof writers are permanently marked `canary` in that registry; provider integrators must
-exclude those writers from generation replay. A writer cannot change its protected purpose.
+The provider integrator reads exact proposal commits as untrusted data and never checks out or
+executes them. It rejects unknown fields, malformed keys, forged signatures, repository/ref
+substitution, stale OIDs, skipped or replayed sequences, cross-writer keys, unapproved rotation,
+undeclared objects, and payload changes. Registration and sequence derive from the signed chain and
+the last attested canonical writer vector. There is no mutable inbox or writer registry.
 
-GitHub rulesets make that boundary enforceable. Ordinary credentials may create one immutable
-proposal ref, but cannot update or delete it. They cannot mutate writer-registry, inbox, canonical,
-archive, or control refs. GitHub Actions integration 15368 is their only bypass actor. The trusted
-workflow accepts the complete signed envelope as data, derives repository and current-ref facts from
-GitHub, reads proposal blobs without checkout, invokes the Rust verifier, and pushes only its exact
-inbox compare-and-swap result. The legacy ref ruleset stays disabled until the guarded bridge cutover.
-Generation construction and canonical/archive/control publication are deliberately separate. A
-follow-on provider integrator consumes only protected inboxes and invokes the generation protocol.
+GitHub rulesets make that boundary enforceable without any bypass actor. Any credential may create
+a new unique v2 ref, but nobody, including Actions or an administrator, can update or delete it.
+Every authority-created ref includes an unpredictable or unpublished suffix, so an ordinary writer
+cannot permanently squat the selected name before creation. Lookalike refs remain untrusted data.
+A control epoch is authoritative only when its exact manifest
+digest has GitHub artifact provenance from `acartine/knots`, the trusted control-epoch workflow,
+an immutable authority-code ref, and its exact reviewed SHA. Trust bootstraps in two phases: the
+attester first ships with an empty fail-closed allowlist; only a later reviewed commit may add the
+exact protected ref, SHA, and workflow tuple. The workflow verifies the previous attested
+epoch and requires the new writer vector to strictly dominate it before creating and attesting a
+new immutable epoch. The legacy ref ruleset stays disabled until the guarded bridge cutover.
+The attester is reusable rather than directly dispatchable. The canary caller is fixed to the
+canary namespace; the provider-integrator caller must validate the generation before invoking the
+production namespace.
 
 ## Immutable generation manifest
 
@@ -109,34 +117,35 @@ not part of protocol v2.
 
 ## Activation
 
-Activation is immutable-object-first and control-CAS-last:
+Activation is immutable-object-first and attested-control-last:
 
 1. Read and validate provider policy facts.
 2. Build and validate the generation, snapshots, writer vector, packs, and exact event index.
 3. Publish the generation-specific canonical ref create-only.
 4. Publish the generation-specific archive ref create-only.
-5. Re-read the provider control head.
-6. Push the new control record with an exact expected-head compare-and-swap.
+5. Verify the latest attested epoch and its canonical writer vector.
+6. Publish a unique immutable control-epoch manifest for exactly the next epoch.
+7. Obtain and verify GitHub OIDC artifact provenance over the exact manifest digest.
 
-An interruption before step six leaves retained immutable objects but does not change canonical
-authority. A stale publisher loses the final compare-and-swap.
+An interruption before step seven leaves retained immutable objects or an unattested lookalike, but
+does not change canonical authority. Conflicting attestations for one epoch fail closed.
 
 ## Monotonic control and rollback
 
 The control record contains:
 
 - a monotonically increasing epoch
-- the exact previous control head
+- the exact previous attested epoch
 - active generation ID and commit
 - the generation archive ref
 - the complete acknowledged writer-head vector
 - the protection-policy digest
 - an activation or recovery action
 
-Every update increments the epoch by exactly one and must dominate all acknowledged writer heads.
-Equal writer sequences must retain the same commit. Rollback never rewinds the control ref. It
-publishes a higher recovery epoch that selects a previously archived generation, names the epoch it
-recovers from, and preserves the acknowledged writer vector.
+Every new authority increments the epoch by exactly one and must strictly dominate the canonical
+writer vector. Equal writer sequences retain their prior acknowledgement. Rollback never rewrites a
+control ref. It publishes and attests a higher recovery epoch that selects a previously archived
+generation, names the epoch it recovers from, and preserves the acknowledged writer vector.
 
 ## Local safety
 
