@@ -1,0 +1,61 @@
+name: Knots v2 Integrate
+run-name: Knots v2 integrate ${{ inputs.proposal_oid }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      proposal_ref:
+        description: Immutable proposal ref
+        required: true
+        type: string
+      proposal_oid:
+        description: Exact proposal object ID
+        required: true
+        type: string
+      signed_submission_base64:
+        description: Complete signed proposal envelope
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      proposal_ref:
+        required: true
+        type: string
+      proposal_oid:
+        required: true
+        type: string
+      signed_submission_base64:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: knots-v2-integrator
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Build trusted integrator
+        uses: dtolnay/rust-toolchain@96d8491b80fc26e2ab48ff0c3928c002176297c8 # 1.93.1
+
+      - name: Compile trusted default-branch code
+        run: cargo build --release --locked
+
+      - name: Verify signed proposal and construct protected inbox update
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EXPECTED_REPOSITORY: acartine/knots
+          PROPOSAL_REF: ${{ inputs.proposal_ref }}
+          PROPOSAL_OID: ${{ inputs.proposal_oid }}
+          SIGNED_SUBMISSION_BASE64: ${{ inputs.signed_submission_base64 }}
+        run: bash scripts/repo/knots-v2-integrate.sh

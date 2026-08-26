@@ -71,8 +71,21 @@ A trusted default-branch Action reads the exact proposal commit as untrusted dat
 out or executes it. The verifier rejects unknown fields, malformed keys, forged signatures,
 repository/ref substitution, stale OIDs, skipped or replayed sequences, cross-writer keys,
 unapproved rotation, undeclared objects, and payload changes. Only a successful verification
-returns a `PromotionRequest`; the Action advances the protected inbox with the signed expected OID
-as its compare-and-swap lease. Lost responses are recovered by polling that exact inbox OID.
+returns a `PromotionRequest`. The Action atomically advances the protected inbox and a protected
+writer registry with exact compare-and-swap leases. The registry binds the writer fingerprint,
+public key, parent writer, inbox OID, and accepted sequence. Existing-writer and rotation authority
+therefore comes only from protected provider state, never a proposal alias or workflow input.
+Live proof writers are permanently marked `canary` in that registry; provider integrators must
+exclude those writers from generation replay. A writer cannot change its protected purpose.
+
+GitHub rulesets make that boundary enforceable. Ordinary credentials may create one immutable
+proposal ref, but cannot update or delete it. They cannot mutate writer-registry, inbox, canonical,
+archive, or control refs. GitHub Actions integration 15368 is their only bypass actor. The trusted
+workflow accepts the complete signed envelope as data, derives repository and current-ref facts from
+GitHub, reads proposal blobs without checkout, invokes the Rust verifier, and pushes only its exact
+inbox compare-and-swap result. The legacy ref ruleset stays disabled until the guarded bridge cutover.
+Generation construction and canonical/archive/control publication are deliberately separate. A
+follow-on provider integrator consumes only protected inboxes and invokes the generation protocol.
 
 ## Immutable generation manifest
 

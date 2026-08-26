@@ -297,6 +297,47 @@ pub struct CompactArgs {
     )]
     pub write_snapshots: bool,
 
+    #[arg(long, help = "Verify one immutable GitHub proposal as untrusted data.")]
+    pub verify_github_proposal: bool,
+
+    #[arg(long, help = "Create one signed live GitHub proposal canary.")]
+    pub create_github_proposal_canary: bool,
+
+    #[arg(
+        long,
+        value_name = "PATH",
+        help = "Bare Git directory containing the proposal."
+    )]
+    pub git_dir: Option<PathBuf>,
+
+    #[arg(
+        long,
+        help = "Trusted GitHub repository identity, such as owner/repository."
+    )]
+    pub repository_id: Option<String>,
+
+    #[arg(long, help = "Provider-observed immutable proposal ref.")]
+    pub proposal_ref: Option<String>,
+
+    #[arg(long, help = "Provider-observed immutable proposal object ID.")]
+    pub proposal_oid: Option<String>,
+
+    #[arg(
+        long,
+        value_name = "PATH",
+        help = "Complete untrusted signed submission envelope."
+    )]
+    pub signed_submission: Option<PathBuf>,
+
+    #[arg(long, help = "Canary event identifier.")]
+    pub event_id: Option<String>,
+
+    #[arg(long, help = "Canary event path relative to the inbox data root.")]
+    pub event_path: Option<String>,
+
+    #[arg(long, value_name = "PATH", help = "Canary event payload file.")]
+    pub event_payload: Option<PathBuf>,
+
     #[arg(short = 'j', long, help = "Render machine-readable JSON.")]
     pub json: bool,
 }

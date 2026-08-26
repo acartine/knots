@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "repository": "acartine/knots",
+  "trusted_integration_id": 15368,
+  "phases": {
+    "canary": [
+      {
+        "name": "knots-v2-canary-authority",
+        "patterns": ["refs/heads/knots-v2-canary/protected/*"],
+        "rules": ["creation", "update", "deletion", "non_fast_forward"],
+        "trusted_bypass": true
+      },
+      {
+        "name": "knots-v2-canary-inbox",
+        "patterns": ["refs/heads/knots-v2-canary/inbox/*"],
+        "rules": ["creation", "update", "deletion", "non_fast_forward"],
+        "trusted_bypass": true
+      }
+    ],
+    "production": [
+      {
+        "name": "knots-v2-legacy-freeze",
+        "enforcement": "disabled",
+        "patterns": ["refs/heads/knots"],
+        "rules": ["creation", "update", "deletion", "non_fast_forward"],
+        "trusted_bypass": true
+      },
+      {
+        "name": "knots-v2-control",
+        "patterns": ["refs/heads/knots-v2-control"],
+        "rules": ["creation", "update", "deletion", "non_fast_forward"],
+        "trusted_bypass": true
+      },
+      {
+        "name": "knots-v2-immutable-generations",
+        "patterns": [
+          "refs/heads/knots-v2-canonical/*",
+          "refs/heads/knots-v2-archive/*"
+        ],
+        "rules": ["creation", "update", "deletion", "non_fast_forward"],
+        "trusted_bypass": true
+      },
+      {
+        "name": "knots-v2-immutable-proposals",
+        "patterns": ["refs/heads/knots-v2-proposals/*/*"],
+        "rules": ["update", "deletion", "non_fast_forward"],
+        "trusted_bypass": true
+      },
+      {
+        "name": "knots-v2-writer-registry",
+        "patterns": ["refs/heads/knots-v2-writers/*"],
+        "rules": ["creation", "update", "deletion", "non_fast_forward"],
+        "trusted_bypass": true
+      },
+      {
+        "name": "knots-v2-append-only-inbox",
+        "patterns": ["refs/heads/knots-v2-inbox/*"],
+        "rules": ["creation", "update", "deletion", "non_fast_forward"],
+        "trusted_bypass": true
+      }
+    ]
+  }
+}

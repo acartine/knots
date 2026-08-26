@@ -405,7 +405,7 @@ fn hex_encode(bytes: &[u8]) -> String {
     output
 }
 
-fn decode_array<const N: usize>(value: &str) -> Option<[u8; N]> {
+pub(super) fn decode_array<const N: usize>(value: &str) -> Option<[u8; N]> {
     if value.len() != N * 2 {
         return None;
     }
