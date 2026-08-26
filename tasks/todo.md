@@ -69,12 +69,12 @@
 - [x] Replace mutable inbox/registry promotion with immutable create-only v2 refs.
 - [x] Add an immutable-authority workflow that constructs and attests the control manifest.
 - [x] Ship Phase A with an empty signer allowlist and protected authority-code policy.
-- [ ] Merge Phase A, protect a random authority-code ref, and capture its exact SHA.
-- [ ] Ship Phase B with only the reviewed authority ref/SHA/workflow tuple allowlisted.
+- [x] Merge Phase A, protect a random authority-code ref, and capture its exact SHA.
+- [x] Add Phase B with only the reviewed authority ref/SHA/workflow tuple allowlisted.
 - [x] Verify repository, workflow, source ref/SHA, epoch monotonicity, and writer dominance.
 - [ ] Reject unattested lookalikes and every rewrite or deletion without bypass actors.
 - [ ] Update the downstream provider-integrator and activation handoffs.
-- [ ] Run focused tests, full sanity, and an independent security review.
+- [x] Run focused tests, full sanity, and an independent security review.
 - [ ] Commit with Sneka attribution, publish a follow-up PR, pass CI, and merge.
 - [ ] Apply/read back zero-bypass rules and capture live canary evidence.
 - [ ] Advance `knots-74e2` to `SHIPPED` with exact-main and attestation proof.

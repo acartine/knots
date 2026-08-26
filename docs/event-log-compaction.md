@@ -88,7 +88,10 @@ A control epoch is authoritative only when its exact manifest
 digest has GitHub artifact provenance from `acartine/knots`, the trusted control-epoch workflow,
 an immutable authority-code ref, and its exact reviewed SHA. Trust bootstraps in two phases: the
 attester first ships with an empty fail-closed allowlist; only a later reviewed commit may add the
-exact protected ref, SHA, and workflow tuple. The workflow verifies the previous attested
+exact protected ref, SHA, and workflow tuple. The current provider policy trusts only authority ref
+`refs/heads/knots-v2-authority-code/e869300032bde6e8257673a3d11ccd60`, reviewed SHA
+`f41b6733d80f9253362d5aacb725a3050b473e08`, and workflow
+`.github/workflows/knots-v2-control-epoch.yml`. The workflow verifies the previous attested
 epoch and requires the new writer vector to strictly dominate it before creating and attesting a
 new immutable epoch. The legacy ref ruleset stays disabled until the guarded bridge cutover.
 The attester is reusable rather than directly dispatchable. The canary caller is fixed to the

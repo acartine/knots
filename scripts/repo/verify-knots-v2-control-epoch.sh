@@ -9,6 +9,7 @@ signer_sha="$(jq -er .manifest.source_sha <<<"${evidence}")"
 source_ref="$(jq -er .manifest.source_ref <<<"${evidence}")"
 subject_path="$(jq -er .subject_path <<<"${evidence}")"
 workflow="$(jq -er .manifest.workflow <<<"${evidence}")"
+run_id="$(jq -er .manifest.run_id <<<"${evidence}")"
 jq -e --arg repo "${repo}" --arg sha "${signer_sha}" \
   --arg ref "${source_ref}" --arg workflow "${workflow}" \
   '.repository == $repo and (.trusted_signers | any(
@@ -31,4 +32,14 @@ for _ in {1..10}; do
   sleep 2
 done
 [[ "${verified}" == true ]] || { echo "error: attestation verification failed" >&2; exit 1; }
+run="$(gh run view "${run_id}" --repo "${repo}" \
+  --json status,conclusion,headSha,headBranch,databaseId)"
+source_branch="${source_ref#refs/heads/}"
+jq -e --arg sha "${signer_sha}" --arg ref "${source_branch}" --arg run_id "${run_id}" \
+  '.status == "completed" and .conclusion == "success" and .headSha == $sha
+    and .headBranch == $ref and (.databaseId | tostring) == $run_id' \
+  <<<"${run}" >/dev/null || {
+  echo "error: signer Actions run did not complete successfully at the reviewed SHA" >&2
+  exit 1
+}
 jq 'del(.subject_path)' <<<"${evidence}"
