@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bf2-674c-7b93-83c7-ce428c5017e6",
+  "occurred_at": "2026-08-26T02:42:17.036798Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan ready: implement idempotent ruleset tooling, trusted default-branch inbox validator/integrator, and disposable live canaries. Exact protected patterns use only Integration 15368 as bypass; no role bypasses. Inbox refs are append-only at GitHub and writer ownership is validated by the trusted integrator. No deletion or new GitHub App.",
+    "datetime": "2026-08-26T02:42:17.036798Z",
+    "entry_id": "01a03bf2-674c-7b93-83c7-ce3ed0a2e1d3",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

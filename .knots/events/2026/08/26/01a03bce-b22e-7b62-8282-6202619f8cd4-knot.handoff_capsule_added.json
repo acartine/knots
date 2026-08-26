@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bce-b22e-7b62-8282-6202619f8cd4",
+  "occurred_at": "2026-08-26T02:03:16.910061Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "APPROVED corrective review: a6f8938af fixes only the caller identity pin. Auth and Diffinite require fixed active verified build-fleet, deny wrong/self/cross-parent, preserve same-parent and target-parent repo-admin ceilings, and mutate only knots_integrator. Full lint exit 0; independent read-only review APPROVE.",
+    "datetime": "2026-08-26T02:03:16.910061Z",
+    "entry_id": "01a03bce-b22e-7b62-8282-61fb76c708ad",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

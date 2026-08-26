@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03cda-541b-7281-a601-ec84433e6e2a",
+  "occurred_at": "2026-08-26T06:55:36.475005Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Attribution correction for the immediately preceding unknown note: Codex GPT-5.6 recorded the zero-bypass immutable-ref and GitHub OIDC attestation design.",
+    "datetime": "2026-08-26T06:55:36.475005Z",
+    "entry_id": "01a03cda-541b-7281-a601-ec78b9bf7fa4",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

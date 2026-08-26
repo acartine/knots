@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bfe-0484-7b62-b707-21675779d6fc",
+  "occurred_at": "2026-08-26T02:54:58.180222Z",
+  "knot_id": "knots-c472",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Correction scope: knots-2af8 owns schema v22, durable private/public signing-key state, public-key-fingerprint writer_id, migration, rotation, crash recovery, and bootstrap preservation. Claim this Knot only after knots-2af8 is SHIPPED. Then implement canonical signed bundle and proposed-commit construction, strict verification of ref/expected old OID/sequence/payload hashes/writer identity, replay and forgery rejection, and the trusted GitHub Actions submission API. knots-74e2 remains blocked until this Knot ships. User approved all local SQLite and GitHub work. Retain all legacy and archive data.",
+    "datetime": "2026-08-26T02:54:58.180222Z",
+    "entry_id": "01a03bfe-0484-7b62-b707-2158664f47e0",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

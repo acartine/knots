@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03c93-94dd-7983-b5f7-103ab58a468a",
+  "occurred_at": "2026-08-26T05:38:19.997917Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-16b4",
+    "lease_expiry_ts": 1787723283,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: github-enforcement-resume",
+    "type": "lease",
+    "updated_at": "2026-08-26T05:38:19.997917Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

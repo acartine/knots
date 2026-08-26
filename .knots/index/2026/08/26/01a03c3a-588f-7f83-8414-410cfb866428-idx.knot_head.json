@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03c3a-588f-7f83-8414-410cfb866428",
+  "occurred_at": "2026-08-26T04:00:51.855835Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-2af8",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Install authenticated checkpoint projection boundary",
+    "type": "work",
+    "updated_at": "2026-08-26T04:00:51.855835Z",
+    "workflow_id": "work_sdlc"
+  }
+}

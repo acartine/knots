@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03c6c-1d3c-76a0-9ff1-0ca2afb544c0",
+  "occurred_at": "2026-08-26T04:55:13.468909Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-8402",
+    "lease_expiry_ts": 1787720710,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: c472 implementation review",
+    "type": "lease",
+    "updated_at": "2026-08-26T04:55:13.468909Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03cb3-35b5-7a70-b346-f571391cf777",
+  "occurred_at": "2026-08-26T06:12:52.789193Z",
+  "knot_id": "knots-5e0f",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: provider-integrator-dependency-wait",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

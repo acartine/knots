@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03c3a-0b6d-77a3-9ca9-0391cc2405a7",
+  "occurred_at": "2026-08-26T04:00:32.109839Z",
+  "knot_id": "knots-209a",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "codex",
+        "agent_type": "api",
+        "model": "",
+        "model_version": "",
+        "provider": "OpenAI"
+      },
+      "lease_type": "agent",
+      "nickname": "sqlite-bootstrap-ship-review",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 14420
+      },
+      "timeout_seconds": 3600
+    }
+  }
+}

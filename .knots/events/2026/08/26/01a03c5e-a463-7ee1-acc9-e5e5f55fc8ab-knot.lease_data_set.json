@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03c5e-a463-7ee1-acc9-e5e5f55fc8ab",
+  "occurred_at": "2026-08-26T04:40:30.56345Z",
+  "knot_id": "knots-85cb",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "Codex",
+        "agent_type": "api",
+        "model": "GPT-5.6",
+        "model_version": "5.6",
+        "provider": "OpenAI"
+      },
+      "lease_type": "agent",
+      "nickname": "c472 implementation recovery",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 34352
+      },
+      "timeout_seconds": 600
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c00-1811-7413-b25b-05eb809c5d62",
+  "occurred_at": "2026-08-26T02:57:14.257045Z",
+  "knot_id": "knots-c472",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "APPROVED. The plan closes the random-UUID trust failure by binding an Ed25519 key fingerprint to every canonical, domain-separated proposal. It eliminates client writes to protected inbox refs: clients can only publish immutable untrusted proposal refs, while the default-branch Action validates the exact proposal OID as data and promotes with an exact old-OID lease. The dependency boundary is correct: knots-2af8 owns durable key state and must ship first. Negative tests cover forgery, replay, cross-writer/repository/ref substitution, stale OIDs, rotation misuse, altered payloads, and v0.17.6 fail-closed behavior. All legacy/archive data remains retained.",
+    "datetime": "2026-08-26T02:57:14.257045Z",
+    "entry_id": "01a03c00-1811-7413-b25b-05d6ad405828",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

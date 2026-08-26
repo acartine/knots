@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bee-f68b-7113-b32d-b6de6ac4f931",
+  "occurred_at": "2026-08-26T02:38:31.563362Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Normal ship ticket 20260826T020444Z-250a4e reached DEPLOYED at 2026-08-26T02:36:37Z on train 20260826T021210Z-113467, exact merged SHA a6f8938af267e53ef5b2f5bdb0d33ba2bcb47b4a.",
+    "datetime": "2026-08-26T02:38:31.563362Z",
+    "entry_id": "01a03bee-f68b-7113-b32d-b6c4797cc899",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

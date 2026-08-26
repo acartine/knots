@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c92-6216-70b1-8042-3c05839ce2dd",
+  "occurred_at": "2026-08-26T05:37:01.462442Z",
+  "knot_id": "knots-c472",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "APPROVED final shipment review. Remote refs/heads/main resolves exactly to 263695b476b16aedef888cf0fae13f6ff70e79d5. PR #109 Sanity, Repo Hygiene, and codecov/patch are green; post-merge exact-main CI and all companion workflows are green. Reviewed and merged trees are identical. Valid sneka-agents/1 attribution is published on the merge commit. Acceptance is satisfied and no required work remains.",
+    "datetime": "2026-08-26T05:37:01.462442Z",
+    "entry_id": "01a03c92-6216-70b1-8042-3bfe51e172b4",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

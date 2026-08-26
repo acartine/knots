@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03cb3-73d4-71a3-8e39-e459297aee1c",
+  "occurred_at": "2026-08-26T06:13:08.692634Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Dependency wait recorded with an identified agent lease. Resume under knots-e2e after knots-74e2 reaches SHIPPED; revalidate all four exact main commits, then implement the approved trusted-run plan. No operator approval is missing and no code or provider state was changed in this step.",
+    "datetime": "2026-08-26T06:13:08.692634Z",
+    "entry_id": "01a03cb3-73d4-71a3-8e39-e44d5dd907cf",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03c18-67be-7683-b091-24de7a80d2ca",
+  "occurred_at": "2026-08-26T03:23:47.518779Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-e024",
+    "lease_expiry_ts": 1787715227,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: provider-fetch-planning",
+    "type": "lease",
+    "updated_at": "2026-08-26T03:22:52.484583Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

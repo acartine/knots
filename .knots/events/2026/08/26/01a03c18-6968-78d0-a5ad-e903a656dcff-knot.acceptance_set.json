@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03c18-6968-78d0-a5ad-e903a656dcff",
+  "occurred_at": "2026-08-26T03:23:47.944529Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "Provider-bound control, canonical bytes, source facts, and retained delta install through SyncService in one CAS-checked SQLite transaction; bootstrap and successor checkpoints converge; quarantined knots, outbox rows, and durable fingerprint signing identities remain correct across crashes and reopen. Live GitHub/Diffinite discovery and invocation are owned by the dependent provider-adapter Knot."
+  }
+}

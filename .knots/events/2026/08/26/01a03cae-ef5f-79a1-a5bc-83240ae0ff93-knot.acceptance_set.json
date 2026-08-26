@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03cae-ef5f-79a1-a5bc-83240ae0ff93",
+  "occurred_at": "2026-08-26T06:08:12.62143Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. GitHub Actions and Diffinite trusted-service adapters authenticate repository, policy revision, protected inbox refs, trusted runner identity, and exact starting OIDs; missing, stale, substituted, permissive, or raced facts fail closed before publication.\n2. Each runner reads protected inbox refs strictly as untrusted data, never checks out or executes their contents, and invokes the shipped knots-ccdc integrator to validate events and construct projection-complete deterministic generations, lossless packs, exact event-ID/content-hash indexes, writer vectors, and a durable conflict ledger.\n3. Publication writes immutable canonical generation, pack, index, conflict-ledger, and archive objects before attempting exactly one control-head compare-and-swap; a stale CAS reloads the winning control and rebuilds without omitting any registered writer or acknowledged tail.\n4. Concurrent-writer and recovery tests prove one exact control CAS wins, stale proposals do not regress state, and rollback publishes a higher recovery epoch dominating all acknowledged writer heads.\n5. Fresh replay from every published generation is byte-equivalent across all hot, warm, cold, edge, lease, workflow, metadata, quarantine, writer, and conflict projections before activation.\n6. Disposable live GitHub and Diffinite canaries prove ordinary credentials cannot advance authoritative refs, trusted runners publish in exact OID/registry order, stale-CAS recovery succeeds, and inbox content is never executed.\n7. No legacy ref, inbox object, generation, pack, archive, raw event, retained conflict record, or Git object is deleted or garbage-collected."
+  }
+}

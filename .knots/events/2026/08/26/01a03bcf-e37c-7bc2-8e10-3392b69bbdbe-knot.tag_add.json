@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03bcf-e37c-7bc2-8e10-3392b69bbdbe",
+  "occurred_at": "2026-08-26T02:04:35.068478Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:codex/knots-9b6a-grantor-fix"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "event_id": "01a03c18-6968-78d0-a5ad-e8f55a2ad501",
+  "occurred_at": "2026-08-26T03:23:47.944529Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.title_set",
+  "data": {
+    "from": "Apply checkpoints across bootstrap and incremental sync",
+    "to": "Install authenticated checkpoint projection boundary"
+  }
+}

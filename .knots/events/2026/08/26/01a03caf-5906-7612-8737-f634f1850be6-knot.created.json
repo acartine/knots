@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03caf-5906-7612-8737-f634f1850be6",
+  "occurred_at": "2026-08-26T06:08:39.686268Z",
+  "knot_id": "knots-bca9",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: provider-integrator-planning",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

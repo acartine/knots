@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c73-15e2-7c02-85bb-30936c8014a0",
+  "occurred_at": "2026-08-26T05:02:50.337939Z",
+  "knot_id": "knots-c472",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "CI failure correction: Codecov identifies 12 uncovered added lines in src/compaction/submission.rs (invalid writer/repository/head/entries/key/rotation/decoder paths) and 3 in src/replication/outbox.rs (stale remote inbox and reconstructed proposal OID mismatch). Add focused adversarial tests from exact merged main, retain all protocol behavior, do not lower coverage thresholds, and publish a follow-up GitHub PR requiring Codecov and main CI green.",
+    "datetime": "2026-08-26T05:02:50.337939Z",
+    "entry_id": "01a03c73-15e2-7c02-85bb-3083a1df3410",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

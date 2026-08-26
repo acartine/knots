@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c66-b68d-7a93-ac41-46d0349bfd2c",
+  "occurred_at": "2026-08-26T04:49:19.501078Z",
+  "knot_id": "knots-c472",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implemented self-authenticating Ed25519 GitHub outbox proposals. Proposal OID, repository/ref/expected old OID/sequence/generation/key lineage and every event hash are signed; clients can submit only immutable proposal refs, while verification returns the exact Actions promotion request. Schema v23 preserves multi-event sequences, published-but-unacknowledged OIDs, and original retry generations losslessly. Forgery, replay, cross-writer, rewrap, undeclared-object, rotation, changed-generation retry, migration, crash/lost-ack, and v0.17.6 fail-closed tests pass. Independent security review APPROVE. Definitive make sanity: 1351 main tests plus integrations, 95.19% coverage. Commit f7bf2152; PR #108.",
+    "datetime": "2026-08-26T04:49:19.501078Z",
+    "entry_id": "01a03c66-b68d-7a93-ac41-46c014c2d8e5",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

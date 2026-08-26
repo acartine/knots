@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03c18-3ebc-7d01-9d14-d845f3a8e835",
+  "occurred_at": "2026-08-26T03:23:37.019998Z",
+  "knot_id": "knots-126f",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: sqlite-bootstrap-correction",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

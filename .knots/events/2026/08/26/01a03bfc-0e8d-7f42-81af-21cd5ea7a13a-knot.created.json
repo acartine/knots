@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03bfc-0e8d-7f42-81af-21cd5ea7a13a",
+  "occurred_at": "2026-08-26T02:52:49.677091Z",
+  "knot_id": "knots-9d31",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: codex-outbox-signing-plan",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

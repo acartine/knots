@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03caf-2784-7511-a4ab-314a890c35d4",
+  "occurred_at": "2026-08-26T06:08:27.011851Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan only now; do not implement until knots-ccdc, knots-c472, knots-74e2, and knots-9b6a are SHIPPED. Use provider-authenticated policy facts and trusted service identities only. Inbox refs are data, never a checkout or executable source. Invoke the shipped ccdc integrator, publish immutable generation/archive objects first, and exact control CAS last. On a stale CAS, rebuild from the winning control. Recovery is a higher dominating epoch. Live disposable GitHub and Diffinite canaries and all required provider/service/deploy approvals are already authorized; no new operator gate. Delete nothing.",
+    "datetime": "2026-08-26T06:08:27.011851Z",
+    "entry_id": "01a03caf-2784-7511-a4ab-313e6e8b3046",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

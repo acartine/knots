@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03cb1-5c3a-7132-a6a5-a3650de90130",
+  "occurred_at": "2026-08-26T06:10:51.578168Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED plan review. The plan is complete, feasible, and keeps the trust boundary intact: provider evidence is sealed and authenticated; inbox objects are parsed by exact OID without checkout or execution; ccdc remains the sole generation constructor; immutable objects and archives precede exact control CAS; stale races rebuild from the winner; recovery is monotonic; and replay-equivalence plus live disposable canaries cover both providers. Failure paths preserve authoritative refs, SQLite state, and every retained object. Ownership is separated correctly from signing, enforcement, fetch/application, and bridge cutover. Implementation remains gated by knots-ccdc, knots-c472, knots-74e2, and knots-9b6a. No additional operator approval is required.",
+    "datetime": "2026-08-26T06:10:51.578168Z",
+    "entry_id": "01a03cb1-5c3a-7132-a6a5-a35cb76eda8b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

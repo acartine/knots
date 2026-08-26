@@ -1,0 +1,38 @@
+{
+  "event_id": "01a03c92-2095-7cb1-bf3b-f1de46c54705",
+  "occurred_at": "2026-08-26T05:36:44.693123Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-c472",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "shipment_review",
+    "step_metadata": {
+      "action_kind": "gate",
+      "action_state": "shipment_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Authenticate GitHub outbox submissions",
+    "type": "work",
+    "updated_at": "2026-08-26T05:36:44.693123Z",
+    "workflow_id": "work_sdlc"
+  },
+  "precondition": {
+    "profile_etag": "01a03c91-f09b-72b1-a9e3-6fb7dd54e8c1"
+  }
+}

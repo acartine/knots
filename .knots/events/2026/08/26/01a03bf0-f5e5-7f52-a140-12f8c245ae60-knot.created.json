@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03bf0-f5e5-7f52-a140-12f8c245ae60",
+  "occurred_at": "2026-08-26T02:40:42.469695Z",
+  "knot_id": "knots-c60c",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: github-enforcement-planning",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

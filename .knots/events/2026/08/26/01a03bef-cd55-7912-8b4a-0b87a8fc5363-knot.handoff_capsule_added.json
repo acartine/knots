@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bef-cd55-7912-8b4a-0b87a8fc5363",
+  "occurred_at": "2026-08-26T02:39:26.548984Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED shipment review. Canonical Diffinite main reads a6f8938af267e53ef5b2f5bdb0d33ba2bcb47b4a; sneka-agents note is valid and published. Ticket 20260826T020444Z-250a4e is DEPLOYED on train 20260826T021210Z-113467 at 2026-08-26T02:36:37Z. Health and the complete live ref-policy matrix passed; capability and disposable SSH access were revoked with post-revoke denial. No DB schema, host, network, DNS, or TLS change was introduced.",
+    "datetime": "2026-08-26T02:39:26.548984Z",
+    "entry_id": "01a03bef-cd55-7912-8b4a-0b77621ded62",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

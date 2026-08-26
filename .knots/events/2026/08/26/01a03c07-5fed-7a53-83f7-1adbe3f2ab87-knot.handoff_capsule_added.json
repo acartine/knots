@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c07-5fed-7a53-83f7-1adbe3f2ab87",
+  "occurred_at": "2026-08-26T03:05:11.405525Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Local dependency-safe draft is in /private/tmp/knots-74e2 on codex/knots-74e2-github-enforcement at base abebfa81. Draft adds strict v2 ruleset manifest/controller, trusted-main signed-inbox integration workflow contract, disposable-ref canary, contract tests, Make target, and changeset. make sanity passed including 95.18% coverage (17649/18543); focused policy tests 4/4; shell syntax, YAML parse, diff check, and fail-closed evidence gates passed. No commit, push, PR, merge, ruleset application, or live canary occurred. Resume only after knots-c472 ships its signed immutable proposal-ref verifier/API (itself blocked by 2af8), then align scripts/repo/knots-v2-integrate.sh to the shipped API. Legacy freeze is intentionally staged disabled: activating it before knots-d6e4 would halt current legacy clients and the remaining dependency graph; d6e4 must activate it only after freeze-first rejection probe/final SHA capture. V2/inbox production policy must not activate before signed-outbox proof.",
+    "datetime": "2026-08-26T03:05:11.405525Z",
+    "entry_id": "01a03c07-5fed-7a53-83f7-1acf012d7668",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

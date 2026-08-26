@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03c3b-0639-7fb3-b669-0b093925febb",
+  "occurred_at": "2026-08-26T04:01:36.313321Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-94b8",
+    "lease_expiry_ts": 1787717496,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: signed-outbox-implementation",
+    "type": "lease",
+    "updated_at": "2026-08-26T04:01:36.299082Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

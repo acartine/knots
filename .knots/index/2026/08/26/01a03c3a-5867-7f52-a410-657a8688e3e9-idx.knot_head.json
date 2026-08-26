@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03c3a-5867-7f52-a410-657a8688e3e9",
+  "occurred_at": "2026-08-26T04:00:51.815116Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-209a",
+    "lease_expiry_ts": 1787720451,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: sqlite-bootstrap-ship-review",
+    "type": "lease",
+    "updated_at": "2026-08-26T04:00:35.524963Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bff-c175-7e60-a716-b80522cd1253",
+  "occurred_at": "2026-08-26T02:56:52.085118Z",
+  "knot_id": "knots-c472",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan complete. Wait for knots-2af8 SHIPPED and branch from its exact merged main. Implement a signed immutable proposal-ref path, not direct client inbox writes. The protected inbox moves only after the default-branch Action verifies the exact proposal commit, signature transcript, public-key fingerprint, expected old OID, and next writer sequence. Preserve all legacy and archive data.",
+    "datetime": "2026-08-26T02:56:52.085118Z",
+    "entry_id": "01a03bff-c175-7e60-a716-b7f3c26e3c45",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

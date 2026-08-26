@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03c17-266a-7300-8d20-f4e85a622354",
+  "occurred_at": "2026-08-26T03:22:25.247561Z",
+  "knot_id": "knots-4521",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Goal:\nMake sync discover and consume protocol-v2 generations only through authenticated GitHub and Diffinite provider adapters. Each adapter must read back live provider policy and control facts, mint ValidatedProtection only from those facts, fetch exact protected control, canonical, archive, and retained inbox bytes, and invoke the schema-v22 SyncService apply boundary for bootstrap and incremental sync.\n\nVerification:\n1. Run provider-adapter fixture tests for GitHub and Diffinite; expect authenticated policy and ref facts to produce ValidatedProtection and exact protected bytes.\n2. Run disposable live-provider probes for both providers; expect policy identity, trusted writer identity, exact control OID, canonical/archive OIDs, and retained inbox deltas to match provider readback.\n3. Run bootstrap and incremental SyncService integration tests against schema v22; expect the exact fetched generation and retained delta to apply once with correct watermarks and quarantine behavior.\n4. Run stale, missing, mismatched, and raced policy/control/OID tests; expect fail-closed behavior before SQLite mutation.\n5. Run offline and no-provider fixtures; expect legacy/local-only behavior to remain available without self-attested v2 activation.\n6. Run make sanity.\n\nConstraints:\nPlain Git configuration, tracked marker files, and repository contents cannot self-attest protection. Provider adapters own authenticated discovery and exact byte retrieval; schema-v22 SyncService owns transactional application. Use exact control-OID compare-and-swap and freshness checks. Retain legacy refs, archives, generations, packs, raw events, inbox data, and Git objects indefinitely. No deletion or garbage collection."
+  }
+}

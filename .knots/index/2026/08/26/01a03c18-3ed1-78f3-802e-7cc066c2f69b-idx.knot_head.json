@@ -1,0 +1,48 @@
+{
+  "event_id": "01a03c18-3ed1-78f3-802e-7cc066c2f69b",
+  "occurred_at": "2026-08-26T03:23:37.041069Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-126f",
+    "lease_expiry_ts": 1787715217,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: sqlite-bootstrap-correction",
+    "type": "lease",
+    "updated_at": "2026-08-26T03:23:37.019998Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c32-f5ab-7d92-9fb0-99a243d45bde",
+  "occurred_at": "2026-08-26T03:52:47.78721Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation review APPROVED against current origin/main and corrected acceptance. Provider-bound authenticated apply inputs are mandatory; replacement is CAS-checked and atomic; local identities, quarantine, retained delta, and exact projections are preserved/validated; migration and downgrade/re-upgrade tests cover crash/reopen, outbox preservation, and rotation lineage. No scope, security, or regression findings. Independent second review also APPROVED. Branch: codex/knots-2af8-v2 commit:7ede7503.",
+    "datetime": "2026-08-26T03:52:47.78721Z",
+    "entry_id": "01a03c32-f5ab-7d92-9fb0-99999eb42a1c",
+    "model": "unknown",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

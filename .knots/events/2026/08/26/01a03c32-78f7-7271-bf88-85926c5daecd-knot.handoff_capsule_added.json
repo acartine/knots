@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c32-78f7-7271-bf88-85926c5daecd",
+  "occurred_at": "2026-08-26T03:52:15.862753Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Authenticated SyncService checkpoint apply boundary implemented and published. Schema v22 stores Ed25519 seed/public key/fingerprint/status/lineage transactionally. CAS, quarantine preservation/drain, exact projections, UUID downgrade/re-upgrade reconciliation, pending outbox preservation, crash/reopen, and file mode tests pass. Provider adapters must construct ValidatedProtection and invoke this boundary; live GitHub/Diffinite discovery is follow-on scope. make sanity: 1340 tests, 95.19%; independent review APPROVE. Branch: codex/knots-2af8-v2",
+    "datetime": "2026-08-26T03:52:15.862753Z",
+    "entry_id": "01a03c32-78f7-7271-bf88-85883911fa2e",
+    "model": "unknown",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

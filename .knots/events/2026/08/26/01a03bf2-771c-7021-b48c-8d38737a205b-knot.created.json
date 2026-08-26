@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03bf2-771c-7021-b48c-8d38737a205b",
+  "occurred_at": "2026-08-26T02:42:21.08491Z",
+  "knot_id": "knots-c6ef",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: github-enforcement-plan-review",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

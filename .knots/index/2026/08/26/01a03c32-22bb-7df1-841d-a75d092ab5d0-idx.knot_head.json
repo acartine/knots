@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03c32-22bb-7df1-841d-a75d092ab5d0",
+  "occurred_at": "2026-08-26T03:51:53.787826Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-126f",
+    "lease_expiry_ts": 1787715227,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: sqlite-bootstrap-correction",
+    "type": "lease",
+    "updated_at": "2026-08-26T03:51:53.787826Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

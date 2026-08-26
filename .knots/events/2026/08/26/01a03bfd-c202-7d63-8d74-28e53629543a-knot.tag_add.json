@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03bfd-c202-7d63-8d74-28e53629543a",
+  "occurred_at": "2026-08-26T02:54:41.104491Z",
+  "knot_id": "knots-c472",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "compaction"
+  }
+}

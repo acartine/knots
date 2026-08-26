@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bcc-658c-7db2-96c4-c1314963a627",
+  "occurred_at": "2026-08-26T02:00:46.220329Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Corrective implementation a6f8938af pins the same-parent build-fleet Persona actually stored in the fleet token path; cross-parent, self, wrong-caller, target eligibility, and target-parent repo-admin limits remain. Focused Auth 1/1, Diffinite 4/4, full affected just lint exit 0. Commit and sneka-agents note published to canonical Diffinite branch.",
+    "datetime": "2026-08-26T02:00:46.220329Z",
+    "entry_id": "01a03bcc-658c-7db2-96c4-c12e1720434e",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

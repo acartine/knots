@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c73-15e2-7c02-85bb-307e1f5a55db",
+  "occurred_at": "2026-08-26T05:02:50.337939Z",
+  "knot_id": "knots-c472",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Late GitHub Codecov patch check failed after PR #108 merged: 94.82% patch coverage against required 95.17% (275 hits, 15 misses). Main merge is 3e3aa0689c2f1200c724f9a3770570bf816df6d2; merge attribution note is published. Treating this as shipment failure and correcting with focused tests; thresholds remain unchanged.",
+    "datetime": "2026-08-26T05:02:50.337939Z",
+    "entry_id": "01a03c73-15e2-7c02-85bb-3069bebdac4f",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

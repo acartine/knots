@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c17-473e-7d93-a527-2f75baa072a6",
+  "occurred_at": "2026-08-26T03:22:33.662756Z",
+  "knot_id": "knots-4521",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Creation handoff: This correction closes the remaining read-path trust gap. Provider policy and exact provider-returned OIDs, never plain Git content, must authorize ValidatedProtection. Fetch exact immutable bytes, recheck policy/control freshness, and then enter the schema-v22 SyncService apply boundary. GitHub and Diffinite fixtures plus disposable live probes are mandatory. Existing operator approval covers both provider control work and SQLite application; do not introduce a later approval gate. Preserve every legacy/archive/generation/pack/event/inbox/Git object.",
+    "datetime": "2026-08-26T03:22:33.662756Z",
+    "entry_id": "01a03c17-473e-7d93-a527-2f6ae4d420b0",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

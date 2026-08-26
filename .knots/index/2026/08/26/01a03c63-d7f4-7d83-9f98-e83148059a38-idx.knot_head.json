@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03c63-d7f4-7d83-9f98-e83148059a38",
+  "occurred_at": "2026-08-26T04:46:11.444303Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-85cb",
+    "lease_expiry_ts": 1787720771,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: c472 implementation recovery",
+    "type": "lease",
+    "updated_at": "2026-08-26T04:40:34.123903Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

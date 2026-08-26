@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03c93-545a-7352-8246-693522459251",
+  "occurred_at": "2026-08-26T05:38:03.482346Z",
+  "knot_id": "knots-16b4",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "github-enforcement-resume",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 98154
+      },
+      "timeout_seconds": 600
+    }
+  }
+}

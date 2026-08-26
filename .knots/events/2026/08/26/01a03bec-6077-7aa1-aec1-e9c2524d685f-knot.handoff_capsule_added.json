@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bec-6077-7aa1-aec1-e9c2524d685f",
+  "occurred_at": "2026-08-26T02:35:42.071374Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Corrective commit a6f8938af267e53ef5b2f5bdb0d33ba2bcb47b4a merged exact. Auth, Intake, and Diffinite deploy stages exited 0; https://diffinite.sneka.ai/healthz returned ok. Live disposable repo de37b423-f256-42ed-8400-7948230c1a9c: app-bound grant/read succeeded (audits 9403/9404); integrator created canonical, control, archive, freeze; frozen legacy update/delete denied with upgrade-specific text. Revoke/read succeeded (audits 9406/9407); all privileged refs denied afterward. Credential-scoped inbox create succeeded, force rewrite and foreign credential path denied. Disposable key rows revoked, SSH denial proven, and local private key material deleted. Ticket 20260826T020444Z-250a4e remains deploy-pending for the full multi-product train.",
+    "datetime": "2026-08-26T02:35:42.071374Z",
+    "entry_id": "01a03bec-6077-7aa1-aec1-e9ba64a8261f",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

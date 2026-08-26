@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c18-b87d-79e3-8ea9-726843ce8b48",
+  "occurred_at": "2026-08-26T03:24:08.189866Z",
+  "knot_id": "knots-4521",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "APPROVED plan review. The plan closes the read-path trust gap without allowing Git configuration or repository bytes to self-attest protection. It binds provider identity, policy revision, trusted writer, ref layout, and exact OIDs; fetches immutable bytes only; rechecks policy/control after fetch; and invokes schema-v22 transactionally for bootstrap and incremental sync. Negative coverage includes pagination omissions, policy rollback, identity substitution, stale/missing OIDs, races, corruption, inbox gaps, offline/provider failure, and unchanged SQLite/object retention. Ownership is separated correctly from write enforcement, signing, integration, and bridge cutover. Implementation must wait for the declared dependencies; no additional operator approval is required.",
+    "datetime": "2026-08-26T03:24:08.189866Z",
+    "entry_id": "01a03c18-b87d-79e3-8ea9-72519cd73401",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

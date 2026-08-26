@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03cae-ef5a-75c0-88c0-d7cc8f5fc1f7",
+  "occurred_at": "2026-08-26T06:08:12.62143Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Goal:\nRun the shipped lossless generation integrator through trusted GitHub Actions and Diffinite service runners so protected inbox refs are consumed only as untrusted data and authoritative generations advance safely.\n\nVerification:\n1. Run provider-adapter fixtures and provider-specific integration tests; expect only authenticated, current policy facts and trusted runner identities to authorize execution.\n2. Run concurrent-writer, stale-control-CAS, and recovery-epoch tests; expect immutable canonical/archive publication before exactly one control CAS and no acknowledged event loss.\n3. Run full replay-equivalence tests from published generations; expect projection-complete deterministic snapshots, packs, indexes, writer vectors, and conflict ledgers.\n4. Run disposable live GitHub and Diffinite canaries; expect exact OID sequencing, ordinary-writer rejection, trusted-runner success, and byte-equivalent replay.\n5. Run make sanity.\n\nConstraints:\nInbox refs and their trees are untrusted data only: never checkout or execute inbox content. Consume only protected inbox refs discovered through provider-authenticated policy facts. Publish immutable canonical generation and archive objects first, then advance control with exact compare-and-swap last. Recovery creates a higher epoch that dominates acknowledged writer heads. Retain all legacy refs, inbox objects, generations, packs, archives, raw events, and Git objects indefinitely. Existing GitHub, Diffinite, service-identity, deployment, SQLite, and live-canary approvals apply; no additional operator gate."
+  }
+}

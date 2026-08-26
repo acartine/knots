@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c39-fb6b-72f0-b58a-c81a62a5c361",
+  "occurred_at": "2026-08-26T04:00:28.010904Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment complete via GitHub PR #107. Rebase merge produced exact-main commit db7b5636dc3745e79e1f70d9991930094265229c; its tree is byte-equivalent to reviewed 7ede7503. Required GitHub Sanity passed in 5m31s and required-public-files passed. Repository ruleset has no required Codecov status; advisory codecov/patch is red while enforced repository total coverage passed at 95.19%. Rewritten main commit has one valid published sneka-agents/1 attribution note. PR: 107 main: db7b5636dc37.",
+    "datetime": "2026-08-26T04:00:28.010904Z",
+    "entry_id": "01a03c39-fb6b-72f0-b58a-c8088644d84f",
+    "model": "unknown",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

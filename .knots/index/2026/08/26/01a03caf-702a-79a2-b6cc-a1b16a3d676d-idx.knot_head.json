@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03caf-702a-79a2-b6cc-a1b16a3d676d",
+  "occurred_at": "2026-08-26T06:08:45.609993Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-bca9",
+    "lease_expiry_ts": 1787725119,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: provider-integrator-planning",
+    "type": "lease",
+    "updated_at": "2026-08-26T06:08:45.609993Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c3a-584f-72e0-858b-e0cdf39fda53",
+  "occurred_at": "2026-08-26T04:00:51.790976Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review APPROVED. origin/main is exactly db7b5636dc3745e79e1f70d9991930094265229c, byte-equivalent to reviewed tree 7ede7503; working tree is clean; implementation and rewritten main commits are tagged; remote sneka-agents/1 note validates; GitHub Sanity run 32928122324 completed success and required-public-files passed. Codecov patch remains advisory and is not in the active ruleset; repository coverage source-of-truth gate passed at 95.19%. No production service or PostgreSQL changes; provider-adapter invocation remains the explicit dependent Knot.",
+    "datetime": "2026-08-26T04:00:51.790976Z",
+    "entry_id": "01a03c3a-584f-72e0-858b-e0b6a4868739",
+    "model": "unknown",
+    "username": "OpenAI",
+    "version": "unknown"
+  }
+}

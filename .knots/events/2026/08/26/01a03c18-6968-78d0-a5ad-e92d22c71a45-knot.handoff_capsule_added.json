@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c18-6968-78d0-a5ad-e92d22c71a45",
+  "occurred_at": "2026-08-26T03:23:47.944529Z",
+  "knot_id": "knots-2af8",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Corrected ownership after implementation review: knots-2af8 supplies SyncService::install_v2_checkpoint and drain_v2_quarantine. CheckpointInput requires ValidatedProtection plus exact protected control/canonical bytes and source facts; retained replay executes inside the replacement transaction. Plain Git metadata never self-attests. The dependent provider-adapter Knot must fetch live GitHub/Diffinite facts and bytes, construct ValidatedProtection, and invoke this boundary.",
+    "datetime": "2026-08-26T03:23:47.944529Z",
+    "entry_id": "01a03c18-6968-78d0-a5ad-e912de579f93",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

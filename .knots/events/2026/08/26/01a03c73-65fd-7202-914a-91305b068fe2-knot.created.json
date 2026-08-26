@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03c73-65fd-7202-914a-91305b068fe2",
+  "occurred_at": "2026-08-26T05:03:10.845703Z",
+  "knot_id": "knots-2f10",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: Codex",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

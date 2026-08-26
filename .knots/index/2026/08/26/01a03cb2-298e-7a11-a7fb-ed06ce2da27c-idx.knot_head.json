@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03cb2-298e-7a11-a7fb-ed06ce2da27c",
+  "occurred_at": "2026-08-26T06:11:44.142333Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-fcf9",
+    "lease_expiry_ts": 1787725287,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: provider-integrator-attribution",
+    "type": "lease",
+    "updated_at": "2026-08-26T06:11:44.142333Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

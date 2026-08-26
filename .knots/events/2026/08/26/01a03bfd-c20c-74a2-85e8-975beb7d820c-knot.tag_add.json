@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03bfd-c20c-74a2-85e8-975beb7d820c",
+  "occurred_at": "2026-08-26T02:54:41.104491Z",
+  "knot_id": "knots-c472",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "signing"
+  }
+}

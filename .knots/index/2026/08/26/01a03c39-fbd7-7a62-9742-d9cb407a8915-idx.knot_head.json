@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03c39-fbd7-7a62-9742-d9cb407a8915",
+  "occurred_at": "2026-08-26T04:00:28.119154Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5ed9",
+    "lease_expiry_ts": 1787720428,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: sqlite-bootstrap-ship",
+    "type": "lease",
+    "updated_at": "2026-08-26T04:00:28.119154Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

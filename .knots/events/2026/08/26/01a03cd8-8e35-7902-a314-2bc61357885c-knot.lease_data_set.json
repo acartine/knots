@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03cd8-8e35-7902-a314-2bc61357885c",
+  "occurred_at": "2026-08-26T06:53:40.277894Z",
+  "knot_id": "knots-5873",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "codex-github-attested-immutable",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 96874
+      },
+      "timeout_seconds": 600
+    }
+  }
+}

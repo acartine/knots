@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03cb3-739f-7b51-ab24-588ca98f095b",
+  "occurred_at": "2026-08-26T06:13:08.639595Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation intentionally not started. knots-74e2 is still in IMPLEMENTATION; knots-ccdc, knots-c472, and knots-9b6a are SHIPPED. The approved plan requires all four interfaces to be shipped and pinned before code or live provider mutation begins.",
+    "datetime": "2026-08-26T06:13:08.639595Z",
+    "entry_id": "01a03cb3-739f-7b51-ab24-587b8dff0d1a",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03c86-29ff-7610-969f-86f7473531d9",
+  "occurred_at": "2026-08-26T05:23:40.671217Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-6aab",
+    "lease_expiry_ts": 1787723615,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: Codex",
+    "type": "lease",
+    "updated_at": "2026-08-26T05:23:40.671217Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

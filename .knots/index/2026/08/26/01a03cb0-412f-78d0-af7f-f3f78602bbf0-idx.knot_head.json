@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03cb0-412f-78d0-af7f-f3f78602bbf0",
+  "occurred_at": "2026-08-26T06:09:39.11929Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-bca9",
+    "lease_expiry_ts": 1787725179,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: provider-integrator-planning",
+    "type": "lease",
+    "updated_at": "2026-08-26T06:09:39.11929Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

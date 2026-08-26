@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c86-13bc-7522-944f-47c697683090",
+  "occurred_at": "2026-08-26T05:23:34.972678Z",
+  "knot_id": "knots-c472",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Codecov correction complete. PR #109, branch codex/knots-c472-codecov, commit cc9ab76cd346. Adds focused adversarial coverage for all reported verifier/retry categories and makes forged-signature corruption deterministic. Definitive make sanity passed 1354 tests at 95.26%; managed pre-push sanity also passed 95.26%. No threshold changes.",
+    "datetime": "2026-08-26T05:23:34.972678Z",
+    "entry_id": "01a03c86-13bc-7522-944f-47bb7c381a2a",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

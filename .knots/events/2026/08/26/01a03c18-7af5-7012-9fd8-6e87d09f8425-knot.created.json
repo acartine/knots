@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03c18-7af5-7012-9fd8-6e87d09f8425",
+  "occurred_at": "2026-08-26T03:23:52.437815Z",
+  "knot_id": "knots-a198",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: provider-fetch-plan-review",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

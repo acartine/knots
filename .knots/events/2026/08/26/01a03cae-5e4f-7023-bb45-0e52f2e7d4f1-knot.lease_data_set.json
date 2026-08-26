@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03cae-5e4f-7023-bb45-0e52f2e7d4f1",
+  "occurred_at": "2026-08-26T06:07:35.503306Z",
+  "knot_id": "knots-5a32",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "Codex",
+        "agent_type": "api",
+        "model": "GPT-5.6",
+        "model_version": "5.6",
+        "provider": "OpenAI"
+      },
+      "lease_type": "agent",
+      "nickname": "github-enforcement-registry",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 82459
+      },
+      "timeout_seconds": 3600
+    }
+  }
+}

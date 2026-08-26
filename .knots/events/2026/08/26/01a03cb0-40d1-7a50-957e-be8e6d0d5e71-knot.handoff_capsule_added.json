@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03cb0-40d1-7a50-957e-be8e6d0d5e71",
+  "occurred_at": "2026-08-26T06:09:39.025867Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Planning complete. Implement only after all four declared provider/integrator dependencies ship. The plan seals provider evidence, treats inbox trees as non-executable untrusted data, independently verifies replay equivalence, publishes immutable objects before exact control CAS, rebuilds on races, and uses higher dominating recovery epochs. GitHub and Diffinite disposable live canaries are included and already approved. No deletion and no new operator gate.",
+    "datetime": "2026-08-26T06:09:39.025867Z",
+    "entry_id": "01a03cb0-40d1-7a50-957e-be789bb0cdff",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

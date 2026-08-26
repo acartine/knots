@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03bfe-59bf-7262-aaac-69ca3022b0c6",
+  "occurred_at": "2026-08-26T02:55:19.999197Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. V2 control, canonical/archive, and inbox production rulesets are active with Integration 15368 as the sole bypass actor; the legacy-freeze ruleset is created and staged but becomes enforcing only in knots-d6e4 after its freeze-first rejection probe and final legacy SHA capture.\\n2. Repository write, maintain, and admin roles cannot bypass any Knots data-ref ruleset.\\n3. Inbox refs permit only trusted Actions-mediated creation and exact fast-forward updates; direct creation/update, deletion, and non-fast-forward updates are rejected. Canonical and archive refs deny all direct client writes.\\n4. A trusted default-branch workflow verifies self-authenticating signed inbox requests, validates inbox data without checking out or executing it, constructs immutable generation/control objects itself, publishes canonical and archive first, then advances control with an exact expected-OID lease.\\n5. Disposable-ref canaries prove ordinary-client rejection, Actions-mediated inbox creation/fast-forward, protected Actions success, and deletion/non-fast-forward rejection before any production v2 policy is activated."
+  }
+}

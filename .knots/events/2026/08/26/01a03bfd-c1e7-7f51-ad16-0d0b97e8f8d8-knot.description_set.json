@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03bfd-c1e7-7f51-ad16-0d0b97e8f8d8",
+  "occurred_at": "2026-08-26T02:54:41.104491Z",
+  "knot_id": "knots-c472",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Goal:\nReplace unsigned random-UUID GitHub outbox identity with self-authenticating per-installation submissions. Consume the durable signing-key state owned by knots-2af8, derive writer_id from the public-key fingerprint, sign every bundle and proposed commit over the target ref, expected old OID, monotonic sequence, and payload hashes, and expose verification APIs used by trusted GitHub Actions before it alone advances protected inbox refs.\n\nVerification:\n1. Run focused signing and verification tests proving valid submissions pass and mutated signatures, refs, expected old OIDs, sequences, payloads, writer identities, and cross-writer replays fail.\n2. Run migration, rotation, crash-recovery, and fresh-bootstrap integration tests against the SQLite signing-key state supplied by knots-2af8; expect stable fingerprints and no lost or duplicated acknowledged sequence.\n3. Run the released v0.17.6 compatibility fixture; expect every attempt to bypass the signed Actions path or directly update a protected inbox ref to fail closed without changing authoritative refs.\n4. Run make sanity and verify the GitHub Actions entrypoint accepts only verified data before publishing.\n\nConstraints:\nThis Knot is blocked by knots-2af8, which owns schema v22 and signing-key persistence. This Knot owns signed bundle/commit construction, verification, replay defense, and the Actions-mediated API. GitHub Actions alone advances protected inbox refs. Do not delete legacy refs, archives, generations, packs, raw events, or Git objects."
+  }
+}

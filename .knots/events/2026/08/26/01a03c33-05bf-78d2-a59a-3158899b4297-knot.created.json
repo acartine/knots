@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03c33-05bf-78d2-a59a-3158899b4297",
+  "occurred_at": "2026-08-26T03:52:51.903734Z",
+  "knot_id": "knots-5ed9",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: sqlite-bootstrap-ship",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03bfd-c1ed-7001-acf8-9b863b9ee9c4",
+  "occurred_at": "2026-08-26T02:54:41.104491Z",
+  "knot_id": "knots-c472",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Per-installation key creation, migration, rotation, crash durability, and fresh bootstrap preserve a stable public-key-fingerprint writer_id through the knots-2af8 SQLite state and are covered by integration tests.\n2. Every outbox bundle and proposed commit is signed over its exact target ref, expected old OID, monotonic writer sequence, writer_id, and canonical payload hashes; verification rejects any changed field.\n3. Verification rejects forged signatures, replayed or non-monotonic sequences, cross-writer substitutions, unregistered or mismatched public keys, and stale expected old OIDs without advancing an authoritative ref.\n4. Clients have no direct protected-inbox push capability; a trusted default-branch GitHub Actions API verifies submissions and alone advances protected inbox refs.\n5. The actual v0.17.6 client fixture fails closed against signed/protected inboxes and cannot create, update, resurrect, or rewrite authoritative v2 data.\n6. Legacy and archive data remain intact; no destructive cleanup or garbage collection is introduced."
+  }
+}

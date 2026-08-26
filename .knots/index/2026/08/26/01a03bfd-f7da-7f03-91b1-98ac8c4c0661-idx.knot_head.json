@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03bfd-f7da-7f03-91b1-98ac8c4c0661",
+  "occurred_at": "2026-08-26T02:54:54.93841Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-9dec",
+    "lease_expiry_ts": 1787712761,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: github-enforcement-implementation",
+    "type": "lease",
+    "updated_at": "2026-08-26T02:54:54.93841Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

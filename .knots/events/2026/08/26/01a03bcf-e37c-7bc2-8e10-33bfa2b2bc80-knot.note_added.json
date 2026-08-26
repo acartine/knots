@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bcf-e37c-7bc2-8e10-33bfa2b2bc80",
+  "occurred_at": "2026-08-26T02:04:35.068478Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment retry uses fresh diff name codex/knots-9b6a-grantor-fix because Diffinite correctly treated the previously merged app-rail diff name as closed; corrective commit unchanged.",
+    "datetime": "2026-08-26T02:04:35.068478Z",
+    "entry_id": "01a03bcf-e37c-7bc2-8e10-33a610fa551c",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

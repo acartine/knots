@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bf2-66d5-7972-9e8b-7a5eefc86c5e",
+  "occurred_at": "2026-08-26T02:42:16.917738Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation plan (complexity: medium; live-policy risk isolated behind disposable refs):\\n1. Add a versioned GitHub policy manifest for four exact rule families: legacy freeze; protected control; immutable canonical/archive; and append-only inbox. Every protected-authority family has only Integration 15368 in bypass_actors; no RepositoryRole actor appears. Inbox permits creation and fast-forward updates by omitting creation/update restrictions, while deletion and non-fast-forward rules stay active.\\n2. Add scripts that render/apply/read back rulesets through the GitHub REST API, reject drift, verify exact patterns and actor lists, and apply a disposable canary policy before production policy. Make application idempotent and never delete refs or Git objects.\\n3. Add a default-branch workflow plus validator/integrator entrypoint. It fetches inbox refs as untrusted Git objects, validates only .knots/v2/inbox data, never checks out or executes inbox content, and uses the trusted GITHUB_TOKEN path to publish immutable canonical/archive refs then advance control last by an exact expected-OID lease.\\n4. Add a canary workflow/script proving an ordinary administrator credential cannot mutate protected disposable refs, while Integration 15368 can create/update them. Verify inbox fast-forward succeeds and deletion/non-fast-forward fails. Recover by retaining the disposable refs; do not delete them.\\n5. Add unit/fixture tests for policy rendering, forbidden bypass roles, exact ref patterns, workflow trust boundary, and canary result validation. Run focused tests and make sanity.\\n6. Commit with Sneka attribution, push a codex branch, open a GitHub PR, pass CI, merge to main, apply live canary rules first, then production rules, read them back, execute live canaries, and record identifiers/OIDs without exposing credentials.\\nRisks: GitHub rulesets cannot bind a wildcard suffix to a specific PAT. Writer ownership therefore remains a semantic registration/signature check performed by the trusted default-branch integrator; the provider capability must not claim writer scoping unless that validation is active. The direct ref layer enforces append-only inbox behavior and protects all authoritative refs.",
+    "datetime": "2026-08-26T02:42:16.917738Z",
+    "entry_id": "01a03bf2-66d5-7972-9e8b-7a4521a9176d",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

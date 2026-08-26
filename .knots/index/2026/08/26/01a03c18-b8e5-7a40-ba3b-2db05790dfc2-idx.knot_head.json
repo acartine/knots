@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03c18-b8e5-7a40-ba3b-2db05790dfc2",
+  "occurred_at": "2026-08-26T03:24:08.293075Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a198",
+    "lease_expiry_ts": 1787715248,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: provider-fetch-plan-review",
+    "type": "lease",
+    "updated_at": "2026-08-26T03:24:08.293075Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

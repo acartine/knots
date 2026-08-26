@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03cae-ef7c-7362-961c-d7a3b1162452",
+  "occurred_at": "2026-08-26T06:08:12.62143Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "providers"
+  }
+}

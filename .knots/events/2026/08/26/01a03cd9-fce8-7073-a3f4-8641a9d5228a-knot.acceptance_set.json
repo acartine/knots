@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03cd9-fce8-7073-a3f4-8641a9d5228a",
+  "occurred_at": "2026-08-26T06:55:14.152769Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Production rulesets protect every v2 proposal, generation/archive, and control-epoch ref with zero bypass actors: ordinary creation of a unique ref is allowed, while updates, deletions, and non-fast-forward writes are denied to everyone; legacy freeze remains staged disabled for knots-d6e4.\n2. Clients publish only c472 self-signed immutable proposal refs. No mutable inbox or writer-registry promotion exists; provider integrator knots-d6dd consumes proposals directly and derives registration/sequence from the signed chain plus canonical writer vector.\n3. Trusted exact-main Actions publishes a unique immutable control-epoch manifest and obtains GitHub OIDC artifact provenance over its exact digest and referenced OIDs. Authority verification binds acartine/knots, .github/workflows/knots-v2-control-epoch.yml, refs/heads/main, exact main SHA, monotonic epoch, and writer dominance.\n4. Ordinary actors may create lookalike control refs but an unattested or wrongly bound manifest is rejected. No v2 ref can be rewritten or deleted by ordinary credentials or Actions.\n5. Live canaries prove ordinary authenticated creation succeeds, rewrite/delete fail, trusted Actions attestation verifies with exact workflow/head binding, and ordinary unattested lookalikes fail before production rules are read back."
+  }
+}

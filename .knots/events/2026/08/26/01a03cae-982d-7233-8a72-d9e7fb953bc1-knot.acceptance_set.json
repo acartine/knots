@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03cae-982d-7233-8a72-d9e7fb953bc1",
+  "occurred_at": "2026-08-26T06:07:50.31755Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Production rulesets actively protect v2 proposal, writer-registry, inbox, control, canonical, and archive refs with Integration 15368 as the sole bypass actor; the legacy-freeze ruleset exists disabled for knots-d6e4.\\n2. Ordinary clients may create one immutable proposal ref but cannot update/delete it, and cannot create/update/delete protected writer-registry, inbox, control, canonical, or archive refs.\\n3. A reachable trusted default-main Action reads a complete signed proposal envelope and exact Git objects as untrusted data, derives repository/current writer authority from protected GitHub state, invokes c472 verification without checkout/execution, and atomically advances the protected writer registry and inbox under exact expected-OID leases.\\n4. Writer rotation requires a parent key from protected registry state; sequence validation is independent of untrusted proposal-ref aliases; direct inbox writes and caller-selected authority OIDs are rejected.\\n5. Disposable live canaries prove an authenticated ordinary administrator is denied while Integration 15368 succeeds for protected creation/fast-forward, and prove deletion/non-fast-forward denial before production activation. Provider generation integration and canonical/archive/control publication from protected inboxes are owned by the follow-on provider-integrator Knot."
+  }
+}

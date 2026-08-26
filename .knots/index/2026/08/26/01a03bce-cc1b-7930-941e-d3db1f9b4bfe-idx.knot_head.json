@@ -1,0 +1,48 @@
+{
+  "event_id": "01a03bce-cc1b-7930-941e-d3db1f9b4bfe",
+  "occurred_at": "2026-08-26T02:03:23.547375Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-9e21",
+    "lease_expiry_ts": 1787713403,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: codex-knots-9b6a-fix-ship",
+    "type": "lease",
+    "updated_at": "2026-08-26T02:03:23.526019Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

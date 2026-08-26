@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c6c-0fba-7663-81ac-525b40a8dd8f",
+  "occurred_at": "2026-08-26T04:55:10.010093Z",
+  "knot_id": "knots-c472",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "APPROVED implementation review. PR #108 exact head f7bf2152 matches the tagged commit and base db7b5636. GitHub reports CLEAN/MERGEABLE; Sanity passed in 5m35s and required-public-files passed. Independent adversarial security review APPROVE after correcting proposal-OID binding, lost-ack migration, verified registration results, fixed transcript vectors, idempotent submission retry, and durable original-generation replay. The client transport has no protected-inbox write method; legacy/archive data is retained.",
+    "datetime": "2026-08-26T04:55:10.010093Z",
+    "entry_id": "01a03c6c-0fba-7663-81ac-524d6b4c4193",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

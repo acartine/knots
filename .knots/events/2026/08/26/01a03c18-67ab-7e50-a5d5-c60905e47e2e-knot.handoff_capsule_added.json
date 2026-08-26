@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c18-67ab-7e50-a5d5-c60905e47e2e",
+  "occurred_at": "2026-08-26T03:23:47.499612Z",
+  "knot_id": "knots-4521",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning complete. Implement a provider-neutral sealed evidence boundary, concrete GitHub and Diffinite authenticated adapters, exact-OID immutable fetch, post-fetch policy/control freshness recheck, and schema-v22 bootstrap/incremental invocation. All trust must originate in live provider readback; plain Git and tracked content cannot self-attest. Dependencies are knots-2af8, knots-c472, knots-74e2, and knots-9b6a. Live disposable probes and fail-closed race/mismatch tests are required. Existing approval covers all provider, SQLite, GitHub, and Diffinite work; preserve all historical objects indefinitely.",
+    "datetime": "2026-08-26T03:23:47.499612Z",
+    "entry_id": "01a03c18-67ab-7e50-a5d5-c5ff4292fd2f",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

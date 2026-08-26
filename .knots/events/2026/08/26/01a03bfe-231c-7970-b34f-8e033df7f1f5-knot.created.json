@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03bfe-231c-7970-b34f-8e033df7f1f5",
+  "occurred_at": "2026-08-26T02:55:06.012566Z",
+  "knot_id": "knots-23fc",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: github-enforcement-correction",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

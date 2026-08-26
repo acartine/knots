@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03c73-375b-7152-b6ff-1e82f570a0e0",
+  "occurred_at": "2026-08-26T05:02:58.907312Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-019e",
+    "lease_expiry_ts": 1787721170,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: c472 shipment",
+    "type": "lease",
+    "updated_at": "2026-08-26T05:02:58.907312Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

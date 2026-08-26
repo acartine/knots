@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03cae-ef81-7901-a395-58f7dd304365",
+  "occurred_at": "2026-08-26T06:08:12.62143Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "integrator"
+  }
+}

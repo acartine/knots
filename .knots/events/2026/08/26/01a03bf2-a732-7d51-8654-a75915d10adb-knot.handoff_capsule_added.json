@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bf2-a732-7d51-8654-a75915d10adb",
+  "occurred_at": "2026-08-26T02:42:33.394191Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "APPROVED. The plan covers all five acceptance criteria, uses a disposable policy boundary before production refs, keeps untrusted inbox objects out of the workflow checkout/execution path, and makes no destructive cleanup. The noted GitHub wildcard/PAT limitation is handled by semantic writer registration in the trusted integrator; the provider capability must remain fail-closed until the live semantic check and append-only rules are both verified. Tests include forbidden role bypasses, exact ref patterns, trust-boundary inspection, and live ordinary-vs-Actions canaries.",
+    "datetime": "2026-08-26T02:42:33.394191Z",
+    "entry_id": "01a03bf2-a732-7d51-8654-a74d6bd9773f",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

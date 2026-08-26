@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03cae-982d-7233-8a72-da0cba2363fd",
+  "occurred_at": "2026-08-26T06:07:50.31755Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Scope correction after independent review: knots-c472 authorizes only signed proposal promotion into a protected inbox. It does not construct generation/control objects, and ccdc has no GitHub provider adapter/replay entrypoint. knots-74e2 therefore owns GitHub enforcement, protected writer registry, and atomic signed proposal promotion only. A new provider-integrator execution Knot owns consuming protected inboxes, invoking ccdc, publishing immutable canonical/archive generations, and advancing control by exact CAS. This avoids shipping a fake publication contract. Legacy freeze remains staged disabled for d6e4.",
+    "datetime": "2026-08-26T06:07:50.31755Z",
+    "entry_id": "01a03cae-982d-7233-8a72-d9f02ec660b6",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

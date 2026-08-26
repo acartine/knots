@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03c66-d89a-7271-bdc6-2bc5901b5991",
+  "occurred_at": "2026-08-26T04:49:28.218722Z",
+  "knot_id": "knots-8402",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: c472 implementation review",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

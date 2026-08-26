@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03c17-2671-78c1-9396-64d21bdc13ee",
+  "occurred_at": "2026-08-26T03:22:25.247561Z",
+  "knot_id": "knots-4521",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. GitHub and Diffinite adapters read authenticated live policy, repository, ref, trusted-writer, and exact OID facts and are the only route that can construct ValidatedProtection.\n2. Protected control, canonical generation, archive, and retained inbox bytes are fetched by exact provider-returned OID; stale, missing, mismatched, substituted, or raced facts fail closed before authoritative or SQLite state changes.\n3. Exact control-OID freshness and compare-and-swap semantics are verified before applying bootstrap or incremental data, and a post-fetch policy/control recheck detects mid-read changes.\n4. Authenticated fetch invokes the schema-v22 SyncService boundary for both fresh bootstrap and incremental sync, preserving transactional projection replacement, watermarks, writer state, and lease quarantine.\n5. GitHub fixtures plus a disposable live GitHub probe and Diffinite fixtures plus a disposable live Diffinite probe prove policy readback, exact-byte retrieval, trusted identity, and rejection paths.\n6. Offline, local-only, unsupported-provider, and unavailable-provider modes never derive ValidatedProtection from plain Git or tracked content; they preserve non-v2 behavior or return a clear fail-closed result without deletion.\n7. No legacy ref, archive, generation, pack, raw event, retained inbox object, or Git object is deleted or garbage-collected."
+  }
+}

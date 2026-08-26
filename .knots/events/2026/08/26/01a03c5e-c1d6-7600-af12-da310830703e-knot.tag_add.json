@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03c5e-c1d6-7600-af12-da310830703e",
+  "occurred_at": "2026-08-26T04:40:38.102209Z",
+  "knot_id": "knots-c472",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:codex/knots-c472-signed-outbox"
+  }
+}

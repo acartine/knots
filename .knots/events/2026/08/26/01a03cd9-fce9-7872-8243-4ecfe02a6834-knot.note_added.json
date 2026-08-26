@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03cd9-fce9-7872-8243-4ecfe02a6834",
+  "occurred_at": "2026-08-26T06:55:14.152769Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Correction: personal repositories cannot admit Integration 15368 as a ruleset bypass. The approved implementation now uses zero bypass actors, immutable create-only refs, and GitHub OIDC artifact attestations. No App, deploy key, secret, or persistent credential is used.",
+    "datetime": "2026-08-26T06:55:14.152769Z",
+    "entry_id": "01a03cd9-fce9-7872-8243-4eb97afc50de",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

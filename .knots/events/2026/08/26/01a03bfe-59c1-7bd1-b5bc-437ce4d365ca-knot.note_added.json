@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bfe-59c1-7bd1-b5bc-437ce4d365ca",
+  "occurred_at": "2026-08-26T02:55:19.999197Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan correction: do not activate the legacy freeze in Wave 3. All current clients and the remaining e2e graph still write refs/heads/knots, so immediate enforcement would halt the graph. Wave 3 stages that exact ruleset while activating only v2 rules after signed-outbox support lands. knots-d6e4 owns the guarded legacy transition: install/enforce freeze, prove ordinary rejection, then capture the final legacy SHA and drain. GitHub inbox writes must be Actions-mediated and signed by a per-installation key whose fingerprint is the writer identity; direct wildcard inbox writes cannot provide credential scoping. The trusted workflow must construct canonical/archive/control objects from validated inputs rather than accepting caller-selected authority OIDs.",
+    "datetime": "2026-08-26T02:55:19.999197Z",
+    "entry_id": "01a03bfe-59c1-7bd1-b5bc-436dd1fe0f0f",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

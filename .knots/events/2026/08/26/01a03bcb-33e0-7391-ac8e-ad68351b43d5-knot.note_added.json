@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bcb-33e0-7391-ac8e-ad68351b43d5",
+  "occurred_at": "2026-08-26T01:59:27.968234Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment live proof found the installed fleet token authenticates as build-fleet, while the endpoint was pinned to land-queue; grant failed closed with 403 and no mutation. Corrected to the existing same-parent build-fleet grantor while preserving cross-parent, self, wrong-caller, and target-parent admin denials; full affected lint passes.",
+    "datetime": "2026-08-26T01:59:27.968234Z",
+    "entry_id": "01a03bcb-33e0-7391-ac8e-ad57ad4998d5",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

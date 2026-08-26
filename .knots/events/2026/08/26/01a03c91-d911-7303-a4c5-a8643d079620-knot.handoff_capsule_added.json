@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03c91-d911-7303-a4c5-a8643d079620",
+  "occurred_at": "2026-08-26T05:36:26.385672Z",
+  "knot_id": "knots-c472",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment complete. PR #109 merged to exact GitHub main 263695b476b16aedef888cf0fae13f6ff70e79d5; merge tree b944e0effe934a07b269b2606b53e98fa1d3c8ec exactly matches reviewed cc9ab76c tree. PR checks: Sanity green, Repo Hygiene green, codecov/patch green at 100%. Post-merge exact-main CI, Repo Hygiene, Release, and Changesets Version PR all succeeded. Sneka attribution note is published on the squash merge. No threshold changes; no legacy/archive deletion.",
+    "datetime": "2026-08-26T05:36:26.385672Z",
+    "entry_id": "01a03c91-d911-7303-a4c5-a85146b95972",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

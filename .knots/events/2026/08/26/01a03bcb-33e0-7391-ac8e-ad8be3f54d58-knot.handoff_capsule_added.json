@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03bcb-33e0-7391-ac8e-ad8be3f54d58",
+  "occurred_at": "2026-08-26T01:59:27.968234Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Live shipment correction: deployed 550cfed failed closed at grant because token identity build-fleet did not match pinned land-queue. Corrective worktree /private/tmp/quilt-knots-9b6a retains same-parent authority and pins verified build-fleet; focused DB/API tests and full affected lint pass. Return to implementation for corrective commit/review/ship.",
+    "datetime": "2026-08-26T01:59:27.968234Z",
+    "entry_id": "01a03bcb-33e0-7391-ac8e-ad7154da23cf",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}
