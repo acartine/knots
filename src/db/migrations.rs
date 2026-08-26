@@ -1,6 +1,6 @@
 use rusqlite::{params, Connection, OptionalExtension, Result};
 
-use super::migration_sql::{PROTOCOL_V2_OUTBOX, REQUIRED_META_DEFAULT_KEYS};
+use super::migration_sql;
 use super::{get_meta, now_utc_rfc3339, CURRENT_SCHEMA_VERSION};
 
 struct Migration {
@@ -9,7 +9,7 @@ struct Migration {
     sql: &'static str,
 }
 
-const MIGRATIONS: [Migration; 21] = [
+const MIGRATIONS: [Migration; 22] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -351,7 +351,12 @@ CREATE TABLE IF NOT EXISTS knot_sync_quarantine (
     Migration {
         version: 21,
         name: "protocol_v2_durable_outbox_v1",
-        sql: PROTOCOL_V2_OUTBOX,
+        sql: migration_sql::PROTOCOL_V2_OUTBOX,
+    },
+    Migration {
+        version: 22,
+        name: "protocol_v2_checkpoint_bootstrap_v1",
+        sql: migration_sql::PROTOCOL_V2_CHECKPOINT,
     },
 ];
 
@@ -474,7 +479,7 @@ pub(super) fn needs_schema_bootstrap(conn: &Connection) -> Result<bool> {
         return Ok(true);
     }
 
-    for key in REQUIRED_META_DEFAULT_KEYS {
+    for key in migration_sql::REQUIRED_META_DEFAULT_KEYS {
         if get_meta(conn, key)?.is_none() {
             return Ok(true);
         }

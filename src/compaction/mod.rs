@@ -1,6 +1,8 @@
 // This module is the shared contract for the publication and bootstrap follow-on knots.
 #![allow(dead_code, unused_imports)]
 
+mod checkpoint;
+mod checkpoint_store;
 mod inbox;
 mod integrator;
 mod manifest;
@@ -12,6 +14,11 @@ mod publication;
 mod refs;
 mod validation;
 
+pub(crate) use checkpoint::{
+    install_checkpoint, prepare_checkpoint, CheckpointError, CheckpointInput, CheckpointSummary,
+    PreparedCheckpoint,
+};
+pub(crate) use checkpoint_store::drain_generation_quarantine;
 pub(crate) use inbox::{
     validate_inbox, InboxBundle, InboxCandidate, InboxEntry, InboxError, ValidatedInbox,
     INBOX_DATA_ROOT,
@@ -52,3 +59,9 @@ mod protocol_coverage_tests;
 
 #[cfg(test)]
 mod integrator_tests;
+
+#[cfg(test)]
+mod checkpoint_tests;
+
+#[cfg(test)]
+mod checkpoint_state_tests;

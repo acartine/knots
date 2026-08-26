@@ -73,6 +73,36 @@ impl<'a> SyncService<'a> {
         }
     }
 
+    /// Install a provider-validated protocol-v2 checkpoint and its retained delta.
+    ///
+    /// The receive-control layer owns fetching protected refs and provider facts. This
+    /// cache boundary owns preparation and the single SQLite replacement transaction.
+    #[allow(dead_code)] // The provider-adapter follow-on supplies validated live inputs.
+    pub(crate) fn install_v2_checkpoint<F>(
+        &self,
+        input: crate::compaction::CheckpointInput<'_>,
+        replay_delta: F,
+    ) -> Result<crate::compaction::CheckpointSummary, SyncError>
+    where
+        F: FnOnce(&Connection) -> Result<(), String>,
+    {
+        let checkpoint = crate::compaction::prepare_checkpoint(input).map_err(compaction_error)?;
+        let machine_id = crate::machine::machine_id(&self.store_paths.root)?;
+        let leased = crate::db::local_leased_knot_ids(self.conn, &machine_id)?;
+        crate::compaction::install_checkpoint(self.conn, &checkpoint, &leased, replay_delta)
+            .map_err(compaction_error)
+    }
+
+    /// Release one generation-quarantined knot after its retained events replay.
+    #[allow(dead_code)] // The provider adapter calls this when a local lease releases.
+    pub(crate) fn drain_v2_quarantine<F>(&self, knot_id: &str, replay: F) -> Result<bool, SyncError>
+    where
+        F: FnOnce(&Connection) -> Result<(), String>,
+    {
+        crate::compaction::drain_generation_quarantine(self.conn, knot_id, replay)
+            .map_err(compaction_error)
+    }
+
     #[allow(dead_code)]
     pub fn sync(&self) -> Result<SyncSummary, SyncError> {
         let mut reporter = None;
@@ -158,6 +188,13 @@ impl<'a> SyncService<'a> {
             ),
         )?;
         Ok(summary)
+    }
+}
+
+#[allow(dead_code)]
+fn compaction_error(error: impl fmt::Display) -> SyncError {
+    SyncError::Compaction {
+        message: error.to_string(),
     }
 }
 
