@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03d28-7ce4-77e3-b370-2ca72541a506",
+  "occurred_at": "2026-08-26T08:20:58.724549Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.tag_remove",
+  "data": {
+    "tag": "commit:e15c24c7c8d0"
+  }
+}

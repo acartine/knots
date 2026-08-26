@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03d28-5d78-7291-84bd-ce5c9ba985e0",
+  "occurred_at": "2026-08-26T08:20:50.679874Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Two-phase GitHub authority shipped through PR #112 and PR #113. Phase A exact main f41b6733d80f9253362d5aacb725a3050b473e08 is pinned by protected immutable authority ref refs/heads/knots-v2-authority-code/e869300032bde6e8257673a3d11ccd60; Phase B exact main is 98f0e8499b53c3f14c671a41dfc8020da1d9be06. Independent security review APPROVE; local full sanity 95.26%. Live canary and production rules readback follow after Phase-B CI.",
+    "datetime": "2026-08-26T08:20:50.679874Z",
+    "entry_id": "01a03d28-5d78-7291-84bd-ce4cf129d8f6",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03d0b-d78e-7773-aa15-a8ba2107d5a5",
+  "occurred_at": "2026-08-26T07:49:41.390509Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Corrected acceptance to the two-phase immutable authority-code bootstrap: Phase A is fail-closed; protection precedes ref creation; Phase B pins the exact protected ref, reviewed SHA, and workflow tuple. No mutable main/config/secret supplies trust.",
+    "datetime": "2026-08-26T07:49:41.390509Z",
+    "entry_id": "01a03d0b-d78e-7773-aa15-a8a621e98ce5",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

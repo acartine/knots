@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03d30-6ea9-7ea0-9b6f-db3ee793c218",
+  "occurred_at": "2026-08-26T08:29:39.369778Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:codex/knots-74e2-executable-authority"
+  }
+}

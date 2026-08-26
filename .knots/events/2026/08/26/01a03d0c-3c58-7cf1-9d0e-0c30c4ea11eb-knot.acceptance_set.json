@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03d0c-3c58-7cf1-9d0e-0c30c4ea11eb",
+  "occurred_at": "2026-08-26T07:50:07.192086Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Production rulesets protect every v2 proposal, generation/archive, and control-epoch ref with zero bypass actors: unique ref creation is allowed, while updates, deletions, and non-fast-forward writes are denied to everyone; legacy freeze remains staged disabled for knots-d6e4.\n2. Clients publish only c472 self-signed immutable proposal refs whose name includes writer, sequence, and proposal OID. No mutable inbox or writer registry exists; provider integrator knots-d6dd consumes proposals directly and derives registration and sequence from the signed chain plus canonical writer vector.\n3. Phase A ships the reusable control-epoch attester and verifier with an empty fail-closed trusted-signer allowlist. After merge SHA A is reviewed, an active zero-bypass authority-code ruleset is read back before creating a random immutable authority ref at exact SHA A.\n4. Phase B allowlists only the exact tuple of authority ref, SHA A, and .github/workflows/knots-v2-control-epoch.yml. Dispatch occurs from that protected ref; authority verification binds acartine/knots, exact workflow, source ref, signer/source digest A, monotonic epoch, writer dominance, and referenced OIDs.\n5. Live canaries prove ordinary unique creation succeeds, ordinary and Actions rewrite/delete fail, trusted Actions attestation verifies with exact authority-ref/SHA/workflow binding, and ordinary unattested lookalikes fail before production v2 rules are applied and read back."
+  }
+}

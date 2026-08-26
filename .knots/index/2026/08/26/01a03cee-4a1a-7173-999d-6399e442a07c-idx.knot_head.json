@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03cee-4a1a-7173-999d-6399e442a07c",
+  "occurred_at": "2026-08-26T07:17:24.634656Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-d747",
+    "lease_expiry_ts": 1787727936,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-github-attested-immutable",
+    "type": "lease",
+    "updated_at": "2026-08-26T07:17:24.634656Z",
+    "workflow_id": "lease_sdlc"
+  }
+}
