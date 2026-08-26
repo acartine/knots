@@ -87,7 +87,7 @@ fn signature_binds_repository_refs_head_sequence_and_payload_hashes() {
 
     let mut changed = signed.clone();
     changed.bundle.sequence = 2;
-    changed.proposal_ref = V2RefLayout::default().proposal(&writer.writer_id, 2);
+    changed.proposal_ref = V2RefLayout::default().proposal(&writer.writer_id, 2, OID_A);
     let input = candidate(&changed, &payload, None, 2);
     assert!(verify_submission(&input, RegistrationAuthority::First).is_err());
 
@@ -304,7 +304,7 @@ fn released_v0176_unsigned_data_is_not_a_submission() {
     };
     let candidate = SubmissionCandidate {
         repository_id: "acartine/knots".to_string(),
-        proposal_ref: V2RefLayout::default().proposal(&unsigned.writer_id, 1),
+        proposal_ref: V2RefLayout::default().proposal(&unsigned.writer_id, 1, OID_A),
         observed_oid: OID_A.to_string(),
         current_inbox_oid: None,
         expected_sequence: 1,
@@ -325,7 +325,7 @@ fn canonical_transcript_has_a_fixed_cross_version_vector() {
     let submission = SignedSubmission {
         schema_version: 1,
         repository_id: "acartine/knots".to_string(),
-        proposal_ref: V2RefLayout::default().proposal(&writer_id, 1),
+        proposal_ref: V2RefLayout::default().proposal(&writer_id, 1, OID_A),
         proposal_oid: OID_A.to_string(),
         target_ref: V2RefLayout::default().inbox(&writer_id),
         expected_old_oid: None,
@@ -352,12 +352,12 @@ fn canonical_transcript_has_a_fixed_cross_version_vector() {
 
     assert_eq!(
         digest(&bytes),
-        "5e8dcfc83955bb064e0ac15e7dac72478928a685574b33b33501959edc82f762"
+        "144956703af59c5dd088335a1b035a2777d27eae0192caf63c006fa2a96072fd"
     );
     assert_eq!(
         hex_encode(&signature),
-        "0a9cf0cd72a90dfef0cdce4a7d47a7fbec0b25901770f57bd76817e12e756e28\
-         104500adfec17285d3d21f43307b4243ebce134d707e164b7924caf7baf73804"
+        "7f0a78b5357a85474f8c2c5b186cce890e24c9d0ddca339204f182e47c639eef\
+         3359033f3adf3c2371ed6258fd464ff35765e8457a25647a4ce14f1e6eea700d"
     );
 }
 

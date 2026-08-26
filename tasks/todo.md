@@ -51,14 +51,30 @@
 - [x] Prove forgery, replay, cross-writer, crash recovery, and v0.17.6 rejection paths.
 - [x] Run `make sanity`, independent review, GitHub CI/merge, and exact-main proof.
 
-## Wave 3 trusted GitHub enforcement
+## Wave 3 trusted GitHub enforcement (superseded personal-repo draft)
 
 - [x] Resume `knots-74e2` from signed-outbox main with a fresh attributed lease.
 - [x] Wrap the shipped signed proposal verifier in a trusted GitHub adapter.
 - [x] Keep proposal/inbox data untrusted and construct protected refs in trusted code.
-- [x] Enforce Integration 15368 as the only Knots v2 bypass actor.
+- [x] Remove the unsupported Integration 15368 bypass design after live preflight.
 - [ ] Prove disposable ordinary denial and trusted Actions success before production.
 - [x] Run focused tests, `make sanity`, and an independent implementation review.
 - [ ] Commit with Sneka attribution, open a GitHub PR, pass CI, and merge.
 - [ ] Apply and read back production v2 rules while leaving legacy freeze disabled.
 - [ ] Record live evidence and advance `knots-74e2` to `SHIPPED`.
+
+## Wave 3 zero-bypass attested epochs correction
+
+- [x] Prove the public personal repository has Actions, OIDC, and attestation support.
+- [x] Replace mutable inbox/registry promotion with immutable create-only v2 refs.
+- [x] Add an immutable-authority workflow that constructs and attests the control manifest.
+- [x] Ship Phase A with an empty signer allowlist and protected authority-code policy.
+- [ ] Merge Phase A, protect a random authority-code ref, and capture its exact SHA.
+- [ ] Ship Phase B with only the reviewed authority ref/SHA/workflow tuple allowlisted.
+- [x] Verify repository, workflow, source ref/SHA, epoch monotonicity, and writer dominance.
+- [ ] Reject unattested lookalikes and every rewrite or deletion without bypass actors.
+- [ ] Update the downstream provider-integrator and activation handoffs.
+- [ ] Run focused tests, full sanity, and an independent security review.
+- [ ] Commit with Sneka attribution, publish a follow-up PR, pass CI, and merge.
+- [ ] Apply/read back zero-bypass rules and capture live canary evidence.
+- [ ] Advance `knots-74e2` to `SHIPPED` with exact-main and attestation proof.

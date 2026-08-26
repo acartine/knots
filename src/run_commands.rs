@@ -264,12 +264,6 @@ pub fn run_perf(app: &app::App, args: PerfArgs) -> Result<(), app::AppError> {
 }
 
 pub fn run_compact(app: &app::App, args: CompactArgs) -> Result<(), app::AppError> {
-    if args.verify_github_proposal {
-        return run_github_proposal(args);
-    }
-    if args.create_github_proposal_canary {
-        return crate::github_commands::run_canary(args);
-    }
     if !args.write_snapshots {
         return Err(app::AppError::InvalidArgument(
             "compact currently requires --write-snapshots".to_string(),
@@ -288,27 +282,6 @@ pub fn run_compact(app: &app::App, args: CompactArgs) -> Result<(), app::AppErro
             summary.cold_path.display()
         );
     }
-    Ok(())
-}
-
-fn run_github_proposal(args: CompactArgs) -> Result<(), app::AppError> {
-    let required = |value: Option<String>, name: &str| {
-        value.ok_or_else(|| app::AppError::InvalidArgument(format!("{name} is required")))
-    };
-    let git_dir = args
-        .git_dir
-        .ok_or_else(|| app::AppError::InvalidArgument("--git-dir is required".to_string()))?;
-    let plan = crate::compaction::verify_github_proposal(&crate::compaction::GitHubProposalInput {
-        git_dir,
-        repository_id: required(args.repository_id, "--repository-id")?,
-        proposal_ref: required(args.proposal_ref, "--proposal-ref")?,
-        proposal_oid: required(args.proposal_oid, "--proposal-oid")?,
-        signed_submission: args.signed_submission.ok_or_else(|| {
-            app::AppError::InvalidArgument("--signed-submission is required".to_string())
-        })?,
-    })
-    .map_err(app::AppError::InvalidArgument)?;
-    print_json(&plan);
     Ok(())
 }
 

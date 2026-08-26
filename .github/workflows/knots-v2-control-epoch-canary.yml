@@ -1,0 +1,41 @@
+name: Knots v2 Control Epoch Canary
+run-name: Knots v2 control canary ${{ inputs.canary_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      canary_id:
+        required: true
+        type: string
+      epoch:
+        required: true
+        type: string
+      generation_ref:
+        required: true
+        type: string
+      generation_oid:
+        required: true
+        type: string
+      writer_vector_base64:
+        required: true
+        type: string
+      archives_base64:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  attest-canary:
+    uses: ./.github/workflows/knots-v2-control-epoch.yml
+    with:
+      namespace: canary
+      epoch: ${{ inputs.epoch }}
+      generation_ref: ${{ inputs.generation_ref }}
+      generation_oid: ${{ inputs.generation_oid }}
+      writer_vector_base64: ${{ inputs.writer_vector_base64 }}
+      archives_base64: ${{ inputs.archives_base64 }}

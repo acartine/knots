@@ -33,7 +33,6 @@ mod fsck;
 mod git_hooks;
 #[cfg(test)]
 mod git_hooks_tests;
-mod github_commands;
 mod hierarchy_alias;
 mod init;
 mod installed_workflows;

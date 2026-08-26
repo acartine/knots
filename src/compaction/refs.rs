@@ -40,7 +40,7 @@ impl V2RefLayout {
         format!("{}{writer_id}", self.inbox_prefix)
     }
 
-    pub(crate) fn proposal(&self, writer_id: &str, sequence: u64) -> String {
-        format!("{}{writer_id}/{sequence}", self.proposal_prefix)
+    pub(crate) fn proposal(&self, writer_id: &str, sequence: u64, oid: &str) -> String {
+        format!("{}{writer_id}/{sequence}/{oid}", self.proposal_prefix)
     }
 }

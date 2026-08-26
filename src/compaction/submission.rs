@@ -131,7 +131,7 @@ pub(crate) fn sign_submission(
     let mut submission = SignedSubmission {
         schema_version: SCHEMA_VERSION,
         repository_id: repository_id.to_string(),
-        proposal_ref: layout.proposal(&writer.writer_id, sequence),
+        proposal_ref: layout.proposal(&writer.writer_id, sequence, proposal_oid),
         proposal_oid: proposal_oid.to_string(),
         target_ref: writer.inbox_ref.clone(),
         expected_old_oid: writer.expected_inbox_oid.clone(),
@@ -208,8 +208,11 @@ fn validate_shape(
         return Err(SubmissionError::InvalidRepository);
     }
     let layout = V2RefLayout::default();
-    let expected_proposal =
-        layout.proposal(&submission.bundle.writer_id, submission.bundle.sequence);
+    let expected_proposal = layout.proposal(
+        &submission.bundle.writer_id,
+        submission.bundle.sequence,
+        &submission.proposal_oid,
+    );
     if submission.proposal_ref != expected_proposal
         || candidate.proposal_ref != expected_proposal
         || submission.proposal_oid != candidate.observed_oid
@@ -405,7 +408,7 @@ fn hex_encode(bytes: &[u8]) -> String {
     output
 }
 
-pub(super) fn decode_array<const N: usize>(value: &str) -> Option<[u8; N]> {
+fn decode_array<const N: usize>(value: &str) -> Option<[u8; N]> {
     if value.len() != N * 2 {
         return None;
     }

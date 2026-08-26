@@ -49,6 +49,7 @@ impl InboxTransport for FakeTransport {
             proposal_ref: V2RefLayout::default().proposal(
                 &writer.writer_id,
                 events[0].sequence.expect("assigned sequence"),
+                &proposed_oid,
             ),
             proposed_oid,
             expected_inbox_oid: writer.expected_inbox_oid.clone(),

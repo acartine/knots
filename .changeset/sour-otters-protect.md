@@ -2,4 +2,4 @@
 "knots": patch
 ---
 
-Add GitHub ruleset and trusted Actions rails for protected protocol-v2 refs.
+Add zero-bypass immutable GitHub refs and OIDC-attested protocol-v2 control epochs.
