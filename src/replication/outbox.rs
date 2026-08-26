@@ -1,19 +1,19 @@
 // The provider-specific transport is wired by the receive-control rollout knots.
 #![allow(dead_code)]
 
-use rusqlite::Connection;
-
-use crate::compaction::{V2RefLayout, ValidatedProtection};
+use crate::compaction::{sign_submission, SignedSubmission, V2RefLayout, ValidatedProtection};
 use crate::db::{
     acknowledge_outbox, assign_pending_outbox, ensure_writer_epoch, mark_outbox_proposed,
     OutboxRecord, WriterEpoch,
 };
 use crate::sync::SyncError;
+use rusqlite::Connection;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub(crate) struct PreparedInbox {
     pub writer_id: String,
     pub inbox_ref: String,
+    pub proposal_ref: String,
     pub proposed_oid: String,
     pub expected_inbox_oid: Option<String>,
     pub expected_control_oid: Option<String>,
@@ -38,8 +38,12 @@ pub(crate) trait InboxTransport {
         expected_control_oid: Option<&str>,
     ) -> Result<PreparedInbox, SyncError>;
 
-    /// Publish with exact leases. First publication atomically updates control and inbox.
-    fn publish(&self, prepared: &PreparedInbox) -> Result<(), SyncError>;
+    /// Publish only the immutable untrusted proposal ref. A trusted Action promotes it.
+    fn submit_proposal(
+        &self,
+        prepared: &PreparedInbox,
+        submission: &SignedSubmission,
+    ) -> Result<(), SyncError>;
 
     /// Fetch the credential-scoped inbox ref after publication or a lost response.
     fn fetch_inbox_oid(&self, inbox_ref: &str) -> Result<Option<String>, SyncError>;
@@ -59,6 +63,7 @@ impl<'a, T: InboxTransport> OutboxPublisher<'a, T> {
         &self,
         credential_id: &str,
         protection: &ValidatedProtection,
+        base_generation: Option<&str>,
         limit: usize,
     ) -> Result<Option<PublishedInbox>, SyncError> {
         require_protection_identity(protection)?;
@@ -68,22 +73,33 @@ impl<'a, T: InboxTransport> OutboxPublisher<'a, T> {
         if events.is_empty() {
             return Ok(None);
         }
-        if let Some(recovered) = self.confirm_prepared(&writer, &events)? {
-            return Ok(Some(recovered));
-        }
-
         let expected_control = (!writer.registered)
             .then(|| protection.control_head())
             .flatten();
+        if let Some(recovered) =
+            self.confirm_prepared(&writer, &events, protection, expected_control)?
+        {
+            return Ok(Some(recovered));
+        }
         let prepared = self.transport.prepare(&writer, &events, expected_control)?;
-        validate_prepared(&writer, &events, expected_control, &prepared)?;
+        let submission = sign_submission(
+            self.conn,
+            protection.repository_id(),
+            &writer,
+            &events,
+            &prepared.proposed_oid,
+            base_generation,
+        )
+        .map_err(|error| outbox_error(&error.to_string()))?;
+        validate_prepared(&writer, &events, &submission, expected_control, &prepared)?;
         mark_outbox_proposed(
             self.conn,
             &writer.writer_id,
             &prepared.event_ids,
             &prepared.proposed_oid,
+            base_generation,
         )?;
-        self.transport.publish(&prepared)?;
+        self.transport.submit_proposal(&prepared, &submission)?;
         self.confirm_exact_oid(&writer, &prepared.proposed_oid, !writer.registered)
             .map(Some)
     }
@@ -92,6 +108,8 @@ impl<'a, T: InboxTransport> OutboxPublisher<'a, T> {
         &self,
         writer: &WriterEpoch,
         events: &[OutboxRecord],
+        protection: &ValidatedProtection,
+        expected_control: Option<&str>,
     ) -> Result<Option<PublishedInbox>, SyncError> {
         let proposed = events
             .first()
@@ -99,20 +117,43 @@ impl<'a, T: InboxTransport> OutboxPublisher<'a, T> {
         let Some(proposed) = proposed else {
             return Ok(None);
         };
-        if events
-            .iter()
-            .any(|event| event.proposed_inbox_oid.as_deref() != Some(proposed))
-        {
+        let durable_generation = events[0].proposal_base_generation.as_deref();
+        if events.iter().any(|event| {
+            event.proposed_inbox_oid.as_deref() != Some(proposed)
+                || event.proposal_base_generation.as_deref() != durable_generation
+        }) {
             return Err(outbox_error(
                 "pending batch contains mixed proposed inbox OIDs",
             ));
         }
         let remote = self.transport.fetch_inbox_oid(&writer.inbox_ref)?;
-        if remote.as_deref() != Some(proposed) {
+        if remote.as_deref() == Some(proposed) {
+            return self
+                .confirm_exact_oid(writer, proposed, !writer.registered)
+                .map(Some);
+        }
+        if remote != writer.expected_inbox_oid {
             return Err(outbox_error(
-                "stored proposed inbox OID does not match the remote inbox",
+                "stored proposal conflicts with the current remote inbox",
             ));
         }
+        let prepared = self.transport.prepare(writer, events, expected_control)?;
+        let submission = sign_submission(
+            self.conn,
+            protection.repository_id(),
+            writer,
+            events,
+            proposed,
+            durable_generation,
+        )
+        .map_err(|error| outbox_error(&error.to_string()))?;
+        validate_prepared(writer, events, &submission, expected_control, &prepared)?;
+        if prepared.proposed_oid != proposed {
+            return Err(outbox_error(
+                "reconstructed proposal OID differs from the durable proposal",
+            ));
+        }
+        self.transport.submit_proposal(&prepared, &submission)?;
         self.confirm_exact_oid(writer, proposed, !writer.registered)
             .map(Some)
     }
@@ -158,12 +199,15 @@ fn require_writer_scope(writer: &WriterEpoch) -> Result<(), SyncError> {
 fn validate_prepared(
     writer: &WriterEpoch,
     events: &[OutboxRecord],
+    submission: &SignedSubmission,
     expected_control: Option<&str>,
     prepared: &PreparedInbox,
 ) -> Result<(), SyncError> {
     let event_ids: Vec<_> = events.iter().map(|event| event.event_id.clone()).collect();
     let valid = prepared.writer_id == writer.writer_id
         && prepared.inbox_ref == writer.inbox_ref
+        && prepared.proposal_ref == submission.proposal_ref
+        && prepared.proposed_oid == submission.proposal_oid
         && prepared.expected_inbox_oid == writer.expected_inbox_oid
         && prepared.expected_control_oid.as_deref() == expected_control
         && prepared.includes_control_registration != writer.registered
