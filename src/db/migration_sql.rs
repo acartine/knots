@@ -48,3 +48,59 @@ CREATE TABLE IF NOT EXISTS v2_legacy_quarantine (
     inventoried_at TEXT NOT NULL
 );
 "#;
+
+pub(super) const PROTOCOL_V2_CHECKPOINT: &str = r#"
+CREATE TABLE IF NOT EXISTS v2_checkpoint (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    generation_id TEXT NOT NULL,
+    control_epoch INTEGER NOT NULL,
+    control_head TEXT NOT NULL,
+    generation_commit TEXT NOT NULL,
+    cutoff_commit TEXT NOT NULL,
+    applied_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS v2_checkpoint_writer_head (
+    writer_id TEXT PRIMARY KEY,
+    inbox_ref TEXT NOT NULL,
+    commit_oid TEXT NOT NULL,
+    sequence INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS v2_checkpoint_event (
+    event_id TEXT PRIMARY KEY,
+    content_sha256 TEXT NOT NULL,
+    pack_id TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS v2_projection_aux (
+    kind TEXT NOT NULL,
+    ordinal INTEGER NOT NULL,
+    payload_json TEXT NOT NULL,
+    PRIMARY KEY (kind, ordinal)
+);
+
+CREATE TABLE IF NOT EXISTS v2_generation_quarantine (
+    knot_id TEXT PRIMARY KEY,
+    base_generation_id TEXT NOT NULL,
+    writer_vector_json TEXT NOT NULL,
+    quarantined_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS v2_writer_identity (
+    writer_id TEXT PRIMARY KEY,
+    algorithm TEXT NOT NULL,
+    public_key BLOB NOT NULL UNIQUE,
+    public_key_sha256 TEXT NOT NULL UNIQUE,
+    private_seed BLOB NOT NULL,
+    generation INTEGER NOT NULL UNIQUE,
+    parent_writer_id TEXT,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    retired_at TEXT,
+    FOREIGN KEY(parent_writer_id) REFERENCES v2_writer_identity(writer_id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_v2_writer_identity_active
+ON v2_writer_identity(active) WHERE active = 1;
+"#;

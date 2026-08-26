@@ -42,6 +42,7 @@ pub(crate) struct ValidatedProtection {
     repository_id: String,
     integrator_id: String,
     control_head: Option<String>,
+    policy_sha256: String,
 }
 
 impl ValidatedProtection {
@@ -55,6 +56,10 @@ impl ValidatedProtection {
 
     pub(crate) fn control_head(&self) -> Option<&str> {
         self.control_head.as_deref()
+    }
+
+    pub(crate) fn policy_sha256(&self) -> &str {
+        &self.policy_sha256
     }
 }
 
@@ -95,6 +100,7 @@ pub(crate) fn validate_protection(
         repository_id: marker.repository_id.clone(),
         integrator_id: marker.integrator_id.clone(),
         control_head: facts.control_head.map(str::to_string),
+        policy_sha256: marker.policy_sha256.clone(),
     })
 }
 

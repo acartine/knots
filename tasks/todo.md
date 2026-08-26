@@ -30,3 +30,14 @@
 - [x] Prove writer rotation, two-clone isolation, and legacy retention with focused tests.
 - [x] Run the released v0.17.6 fixture and full repository sanity gates.
 - [ ] Publish through GitHub and verify merged main, CI, attribution, and terminal Knot state.
+
+## Wave 3 checkpoint bootstrap
+
+- [x] Start from protected-v2 and durable-outbox main with the withdrawn v1 work preserved.
+- [x] Add the generation checkpoint, exact writer/event index, and generation quarantine schema.
+- [x] Persist fingerprint-derived writer identities with crash-safe local signing-key rotation.
+- [x] Validate protected control, manifest, snapshots, projections, packs, and source facts first.
+- [x] Replace every SQLite projection and generation watermark in one transaction.
+- [x] Preserve locally-authored outboxes and migrate leased knots to generation quarantine.
+- [x] Prove fresh bootstrap, pre-cutoff replacement, crash rollback, corruption rejection, and replay equivalence.
+- [x] Run `make sanity`, publish through GitHub, and verify exact merged main and terminal Knot state.

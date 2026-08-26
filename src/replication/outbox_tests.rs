@@ -106,6 +106,8 @@ fn credential_rotation_uses_a_new_writer_scoped_ref() {
     let second = rotate_writer_epoch(&conn, "credential-b").expect("rotated writer");
 
     assert_ne!(first.writer_id, second.writer_id);
+    assert_eq!(first.writer_id.len(), 64);
+    assert!(first.writer_id.bytes().all(|byte| byte.is_ascii_hexdigit()));
     assert_eq!(second.credential_id, "credential-b");
     assert_eq!(
         second.inbox_ref,

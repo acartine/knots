@@ -16,13 +16,15 @@ use crate::domain::metadata::MetadataEntry;
 use crate::domain::scope::ScopeData;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 21;
+pub const CURRENT_SCHEMA_VERSION: i64 = 22;
 
 mod catalog;
 mod migration_sql;
 mod migrations;
 mod outbox;
 mod quarantine;
+#[allow(dead_code)]
+mod writer_identity;
 
 pub use catalog::{
     count_active_leases, count_cold_catalog, count_cold_catalog_shadowed_by_hot, count_knot_hot,
@@ -44,6 +46,12 @@ pub(crate) use outbox::{
 pub use quarantine::{
     list_quarantined_knots, local_leased_knot_ids, quarantine_knot_if_absent, remove_quarantine,
 };
+#[allow(unused_imports)]
+pub(crate) use writer_identity::{
+    ensure_writer_identity, ensure_writer_identity_for_credential, load_writer_signing_key,
+    rotate_writer_identity, rotate_writer_identity_for_credential, WriterIdentity,
+    WriterIdentityError,
+};
 
 const SQLITE_LOCK_RETRY_LIMIT: usize = 2;
 const SQLITE_LOCK_RETRY_BASE_DELAY_MS: u64 = 10;
@@ -60,7 +68,36 @@ pub fn open_connection(path: &str) -> Result<Connection> {
     if migrations::needs_schema_bootstrap(&conn)? {
         with_write_retry(|| migrations::apply_migrations(&mut conn))?;
     }
+    secure_database_files(path)?;
     Ok(conn)
+}
+
+#[cfg(unix)]
+fn secure_database_files(path: &str) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+
+    if path == ":memory:" || path.starts_with("file::memory:") {
+        return Ok(());
+    }
+    for candidate in [
+        path.to_string(),
+        format!("{path}-wal"),
+        format!("{path}-shm"),
+    ] {
+        let Ok(metadata) = std::fs::metadata(&candidate) else {
+            continue;
+        };
+        let mut permissions = metadata.permissions();
+        permissions.set_mode(0o600);
+        std::fs::set_permissions(candidate, permissions)
+            .map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))?;
+    }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn secure_database_files(_path: &str) -> Result<()> {
+    Ok(())
 }
 
 /// Open a connection with pragmas but without applying migrations.
@@ -117,7 +154,7 @@ fn lock_retry_delay(retry: usize) -> Duration {
     Duration::from_millis(base + jitter)
 }
 
-fn now_utc_rfc3339() -> String {
+pub(crate) fn now_utc_rfc3339() -> String {
     OffsetDateTime::now_utc()
         .format(&Rfc3339)
         .expect("RFC3339 formatting for UTC timestamp should never fail")

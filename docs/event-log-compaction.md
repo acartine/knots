@@ -48,6 +48,11 @@ Neither Git config, environment variables, nor a tracked marker can self-attest.
 forged, or unenforced provider facts fail closed. Until provider integration supplies live facts,
 the shipped direct-publication and local-deletion paths remain disabled.
 
+The local cache exposes `SyncService::install_v2_checkpoint` as the authenticated apply boundary.
+It accepts only a `CheckpointInput` containing `ValidatedProtection`, the protected control and
+canonical bytes, exact source facts, and retained-delta replay. Provider adapters must fetch and
+validate those inputs before calling it; the cache never treats plain Git metadata as protection.
+
 ## Immutable generation manifest
 
 Each generation is content-addressed from all canonical identity fields. The manifest records:

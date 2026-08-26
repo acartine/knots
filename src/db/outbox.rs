@@ -1,10 +1,8 @@
 use rusqlite::{params, Connection, OptionalExtension, Result};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
-use uuid::Uuid;
 
 use super::now_utc_rfc3339;
-use crate::compaction::V2RefLayout;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub(crate) struct WriterEpoch {
@@ -72,8 +70,10 @@ pub(crate) fn record_outbox_event(
 }
 
 pub(crate) fn ensure_writer_epoch(conn: &Connection, credential_id: &str) -> Result<WriterEpoch> {
+    let identity = super::ensure_writer_identity_for_credential(conn, Some(credential_id))
+        .map_err(identity_error)?;
     if let Some(writer) = active_writer(conn)? {
-        if writer.credential_id == credential_id {
+        if writer.writer_id == identity.writer_id && writer.credential_id == credential_id {
             return Ok(writer);
         }
         let pending: bool = conn.query_row(
@@ -89,41 +89,18 @@ pub(crate) fn ensure_writer_epoch(conn: &Connection, credential_id: &str) -> Res
         }
         return rotate_writer_epoch(conn, credential_id);
     }
-    create_writer_epoch(conn, credential_id)
+    Err(rusqlite::Error::InvalidQuery)
 }
 
 pub(crate) fn rotate_writer_epoch(conn: &Connection, credential_id: &str) -> Result<WriterEpoch> {
-    let tx = conn.unchecked_transaction()?;
-    tx.execute("UPDATE v2_writer_epoch SET active = 0 WHERE active = 1", [])?;
-    let writer = insert_writer_epoch(&tx, credential_id)?;
-    tx.commit()?;
-    Ok(writer)
+    super::ensure_writer_identity(conn).map_err(identity_error)?;
+    super::rotate_writer_identity_for_credential(conn, Some(credential_id))
+        .map_err(identity_error)?;
+    active_writer(conn)?.ok_or(rusqlite::Error::InvalidQuery)
 }
 
-fn create_writer_epoch(conn: &Connection, credential_id: &str) -> Result<WriterEpoch> {
-    let tx = conn.unchecked_transaction()?;
-    let writer = insert_writer_epoch(&tx, credential_id)?;
-    tx.commit()?;
-    Ok(writer)
-}
-
-fn insert_writer_epoch(conn: &Connection, credential_id: &str) -> Result<WriterEpoch> {
-    let writer_id = Uuid::now_v7().to_string();
-    let inbox_ref = V2RefLayout::default().inbox(&writer_id);
-    conn.execute(
-        "INSERT INTO v2_writer_epoch (
-            writer_id, credential_id, inbox_ref, created_at
-         ) VALUES (?1, ?2, ?3, ?4)",
-        params![writer_id, credential_id, inbox_ref, now_utc_rfc3339()],
-    )?;
-    Ok(WriterEpoch {
-        writer_id,
-        credential_id: credential_id.to_string(),
-        inbox_ref,
-        expected_inbox_oid: None,
-        next_sequence: 1,
-        registered: false,
-    })
+fn identity_error(error: super::WriterIdentityError) -> rusqlite::Error {
+    rusqlite::Error::ToSqlConversionFailure(Box::new(error))
 }
 
 fn active_writer(conn: &Connection) -> Result<Option<WriterEpoch>> {
