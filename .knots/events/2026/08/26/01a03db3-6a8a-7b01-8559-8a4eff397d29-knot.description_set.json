@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03db3-6a8a-7b01-8559-8a4eff397d29",
+  "occurred_at": "2026-08-26T10:52:43.514492Z",
+  "knot_id": "knots-aed7",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Recreated from quilt-c413 per the 2026-08-25 ruling that knot-tracker bugs live in the knots project (388b/knots-2c76 precedent). A note added without the knot's bound lease is recorded with author [unknown] instead of the acting persona; attribution should come from the lease or the actor identity."
+  }
+}

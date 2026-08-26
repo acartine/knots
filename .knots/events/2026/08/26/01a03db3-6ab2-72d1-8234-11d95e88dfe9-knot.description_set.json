@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03db3-6ab2-72d1-8234-11d95e88dfe9",
+  "occurred_at": "2026-08-26T10:52:43.565575Z",
+  "knot_id": "knots-08b5",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Recreated from quilt-98a5 per the 2026-08-25 ruling that knot-tracker bugs live in the knots project (388b/knots-2c76 precedent). Under concurrent agents, register churn can revert a claimed knot's action state; see quilt-98a5 for the original capture."
+  }
+}

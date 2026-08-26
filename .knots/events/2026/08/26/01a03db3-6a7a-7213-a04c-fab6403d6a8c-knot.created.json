@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03db3-6a7a-7213-a04c-fab6403d6a8c",
+  "occurred_at": "2026-08-26T10:52:43.514492Z",
+  "knot_id": "knots-aed7",
+  "type": "knot.created",
+  "data": {
+    "body": "Recreated from quilt-c413 per the 2026-08-25 ruling that knot-tracker bugs live in the knots project (388b/knots-2c76 precedent). A note added without the knot's bound lease is recorded with author [unknown] instead of the acting persona; attribution should come from the lease or the actor identity.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno: notes written without a bound lease land attributed [unknown]",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}
