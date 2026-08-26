@@ -142,7 +142,14 @@ fn trusted_workflow_attests_exact_authority_code_manifest() {
         .expect("trusted signer allowlist should read");
     assert_eq!(
         serde_json::from_str::<Value>(&signers).unwrap()["trusted_signers"],
-        serde_json::json!([])
+        serde_json::json!([{
+            "ref": concat!(
+                "refs/heads/knots-v2-authority-code/",
+                "e869300032bde6e8257673a3d11ccd60"
+            ),
+            "sha": "f41b6733d80f9253362d5aacb725a3050b473e08",
+            "workflow": ".github/workflows/knots-v2-control-epoch.yml"
+        }])
     );
 }
 
@@ -172,10 +179,51 @@ fn production_apply_requires_complete_attested_canary_evidence() {
         "exact_workflow_head_verified",
         "manifest_sha256",
         "control_oid",
+        "authority_sha",
+        "authority_ref",
+        "signer_workflow",
+        "live canary authority does not match the activation evidence",
+        "verify-knots-v2-control-epoch.sh",
+        "refs/heads/main",
+        "canary evidence does not bind the reviewed authority tuple",
     ] {
         assert!(script.contains(signal), "missing canary signal {signal}");
     }
     assert!(!script.contains("SIGNED_OUTBOX"));
+}
+
+#[test]
+fn live_canary_driver_proves_create_only_and_exact_attestation() {
+    let script = fs::read_to_string(root().join("scripts/repo/run-knots-v2-policy-canary.sh"))
+        .expect("canary driver should read");
+    for required in [
+        "knots-v2-rulesets.mjs apply canary",
+        "ordinary_creation_succeeded",
+        "ordinary_rewrite_rejected",
+        "ordinary_deletion_rejected",
+        "unattested_lookalike_rejected",
+        "exact_workflow_head_verified",
+        "gh workflow run knots-v2-control-epoch-canary.yml",
+        "verify-knots-v2-control-epoch.sh",
+        "authority_sha",
+        "authority_ref",
+        "existing_control_ref",
+        "lookalike_epoch",
+        "probe_ref",
+        "https://github.com/acartine/knots.git",
+    ] {
+        assert!(script.contains(required), "missing canary proof {required}");
+    }
+    assert!(!script.contains("secrets."));
+    assert!(!script.contains("deploy key"));
+    assert!(!script.contains("ls-remote origin"));
+    assert!(!script.contains("--no-verify origin"));
+
+    let verifier = fs::read_to_string(root().join("scripts/repo/verify-knots-v2-control-epoch.sh"))
+        .expect("verifier should read");
+    assert!(verifier.contains("gh run view"));
+    assert!(verifier.contains(".conclusion == \"success\""));
+    assert!(verifier.contains(".headSha == $sha"));
 }
 
 #[test]

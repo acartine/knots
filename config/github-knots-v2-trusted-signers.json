@@ -1,5 +1,11 @@
 {
   "schema_version": 1,
   "repository": "acartine/knots",
-  "trusted_signers": []
+  "trusted_signers": [
+    {
+      "ref": "refs/heads/knots-v2-authority-code/e869300032bde6e8257673a3d11ccd60",
+      "sha": "f41b6733d80f9253362d5aacb725a3050b473e08",
+      "workflow": ".github/workflows/knots-v2-control-epoch.yml"
+    }
+  ]
 }
