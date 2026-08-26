@@ -3,6 +3,7 @@
 
 mod checkpoint;
 mod checkpoint_store;
+mod github_submission;
 mod inbox;
 mod integrator;
 mod manifest;
@@ -20,6 +21,10 @@ pub(crate) use checkpoint::{
     PreparedCheckpoint,
 };
 pub(crate) use checkpoint_store::drain_generation_quarantine;
+pub(crate) use github_submission::{
+    create_github_canary_submission, verify_github_proposal, GitHubPromotionPlan,
+    GitHubProposalInput,
+};
 pub(crate) use inbox::{
     validate_inbox, InboxBundle, InboxCandidate, InboxEntry, InboxError, ValidatedInbox,
     INBOX_DATA_ROOT,

@@ -50,3 +50,15 @@
 - [x] Remove direct client inbox publication from the transport capability.
 - [x] Prove forgery, replay, cross-writer, crash recovery, and v0.17.6 rejection paths.
 - [x] Run `make sanity`, independent review, GitHub CI/merge, and exact-main proof.
+
+## Wave 3 trusted GitHub enforcement
+
+- [x] Resume `knots-74e2` from signed-outbox main with a fresh attributed lease.
+- [x] Wrap the shipped signed proposal verifier in a trusted GitHub adapter.
+- [x] Keep proposal/inbox data untrusted and construct protected refs in trusted code.
+- [x] Enforce Integration 15368 as the only Knots v2 bypass actor.
+- [ ] Prove disposable ordinary denial and trusted Actions success before production.
+- [x] Run focused tests, `make sanity`, and an independent implementation review.
+- [ ] Commit with Sneka attribution, open a GitHub PR, pass CI, and merge.
+- [ ] Apply and read back production v2 rules while leaving legacy freeze disabled.
+- [ ] Record live evidence and advance `knots-74e2` to `SHIPPED`.

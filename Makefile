@@ -6,7 +6,7 @@ SANITY_TARGET_DIR ?= target/sanity
 SANITY_COVERAGE_TARGET_DIR ?= target/sanity-coverage
 
 .PHONY: fmt lint test coverage sanity reap-artifacts install-hooks check-threshold loom-bundle \
-	event-log-fixture event-log-inventory demo demo-gif
+	event-log-fixture event-log-inventory github-knots-v2-policy demo demo-gif
 
 fmt:
 	cargo fmt --all -- --check
@@ -53,6 +53,9 @@ event-log-fixture:
 event-log-inventory:
 	@test -n "$(EVENT_LOG_ROOT)" || { echo "EVENT_LOG_ROOT is required" >&2; exit 1; }
 	node scripts/event-log-inventory.mjs --root "$(EVENT_LOG_ROOT)" $(EVENT_LOG_INVENTORY_ARGS)
+
+github-knots-v2-policy:
+	node scripts/repo/knots-v2-rulesets.mjs verify production
 
 demo:
 	@echo 'Run: asciinema rec --overwrite -c "bash scripts/demo.sh" assets/demo.cast'
