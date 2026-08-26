@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af8-6d16-7d03-9945-54be0206a8eb",
+  "occurred_at": "2026-08-25T22:09:14.518139Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Changes requested: GitHub Sanity failed only on clippy::nonminimal_bool at src/replication/outbox.rs:169 under Rust 1.93. Local toolchain did not flag it. Required correction is prepared.includes_control_registration != writer.registered, followed by gates and a new attributed commit.",
+    "datetime": "2026-08-25T22:09:14.518139Z",
+    "entry_id": "01a03af8-6d16-7d03-9945-54a2ab43a5fe",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

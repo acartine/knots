@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03b3f-abe9-7a60-8ce3-52668bef1fd1",
+  "occurred_at": "2026-08-25T23:27:03.657103Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-158a",
+    "lease_expiry_ts": 1787701023,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: compaction-publish-live-probes",
+    "type": "lease",
+    "updated_at": "2026-08-25T23:22:40.547553Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

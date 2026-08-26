@@ -1,0 +1,50 @@
+{
+  "event_id": "01a03a92-78b9-7360-b87f-ae670b069bdd",
+  "occurred_at": "2026-08-25T20:17:52.820417Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ccdc",
+    "lease_expiry_ts": 0,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "planning",
+      "output": {
+        "access_hint": "kno show",
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "planning",
+      "output": {
+        "access_hint": "kno show",
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Build the lossless Knots generation integrator",
+    "type": "work",
+    "updated_at": "2026-08-25T20:17:52.820417Z",
+    "workflow_id": "work_sdlc"
+  }
+}

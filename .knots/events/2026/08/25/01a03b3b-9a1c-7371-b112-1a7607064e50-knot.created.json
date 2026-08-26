@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03b3b-9a1c-7371-b112-1a7607064e50",
+  "occurred_at": "2026-08-25T23:22:36.956579Z",
+  "knot_id": "knots-158a",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-publish-live-probes",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

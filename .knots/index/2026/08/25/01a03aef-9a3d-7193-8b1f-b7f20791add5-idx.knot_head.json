@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03aef-9a3d-7193-8b1f-b7f20791add5",
+  "occurred_at": "2026-08-25T21:59:36.253719Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-7b88",
+    "lease_expiry_ts": 1787695776,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-knots-9b6a-size-rereview",
+    "type": "lease",
+    "updated_at": "2026-08-25T21:59:36.253719Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

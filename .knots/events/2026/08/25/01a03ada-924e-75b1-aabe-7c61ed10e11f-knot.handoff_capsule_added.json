@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ada-924e-75b1-aabe-7c61ed10e11f",
+  "occurred_at": "2026-08-25T21:36:37.966501Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan is ready: additive local durable receipts, quarantine-only legacy upgrade handling, atomic control-plus-first-inbox CAS, exact scoped-inbox acknowledgement, no replica scan, and retention-only semantics. No child knots are needed.",
+    "datetime": "2026-08-25T21:36:37.966501Z",
+    "entry_id": "01a03ada-924e-75b1-aabe-7c57dcdd7207",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

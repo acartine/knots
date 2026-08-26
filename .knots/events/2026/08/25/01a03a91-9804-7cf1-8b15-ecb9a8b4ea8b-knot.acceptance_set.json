@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a91-9804-7cf1-8b15-ecb9a8b4ea8b",
+  "occurred_at": "2026-08-25T20:16:55.290209Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Exact legacy, canonical/control/archive, and knots-inbox patterns have separate active rulesets; Actions integration 15368 is the sole canonical and freeze bypass actor.\n2. Repository write, maintain, and admin roles cannot bypass Knots data-ref rules.\n3. Inbox refs allow creation and fast-forward updates while denying deletion and non-fast-forward updates; canonical and archive refs deny direct client writes.\n4. A trusted default-branch workflow validates inbox data and advances canonical state without checking out or executing inbox code.\n5. Disposable-ref canaries prove ordinary-client rejection, Actions success, and safe recovery before any production Knots ref is frozen."
+  }
+}

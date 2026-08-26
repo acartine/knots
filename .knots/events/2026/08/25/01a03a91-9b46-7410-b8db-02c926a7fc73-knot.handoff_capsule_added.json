@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a91-9b46-7410-b8db-02c926a7fc73",
+  "occurred_at": "2026-08-25T20:16:56.134641Z",
+  "knot_id": "knots-d6e4",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Operator approvals: GitHub rules and trusted Actions work, Diffinite receive controls/service identity/deploy, all local SQLite changes, PR/release rails, live canaries, and additive archives are approved. No later human rollout gate is permitted. Archives remain indefinitely; production PostgreSQL schema changes and new hosts are unnecessary. Use actual released old binaries in verification.",
+    "datetime": "2026-08-25T20:16:56.134641Z",
+    "entry_id": "01a03a91-9b46-7410-b8db-02be7467570a",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

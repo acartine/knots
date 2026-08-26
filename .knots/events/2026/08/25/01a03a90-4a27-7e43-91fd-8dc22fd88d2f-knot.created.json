@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a90-4a27-7e43-91fd-8dc22fd88d2f",
+  "occurred_at": "2026-08-25T20:15:29.831576Z",
+  "knot_id": "knots-075e",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\nReplace the unsafe same-path generation design with the provider-protected protocol-v2 contract used by every later compaction component.\n\nVerification:\n1. Run cargo test compaction and confirm the manifest, vector, pack, activation, and rollback models pass.\n2. Run the released v0.17.6 compatibility fixture and confirm legacy writes cannot alter .knots/v2 canonical hashes.\n3. Run make sanity and confirm formatting, lint, tests, and coverage pass.\n\nConstraints:\nUse separate legacy, canonical/control, archive, and credential-scoped inbox refs plus the .knots/v2 namespace. Disable the shipped 5728 direct-publication and local-prune path unless a provider-protected control marker validates. Retain every archive and raw event pack indefinitely.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Replace direct compaction with protected v2 protocol",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

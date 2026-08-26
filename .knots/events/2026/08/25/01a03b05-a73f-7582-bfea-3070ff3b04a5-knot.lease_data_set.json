@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03b05-a73f-7582-bfea-3070ff3b04a5",
+  "occurred_at": "2026-08-25T22:23:41.375571Z",
+  "knot_id": "knots-8eb0",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "codex-knots-9b6a-grant-rail-review",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 85259
+      },
+      "timeout_seconds": 600
+    }
+  }
+}

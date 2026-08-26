@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b3b-8a56-74c0-b027-5fd721eeac4f",
+  "occurred_at": "2026-08-25T23:22:32.917705Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "DEPLOYMENT REVIEW HOLD: exact 89c818b3736f is deployed and healthy. Move to shipment to execute the already-authorized live audited integrator capability and disposable-ref acceptance/rejection probes, then return for final review.",
+    "datetime": "2026-08-25T23:22:32.917705Z",
+    "entry_id": "01a03b3b-8a56-74c0-b027-5fcde55a9240",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

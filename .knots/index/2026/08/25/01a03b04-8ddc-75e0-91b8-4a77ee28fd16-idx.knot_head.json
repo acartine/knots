@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03b04-8ddc-75e0-91b8-4a77ee28fd16",
+  "occurred_at": "2026-08-25T22:22:29.34011Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ccdc",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Build the lossless Knots generation integrator",
+    "type": "work",
+    "updated_at": "2026-08-25T22:22:29.34011Z",
+    "workflow_id": "work_sdlc"
+  }
+}

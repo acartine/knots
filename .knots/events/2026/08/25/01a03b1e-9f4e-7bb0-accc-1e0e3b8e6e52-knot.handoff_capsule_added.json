@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b1e-9f4e-7bb0-accc-1e0e3b8e6e52",
+  "occurred_at": "2026-08-25T22:50:57.74185Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Final shipment review approved. Exact remote main abebfa817151 contains schema-v21 writer epochs, immutable outbox receipts, quarantine inventory, receipt-only publisher, exact remote OID confirmation, and lost-ack recovery. Current rebased implementation commits and the squash shipment commit are tagged with 12-character hashes. Exact-main Sanity, repository hygiene, version detection, and pre-merge Codecov patch 99.33% all passed; release builds correctly skipped because this was not a release. No invariant violation or dependent-system regression was found.",
+    "datetime": "2026-08-25T22:50:57.74185Z",
+    "entry_id": "01a03b1e-9f4e-7bb0-accc-1df4093b7c5e",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

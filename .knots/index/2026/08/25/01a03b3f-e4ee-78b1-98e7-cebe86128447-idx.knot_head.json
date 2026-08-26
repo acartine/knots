@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03b3f-e4ee-78b1-98e7-cebe86128447",
+  "occurred_at": "2026-08-25T23:27:18.25423Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a0b1",
+    "lease_expiry_ts": 1787701038,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: compaction-publish-redesign-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T23:27:18.25423Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

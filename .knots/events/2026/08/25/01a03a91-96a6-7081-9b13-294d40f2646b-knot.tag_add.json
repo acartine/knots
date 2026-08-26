@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a91-96a6-7081-9b13-294d40f2646b",
+  "occurred_at": "2026-08-25T20:16:54.916607Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "integrator"
+  }
+}

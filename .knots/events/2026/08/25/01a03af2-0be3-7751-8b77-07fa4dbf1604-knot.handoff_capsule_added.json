@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af2-0be3-7751-8b77-07fa4dbf1604",
+  "occurred_at": "2026-08-25T22:02:16.419233Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "CI FAILURE: ticket 20260825T215952Z-89abac, only actionable failure repo.declared_path_readers for the new v7 shell fixture. All Rust compile/clippy/fmt/deny, TypeScript, affected reachability, and file-size stages passed. No merge/deploy. Inline fixture and reship. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T22:02:16.419233Z",
+    "entry_id": "01a03af2-0be3-7751-8b77-07ee11e86260",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a91-9548-7533-8b28-cf22f48f5cad",
+  "occurred_at": "2026-08-25T20:16:54.566076Z",
+  "knot_id": "knots-7874",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "protocol-v2"
+  }
+}

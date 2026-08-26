@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03aca-f024-7e62-bdb6-e31636c99b45",
+  "occurred_at": "2026-08-25T21:19:33.411746Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Follow-up coverage repair opened as GitHub PR #104. Hold merge until required CI and codecov/patch are green.",
+    "datetime": "2026-08-25T21:19:33.411746Z",
+    "entry_id": "01a03aca-f024-7e62-bdb6-e3079c8ef6e7",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

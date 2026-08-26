@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03b99-0c2d-7cc1-974a-60caf9ad6eb9",
+  "occurred_at": "2026-08-26T01:04:41.005497Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ea02",
+    "lease_expiry_ts": 1787706874,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: codex-knots-9b6a-review-recovery-2",
+    "type": "lease",
+    "updated_at": "2026-08-26T01:04:41.005497Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

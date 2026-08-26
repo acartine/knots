@@ -1,0 +1,63 @@
+{
+  "event_id": "01a03a92-38ec-7dd0-ae8c-cbf6a416b207",
+  "occurred_at": "2026-08-25T20:17:36.492306Z",
+  "knot_id": "knots-a7f0",
+  "type": "knot.execution_plan_data_set",
+  "data": {
+    "execution_plan": {
+      "objective": "Ship lossless, remotely enforced Knots compaction across repositories and machines.",
+      "waves": [
+        {
+          "name": "Wave 1: protected contract",
+          "objective": "Replace unsafe direct publication with the enforceable protocol-v2 contract.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-075e"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 1
+        },
+        {
+          "name": "Wave 2: writers and authorities",
+          "objective": "Build independent client, integrator, and Diffinite enforcement foundations.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-7874",
+                "knots-ccdc",
+                "knots-9b6a"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 2
+        },
+        {
+          "name": "Wave 3: provider and cache convergence",
+          "objective": "Land GitHub enforcement and transactional checkpoint application in parallel.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-74e2",
+                "knots-2af8"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 3
+        },
+        {
+          "name": "Wave 4: legacy bridge",
+          "objective": "Bridge, freeze, drain, and activate repositories without losing old-client work.",
+          "wave_index": 4
+        }
+      ]
+    }
+  },
+  "precondition": {
+    "profile_etag": "01a03a92-3896-74e3-ba1d-1e5a1f6b8fb2"
+  }
+}

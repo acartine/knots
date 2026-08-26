@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b8d-67dc-7a32-80bf-206131fa39d0",
+  "occurred_at": "2026-08-26T00:51:58.044663Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Corrected late lint failure by making service-log mode reads portable across GNU/BSD stat, preserving special mode bits; focused convergence test passes. Branch: codex/knots-9b6a-app-rail",
+    "datetime": "2026-08-26T00:51:58.044663Z",
+    "entry_id": "01a03b8d-67dc-7a32-80bf-205a24327090",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

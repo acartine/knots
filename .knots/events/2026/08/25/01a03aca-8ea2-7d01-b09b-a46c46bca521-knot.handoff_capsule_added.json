@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03aca-8ea2-7d01-b09b-a46c46bca521",
+  "occurred_at": "2026-08-25T21:19:08.45043Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation review approved. The follow-up is test-only, exercises every reachable previously uncovered protocol-v2 rejection path, preserves all four acceptance criteria and archive-retention constraints, has a clean diff, attributed commit, 99.39% measured original patch coverage, and full make sanity at 95.18%. Branch: codex/knots-075e-codecov",
+    "datetime": "2026-08-25T21:19:08.45043Z",
+    "entry_id": "01a03aca-8ea2-7d01-b09b-a45538673133",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

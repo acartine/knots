@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af3-7839-7833-bec8-7794c9bd8b15",
+  "occurred_at": "2026-08-25T22:03:49.689905Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Hermetic-input correction completed: removed the standalone v7 shell fixture and inlined its test body into diffinite/src/ssh_ref_policy_knots_git_tests.rs, now 397 lines. No production behavior changed; policy tests remain 26/26. Commit dd6c71ae6636 with published attribution. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T22:03:49.689905Z",
+    "entry_id": "01a03af3-7839-7833-bec8-778ffffc4733",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

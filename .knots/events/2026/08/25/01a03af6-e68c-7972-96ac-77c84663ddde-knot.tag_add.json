@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03af6-e68c-7972-96ac-77c84663ddde",
+  "occurred_at": "2026-08-25T22:07:34.540367Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.tag_add",
+  "data": {
+    "tag": "branch:codex/knots-ccdc-integrator"
+  }
+}

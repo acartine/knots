@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03aaf-77bc-75a1-a4e7-7274e3dbde18",
+  "occurred_at": "2026-08-25T20:49:33.116388Z",
+  "knot_id": "knots-d05b",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "codex",
+        "agent_type": "api",
+        "model": "gpt-5",
+        "model_version": "codex",
+        "provider": "OpenAI"
+      },
+      "lease_type": "agent",
+      "nickname": "codex-compaction-075e-implementation-review",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 81312
+      },
+      "timeout_seconds": 3600
+    }
+  }
+}

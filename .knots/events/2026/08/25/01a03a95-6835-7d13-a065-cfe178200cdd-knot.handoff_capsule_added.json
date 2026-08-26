@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a95-6835-7d13-a065-cfe178200cdd",
+  "occurred_at": "2026-08-25T20:21:05.205388Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan review APPROVED. It covers all four acceptance criteria and explicitly retains every legacy path, archive, generation, pack, and Git object. Security is fail-closed through a marker that binds ref roles and writer identity; activation is immutable-first with exact CAS; rollback never rewinds epochs. Maintainability stays within focused compaction modules, and the test plan includes schema/vector/pack/activation/rollback plus actual v0.17.6 legacy isolation and full sanity. Provider live enforcement remains a later leaf, so Wave 1 performs no provider mutation.",
+    "datetime": "2026-08-25T20:21:05.205388Z",
+    "entry_id": "01a03a95-6835-7d13-a065-cfdfe1cbfdf5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

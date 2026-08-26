@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ada-76d2-7573-b65c-e16588fa04e2",
+  "occurred_at": "2026-08-25T21:36:30.930031Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Planning completed without child knots. The implementation will add strict data-only inbox validation, deterministic compressed lossless packs with exact decoded-stream indexes, projection-complete canonical artifacts and durable conflicts, replay-equivalence gating, immutable-first publication, exact control CAS, race rebuild, and monotonic recovery. Validation covers hostile bundles, concurrent writer heads, CAS races, no event loss, rollback epochs, cargo test compaction, and make sanity. No deletion or GC.",
+    "datetime": "2026-08-25T21:36:30.930031Z",
+    "entry_id": "01a03ada-76d2-7573-b65c-e1561c5ed5ad",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

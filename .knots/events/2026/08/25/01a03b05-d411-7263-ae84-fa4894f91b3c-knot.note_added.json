@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b05-d411-7263-ae84-fa4894f91b3c",
+  "occurred_at": "2026-08-25T22:23:52.849766Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review requires one missing acceptance item: a narrowly scoped machine-capable audited grant/readback rail that cannot self-escalate, followed by a live positive knots_integrator probe and cleanup. Current user-only merge-grant CLI and test-only positive proof are insufficient.",
+    "datetime": "2026-08-25T22:23:52.849766Z",
+    "entry_id": "01a03b05-d411-7263-ae84-fa31a4bffcb7",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

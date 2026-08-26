@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03a94-ef2d-74a3-bca7-fef817622c21",
+  "occurred_at": "2026-08-25T20:20:34.221849Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-36af",
+    "lease_expiry_ts": 1787689834,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-knots-075e-wave1",
+    "type": "lease",
+    "updated_at": "2026-08-25T20:20:34.221849Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

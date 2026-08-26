@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b7f-1701-7e03-9419-a4a8197cb333",
+  "occurred_at": "2026-08-26T00:36:19.841259Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Replaced SSH/sudo/egress grant transport with land-queue Persona bearer through Sneka Auth and existing Diffinite service bearer; preserved parent-admin ceiling, atomic audit, locking, and bounded grant/read/revoke. Removed host mutation. Focused endpoint, transaction, ops-dispatch, boundary, and static tests pass; full local lint passed through late bobbin fixture, whose macOS sed portability fix passes 14/14. Branch: codex/knots-9b6a-app-rail",
+    "datetime": "2026-08-26T00:36:19.841259Z",
+    "entry_id": "01a03b7f-1701-7e03-9419-a499017dc5c3",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

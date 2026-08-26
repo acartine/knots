@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ad9-c2fb-7e11-9efa-42c260fa3fd3",
+  "occurred_at": "2026-08-25T21:35:44.891819Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Plan uses a persistent managed core.hooksPath floor so a v7 application rollback cannot replace the effective v8 policy. The hook validates the complete receive batch, scopes inboxes to credential IDs, gates canonical/control/archive/freeze on knots_integrator, and requires no PostgreSQL migration or new infrastructure.",
+    "datetime": "2026-08-25T21:35:44.891819Z",
+    "entry_id": "01a03ad9-c2fb-7e11-9efa-42bc42a71bcb",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03b3f-f527-7b63-a931-a5643ef221ff",
+  "occurred_at": "2026-08-25T23:27:22.407816Z",
+  "knot_id": "knots-85c9",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-publish-app-rail",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ada-5fa7-7391-a87e-93297eb195bb",
+  "occurred_at": "2026-08-25T21:36:24.999043Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation plan (effort 2, no child knots): 1. Extend the protocol-v2 manifest with canonical projection and conflict-ledger descriptors, a deterministic pack format, exact event ID/content-hash indexing, and writer-vector data while preserving immutable generation identity. 2. Add an untrusted inbox parser that accepts only the declared .knots/v2 data paths; verifies strict JSON schemas, event IDs, hashes, byte counts, writer identity/sequence, causal base, and the caller-observed inbox head; it never checks out or executes inbox content. 3. Add a deterministic lossless pack builder using sorted length-delimited raw records and deterministic compression, with exact offsets/hashes over the decoded stream and duplicate-or-mutation detection. 4. Add a generation integrator that folds every registered writer tail, durably records stale/conflicting submissions, produces canonical hot/warm/cold/edge/lease/workflow/metadata/conflict projections through a replay interface, and rejects activation unless independent full replay is byte-identical. 5. Stage the manifest, snapshots, packs, indexes, and conflict ledger as immutable generation artifacts before calling the existing exact expected-control-head CAS; on a race, reload the winning control and rebuild so no acknowledged tail regresses. Recovery may only create epoch N+1 and must dominate the active writer vector. 6. Add focused tests for hostile paths/schema/hash/head/sequence/base inputs, deterministic packs and exact indexes, projection completeness/equivalence, durable conflicts, concurrent temporary inbox refs with one CAS winner/no event loss, and higher-epoch recovery. Then run cargo test compaction and make sanity. Risks: compressed offsets must be defined against the decoded deterministic stream; exact control CAS must never be retried with stale artifacts; all output ordering must use canonical sorted collections. No deletion, GC, legacy ref mutation, archive rewrite, or infrastructure change is in scope.",
+    "datetime": "2026-08-25T21:36:24.999043Z",
+    "entry_id": "01a03ada-5fa7-7391-a87e-931b88d4dfb3",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

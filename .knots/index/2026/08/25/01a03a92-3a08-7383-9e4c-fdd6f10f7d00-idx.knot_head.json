@@ -1,0 +1,124 @@
+{
+  "event_id": "01a03a92-3a08-7383-9e4c-fdd6f10f7d00",
+  "occurred_at": "2026-08-25T20:17:36.768205Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "execution_plan": {
+      "objective": "Ship lossless, remotely enforced Knots compaction across repositories and machines.",
+      "waves": [
+        {
+          "name": "Wave 1: protected contract",
+          "objective": "Replace unsafe direct publication with the enforceable protocol-v2 contract.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-075e"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 1
+        },
+        {
+          "name": "Wave 2: writers and authorities",
+          "objective": "Build independent client, integrator, and Diffinite enforcement foundations.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-7874",
+                "knots-ccdc",
+                "knots-9b6a"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 2
+        },
+        {
+          "name": "Wave 3: provider and cache convergence",
+          "objective": "Land GitHub enforcement and transactional checkpoint application in parallel.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-74e2",
+                "knots-2af8"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 3
+        },
+        {
+          "name": "Wave 4: legacy bridge",
+          "objective": "Bridge, freeze, drain, and activate repositories without losing old-client work.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-d6e4"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 4
+        },
+        {
+          "name": "Wave 5: release and rollout",
+          "objective": "Prove compatibility and scale, release, canary, and roll out every discovered repository.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-246b"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 5
+        }
+      ]
+    },
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a7f0",
+    "lease_expiry_ts": 0,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "design",
+      "output": {
+        "artifact_type": "note"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "execution_plan_sdlc/autopilot",
+    "state": "ready_for_design",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "design",
+      "output": {
+        "artifact_type": "note"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Deliver protected protocol-v2 compaction",
+    "type": "execution_plan",
+    "updated_at": "2026-08-25T20:17:36.768205Z",
+    "workflow_id": "execution_plan_sdlc"
+  },
+  "precondition": {
+    "profile_etag": "01a03a92-39a6-7593-9bf5-9a83714294f5"
+  }
+}

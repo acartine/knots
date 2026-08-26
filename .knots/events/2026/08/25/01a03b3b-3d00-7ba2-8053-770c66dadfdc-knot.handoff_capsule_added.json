@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b3b-3d00-7ba2-8053-770c66dadfdc",
+  "occurred_at": "2026-08-25T23:22:13.120194Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "SHIPMENT COMPLETE. Retry ticket 20260825T231038Z-4a4122 passed full lint, merged and exact-stamped 89c818b3736f164ed2361aa8656221809afae754 to canonical Diffinite main at 2026-08-25T23:15:25Z, then deployed Diffinite through train 20260825T231534Z-dc2998 at 2026-08-25T23:21:46Z. Product diffinite exited 0 and all deployed containers were healthy. Live audited capability grant/read/probe/revoke remains for shipment review.",
+    "datetime": "2026-08-25T23:22:13.120194Z",
+    "entry_id": "01a03b3b-3d00-7ba2-8053-76fa488bff2e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

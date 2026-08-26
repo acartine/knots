@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03aef-99de-7f43-9cd6-1487ce04f10c",
+  "occurred_at": "2026-08-25T21:59:36.158593Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED after shipment-gate correction. Commit 92b911de86d9 changes only a three-line comment to one line, restoring diffinite/src/ssh.rs to 498 lines without behavior drift. The previous full gate passed all Rust and TypeScript stages except this now-corrected size check; focused policy tests remain 26/26. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T21:59:36.158593Z",
+    "entry_id": "01a03aef-99de-7f43-9cd6-147bf01aa897",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

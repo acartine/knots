@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b3b-8a56-74c0-b027-5fb13e8e9d82",
+  "occurred_at": "2026-08-25T23:22:32.917705Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment review is read-only, but acceptance explicitly requires authorized live grant/readback/revoke and disposable ref writes. Return to shipment only to perform those bounded production probes, then review again.",
+    "datetime": "2026-08-25T23:22:32.917705Z",
+    "entry_id": "01a03b3b-8a56-74c0-b027-5fa023dd426e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

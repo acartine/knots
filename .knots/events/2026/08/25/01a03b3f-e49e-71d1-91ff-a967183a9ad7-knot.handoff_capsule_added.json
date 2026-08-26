@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b3f-e49e-71d1-91ff-a967183a9ad7",
+  "occurred_at": "2026-08-25T23:27:18.174042Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "NEEDS REVISION: preserve the bounded grant/read/revoke transaction, parent-admin ceiling, FOR UPDATE locking, and audit row. Replace build-host SSH plus far-side sudo with the smallest existing authenticated Diffinite application/service transport; remove wrapper, converge, SSH classification, and related docs/tests. No host, network, schema, or direct DB mutation.",
+    "datetime": "2026-08-25T23:27:18.174042Z",
+    "entry_id": "01a03b3f-e49e-71d1-91ff-a9542bc27315",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

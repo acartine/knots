@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b0b-0c5b-70d2-9ae8-e75cdc62f857",
+  "occurred_at": "2026-08-25T22:29:34.93918Z",
+  "knot_id": "knots-7874",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment CI is not fully green: GitHub Sanity and repository hygiene pass, but codecov/patch reports 90.72% diff coverage against the 95.13% target. Add focused branch/error-path tests for the new outbox and publisher code until Codecov patch coverage passes; do not lower thresholds.",
+    "datetime": "2026-08-25T22:29:34.93918Z",
+    "entry_id": "01a03b0b-0c5b-70d2-9ae8-e74a39dfee35",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03ada-a8ce-7c12-9a3b-a316a8cb2a73",
+  "occurred_at": "2026-08-25T21:36:43.726164Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-3d1f",
+    "lease_expiry_ts": 1787694403,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: compaction-integrator-plan-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T21:36:43.712301Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

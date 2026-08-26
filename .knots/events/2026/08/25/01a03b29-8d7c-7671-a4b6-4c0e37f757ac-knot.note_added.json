@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b29-8d7c-7671-a4b6-4c0e37f757ac",
+  "occurred_at": "2026-08-25T23:02:54.076108Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment ticket 20260825T225429Z-ca4559 failed before merge or deploy only at repo.rail_declarations: deploy/build-host/run-diffinite-knots-integrator.sh lacks the required RAIL DECLARATION block. Add the exact declaration, validate the checker, publish on a new Diffinite generation, and reship.",
+    "datetime": "2026-08-25T23:02:54.076108Z",
+    "entry_id": "01a03b29-8d7c-7671-a4b6-4bf680bb7488",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

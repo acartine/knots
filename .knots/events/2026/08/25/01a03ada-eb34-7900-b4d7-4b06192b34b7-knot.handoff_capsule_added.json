@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ada-eb34-7900-b4d7-4b06192b34b7",
+  "occurred_at": "2026-08-25T21:37:00.724198Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Plan review approved. The additive receipt row gives a crash-safe pre-cache boundary; quarantine avoids ambiguous legacy authorship; atomic first control-plus-inbox publication closes the registration race; exact OID confirmation handles lost acknowledgements without history scans; tests cover all acceptance criteria and retention constraints. No child dependency or approval gate remains.",
+    "datetime": "2026-08-25T21:37:00.724198Z",
+    "entry_id": "01a03ada-eb34-7900-b4d7-4afe6d434820",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

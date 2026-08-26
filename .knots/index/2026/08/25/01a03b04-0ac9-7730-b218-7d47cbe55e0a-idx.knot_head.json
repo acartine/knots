@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03b04-0ac9-7730-b218-7d47cbe55e0a",
+  "occurred_at": "2026-08-25T22:21:55.785274Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ce7c",
+    "lease_expiry_ts": 1787703715,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: compaction-integrator-shipment",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:21:55.785274Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

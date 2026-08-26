@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ae6-bed2-71a0-87cf-99bb9bdeb72a",
+  "occurred_at": "2026-08-25T21:49:55.793794Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation review requests one narrow correction: the rollback-floor test must exercise the previous v7 installer lifecycle (v7 install, v8 upgrade, v7 reinstall), not only write a permissive default hook directly. This is required by the approved security review condition; production code otherwise matches the acceptance criteria.",
+    "datetime": "2026-08-25T21:49:55.793794Z",
+    "entry_id": "01a03ae6-bed2-71a0-87cf-99a0fd49c9ab",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

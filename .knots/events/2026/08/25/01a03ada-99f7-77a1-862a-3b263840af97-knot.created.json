@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03ada-99f7-77a1-862a-3b263840af97",
+  "occurred_at": "2026-08-25T21:36:39.92795Z",
+  "knot_id": "knots-3d1f",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-integrator-plan-review",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

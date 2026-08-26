@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b04-0a5d-7f71-9d71-343c4404195e",
+  "occurred_at": "2026-08-25T22:21:55.677501Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipped through GitHub PR #106. Rebase merge created main commits 6932c1772c4b and 062e631cd81e; both are tagged and carry individually validated, published sneka-agents/1 notes. Remote main is exactly 062e631cd81e and its tree matches the approved branch tree 9ad9036c9165. Exact-main workflows are green: CI/Sanity 6m21s, Repo Hygiene, Release, and Changesets Version PR. No release artifact was expected because no changeset/version bump was introduced. No deletion or GC occurred. PR #106.",
+    "datetime": "2026-08-25T22:21:55.677501Z",
+    "entry_id": "01a03b04-0a5d-7f71-9d71-3420ec08f618",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

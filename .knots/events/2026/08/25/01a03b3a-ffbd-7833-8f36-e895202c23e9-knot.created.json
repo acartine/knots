@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03b3a-ffbd-7833-8f36-e895202c23e9",
+  "occurred_at": "2026-08-25T23:21:57.437739Z",
+  "knot_id": "knots-40cd",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-publish-shipped-recovery",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

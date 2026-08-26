@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af3-d1aa-72f1-bc65-01a67ce5d8c0",
+  "occurred_at": "2026-08-25T22:04:12.586568Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED after hermetic-input correction. Commit dd6c71ae6636 only moves the v7 rollback fixture into the existing Rust test module and removes the undeclared file; module is 397 lines, production code is unchanged, and policy tests are 26/26. The prior full gate passed every other affected stage. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T22:04:12.586568Z",
+    "entry_id": "01a03af3-d1aa-72f1-bc65-019f580b8fad",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

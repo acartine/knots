@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b29-8d7c-7671-a4b6-4c2020fada5d",
+  "occurred_at": "2026-08-25T23:02:54.076108Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "CI FAILURE: ticket 20260825T225429Z-ca4559; exact efa308152c9c; only actionable failure is missing RAIL DECLARATION in run-diffinite-knots-integrator.sh. No merge/deploy. All earlier focused checks passed.",
+    "datetime": "2026-08-25T23:02:54.076108Z",
+    "entry_id": "01a03b29-8d7c-7671-a4b6-4c19dc72b5c7",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

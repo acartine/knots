@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ae6-bf23-7241-bcf1-b995bd6612f4",
+  "occurred_at": "2026-08-25T21:49:55.875486Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "CHANGES REQUESTED: replace the simulated direct v7 hook write with an exact test-only copy of the prior v7 installer behavior and prove the v7 to v8 to v7 lifecycle keeps core.hooksPath at v8 and rejects a forbidden Knots inbox update. No production-policy change requested. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T21:49:55.875486Z",
+    "entry_id": "01a03ae6-bf23-7241-bcf1-b9844eca7dfe",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

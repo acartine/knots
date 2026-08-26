@@ -1,0 +1,48 @@
+{
+  "event_id": "01a03ad7-4c7c-71b3-8706-83604148b91d",
+  "occurred_at": "2026-08-25T21:33:03.484544Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-075e",
+    "lease_expiry_ts": 0,
+    "next_step_metadata": {
+      "action_kind": "gate",
+      "action_state": "shipment_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_shipment_review",
+    "step_metadata": {
+      "action_kind": "gate",
+      "action_state": "shipment_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Replace direct compaction with protected v2 protocol",
+    "type": "work",
+    "updated_at": "2026-08-25T21:33:03.484544Z",
+    "workflow_id": "work_sdlc"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03b44-779c-7902-8b5d-c778e9b9cac2",
+  "occurred_at": "2026-08-25T23:32:17.948607Z",
+  "knot_id": "knots-5a38",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "compaction-publish-app-rail",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 66151
+      },
+      "timeout_seconds": 600
+    }
+  }
+}

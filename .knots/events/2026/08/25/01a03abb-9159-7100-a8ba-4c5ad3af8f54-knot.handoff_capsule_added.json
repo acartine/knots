@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03abb-9159-7100-a8ba-4c5ad3af8f54",
+  "occurred_at": "2026-08-25T21:02:46.105282Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "GitHub PR #103 is merged at 7770162c4ab4fd950866685229b1095025564ac2, but late codecov/patch failed at 90.54% versus 95.17%. Required CI passed. Follow the declared CI-failure path and add focused coverage tests; do not revert shipped v2 protection.",
+    "datetime": "2026-08-25T21:02:46.105282Z",
+    "entry_id": "01a03abb-9159-7100-a8ba-4c4536208dc4",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

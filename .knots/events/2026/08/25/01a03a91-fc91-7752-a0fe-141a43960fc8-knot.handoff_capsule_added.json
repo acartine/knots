@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a91-fc91-7752-a0fe-141a43960fc8",
+  "occurred_at": "2026-08-25T20:17:21.041176Z",
+  "knot_id": "knots-a7f0",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "All potential approval gates were front-loaded on 2026-08-25. Approved: GitHub rules/Actions, Diffinite receive controls/service identity/deploy, all local SQLite migrations and data rewrites, GitHub publication/releases, canaries, and additive archives. No later human rollout gate. Defaults: poison enabled; disposable-ref infrastructure canary; shemcp then compactor product canaries; automatic per-repo cutover after green bridge/protection/equivalence probes; indefinite archive retention. Production PostgreSQL schema changes, new hosts, DNS/TLS/network work, and archive deletion are not required.",
+    "datetime": "2026-08-25T20:17:21.041176Z",
+    "entry_id": "01a03a91-fc91-7752-a0fe-1404ff4f0081",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

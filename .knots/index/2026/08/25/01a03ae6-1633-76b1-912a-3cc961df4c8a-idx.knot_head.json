@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03ae6-1633-76b1-912a-3cc961df4c8a",
+  "occurred_at": "2026-08-25T21:49:12.62751Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-265d",
+    "lease_expiry_ts": 1787694381,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-diffinite-ref-policy-implementation",
+    "type": "lease",
+    "updated_at": "2026-08-25T21:49:12.62751Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

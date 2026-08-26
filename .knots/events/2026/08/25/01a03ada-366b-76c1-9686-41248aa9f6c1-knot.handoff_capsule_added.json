@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ada-366b-76c1-9686-41248aa9f6c1",
+  "occurred_at": "2026-08-25T21:36:14.443697Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED. The plan covers every acceptance criterion and keeps the change within existing Diffinite code, persistent Git storage, persona capability storage, and deployment rails. Security conditions for implementation: validate the entire receive batch before any per-ref decision; bind inbox ownership to server-supplied credential UUID; keep capability resolution fail-closed; never let a persona self-grant integrator; preserve foreign hook refusal; and prove core.hooksPath remains on v8 after running the actual v7 installer. Live freeze probes must use a bounded disposable repository/ref namespace until the Knots bridge has separately met cutover preconditions.",
+    "datetime": "2026-08-25T21:36:14.443697Z",
+    "entry_id": "01a03ada-366b-76c1-9686-4110ccf9afe8",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

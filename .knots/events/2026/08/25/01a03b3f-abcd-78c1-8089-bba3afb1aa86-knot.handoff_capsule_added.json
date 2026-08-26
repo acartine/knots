@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b3f-abcd-78c1-8089-bba3afb1aa86",
+  "occurred_at": "2026-08-25T23:27:03.629254Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "SHIPMENT LIVE CHECK INCOMPLETE: exact 89c818b is deployed, but grant/read returned sudo password required because the far-side wrapper was not installed. No capability mutation occurred. Do not retry host converge. Return through shipment review to implementation for an application-bound authenticated rail.",
+    "datetime": "2026-08-25T23:27:03.629254Z",
+    "entry_id": "01a03b3f-abcd-78c1-8089-bb95a6b147bc",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

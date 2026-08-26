@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03afd-f641-7c71-9043-cc5d1e57a57e",
+  "occurred_at": "2026-08-25T22:15:17.313885Z",
+  "knot_id": "knots-d085",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: outbox-review-2",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03af6-7bd0-7d80-bf7e-c3124dc04374",
+  "occurred_at": "2026-08-25T22:07:07.216868Z",
+  "knot_id": "knots-01f3",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "codex-knots-9b6a-digest-review",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 57221
+      },
+      "timeout_seconds": 600
+    }
+  }
+}

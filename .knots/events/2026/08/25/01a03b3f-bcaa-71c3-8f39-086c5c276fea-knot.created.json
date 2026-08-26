@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03b3f-bcaa-71c3-8f39-086c5c276fea",
+  "occurred_at": "2026-08-25T23:27:07.946266Z",
+  "knot_id": "knots-a0b1",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-publish-redesign-review",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

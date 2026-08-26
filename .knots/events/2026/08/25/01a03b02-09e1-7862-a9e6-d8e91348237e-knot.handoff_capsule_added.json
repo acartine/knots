@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b02-09e1-7862-a9e6-d8e91348237e",
+  "occurred_at": "2026-08-25T22:19:44.48184Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "DEPLOYMENT REVIEW HOLD: deployed SHA cdbb959cb859 is healthy; no regression. Move to shipment only to run authorized disposable production receive-policy probes, then review again.",
+    "datetime": "2026-08-25T22:19:44.48184Z",
+    "entry_id": "01a03b02-09e1-7862-a9e6-d8dce58b1c6c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

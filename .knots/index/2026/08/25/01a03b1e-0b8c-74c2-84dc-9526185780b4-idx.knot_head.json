@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03b1e-0b8c-74c2-84dc-9526185780b4",
+  "occurred_at": "2026-08-25T22:50:19.916207Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-4788",
+    "lease_expiry_ts": 1787701819,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: outbox-shipment-2",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:44:18.455644Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

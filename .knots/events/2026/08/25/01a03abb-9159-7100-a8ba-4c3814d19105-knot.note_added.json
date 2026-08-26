@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03abb-9159-7100-a8ba-4c3814d19105",
+  "occurred_at": "2026-08-25T21:02:46.105282Z",
+  "knot_id": "knots-075e",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "codex",
+    "content": "PR #103 merged to main at 7770162c4ab4fd950866685229b1095025564ac2 with required Sanity and repo-hygiene checks green. A late codecov/patch status then reported 90.54% diff coverage against 95.17%. Full repository coverage remains 95.03%. Shipment cannot be signed off until the patch status is repaired with focused tests.",
+    "datetime": "2026-08-25T21:02:46.105282Z",
+    "entry_id": "01a03abb-9159-7100-a8ba-4c270ae64607",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

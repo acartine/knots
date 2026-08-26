@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b2b-e5b0-7e63-a9f2-ef38732778d1",
+  "occurred_at": "2026-08-25T23:05:27.728502Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED after deterministic lint correction. Commit 89c818b3736f changes only the required seven-line rail declaration, truthfully identifying no local installs, prerequisites, blocking calls, and stop behavior. The enforced rail-declaration checker passes all 169 rails; production behavior is unchanged.",
+    "datetime": "2026-08-25T23:05:27.728502Z",
+    "entry_id": "01a03b2b-e5b0-7e63-a9f2-ef2498b05e56",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

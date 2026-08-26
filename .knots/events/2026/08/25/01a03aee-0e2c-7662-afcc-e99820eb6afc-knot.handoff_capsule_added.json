@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03aee-0e2c-7662-afcc-e99820eb6afc",
+  "occurred_at": "2026-08-25T21:57:54.860504Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "CI FAILURE: ticket 20260825T215420Z-718fff, exact cause diffinite/src/ssh.rs 500 lines > 499. No merge or deploy occurred. Fix only the comment/file-size regression, then rerun shipment. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T21:57:54.860504Z",
+    "entry_id": "01a03aee-0e2c-7662-afcc-e98b003f045b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

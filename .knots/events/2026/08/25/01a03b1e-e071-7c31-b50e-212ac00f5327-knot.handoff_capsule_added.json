@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b1e-e071-7c31-b50e-212ac00f5327",
+  "occurred_at": "2026-08-25T22:51:14.417095Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation correction published canonically to Diffinite branch codex/knots-9b6a at efa308152c9ca9dc17a59b501df291fbbbea12d9, with sneka-agents notes published first for 7dc021acb33b and efa308152c9c. Added atomic audited grant/read/revoke admin rail for knots_integrator and named diffinite@ zero-argument sudo transport installed by converge. Validation: cargo check di-server; domain 2/2; Docker integration 2/2; build-host and far-side wrapper tests pass; ops command and SSH classifiers pass; cargo fmt and git diff check pass. Temporary diagnostic key revoked and transfer artifacts cleaned.",
+    "datetime": "2026-08-25T22:51:14.417095Z",
+    "entry_id": "01a03b1e-e071-7c31-b50e-211707665d49",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

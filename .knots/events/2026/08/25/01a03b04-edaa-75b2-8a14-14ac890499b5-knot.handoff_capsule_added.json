@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b04-edaa-75b2-8a14-14ac890499b5",
+  "occurred_at": "2026-08-25T22:22:53.866434Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Rebased PR #105 onto current main. Sole conflict was tasks/todo.md; preserved main's knots-ccdc integrator checklist and appended the Wave 2 durable-outbox checklist. Rebased commits 74626350 and db48e67f retain published Sneka attribution. Full make sanity passed on the rebased tree at 95.04% coverage, and the branch was updated with force-with-lease.",
+    "datetime": "2026-08-25T22:22:53.866434Z",
+    "entry_id": "01a03b04-edaa-75b2-8a14-1495756f6c66",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

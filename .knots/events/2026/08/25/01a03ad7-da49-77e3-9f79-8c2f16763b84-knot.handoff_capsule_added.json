@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ad7-da49-77e3-9f79-8c2f16763b84",
+  "occurred_at": "2026-08-25T21:33:39.785723Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment review approved. Remote main is exactly 5de54c9ab2ecf949b8a39f82f225bdca37f35f0b; its tree matches the reviewed branch; GitHub PR #104 is merged; Sanity, required-public-files, and codecov/patch are green; post-merge main CI run 32901029461 passed; the single Sneka attribution JSON is published; the feature branch is absent; all protocol-v2 and archive-retention acceptance criteria remain satisfied.",
+    "datetime": "2026-08-25T21:33:39.785723Z",
+    "entry_id": "01a03ad7-da49-77e3-9f79-8c134b80c1e9",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

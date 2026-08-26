@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af5-3f5f-7971-83ed-de267ff4da6a",
+  "occurred_at": "2026-08-25T22:05:46.207319Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "CI FAILURE: ticket 20260825T220432Z-135db1, pinned helper digest drift from unnecessary persona_merge_grants.rs comment edits. No merge/deploy. Restore comments byte-for-byte and reship. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T22:05:46.207319Z",
+    "entry_id": "01a03af5-3f5f-7971-83ed-de1b263b6cd0",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

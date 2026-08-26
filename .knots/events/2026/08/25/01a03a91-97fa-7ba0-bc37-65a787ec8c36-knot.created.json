@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a91-97fa-7ba0-bc37-65a787ec8c36",
+  "occurred_at": "2026-08-25T20:16:55.290209Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\nMake GitHub enforce legacy, canonical, archive, control, and inbox ref ownership using trusted default-branch Actions and strict rulesets.\n\nVerification:\n1. In acartine/knots, enforce disposable-ref rules and prove an ordinary admin credential is rejected while GitHub Actions integration 15368 succeeds.\n2. Read back rulesets and verify no repository-role bypass exists on Knots data refs.\n3. Run workflow tests and make sanity.\n\nConstraints:\nUse the existing GitHub Actions integration, not a new App. Inbox content is data only. Begin with disposable refs and additive archives. Do not delete or rewrite legacy or archive refs.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Enforce Knots refs with trusted GitHub Actions",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03afe-56e0-7f30-a053-d492d6e6aa75",
+  "occurred_at": "2026-08-25T22:15:42.048411Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Changes requested: PR #105 tracks corrected head 2a6dedd0, but GitHub reports mergeable=CONFLICTING and mergeStateStatus=DIRTY after main advanced. CI has not started for the corrected head. Return to implementation for a current-main rebase and full verification.",
+    "datetime": "2026-08-25T22:15:42.048411Z",
+    "entry_id": "01a03afe-56e0-7f30-a053-d48de148f7f0",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

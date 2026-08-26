@@ -1,0 +1,34 @@
+{
+  "event_id": "01a03a92-377c-7e12-8f72-c040831d0989",
+  "occurred_at": "2026-08-25T20:17:36.124124Z",
+  "knot_id": "knots-a7f0",
+  "type": "knot.execution_plan_data_set",
+  "data": {
+    "execution_plan": {
+      "objective": "Ship lossless, remotely enforced Knots compaction across repositories and machines.",
+      "waves": [
+        {
+          "name": "Wave 1: protected contract",
+          "objective": "Replace unsafe direct publication with the enforceable protocol-v2 contract.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-075e"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 1
+        },
+        {
+          "name": "Wave 2: writers and authorities",
+          "objective": "Build independent client, integrator, and Diffinite enforcement foundations.",
+          "wave_index": 2
+        }
+      ]
+    }
+  },
+  "precondition": {
+    "profile_etag": "01a03a92-3725-7740-9f4c-99961ed93065"
+  }
+}

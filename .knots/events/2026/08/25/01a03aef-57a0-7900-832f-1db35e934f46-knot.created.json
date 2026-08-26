@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03aef-57a0-7900-832f-1db35e934f46",
+  "occurred_at": "2026-08-25T21:59:19.200252Z",
+  "knot_id": "knots-7b88",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: codex-knots-9b6a-size-rereview",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

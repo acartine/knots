@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af7-6019-7e53-89f4-640aa2a8cd85",
+  "occurred_at": "2026-08-25T22:08:05.657136Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation review approved against all five acceptance criteria. Remote branch resolves exactly to ee8f8d665260; diff is confined to the protocol-v2 compaction contract, integrator, tests, dependency lockfile, and task checklist. Inbox parsing is strict data-only and rejects hostile paths/schema/head/hash/ID/sequence inputs. Deterministic compressed packs, exact decoded indexes, complete projections, durable conflicts, explicit predecessor replay equivalence, monotonic vectors/epochs, immutable-first exact CAS, concurrent loser rebuild, and higher-epoch recovery are covered. No deletion, GC, checkout, workflow execution, legacy mutation, or unrelated regression was introduced. make sanity passed at 95.11% coverage.",
+    "datetime": "2026-08-25T22:08:05.657136Z",
+    "entry_id": "01a03af7-6019-7e53-89f4-63f4673eab52",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

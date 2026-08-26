@@ -1,0 +1,48 @@
+{
+  "event_id": "01a03a91-98ed-7143-93d2-4c508a3dc1d9",
+  "occurred_at": "2026-08-25T20:16:55.533043Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-ae92",
+    "lease_expiry_ts": 0,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: create-diffinite",
+    "type": "lease",
+    "updated_at": "2026-08-25T20:16:55.533043Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

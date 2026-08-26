@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03af8-6d62-7273-82c8-d421a6a8086f",
+  "occurred_at": "2026-08-25T22:09:14.594711Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-5429",
+    "lease_expiry_ts": 1787699354,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: outbox-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:09:14.594711Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b05-d443-75e1-8013-75fbee727a31",
+  "occurred_at": "2026-08-25T22:23:52.899817Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "NEEDS REVISION: implement bounded audited admin automation for knots_integrator grant/readback/revoke using existing Diffinite host and DB, no schema or infrastructure. Reship, grant disposable verified service Persona, prove canonical/control/archive/freeze positive plus ordinary denial, read back and revoke grant/key.",
+    "datetime": "2026-08-25T22:23:52.899817Z",
+    "entry_id": "01a03b05-d443-75e1-8013-75ecc94efa29",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

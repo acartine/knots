@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03af6-697c-7472-80d0-0fe0a6fda73f",
+  "occurred_at": "2026-08-25T22:07:02.524215Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-9997",
+    "lease_expiry_ts": 1787696222,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-knots-9b6a-digest-restore",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:07:02.524215Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

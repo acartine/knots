@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a8f-f4aa-70b3-be04-3716bdc884ac",
+  "occurred_at": "2026-08-25T20:15:07.946537Z",
+  "knot_id": "knots-fc72",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-replan",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

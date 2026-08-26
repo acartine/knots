@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b04-8d8e-7ed2-89d3-6e53b15e0cd9",
+  "occurred_at": "2026-08-25T22:22:29.261575Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment review approved. GitHub main resolves to 062e631cd81e; the shipped integrator is present on that exact commit, and its tree matches the approved branch. All four implementation and rebase-merge commits have exact 12-character commit tags. Exact-main check runs are green: Sanity, required-public-files, version-packages, and release detection; platform builds and publication correctly skipped because this was not a versioned release. Repo Hygiene, Release, and Changesets workflows also completed successfully. No compaction deletion/GC path was introduced or run, and no dependent-system regression appeared in the full test/CI matrix.",
+    "datetime": "2026-08-25T22:22:29.261575Z",
+    "entry_id": "01a03b04-8d8e-7ed2-89d3-6e4a101e9bb0",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

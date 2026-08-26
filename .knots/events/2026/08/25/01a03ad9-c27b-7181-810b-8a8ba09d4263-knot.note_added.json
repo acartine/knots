@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ad9-c27b-7181-810b-8a8ba09d4263",
+  "occurred_at": "2026-08-25T21:35:44.763177Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implementation plan (complexity: high, one coherent receive-policy boundary; no child knots):\\n1. Create an isolated Quilt worktree from current origin/main on codex/knots-9b6a; re-read Quilt taxonomy and lessons.\\n2. Replace the v7 single-pass hook with a tested v8 managed hook installed before every receive-pack. Reserve refs/work/knots, refs/work/knots-v2/{canonical,control,archive/**,freeze,inbox/<credential-id>/**} for every actor.\\n3. Read the complete update batch before validation so creation of the freeze marker and a legacy update in the same atomic push cannot bypass freeze. Once the marker exists or is created in the batch, deny legacy create/update/delete with an upgrade-specific error.\\n4. Inbox policy: require trusted DIFFINITE_CREDENTIAL_ID to equal the path owner; allow create and fast-forward only; reject force-update and deletion. Canonical/control require a new knots_integrator persona capability and fast-forward updates; archive/freeze require that capability and are create-only.\\n5. Persist the effective hook behind a managed core.hooksPath v8 directory. The v8 installer recognizes a newer managed floor and never downgrades it; a rolled-back v7 binary may write the obsolete default hooks/pre-receive, but Git continues executing v8. Add real-Git rollback tests using the actual previous v7 hook body/installer behavior.\\n6. Extend the existing free-text persona capability model, API/CLI spelling, audit records, and a machine-capable audited grant/provision path for an already verified service persona and rotating SSH key. Do not add a schema migration.\\n7. Add real bare-repository tests covering every actor kind, credential scoping, create/FF/force/delete, service-only refs, same-push freeze, legacy recreation, foreign hook refusal, and rollback floor. Run focused Rust/CLI tests, then the repository-required ship rail (which owns full lint).\\n8. Deploy via just ship --wait. Provision/grant the verified service persona through the agent-owned rail. Read back the effective hooksPath/hook version and run bounded live disposable-ref acceptance/rejection probes, cleaning only disposable refs through the authorized service path. Confirm exact deployed SHA and terminal Knot state.\\nRisks: hook batch parsing must preserve multi-ref atomic rejection; Git SHA-1/SHA-256 zero IDs must both work; capability lookup must fail closed; rollback must retain enforcement even though service writes may become unavailable on an old binary; freeze is irreversible and therefore activated only after hook/readback and bridge preconditions.",
+    "datetime": "2026-08-25T21:35:44.763177Z",
+    "entry_id": "01a03ad9-c27b-7181-810b-8a7c2403ee17",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "event_id": "01a03ad8-a8e1-7fb0-9895-14cb13aced5a",
+  "occurred_at": "2026-08-25T21:34:32.673463Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-7874",
+    "lease_expiry_ts": 0,
+    "next_step_metadata": {
+      "action_kind": "gate",
+      "action_state": "plan_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "autopilot",
+    "state": "planning",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "planning",
+      "output": {
+        "access_hint": "kno show",
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Publish only durable local Knots outboxes",
+    "type": "work",
+    "updated_at": "2026-08-25T21:34:32.673463Z",
+    "workflow_id": "work_sdlc"
+  },
+  "precondition": {
+    "profile_etag": "01a03a92-7863-7331-9be5-dd3f87b5f9b7"
+  }
+}

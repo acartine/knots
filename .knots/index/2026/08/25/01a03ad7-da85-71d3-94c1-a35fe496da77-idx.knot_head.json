@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03ad7-da85-71d3-94c1-a35fe496da77",
+  "occurred_at": "2026-08-25T21:33:39.845492Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-075e",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Replace direct compaction with protected v2 protocol",
+    "type": "work",
+    "updated_at": "2026-08-25T21:33:39.845492Z",
+    "workflow_id": "work_sdlc"
+  }
+}

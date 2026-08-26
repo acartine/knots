@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03b29-61af-74e1-b383-d6bb6a483f9b",
+  "occurred_at": "2026-08-25T23:02:42.863281Z",
+  "knot_id": "knots-a64e",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-publish-ci-recovery",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

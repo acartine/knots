@@ -1,0 +1,51 @@
+{
+  "event_id": "01a03ad9-fa4e-71a3-aeba-7e93dacc3a6a",
+  "occurred_at": "2026-08-25T21:35:59.05459Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-9b6a",
+    "lease_expiry_ts": 0,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "implementation",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "autopilot",
+    "state": "plan_review",
+    "step_metadata": {
+      "action_kind": "gate",
+      "action_state": "plan_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Enforce Knots refs in Diffinite receive policy",
+    "type": "work",
+    "updated_at": "2026-08-25T21:35:59.05459Z",
+    "workflow_id": "work_sdlc"
+  },
+  "precondition": {
+    "profile_etag": "01a03ad9-d415-7272-95d9-57ce726240e4"
+  }
+}

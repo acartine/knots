@@ -1,0 +1,12 @@
+{
+  "event_id": "01a03a91-9ac9-7e11-b121-ac551d79b511",
+  "occurred_at": "2026-08-25T20:16:55.993834Z",
+  "knot_id": "knots-d6e4",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "cargo test replication",
+      "make sanity"
+    ]
+  }
+}

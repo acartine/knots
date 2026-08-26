@@ -1,0 +1,12 @@
+{
+  "event_id": "01a03a91-9968-78a2-b344-6e98b0be7398",
+  "occurred_at": "2026-08-25T20:16:55.641233Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "cargo test --manifest-path /Users/cartine/quilt/diffinite/Cargo.toml ssh_ref_policy",
+      "make sanity"
+    ]
+  }
+}

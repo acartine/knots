@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03af8-8fb2-7eb1-bfc9-7173176ae6ea",
+  "occurred_at": "2026-08-25T22:09:23.378328Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-73fe",
+    "lease_expiry_ts": 1787699359,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: outbox-ci-fix",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:09:23.378328Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

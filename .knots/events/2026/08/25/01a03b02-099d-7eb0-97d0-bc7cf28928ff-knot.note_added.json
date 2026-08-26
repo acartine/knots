@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b02-099d-7eb0-97d0-bc7cf28928ff",
+  "occurred_at": "2026-08-25T22:19:44.413312Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Deployment is green, but required live receive-policy probes need bounded disposable Git writes, which shipment_review explicitly forbids. Return to shipment to perform the already-authorized private disposable repository/key/ref probes, then re-enter shipment review with live evidence.",
+    "datetime": "2026-08-25T22:19:44.413312Z",
+    "entry_id": "01a03b02-099d-7eb0-97d0-bc67fcdd71b0",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

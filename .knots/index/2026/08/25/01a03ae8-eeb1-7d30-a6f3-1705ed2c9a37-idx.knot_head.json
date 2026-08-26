@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03ae8-eeb1-7d30-a6f3-1705ed2c9a37",
+  "occurred_at": "2026-08-25T21:52:19.121361Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-0992",
+    "lease_expiry_ts": 1787695339,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-knots-9b6a-rollback-test-fix",
+    "type": "lease",
+    "updated_at": "2026-08-25T21:52:19.121361Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

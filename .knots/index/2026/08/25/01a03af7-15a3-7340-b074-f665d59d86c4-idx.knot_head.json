@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03af7-15a3-7340-b074-f665d59d86c4",
+  "occurred_at": "2026-08-25T22:07:46.595671Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-e8b2",
+    "lease_expiry_ts": 1787702863,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: compaction-integrator-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:07:46.595671Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

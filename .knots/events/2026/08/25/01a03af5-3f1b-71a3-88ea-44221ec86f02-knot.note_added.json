@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af5-3f1b-71a3-88ea-44221ec86f02",
+  "occurred_at": "2026-08-25T22:05:46.139682Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Third shipment ticket 20260825T220432Z-135db1 failed before merge/deploy at repo.persona_browser_boundaries because documentation-only edits in diffinite/src/http/api/persona_merge_grants.rs changed a pinned helper source digest. Rust compile/clippy/fmt, file size, and prior broader gates passed. Restore the unnecessary comments exactly; no production behavior change.",
+    "datetime": "2026-08-25T22:05:46.139682Z",
+    "entry_id": "01a03af5-3f1b-71a3-88ea-441cb22df8c1",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

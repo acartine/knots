@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af6-c6da-7573-9d47-4b48bea6f7f3",
+  "occurred_at": "2026-08-25T22:07:26.425776Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED after pinned-helper restoration. persona_merge_grants.rs is byte-identical to origin/main, so the boundary digest is preserved; only comments were restored. Source limits are green (ssh.rs 498, Knots tests 397), and policy tests remain 26/26. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T22:07:26.425776Z",
+    "entry_id": "01a03af6-c6da-7573-9d47-4b34ec634966",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

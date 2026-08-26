@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b0a-1e2c-73d0-9fa5-72b5fc54c257",
+  "occurred_at": "2026-08-25T22:28:33.964227Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation review approved against all five acceptance criteria. PR #105 is mergeable at db48e67f; required-public-files and GitHub Sanity passed. The reviewed v2 publisher reads only durable receipts, first publication is atomically control-plus-empty-inbox leased, acknowledgements require the exact remote OID, and upgrade inventory retains rather than republishes or deletes legacy paths. Full current-main sanity passed at 95.04% coverage with no invariant, security, or regression issue found.",
+    "datetime": "2026-08-25T22:28:33.964227Z",
+    "entry_id": "01a03b0a-1e2c-73d0-9fa5-72af06d558b5",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

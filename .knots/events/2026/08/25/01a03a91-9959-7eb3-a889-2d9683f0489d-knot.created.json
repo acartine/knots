@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a91-9959-7eb3-a889-2d9683f0489d",
+  "occurred_at": "2026-08-25T20:16:55.641233Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\nExtend Diffinite's managed receive policy so every Knots protocol ref has server-enforced ownership and old deployments cannot reopen frozen refs.\n\nVerification:\n1. Run real-bare-repo pre-receive tests for credential-scoped inboxes, service-only canonical refs, freeze markers, deletion, recreation, and force-update denial.\n2. Run rollback-floor tests proving an older application cannot reinstall a permissive hook.\n3. Ship through the normal Diffinite rail and read back the installed hook plus live rejection/acceptance probes.\n\nConstraints:\nUse existing Diffinite hosts, persistent repo storage, deployment rail, and persona capability text array. Add no production database schema migration, host, DNS, TLS, or network dependency.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Enforce Knots refs in Diffinite receive policy",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

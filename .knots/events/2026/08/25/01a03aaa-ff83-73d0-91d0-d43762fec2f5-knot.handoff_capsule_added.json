@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03aaa-ff83-73d0-91d0-d43762fec2f5",
+  "occurred_at": "2026-08-25T20:44:40.195439Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation commit a1878944c2d41a4f184b179d9824de4fcea5490f. Branch: codex/knots-075e-protected-v2. Protected protocol-v2 authority is isolated under .knots/v2 with canonical/control/archive/inbox refs, lossless raw-pack and exact event indexes, monotonic activation/recovery records, provider-marker validation, and fail-closed local deletion. Legacy v0.17.6 writes cannot alter canonical v2 state. Validation: cargo test compaction (10 passed), cargo test --test v0176_compaction_compat (1 passed), make lint, make install-hooks, and make sanity (1,307 unit tests plus all integration targets; 95.03% coverage). Sneka attribution note published.",
+    "datetime": "2026-08-25T20:44:40.195439Z",
+    "entry_id": "01a03aaa-ff83-73d0-91d0-d42a544f0462",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

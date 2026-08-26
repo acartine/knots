@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03b29-a91f-7cd0-9b0e-e9ff3d24ac30",
+  "occurred_at": "2026-08-25T23:03:01.151873Z",
+  "knot_id": "knots-d350",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-publish-rail-fix",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

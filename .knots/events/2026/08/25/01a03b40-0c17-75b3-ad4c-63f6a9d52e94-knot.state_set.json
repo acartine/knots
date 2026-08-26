@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03b40-0c17-75b3-ad4c-63f6a9d52e94",
+  "occurred_at": "2026-08-25T23:27:28.27992Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.state_set",
+  "data": {
+    "actor_kind": "agent",
+    "force": false,
+    "from": "ready_for_implementation",
+    "profile_id": "autopilot",
+    "to": "implementation",
+    "workflow_id": "work_sdlc"
+  },
+  "precondition": {
+    "profile_etag": "01a03b3f-e4d9-7fd0-9a1e-37ac4f7bb5e5"
+  }
+}

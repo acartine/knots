@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03afd-e45f-71f3-beaa-69aa804ec5a8",
+  "occurred_at": "2026-08-25T22:15:12.735118Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-73fe",
+    "lease_expiry_ts": 1787699712,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: outbox-ci-fix",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:15:12.735118Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

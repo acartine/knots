@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03af6-eafe-7c41-90eb-0a6ac90212de",
+  "occurred_at": "2026-08-25T22:07:35.678451Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-541d",
+    "lease_expiry_ts": 1787696251,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: codex-knots-9b6a-fourth-ship",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:07:35.678451Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

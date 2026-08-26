@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a91-968e-7d42-bf14-8454e3a805c7",
+  "occurred_at": "2026-08-25T20:16:54.916607Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. The integrator validates path allowlists, schemas, event IDs, content hashes, writer sequences, causal bases, and expected inbox heads before acceptance.\n2. Each immutable generation contains complete hot, warm, cold, edge, lease, workflow, metadata, and durable conflict projections plus deterministic compressed raw-event packs and an exact ID/hash index.\n3. Full replay from the predecessor and accepted writer vector is byte-equivalent to the snapshot before activation.\n4. Generation publication precedes one exact control-head CAS; races retry from the winning control and omit no registered writer or acknowledged tail.\n5. Recovery publishes a higher epoch dominating all acknowledged writer heads; control never moves backward."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af7-9f57-7a63-89ca-4c489318e919",
+  "occurred_at": "2026-08-25T22:08:21.847303Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implemented schema v21 durable immutable outbox receipts, credential-scoped writer epochs, legacy quarantine inventory, exact-ref lease publication, exact remote OID acknowledgement, and lost-ack recovery. Compatibility files remain retained and replica trees are never scanned by the v2 publisher. Commit 8361bc68 is published in GitHub PR #105 with Sneka attribution. make sanity passed with 1,318 unit tests and 95.11% coverage; released v0.17.6 and focused two-clone/crash/rotation tests passed.",
+    "datetime": "2026-08-25T22:08:21.847303Z",
+    "entry_id": "01a03af7-9f57-7a63-89ca-4c3bdbd1e023",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

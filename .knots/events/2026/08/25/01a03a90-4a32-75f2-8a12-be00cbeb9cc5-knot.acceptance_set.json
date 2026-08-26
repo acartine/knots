@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a90-4a32-75f2-8a12-be00cbeb9cc5",
+  "occurred_at": "2026-08-25T20:15:29.831576Z",
+  "knot_id": "knots-075e",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Protocol-v2 manifests identify immutable generations, predecessor/control epochs, registered writer heads, snapshot hashes/counts, lossless pack hashes, and exact event-id/content-hash indexes.\n2. Activation is immutable-object-first and exact expected-control-head CAS last; rollback publishes a higher recovery epoch that dominates acknowledged writer heads.\n3. Legacy .knots/events, .knots/index, and .knots/snapshots are non-authoritative on v2 and cannot change canonical state.\n4. No local or remote legacy path, archive ref, prior generation, pack, or Git object is deleted by this work."
+  }
+}

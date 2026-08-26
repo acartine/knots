@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af6-691d-71d3-a64f-c62f4615ef2c",
+  "occurred_at": "2026-08-25T22:07:02.429287Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Integrity-gate correction completed: restored diffinite/src/http/api/persona_merge_grants.rs comments exactly to origin/main, removing all diff from that pinned helper file. Policy tests remain 26/26. Commit cdbb959cb859 with published attribution. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T22:07:02.429287Z",
+    "entry_id": "01a03af6-691d-71d3-a64f-c613a212da44",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

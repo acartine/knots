@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a91-fb86-7b60-aa2c-1eb1fb89895f",
+  "occurred_at": "2026-08-25T20:17:20.774024Z",
+  "knot_id": "knots-9644",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: create-compaction-plan",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

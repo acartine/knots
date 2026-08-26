@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03af2-0ba8-7120-8348-a410bd8ab19c",
+  "occurred_at": "2026-08-25T22:02:16.3603Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Reship ticket 20260825T215952Z-89abac passed file sizes and all Rust/TypeScript stages, then failed before merge/deploy at repo.declared_path_readers because the new test fixture diffinite/src/ssh_ref_policy/v7_pre_receive.sh is an undeclared tracked input. Production remains unchanged. Correction: inline the fixture into the existing Rust test module (still below 500 lines) and remove the extra path.",
+    "datetime": "2026-08-25T22:02:16.3603Z",
+    "entry_id": "01a03af2-0ba8-7120-8348-a400b193744a",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

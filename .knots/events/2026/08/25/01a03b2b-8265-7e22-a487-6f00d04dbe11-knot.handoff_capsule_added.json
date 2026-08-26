@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b2b-8265-7e22-a487-6f00d04dbe11",
+  "occurred_at": "2026-08-25T23:05:02.309303Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Deterministic lint correction complete: added only the required truthful RAIL DECLARATION to the Knots integrator build-host command. repo.rail_declarations passes for 169 rails; wrapper, ops-command, SSH classifier, and diff checks pass. Commit 89c818b3736f with attribution published before fresh canonical branch codex/knots-9b6a-integrator-v2.",
+    "datetime": "2026-08-25T23:05:02.309303Z",
+    "entry_id": "01a03b2b-8265-7e22-a487-6efb34bd54d3",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b9a-8042-72d2-b095-3bcbe88d53a7",
+  "occurred_at": "2026-08-26T01:06:16.258266Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED: managed hook and rollback floor already on main cover credential-scoped append-only inboxes, integrator-only canonical/control/archive/freeze, legacy freeze/recreation denial, and binary compatibility. This branch replaces rejected host mutation with independently authenticated land-queue Persona -> Auth -> Diffinite service transport, parent-admin ceiling, transaction locks, audit, bounded verbs, and cleanup. Focused real-DB/API/ops/boundary tests pass. Full lint passed every project and late stages through the final platform-specific fixture discovered; both deterministic portability failures now have focused passing suites and the shipment rail will rerun the complete gate. Branch: codex/knots-9b6a-app-rail",
+    "datetime": "2026-08-26T01:06:16.258266Z",
+    "entry_id": "01a03b9a-8042-72d2-b095-3bb005257c63",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

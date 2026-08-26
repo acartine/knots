@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03a91-94d1-7312-b906-716cb6e50c97",
+  "occurred_at": "2026-08-25T20:16:54.481655Z",
+  "knot_id": "knots-3979",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "Codex",
+        "agent_type": "api",
+        "model": "GPT-5",
+        "model_version": "5",
+        "provider": "OpenAI"
+      },
+      "lease_type": "agent",
+      "nickname": "create-outbox",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 15707
+      },
+      "timeout_seconds": 600
+    }
+  }
+}

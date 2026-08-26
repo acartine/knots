@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b05-8f74-70e1-aa27-ae3c023485d3",
+  "occurred_at": "2026-08-25T22:23:35.284085Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "LIVE PROBES COMPLETE on private thecartine/knots-v2-probe-9b6a using verified Persona codex and one-day SSH credential 01a03b02-b8e6-7063-be4a-1cf0f973a094 (now revoked; local key deleted). Accepted: agent branch, own credential inbox create and fast-forward, legacy bridge before freeze. Rejected with deployed v8 messages: cross-credential inbox, own-inbox force rewind, own-inbox delete, canonical without integrator, and freeze without integrator. Full lint/deploy evidence remains ticket 20260825T220746Z-d4fc9b, train 20260825T220851Z-a3dd3b, SHA cdbb959cb859fb18e27f1f52a7576cead4f8c460.",
+    "datetime": "2026-08-25T22:23:35.284085Z",
+    "entry_id": "01a03b05-8f74-70e1-aa27-ae2818f057ed",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

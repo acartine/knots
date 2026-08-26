@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a91-9526-7273-a781-0d06e9e10105",
+  "occurred_at": "2026-08-25T20:16:54.566076Z",
+  "knot_id": "knots-7874",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\nReplace whole-replica event scanning with a durable, locally authored outbox and credential-scoped inbox publication.\n\nVerification:\n1. Run focused replication/outbox crash, retry, rotation, and released-client compatibility tests.\n2. Run a two-clone temporary-remote test and confirm neither clone republishes acknowledged compacted history.\n3. Run make sanity.\n\nConstraints:\nPersist local work before cache mutation. Register each writer epoch through control CAS. Never derive an outbox by scanning replicated event, index, snapshot, archive, or pack trees.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Publish only durable local Knots outboxes",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

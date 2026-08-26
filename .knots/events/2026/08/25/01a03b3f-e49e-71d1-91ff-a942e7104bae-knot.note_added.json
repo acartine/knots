@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b3f-e49e-71d1-91ff-a942e7104bae",
+  "occurred_at": "2026-08-25T23:27:18.174042Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Needs revision: the shipped admin domain operation is sound, but its live transport depends on a new host sudo/egress mutation. Keep the operation inside an already deployed authenticated Diffinite service boundary and delete the new host transport/install surface.",
+    "datetime": "2026-08-25T23:27:18.174042Z",
+    "entry_id": "01a03b3f-e49e-71d1-91ff-a93fe9bbabf0",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

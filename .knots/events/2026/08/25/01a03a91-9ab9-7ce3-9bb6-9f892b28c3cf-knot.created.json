@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a91-9ab9-7ce3-9bb6-9f892b28c3cf",
+  "occurred_at": "2026-08-25T20:16:55.993834Z",
+  "knot_id": "knots-d6e4",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\nProvide a resumable, lossless bridge and cutover state machine for repositories moving from legacy replication to protected v2 generations.\n\nVerification:\n1. Run released v0.17.6 and current binaries concurrently through bridge, freeze, final drain, activation, offline-return, and rollback fixtures.\n2. Prove freeze-before-final-head ordering, full state and edge equivalence, zero accepted backlog, and monotonic recovery.\n3. Run make sanity.\n\nConstraints:\nLegacy stays authoritative until remote update and recreation denial is installed and rejection-probed. Enable the malformed legacy-path v2 tripwire as defense-in-depth. Retain every legacy and generation archive indefinitely.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Bridge legacy and protected Knots generations",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

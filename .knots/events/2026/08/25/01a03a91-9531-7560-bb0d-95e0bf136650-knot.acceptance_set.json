@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a91-9531-7560-bb0d-95e0bf136650",
+  "occurred_at": "2026-08-25T20:16:54.566076Z",
+  "knot_id": "knots-7874",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Every v2 write atomically records its immutable event bundle and pending outbox receipt before materialized-cache mutation.\n2. Push registers a random installation writer epoch through expected-control-head CAS and updates only its credential-scoped inbox by expected-head fast-forward.\n3. An event is acknowledged only after its remote inbox OID is confirmed; crash retries and lost acknowledgements deduplicate by exact event ID and content hash.\n4. Replica history is never scanned or republished, and acknowledged pre-checkpoint paths cannot be resurrected.\n5. Unseen local legacy events survive upgrade and are imported or quarantined without deleting legacy files."
+  }
+}

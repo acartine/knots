@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a91-9617-7f02-9e49-3418c6091b11",
+  "occurred_at": "2026-08-25T20:16:54.807793Z",
+  "knot_id": "knots-d6ff",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: create-integrator",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

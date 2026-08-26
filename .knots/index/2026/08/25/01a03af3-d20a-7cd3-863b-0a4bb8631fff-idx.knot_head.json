@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03af3-d20a-7cd3-863b-0a4bb8631fff",
+  "occurred_at": "2026-08-25T22:04:12.682945Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-52bc",
+    "lease_expiry_ts": 1787696052,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-knots-9b6a-hermetic-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:04:12.682945Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

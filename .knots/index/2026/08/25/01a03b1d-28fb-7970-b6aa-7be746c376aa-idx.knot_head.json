@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03b1d-28fb-7970-b6aa-7be746c376aa",
+  "occurred_at": "2026-08-25T22:49:21.915982Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-39c3",
+    "lease_expiry_ts": 1787697358,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: codex-knots-9b6a-grant-rail",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:49:21.915982Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

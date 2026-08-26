@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03aaf-dd38-7012-a97e-9ea2ed3f68c9",
+  "occurred_at": "2026-08-25T20:49:59.095907Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Implementation review APPROVED for remote branch codex/knots-075e-protected-v2 at a1878944c2d4. The diff satisfies all four acceptance criteria: complete v2 manifest/control/vector/pack/index schema; immutable-first publication with exact final control CAS and higher-epoch recovery; authoritative paths confined to .knots/v2 with legacy-path isolation; and no deletion primitive remains in the Wave 1 generation fence. Provider protection is derived from matching provider facts and fails closed. Diff check is clean, all changed Rust files satisfy size limits, v0.17.6 isolation test passes, full pre-push sanity passed, and coverage is 95.03%. No security or regression issue found.",
+    "datetime": "2026-08-25T20:49:59.095907Z",
+    "entry_id": "01a03aaf-dd38-7012-a97e-9e9ec462ed4f",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

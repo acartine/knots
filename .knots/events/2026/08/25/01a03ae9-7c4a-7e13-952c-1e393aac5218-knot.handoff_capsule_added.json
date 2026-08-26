@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ae9-7c4a-7e13-952c-1e393aac5218",
+  "occurred_at": "2026-08-25T21:52:55.370224Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED on rereview. The branch diff implements every source-level criterion: hook v8 installs for every receive-pack; trusted credential UUID scopes append-only inboxes; integrator capability gates canonical/control/archive/freeze; whole-batch freeze closes same-push and recreation bypasses; managed core.hooksPath creates a rollback floor; v7-to-v8-to-v7 is exercised by real Git tests. Existing verified Persona/key/grant rails are reused without schema or infrastructure change. Focused tests are green (26/26 Diffinite policy, 6/6 CLI); Quilt's full lint/merge/deploy gate remains correctly owned by the shipment rail. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T21:52:55.370224Z",
+    "entry_id": "01a03ae9-7c4a-7e13-952c-1e2bcd2b9f81",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

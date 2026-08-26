@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03b2b-e604-7640-b94e-69b871ca2eee",
+  "occurred_at": "2026-08-25T23:05:27.812694Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-d1c8",
+    "lease_expiry_ts": 1787699727,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: compaction-publish-rail-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T23:05:27.812694Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

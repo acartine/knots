@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ae6-3777-71d2-a445-2a12b7e78031",
+  "occurred_at": "2026-08-25T21:49:21.143378Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Implemented managed hook v8 for all receive-pack actors: credential-scoped append-only inbox refs, integrator-only canonical/control/archive/freeze refs, transaction-wide legacy freeze, and durable core.hooksPath rollback floor. Extended the existing audited capability API/CLI with knots_integrator; no schema or infrastructure change. Tests: Diffinite ssh_ref_policy 26/26 and sneka-cli persona command 6/6. Commit b76343f1e837 with published sneka-agents note. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T21:49:21.143378Z",
+    "entry_id": "01a03ae6-3777-71d2-a445-2a0f709024db",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

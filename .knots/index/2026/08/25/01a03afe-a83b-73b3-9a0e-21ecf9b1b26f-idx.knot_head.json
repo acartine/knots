@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03afe-a83b-73b3-9a0e-21ecf9b1b26f",
+  "occurred_at": "2026-08-25T22:16:02.875293Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-7b5d",
+    "lease_expiry_ts": 1787699752,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: outbox-rebase",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:16:02.875293Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

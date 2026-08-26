@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a91-9963-7a30-914c-c97637258b02",
+  "occurred_at": "2026-08-25T20:16:55.641233Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. The managed hook is installed before every receive-pack and reserves Knots legacy, canonical/control/archive, freeze-marker, and inbox namespaces for every actor kind.\n2. Inbox paths are scoped to trusted credential ID and permit only create or fast-forward updates; canonical/control/archive updates require the dedicated integrator capability.\n3. An armed per-repository freeze marker rejects both update and recreation of the legacy Knots ref with an upgrade-specific error.\n4. A deploy compatibility floor prevents any older Diffinite binary from downgrading the persistent hook after freeze.\n5. A verified service persona, rotating SSH credential, audited grant rail, deployment, and production readback require no human session or email-verification handoff."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03b2b-9cac-7f53-b4b7-5f15544f83d9",
+  "occurred_at": "2026-08-25T23:05:09.036Z",
+  "knot_id": "knots-d1c8",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: compaction-publish-rail-review",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

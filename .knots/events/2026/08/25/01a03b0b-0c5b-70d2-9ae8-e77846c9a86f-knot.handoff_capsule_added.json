@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b0b-0c5b-70d2-9ae8-e77846c9a86f",
+  "occurred_at": "2026-08-25T22:29:34.93918Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Shipment rolled back before merge because codecov/patch is red: 90.72% of diff hit, target 95.13%. Overall make sanity remains green at 95.04%. Local Cobertura identifies uncovered new branches in src/db/outbox.rs and src/replication/outbox.rs; add focused tests, preserve the coverage ratchet, then repeat review and shipment.",
+    "datetime": "2026-08-25T22:29:34.93918Z",
+    "entry_id": "01a03b0b-0c5b-70d2-9ae8-e768ef7d9d64",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

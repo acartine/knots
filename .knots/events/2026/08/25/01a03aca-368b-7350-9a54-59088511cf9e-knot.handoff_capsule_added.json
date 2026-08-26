@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03aca-368b-7350-9a54-59088511cf9e",
+  "occurred_at": "2026-08-25T21:18:45.899498Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Codecov repair covers protocol-v2 rejection paths without production behavior changes. Original changed executable lines measure 326/328 (99.39%); make sanity passes at 95.18% overall (16954/17812), compaction tests 14/14, and v0.17.6 compatibility 1/1. Branch: codex/knots-075e-codecov",
+    "datetime": "2026-08-25T21:18:45.899498Z",
+    "entry_id": "01a03aca-368b-7350-9a54-58f2525d9aa9",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

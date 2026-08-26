@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ad7-3c5a-79e1-9604-91ed2e03104b",
+  "occurred_at": "2026-08-25T21:32:59.354078Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "GitHub PR #104 merged to remote main at 5de54c9ab2ecf949b8a39f82f225bdca37f35f0b. PR checks passed: Sanity 5m56s, required-public-files 4s, codecov/patch success. Post-merge main checks passed: Sanity 5m52s, required-public-files success, version-packages success, detect-release success; release builds correctly skipped because no release changeset. The merged tree matches the reviewed branch, remote squash attribution is published, and the feature branch is deleted.",
+    "datetime": "2026-08-25T21:32:59.354078Z",
+    "entry_id": "01a03ad7-3c5a-79e1-9604-91d8a2c37747",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

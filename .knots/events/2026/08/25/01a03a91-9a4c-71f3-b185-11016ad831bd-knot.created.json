@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a91-9a4c-71f3-b185-11016ad831bd",
+  "occurred_at": "2026-08-25T20:16:55.884189Z",
+  "knot_id": "knots-c44d",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: create-bridge",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

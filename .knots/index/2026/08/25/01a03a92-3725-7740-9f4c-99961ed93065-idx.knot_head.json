@@ -1,0 +1,69 @@
+{
+  "event_id": "01a03a92-3725-7740-9f4c-99961ed93065",
+  "occurred_at": "2026-08-25T20:17:36.032606Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "execution_plan": {
+      "objective": "Ship lossless, remotely enforced Knots compaction across repositories and machines.",
+      "waves": [
+        {
+          "name": "Wave 1: protected contract",
+          "objective": "Replace unsafe direct publication with the enforceable protocol-v2 contract.",
+          "steps": [
+            {
+              "knot_ids": [
+                "knots-075e"
+              ],
+              "step_index": 1
+            }
+          ],
+          "wave_index": 1
+        }
+      ]
+    },
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-a7f0",
+    "lease_expiry_ts": 0,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "design",
+      "output": {
+        "artifact_type": "note"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "execution_plan_sdlc/autopilot",
+    "state": "ready_for_design",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "design",
+      "output": {
+        "artifact_type": "note"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Deliver protected protocol-v2 compaction",
+    "type": "execution_plan",
+    "updated_at": "2026-08-25T20:17:36.032606Z",
+    "workflow_id": "execution_plan_sdlc"
+  },
+  "precondition": {
+    "profile_etag": "01a03a92-36c8-70a3-bd75-9f199cb566f1"
+  }
+}

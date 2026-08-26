@@ -1,0 +1,11 @@
+{
+  "event_id": "01a03a91-fc23-7f51-bb08-1eb2b2601854",
+  "occurred_at": "2026-08-25T20:17:20.931782Z",
+  "knot_id": "knots-a7f0",
+  "type": "knot.execution_plan_data_set",
+  "data": {
+    "execution_plan": {
+      "objective": "Ship lossless, remotely enforced Knots compaction across repositories and machines."
+    }
+  }
+}

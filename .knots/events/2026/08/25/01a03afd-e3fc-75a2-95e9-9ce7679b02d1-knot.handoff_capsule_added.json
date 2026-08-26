@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03afd-e3fc-75a2-95e9-9ce7679b02d1",
+  "occurred_at": "2026-08-25T22:15:12.636261Z",
+  "knot_id": "knots-7874",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "codex",
+    "content": "Applied GitHub Rust 1.93 review correction in commit 2a6dedd0. Replaced the nonminimal boolean equality with direct inequality, preserving behavior. make lint, six focused outbox tests, and the full managed make sanity hook passed at 95.11% coverage; commit and Sneka attribution are published to PR #105.",
+    "datetime": "2026-08-25T22:15:12.636261Z",
+    "entry_id": "01a03afd-e3fc-75a2-95e9-9cd9fc8719c7",
+    "model": "gpt-5",
+    "username": "OpenAI",
+    "version": "codex"
+  }
+}

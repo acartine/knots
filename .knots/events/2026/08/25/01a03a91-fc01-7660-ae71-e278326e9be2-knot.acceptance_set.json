@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a91-fc01-7660-ae71-e278326e9be2",
+  "occurred_at": "2026-08-25T20:17:20.885813Z",
+  "knot_id": "knots-a7f0",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. GitHub and Diffinite remotely enforce credential-scoped inboxes and trusted canonical writers.\n2. New clients publish only durable local outboxes and cannot resurrect compacted replica history.\n3. Complete lossless generations bootstrap every SQLite projection transactionally and preserve leases and quarantine.\n4. Legacy clients remain correct before freeze and fail remotely after freeze; upgraded offline work is imported or quarantined.\n5. Canary-first rollout proves full-replay equivalence and the scale targets without deleting any archive."
+  }
+}

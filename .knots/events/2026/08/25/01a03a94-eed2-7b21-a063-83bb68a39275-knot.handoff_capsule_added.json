@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a94-eed2-7b21-a063-83bb68a39275",
+  "occurred_at": "2026-08-25T20:20:34.130873Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Wave 1 plan: semantic .knots/v2 protected contract; immutable archive/pack first; exact control-head CAS last; higher-epoch rollback; provider marker gates all publication and the legacy local-delete path becomes retention-only. Add actual v0.17.6-derived compatibility fixture, full focused tests, sanity, GitHub PR/CI/merge, and terminal proof. No live provider policy mutation or deletion.",
+    "datetime": "2026-08-25T20:20:34.130873Z",
+    "entry_id": "01a03a94-eed2-7b21-a063-83a1eda8dadc",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

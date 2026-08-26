@@ -1,0 +1,22 @@
+{
+  "event_id": "01a03b3b-10e0-7a12-a2e7-16ca4df54cdf",
+  "occurred_at": "2026-08-25T23:22:01.824337Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-c8ac",
+    "lease_expiry_ts": 1787699735,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: compaction-publish-reship",
+    "type": "lease",
+    "updated_at": "2026-08-25T23:22:01.824337Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

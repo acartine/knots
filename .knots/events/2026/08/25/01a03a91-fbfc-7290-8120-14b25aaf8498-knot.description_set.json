@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a91-fbfc-7290-8120-14b25aaf8498",
+  "occurred_at": "2026-08-25T20:17:20.885813Z",
+  "knot_id": "knots-a7f0",
+  "type": "knot.description_set",
+  "data": {
+    "description": "Goal:\nDeliver safe, remotely enforced, lossless Knots compaction across GitHub and Diffinite repositories without deleting rollback archives.\n\nVerification:\n1. Verify every referenced Knot reaches SHIPPED under knots-e2e.\n2. Verify provider rejection/acceptance probes, released-client compatibility, fresh-clone equivalence, SQLite rollback, and scale targets.\n3. Verify canary-first live rollout records canonical generations for every discovered remote-backed Knots repository.\n\nConstraints:\nUse the approved provider and SQLite changes. Use existing hosts and rails. Enable the old-reader poison tripwire. Keep all archives, packs, generations, and legacy refs indefinitely."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ae8-ee48-7d82-a5a1-11f7fbcfaca5",
+  "occurred_at": "2026-08-25T21:52:19.016235Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Review correction completed: the real-Git setup now installs the faithful v7 hook/installer lifecycle, upgrades to v8, reruns v7, confirms core.hooksPath remains v8, and proves a cross-credential inbox push is still rejected. Diffinite ssh_ref_policy remains 26/26. Commit 58f137c05486 with published attribution. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T21:52:19.016235Z",
+    "entry_id": "01a03ae8-ee48-7d82-a5a1-11e1c0ba8f5e",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

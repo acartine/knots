@@ -1,0 +1,48 @@
+{
+  "event_id": "01a03af6-7be2-7812-a8d2-b1e5d5858607",
+  "occurred_at": "2026-08-25T22:07:07.234703Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-01f3",
+    "lease_expiry_ts": 1787696227,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: codex-knots-9b6a-digest-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T22:07:07.204469Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

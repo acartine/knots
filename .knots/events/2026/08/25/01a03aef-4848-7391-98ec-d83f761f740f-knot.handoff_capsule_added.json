@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03aef-4848-7391-98ec-d83f761f740f",
+  "occurred_at": "2026-08-25T21:59:15.272539Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment gate correction completed: compressed only the new receive-hook comment; diffinite/src/ssh.rs is now 498 lines (max 499) with no behavior change. Policy tests remain 26/26. Commit 92b911de86d9 with published attribution. Branch: codex/knots-9b6a",
+    "datetime": "2026-08-25T21:59:15.272539Z",
+    "entry_id": "01a03aef-4848-7391-98ec-d82a16487ac9",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

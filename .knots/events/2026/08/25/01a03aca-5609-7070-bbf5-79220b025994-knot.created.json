@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03aca-5609-7070-bbf5-79220b025994",
+  "occurred_at": "2026-08-25T21:18:53.961318Z",
+  "knot_id": "knots-d4c4",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: codex-075e-codecov-review",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

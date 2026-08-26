@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03ad7-03ac-76f2-8f19-d286a391f3c7",
+  "occurred_at": "2026-08-25T21:32:44.844591Z",
+  "knot_id": "knots-3100",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: codex-075e-final-ship",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

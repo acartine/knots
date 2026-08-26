@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03ad8-972f-7e61-a5bb-3aa268a28fc7",
+  "occurred_at": "2026-08-25T21:34:28.143334Z",
+  "knot_id": "knots-2315",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "codex",
+        "agent_type": "api",
+        "model": "gpt-5",
+        "model_version": "codex",
+        "provider": "OpenAI"
+      },
+      "lease_type": "agent",
+      "nickname": "codex-7874-planning",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 51858
+      },
+      "timeout_seconds": 3600
+    }
+  }
+}

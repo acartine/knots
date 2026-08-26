@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ada-d4d5-7be2-bc54-b7a3f24e6cfc",
+  "occurred_at": "2026-08-25T21:36:54.997226Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Plan review approved. Scope is feasible without child knots and preserves the protocol-v2 ownership boundary: validation and canonical serialization are inside the integrator; provider policy and client outbox production remain sibling concerns. Security is fail-closed because inbox bytes are parsed from explicit data entries only. Replay equivalence, exact decoded indexes, vector monotonicity, conflict durability, CAS races, and higher-epoch recovery have dedicated tests. Keep production-facing traits narrow and require complete projections rather than optional fields.",
+    "datetime": "2026-08-25T21:36:54.997226Z",
+    "entry_id": "01a03ada-d4d5-7be2-bc54-b791dafe473b",
+    "model": "GPT-5",
+    "username": "OpenAI",
+    "version": "5"
+  }
+}

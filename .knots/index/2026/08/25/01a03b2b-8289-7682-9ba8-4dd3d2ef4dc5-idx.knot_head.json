@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03b2b-8289-7682-9ba8-4dd3d2ef4dc5",
+  "occurred_at": "2026-08-25T23:05:02.345347Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-d350",
+    "lease_expiry_ts": 1787699702,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: compaction-publish-rail-fix",
+    "type": "lease",
+    "updated_at": "2026-08-25T23:03:09.416681Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

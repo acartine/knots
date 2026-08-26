@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b3f-abcd-78c1-8089-bb83fd8d79c8",
+  "occurred_at": "2026-08-25T23:27:03.629254Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Live verification found the app-level capability operation still depended on an uninstalled host sudo/egress wrapper. The production converge apply was rejected and not run. Redesign inside Diffinite existing authenticated service boundary; remove all new SSH/sudo/egress changes; preserve parent-admin ceiling, atomic locking/audit, bounded actions, and no schema change.",
+    "datetime": "2026-08-25T23:27:03.629254Z",
+    "entry_id": "01a03b3f-abcd-78c1-8089-bb716b95dcd5",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

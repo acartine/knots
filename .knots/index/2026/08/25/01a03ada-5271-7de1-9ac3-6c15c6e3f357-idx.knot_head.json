@@ -1,0 +1,35 @@
+{
+  "event_id": "01a03ada-5271-7de1-9ac3-6c15c6e3f357",
+  "occurred_at": "2026-08-25T21:36:21.617295Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-265d",
+    "lease_expiry_ts": 1787694381,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: codex-diffinite-ref-policy-implementation",
+    "type": "lease",
+    "updated_at": "2026-08-25T21:36:21.603544Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

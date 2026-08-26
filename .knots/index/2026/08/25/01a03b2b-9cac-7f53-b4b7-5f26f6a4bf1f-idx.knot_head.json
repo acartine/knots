@@ -1,0 +1,48 @@
+{
+  "event_id": "01a03b2b-9cac-7f53-b4b7-5f26f6a4bf1f",
+  "occurred_at": "2026-08-25T23:05:09.036Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-d1c8",
+    "lease_expiry_ts": 0,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: compaction-publish-rail-review",
+    "type": "lease",
+    "updated_at": "2026-08-25T23:05:09.036Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

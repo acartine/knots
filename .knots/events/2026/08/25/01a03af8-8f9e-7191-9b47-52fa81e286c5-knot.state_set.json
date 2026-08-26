@@ -1,0 +1,20 @@
+{
+  "event_id": "01a03af8-8f9e-7191-9b47-52fa81e286c5",
+  "occurred_at": "2026-08-25T22:09:23.358292Z",
+  "knot_id": "knots-7874",
+  "type": "knot.state_set",
+  "data": {
+    "actor_kind": "agent",
+    "agent_model": "gpt-5",
+    "agent_name": "codex",
+    "agent_version": "codex",
+    "force": false,
+    "from": "ready_for_implementation",
+    "profile_id": "autopilot",
+    "to": "implementation",
+    "workflow_id": "work_sdlc"
+  },
+  "precondition": {
+    "profile_etag": "01a03af8-6d4f-7552-a099-2a8f9e7ab018"
+  }
+}

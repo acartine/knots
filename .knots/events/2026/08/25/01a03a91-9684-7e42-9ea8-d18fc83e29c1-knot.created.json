@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03a91-9684-7e42-9ea8-d18fc83e29c1",
+  "occurred_at": "2026-08-25T20:16:54.916607Z",
+  "knot_id": "knots-ccdc",
+  "type": "knot.created",
+  "data": {
+    "body": "Goal:\nBuild the trusted data-only integrator that validates inbox bundles, produces projection-complete generations, and advances canonical control safely.\n\nVerification:\n1. Run deterministic pack, full-replay equivalence, vector-race, conflict-ledger, and rollback-generation tests.\n2. Run the integrator against concurrent temporary inbox refs and prove exactly one control CAS wins without event loss.\n3. Run make sanity.\n\nConstraints:\nTreat inbox trees only as untrusted data and never execute their code or workflows. Publish immutable objects first and control last. Retain archives, packs, generations, and unacknowledged tails indefinitely.",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "Build the lossless Knots generation integrator",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}

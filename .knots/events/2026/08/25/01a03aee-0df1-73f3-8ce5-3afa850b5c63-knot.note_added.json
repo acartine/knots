@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03aee-0df1-73f3-8ce5-3afa850b5c63",
+  "occurred_at": "2026-08-25T21:57:54.801223Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Shipment ticket 20260825T215420Z-718fff failed before merge/deploy only at repo.file_sizes: diffinite/src/ssh.rs is 500 lines, max 499. All Rust compile/clippy/fmt/deny and TypeScript stages passed. Production is unchanged. Narrow correction: compress the new receive-hook comment without changing behavior, rerun focused tests, and reship.",
+    "datetime": "2026-08-25T21:57:54.801223Z",
+    "entry_id": "01a03aee-0df1-73f3-8ce5-3ae011359fae",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

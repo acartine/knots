@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b1f-5ff0-7a80-b4d7-686e26d18458",
+  "occurred_at": "2026-08-25T22:51:47.055845Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "APPROVED. The reviewed Diffinite branch efa308152c9c adds a bounded atomic admin rail that only grants, reads, or revokes knots_integrator for an active verified Persona whose parent currently administers the exact repository; it preserves unrelated capabilities and atomically audits every operation. The transport accepts only four validated tokens, targets the rostered git host as the named diffinite service account, invokes a fixed zero-argument NOSETENV sudo wrapper, and is installed through existing converge with no schema or infrastructure change. Unit, Docker integration, wrapper, ops-command, SSH-classifier, format, compile, and diff checks are green. Full repository lint/merge/deploy remains owned by shipment.",
+    "datetime": "2026-08-25T22:51:47.055845Z",
+    "entry_id": "01a03b1f-5ff0-7a80-b4d7-685c9cc2702b",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

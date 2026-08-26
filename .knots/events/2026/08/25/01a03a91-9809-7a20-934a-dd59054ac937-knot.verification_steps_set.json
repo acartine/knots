@@ -1,0 +1,11 @@
+{
+  "event_id": "01a03a91-9809-7a20-934a-dd59054ac937",
+  "occurred_at": "2026-08-25T20:16:55.290209Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "make sanity"
+    ]
+  }
+}

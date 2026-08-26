@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03b07-9b66-7e71-bf0c-03d81fbd4b44",
+  "occurred_at": "2026-08-25T22:25:49.41497Z",
+  "knot_id": "knots-39c3",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "",
+        "agent_type": "",
+        "model": "",
+        "model_version": "",
+        "provider": ""
+      },
+      "lease_type": "agent",
+      "nickname": "codex-knots-9b6a-grant-rail",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 21024
+      },
+      "timeout_seconds": 600
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "01a03a91-9ac4-7d00-a3e1-51dcb6309b20",
+  "occurred_at": "2026-08-25T20:16:55.993834Z",
+  "knot_id": "knots-d6e4",
+  "type": "knot.acceptance_set",
+  "data": {
+    "acceptance": "1. Bridge mode imports new legacy events into v2 and reverse-exports accepted v2 events so old clients remain correct before freeze, deduplicating by exact event ID and content hash.\n2. Cutover installs and probes legacy update/recreation denial before capturing the final legacy SHA, draining through that SHA, and activating v2.\n3. Activation requires zero bridge backlog, projection-complete full-replay equivalence, immutable archives, protected canonical refs, and fresh-clone read/write proof.\n4. Offline legacy work remains local; after upgrade it enters an inbox and stale mutations are durably quarantined rather than discarded.\n5. Per-repository rollout states are resumable and rollback creates a newer recovery generation without reopening legacy or deleting archives."
+  }
+}

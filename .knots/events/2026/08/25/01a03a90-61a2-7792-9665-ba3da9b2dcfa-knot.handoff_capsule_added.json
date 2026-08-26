@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03a90-61a2-7792-9665-ba3da9b2dcfa",
+  "occurred_at": "2026-08-25T20:15:35.842545Z",
+  "knot_id": "knots-075e",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Operator approvals are recorded in tasks/approval-ledger.md. This Knot supersedes the unsafe assumptions in shipped 5807/5728 without reopening them. Provider enforcement, local SQLite changes, PR/release rails, service identities, and live canaries are approved. Archive/ref/history deletion and production PostgreSQL schema changes are unnecessary and excluded. Actual v0.17.6 fixtures must remain in verification.",
+    "datetime": "2026-08-25T20:15:35.842545Z",
+    "entry_id": "01a03a90-61a2-7792-9665-ba22283e038c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

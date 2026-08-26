@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03b9a-1a13-79b3-a823-32d6d906a9c5",
+  "occurred_at": "2026-08-26T01:05:50.099822Z",
+  "knot_id": "knots-9b6a",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Corrected final late lint portability failure by using BSD-compatible sed backup syntax and deleting scratch backups; preview reset production fixture passes end to end. Branch: codex/knots-9b6a-app-rail",
+    "datetime": "2026-08-26T01:05:50.099822Z",
+    "entry_id": "01a03b9a-1a13-79b3-a823-32c1ae6bc865",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}
