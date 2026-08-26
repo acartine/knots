@@ -26,7 +26,8 @@ refs/heads/knots                              legacy compatibility
 refs/heads/knots-v2-control                   protected singleton control
 refs/heads/knots-v2-canonical/<generation>    immutable generation
 refs/heads/knots-v2-archive/<generation>      additive immutable archive
-refs/heads/knots-v2-inbox/<writer-id>         credential-scoped writer inbox
+refs/heads/knots-v2-proposals/<writer>/<seq>  immutable untrusted submission
+refs/heads/knots-v2-inbox/<writer-id>         protected Actions-owned writer inbox
 ```
 
 The provider integration must enforce equivalent roles when it maps them to another ref namespace.
@@ -52,6 +53,26 @@ The local cache exposes `SyncService::install_v2_checkpoint` as the authenticate
 It accepts only a `CheckpointInput` containing `ValidatedProtection`, the protected control and
 canonical bytes, exact source facts, and retained-delta replay. Provider adapters must fetch and
 validate those inputs before calling it; the cache never treats plain Git metadata as protection.
+
+## Signed GitHub submissions
+
+GitHub clients never create or update protected inbox refs. Each installation has an Ed25519 key
+stored transactionally in its mode-0600 local SQLite database. Its `writer_id` is the lowercase
+SHA-256 fingerprint of the public key, so a random UUID cannot claim another writer's identity.
+
+The client first builds one immutable proposal commit per writer sequence, then signs its exact OID.
+The domain-separated envelope binds that OID, the repository identity, proposal and target refs,
+exact expected inbox OID, writer sequence, previous head, causal generation, public key, and every
+event path, length, ID, and payload SHA-256. Rotated keys include the previous writer ID and a second
+signature from that parent key. The proposal ref and signed envelope are only inputs to the trusted
+Action; neither gives the client permission to update a protected inbox ref.
+
+A trusted default-branch Action reads the exact proposal commit as untrusted data and never checks
+out or executes it. The verifier rejects unknown fields, malformed keys, forged signatures,
+repository/ref substitution, stale OIDs, skipped or replayed sequences, cross-writer keys,
+unapproved rotation, undeclared objects, and payload changes. Only a successful verification
+returns a `PromotionRequest`; the Action advances the protected inbox with the signed expected OID
+as its compare-and-swap lease. Lost responses are recovered by polling that exact inbox OID.
 
 ## Immutable generation manifest
 

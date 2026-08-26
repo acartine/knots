@@ -24,6 +24,7 @@ pub(crate) struct OutboxRecord {
     pub writer_id: Option<String>,
     pub sequence: Option<u64>,
     pub proposed_inbox_oid: Option<String>,
+    pub proposal_base_generation: Option<String>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -136,7 +137,7 @@ pub(crate) fn assign_pending_outbox(
     }
     let tx = conn.unchecked_transaction()?;
     let mut rows = list_unassigned(&tx, limit)?;
-    let mut sequence = writer.next_sequence;
+    let sequence = writer.next_sequence;
     for row in &mut rows {
         tx.execute(
             "UPDATE v2_outbox SET writer_id = ?1, sequence = ?2
@@ -145,12 +146,16 @@ pub(crate) fn assign_pending_outbox(
         )?;
         row.writer_id = Some(writer.writer_id.clone());
         row.sequence = Some(sequence);
-        sequence += 1;
     }
-    tx.execute(
-        "UPDATE v2_writer_epoch SET next_sequence = ?1 WHERE writer_id = ?2",
-        params![sequence as i64, writer.writer_id],
-    )?;
+    if !rows.is_empty() {
+        let next = sequence
+            .checked_add(1)
+            .ok_or(rusqlite::Error::InvalidQuery)?;
+        tx.execute(
+            "UPDATE v2_writer_epoch SET next_sequence = ?1 WHERE writer_id = ?2",
+            params![next as i64, writer.writer_id],
+        )?;
+    }
     tx.commit()?;
     list_pending_outbox(conn, &writer.writer_id, limit)
 }
@@ -159,7 +164,7 @@ fn list_unassigned(conn: &Connection, limit: usize) -> Result<Vec<OutboxRecord>>
     query_outbox(
         conn,
         "SELECT event_id, stream, relative_path, content_sha256, payload,
-                writer_id, sequence, proposed_inbox_oid
+                writer_id, sequence, proposed_inbox_oid, proposal_base_generation
          FROM v2_outbox WHERE writer_id IS NULL AND acknowledged_at IS NULL
          ORDER BY created_at, event_id LIMIT ?1",
         None,
@@ -170,16 +175,20 @@ fn list_unassigned(conn: &Connection, limit: usize) -> Result<Vec<OutboxRecord>>
 pub(crate) fn list_pending_outbox(
     conn: &Connection,
     writer_id: &str,
-    limit: usize,
+    _limit: usize,
 ) -> Result<Vec<OutboxRecord>> {
     query_outbox(
         conn,
         "SELECT event_id, stream, relative_path, content_sha256, payload,
-                writer_id, sequence, proposed_inbox_oid
+                writer_id, sequence, proposed_inbox_oid, proposal_base_generation
          FROM v2_outbox WHERE writer_id = ?1 AND acknowledged_at IS NULL
-         ORDER BY sequence LIMIT ?2",
+           AND sequence = (
+               SELECT MIN(sequence) FROM v2_outbox
+               WHERE writer_id = ?1 AND acknowledged_at IS NULL
+           )
+         ORDER BY event_id LIMIT ?2",
         Some(writer_id),
-        limit,
+        i64::MAX as usize,
     )
 }
 
@@ -200,6 +209,7 @@ fn query_outbox(
             writer_id: row.get(5)?,
             sequence: row.get::<_, Option<i64>>(6)?.map(|value| value as u64),
             proposed_inbox_oid: row.get(7)?,
+            proposal_base_generation: row.get(8)?,
         })
     };
     let rows = if let Some(writer_id) = writer_id {
@@ -215,14 +225,19 @@ pub(crate) fn mark_outbox_proposed(
     writer_id: &str,
     event_ids: &[String],
     proposed_oid: &str,
+    base_generation: Option<&str>,
 ) -> Result<()> {
     let tx = conn.unchecked_transaction()?;
     for event_id in event_ids {
         let changed = tx.execute(
-            "UPDATE v2_outbox SET proposed_inbox_oid = ?1
+            "UPDATE v2_outbox
+             SET proposed_inbox_oid = ?1, proposal_base_generation = ?4
              WHERE event_id = ?2 AND writer_id = ?3 AND acknowledged_at IS NULL
-               AND (proposed_inbox_oid IS NULL OR proposed_inbox_oid = ?1)",
-            params![proposed_oid, event_id, writer_id],
+               AND (proposed_inbox_oid IS NULL OR (
+                   proposed_inbox_oid = ?1
+                   AND proposal_base_generation IS ?4
+               ))",
+            params![proposed_oid, event_id, writer_id, base_generation],
         )?;
         if changed != 1 {
             return Err(rusqlite::Error::InvalidQuery);

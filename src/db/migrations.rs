@@ -1,15 +1,12 @@
-use rusqlite::{params, Connection, OptionalExtension, Result};
-
 use super::migration_sql;
 use super::{get_meta, now_utc_rfc3339, CURRENT_SCHEMA_VERSION};
-
+use rusqlite::{params, Connection, OptionalExtension, Result};
 struct Migration {
     version: i64,
     name: &'static str,
     sql: &'static str,
 }
-
-const MIGRATIONS: [Migration; 22] = [
+const MIGRATIONS: [Migration; 23] = [
     Migration {
         version: 1,
         name: "baseline_cache_schema_v1",
@@ -358,8 +355,12 @@ CREATE TABLE IF NOT EXISTS knot_sync_quarantine (
         name: "protocol_v2_checkpoint_bootstrap_v1",
         sql: migration_sql::PROTOCOL_V2_CHECKPOINT,
     },
+    Migration {
+        version: 23,
+        name: "protocol_v2_signed_submission_batches_v1",
+        sql: migration_sql::PROTOCOL_V2_SIGNED_BATCHES,
+    },
 ];
-
 pub(super) fn apply_migrations(conn: &mut Connection) -> Result<()> {
     let tx = conn.transaction()?;
     tx.execute_batch(

@@ -41,3 +41,12 @@
 - [x] Preserve locally-authored outboxes and migrate leased knots to generation quarantine.
 - [x] Prove fresh bootstrap, pre-cutoff replacement, crash rollback, corruption rejection, and replay equivalence.
 - [x] Run `make sanity`, publish through GitHub, and verify exact merged main and terminal Knot state.
+
+## Wave 3 signed GitHub outboxes
+
+- [x] Define canonical Ed25519 submission transcripts and immutable proposal refs.
+- [x] Build submissions from SQLite-backed fingerprint identities and durable outbox receipts.
+- [x] Verify repository/ref/OID/sequence/key rotation/signature/payload bindings fail closed.
+- [x] Remove direct client inbox publication from the transport capability.
+- [x] Prove forgery, replay, cross-writer, crash recovery, and v0.17.6 rejection paths.
+- [x] Run `make sanity`, independent review, GitHub CI/merge, and exact-main proof.

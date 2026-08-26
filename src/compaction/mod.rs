@@ -12,6 +12,7 @@ mod protection;
 mod protocol;
 mod publication;
 mod refs;
+mod submission;
 mod validation;
 
 pub(crate) use checkpoint::{
@@ -46,7 +47,11 @@ pub(crate) use protection::{
 };
 pub(crate) use protocol::{ControlKind, ControlRecord, ProtocolError, ProtocolModel};
 pub(crate) use publication::{GenerationPublisher, PublicationTarget};
-pub(crate) use refs::{V2RefLayout, CANONICAL_REF_PREFIX, LEGACY_REF};
+pub(crate) use refs::{V2RefLayout, CANONICAL_REF_PREFIX, LEGACY_REF, PROPOSAL_REF_PREFIX};
+pub(crate) use submission::{
+    sign_submission, verify_submission, PromotionRequest, RegistrationAuthority, SignedSubmission,
+    SubmissionCandidate, SubmissionError, VerifiedRegistration,
+};
 pub(crate) use validation::{
     parse_and_validate, validate, SourceFacts, ValidationContext, ValidationError,
 };

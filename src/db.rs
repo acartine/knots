@@ -16,7 +16,7 @@ use crate::domain::metadata::MetadataEntry;
 use crate::domain::scope::ScopeData;
 use crate::domain::step_history::StepRecord;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 22;
+pub const CURRENT_SCHEMA_VERSION: i64 = 23;
 
 mod catalog;
 mod migration_sql;

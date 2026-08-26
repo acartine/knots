@@ -374,9 +374,10 @@ fn schema_upgrade_is_atomic_and_checkpoint_tables_are_present() {
     let ws = knots_test_support::workspace("checkpoint-migration");
     let path = ws.path().join("state.sqlite");
     let conn = db::open_connection(path.to_str().unwrap()).unwrap();
+    let schema_version = db::CURRENT_SCHEMA_VERSION.to_string();
     assert_eq!(
         db::get_meta(&conn, "schema_version").unwrap().as_deref(),
-        Some("22")
+        Some(schema_version.as_str())
     );
     assert_eq!(
         scalar(
