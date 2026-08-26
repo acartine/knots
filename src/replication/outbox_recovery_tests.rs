@@ -55,3 +55,26 @@ fn failed_action_invocation_reconstructs_and_resubmits_the_signed_proposal() {
         vec![Some("gen-a".to_string()), Some("gen-a".to_string())]
     );
 }
+
+#[test]
+fn stored_proposal_retry_rejects_stale_remote_and_rewrapped_oid() {
+    let conn = test_connection();
+    record(&conn, "event-a", b"a");
+    let transport = FakeTransport::default();
+    transport.skip_remote_update.set(true);
+    let publisher = OutboxPublisher::new(&conn, &transport);
+    assert!(publisher
+        .publish_pending("credential-a", &protection(None), None, 10)
+        .is_err());
+
+    *transport.remote_oid.borrow_mut() = Some(OID_A.to_string());
+    assert!(publisher
+        .publish_pending("credential-a", &protection(None), None, 10)
+        .is_err());
+
+    *transport.remote_oid.borrow_mut() = None;
+    *transport.prepared_oid_override.borrow_mut() = Some("b".repeat(64));
+    assert!(publisher
+        .publish_pending("credential-a", &protection(None), None, 10)
+        .is_err());
+}
