@@ -1,0 +1,13 @@
+{
+  "event_id": "01a03db7-e639-7de1-8536-e8de5af75b1f",
+  "occurred_at": "2026-08-26T10:57:37.337088Z",
+  "knot_id": "knots-bd1c",
+  "type": "knot.verification_steps_set",
+  "data": {
+    "verification_steps": [
+      "Claim a scratch knot with kno claim --e2e <id> --lease <id>, write a note under that lease, read it back with kno show -v: the author is the persona slug.",
+      "Repeat for a handoff capsule written with kno update -H under the same bound lease.",
+      "A note written with NO bound lease still reads as unattributed, AND a note written under a bound lease is DISTINGUISHABLE from it: write one of each, read both back with kno show -v, and confirm they do not render identically. If some write path's author genuinely cannot be resolved, that path must render differently from a documented leaseless write rather than sharing its label."
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "01a03db7-d274-78d3-8f5c-fbca2d2861ba",
+  "occurred_at": "2026-08-26T10:57:32.276619Z",
+  "knot_id": "knots-bd1c",
+  "type": "knot.created",
+  "data": {
+    "body": "Restore author attribution on knot notes and handoff capsules. Since 2026-08-26 every note and capsule is recorded as '[unknown <date>]' instead of the writing persona, INCLUDING writes made under a lease that kno itself bound during claim. Attribution worked the day before under the same workflow, so this is a regression (kno 0.17.6), not the documented lease-identity behaviour.\n\nEvidence (measured 2026-08-26, kno 0.17.6, quilt store):\n- quilt-94a1: 4 notes + 2 capsules dated 08-26 ALL '[unknown]'; 3 notes dated 08-25 are '[claude]'. Leases 5909/7b51/6933 were bound via successful 'kno claim --e2e ... --lease'.\n- quilt-b726: 3 notes + 6 capsules dated 08-26 ALL '[unknown]'; 08-25 writes attributed. Two independent sessions, same day boundary.\n- Lease enforcement is still live: 'kno update 94a1 --lease 2f08' after shipped was REJECTED ('lease binding is only allowed during claim operations'). Binding works; author RESOLUTION from the bound lease does not.\n\nWhy it matters: a review note that cannot name its reviewer is not an audit trail, and because leaseless and lease-bound writes render identically as '[unknown]', an unattributed write is indistinguishable from an unattributable one — the documented leaseless behaviour becomes an alibi hiding the regression.\n\nOut of scope: the git-note rail (refs/notes/sneka-agents) — separate mechanism, working.\n\nHistory: originally filed as quilt-f12d; that record was corrupted by register churn (came back as type=lease, title 'Lease: codex-knot-7bda-approved-shipment-claim' with this knot's body — the 08b5 shape) and is abandoned in place (lease_terminated). Recreated here 2026-08-26 at operator request. Related: aed7 (leaseless-note attribution gap), 08b5 (register churn).",
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "autopilot",
+    "state": "ready_for_planning",
+    "title": "kno 0.17.6 regression: notes and capsules under a BOUND lease attributed [unknown]",
+    "type": "work",
+    "workflow_id": "work_sdlc"
+  }
+}
