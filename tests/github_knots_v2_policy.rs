@@ -140,14 +140,16 @@ fn trusted_workflow_attests_exact_authority_code_manifest() {
     }
     let signers = fs::read_to_string(root().join("config/github-knots-v2-trusted-signers.json"))
         .expect("trusted signer allowlist should read");
+    assert!(!signers.contains("e869300032bde6e8257673a3d11ccd60"));
+    assert!(!signers.contains("f41b6733d80f9253362d5aacb725a3050b473e08"));
     assert_eq!(
         serde_json::from_str::<Value>(&signers).unwrap()["trusted_signers"],
         serde_json::json!([{
             "ref": concat!(
                 "refs/heads/knots-v2-authority-code/",
-                "e869300032bde6e8257673a3d11ccd60"
+                "d3cd880046a8da7538179a4486e1ef28"
             ),
-            "sha": "f41b6733d80f9253362d5aacb725a3050b473e08",
+            "sha": "7eeaa578a963b95377fd0d03f240442f0bfa4dd9",
             "workflow": ".github/workflows/knots-v2-control-epoch.yml"
         }])
     );
