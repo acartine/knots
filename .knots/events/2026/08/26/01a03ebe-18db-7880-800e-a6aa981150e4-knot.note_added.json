@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ebe-18db-7880-800e-a6aa981150e4",
+  "occurred_at": "2026-08-26T15:44:00.731546Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "External GitHub Actions outage blocked shipment after Phase D publication. PR #115 is open and mergeable at f766db5b965537b547d7875af5dcd714e2599303. CI run 32984691860 was cancelled server-side after 15 minutes with zero steps and no runner; a retry remains queued without a job. GitHub Status reports a critical Actions incident caused by database-primary failover. No merge, OIDC canary, production v2 ruleset apply, or legacy freeze occurred.",
+    "datetime": "2026-08-26T15:44:00.731546Z",
+    "entry_id": "01a03ebe-18db-7880-800e-a6928f44e642",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

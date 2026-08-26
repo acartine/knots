@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ebe-18db-7880-800e-a6c71b376b2d",
+  "occurred_at": "2026-08-26T15:44:00.731546Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Resume knots-74e2 under knots-e2e after GitHub Actions incident pg14nv9m3095 resolves. Re-run PR #115 CI/Repo Hygiene to green, merge exact reviewed Phase D, verify merged Sneka attribution, run scripts/repo/run-knots-v2-policy-canary.sh from exact main, apply/read back production zero-bypass rules with legacy disabled, update d6dd/4521 handoffs, then finish review/shipment. Protected authority ref d3cd880046a8da7538179a4486e1ef28 remains exact 7eeaa578 and immutable.",
+    "datetime": "2026-08-26T15:44:00.731546Z",
+    "entry_id": "01a03ebe-18db-7880-800e-a6b4a6b5a6e6",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

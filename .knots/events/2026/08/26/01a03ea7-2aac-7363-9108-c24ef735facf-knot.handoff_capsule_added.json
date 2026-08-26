@@ -1,0 +1,15 @@
+{
+  "event_id": "01a03ea7-2aac-7363-9108-c24ef735facf",
+  "occurred_at": "2026-08-26T15:18:57.964393Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Phase D rotates the singleton trusted signer to protected authority ref d3cd880046a8da7538179a4486e1ef28 at exact Phase C SHA 7eeaa578a963b95377fd0d03f240442f0bfa4dd9. Focused tests, make sanity at 95.26%, and independent security review pass. PR #115.",
+    "datetime": "2026-08-26T15:18:57.964393Z",
+    "entry_id": "01a03ea7-2aac-7363-9108-c2354c221cc8",
+    "model": "GPT-5.6",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

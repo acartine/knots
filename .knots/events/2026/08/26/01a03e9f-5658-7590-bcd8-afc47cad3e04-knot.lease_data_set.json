@@ -1,0 +1,24 @@
+{
+  "event_id": "01a03e9f-5658-7590-bcd8-afc47cad3e04",
+  "occurred_at": "2026-08-26T15:10:24.856448Z",
+  "knot_id": "knots-9b95",
+  "type": "knot.lease_data_set",
+  "data": {
+    "lease_data": {
+      "agent_info": {
+        "agent_name": "Codex",
+        "agent_type": "api",
+        "model": "GPT-5.6",
+        "model_version": "5.6",
+        "provider": "OpenAI"
+      },
+      "lease_type": "agent",
+      "nickname": "codex-knots-74e2-phase-d-attributed",
+      "owner": {
+        "machine_id": "55d7d3d3517133536520fbc7fbd861dc",
+        "pid": 13527
+      },
+      "timeout_seconds": 1800
+    }
+  }
+}
