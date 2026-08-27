@@ -78,3 +78,13 @@
 - [ ] Commit with Sneka attribution, publish a follow-up PR, pass CI, and merge.
 - [ ] Apply/read back zero-bypass rules and capture live canary evidence.
 - [ ] Advance `knots-74e2` to `SHIPPED` with exact-main and attestation proof.
+
+## knots-74e2 Phase D authority rotation
+
+- [x] Protect and prove a random immutable authority-code ref at exact Phase C SHA.
+- [x] Rotate the checked-in signer allowlist to only the Phase C ref/SHA/workflow tuple.
+- [x] Prove the retained Phase A authority ref is no longer trusted.
+- [x] Run focused policy tests, full sanity, and independent security review.
+- [ ] Publish Phase D through GitHub PR, CI, and exact-main merge proof.
+- [ ] Run the live attestation canary and apply/read back production zero-bypass rules.
+- [ ] Record downstream handoffs and advance `knots-74e2` to `SHIPPED`.
