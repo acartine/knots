@@ -94,5 +94,6 @@
 - [x] Diagnose the sandbox-only Sigstore cache denial without weakening verification.
 - [x] Reset only the disposable canary namespace and restore its zero-bypass ruleset.
 - [x] Fetch the exact published control commit before constructing rewrite probes.
-- [ ] Publish the driver fix and rerun the complete live canary from exact main.
+- [x] Publish the driver fix and rerun the complete live canary from exact main.
+- [x] Bind activation evidence to the canonical hyphen-delimited manifest digest.
 - [ ] Apply and read back production rules while keeping legacy freeze disabled.
