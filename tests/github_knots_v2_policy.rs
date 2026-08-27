@@ -212,6 +212,8 @@ fn live_canary_driver_proves_create_only_and_exact_attestation() {
         "existing_control_ref",
         "lookalike_epoch",
         "probe_ref",
+        "git fetch --quiet --no-tags \"${github_remote}\" \"${control_ref}\"",
+        "git rev-parse FETCH_HEAD",
         "https://github.com/acartine/knots.git",
     ] {
         assert!(script.contains(required), "missing canary proof {required}");

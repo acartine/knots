@@ -85,6 +85,14 @@
 - [x] Rotate the checked-in signer allowlist to only the Phase C ref/SHA/workflow tuple.
 - [x] Prove the retained Phase A authority ref is no longer trusted.
 - [x] Run focused policy tests, full sanity, and independent security review.
-- [ ] Publish Phase D through GitHub PR, CI, and exact-main merge proof.
+- [x] Publish Phase D through GitHub PR, CI, and exact-main merge proof.
 - [ ] Run the live attestation canary and apply/read back production zero-bypass rules.
 - [ ] Record downstream handoffs and advance `knots-74e2` to `SHIPPED`.
+
+## knots-74e2 canary recovery
+
+- [x] Diagnose the sandbox-only Sigstore cache denial without weakening verification.
+- [x] Reset only the disposable canary namespace and restore its zero-bypass ruleset.
+- [x] Fetch the exact published control commit before constructing rewrite probes.
+- [ ] Publish the driver fix and rerun the complete live canary from exact main.
+- [ ] Apply and read back production rules while keeping legacy freeze disabled.
