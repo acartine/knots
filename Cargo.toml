@@ -3,7 +3,7 @@ members = ["crates/knots-test-support"]
 
 [package]
 name = "knots"
-version = "0.17.6"
+version = "0.18.0"
 edition = "2021"
 
 [features]
