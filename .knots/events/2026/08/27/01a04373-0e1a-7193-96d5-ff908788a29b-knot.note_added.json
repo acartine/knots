@@ -1,0 +1,15 @@
+{
+  "event_id": "01a04373-0e1a-7193-96d5-ff908788a29b",
+  "occurred_at": "2026-08-27T13:40:08.858494Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation review APPROVE: PRs #115-#117 merged exact reviewed heads; main 52d3ba2; CI green; Sneka notes verified; independent reviews approved both recovery fixes; canary and production readback satisfy all acceptance criteria.",
+    "datetime": "2026-08-27T13:40:08.858494Z",
+    "entry_id": "01a04373-0e1a-7193-96d5-ff84c6eda35d",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

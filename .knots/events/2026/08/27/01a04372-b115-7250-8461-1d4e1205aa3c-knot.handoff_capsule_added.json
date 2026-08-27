@@ -1,0 +1,15 @@
+{
+  "event_id": "01a04372-b115-7250-8461-1d4e1205aa3c",
+  "occurred_at": "2026-08-27T13:39:45.044813Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Implementation and live activation complete. Exact main: 52d3ba2df7ce35258d314caef200245aae37ee44. PR #117. Canary evidence: /tmp/knots-74e2-canary-evidence-52d3ba2.json. Production rulesets read back active/zero-bypass; legacy freeze disabled.",
+    "datetime": "2026-08-27T13:39:45.044813Z",
+    "entry_id": "01a04372-b115-7250-8461-1d3edefd8146",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

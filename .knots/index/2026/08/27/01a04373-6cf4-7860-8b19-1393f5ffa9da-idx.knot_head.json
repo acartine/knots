@@ -1,0 +1,22 @@
+{
+  "event_id": "01a04373-6cf4-7860-8b19-1393f5ffa9da",
+  "occurred_at": "2026-08-27T13:40:33.140823Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-74e2",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "shipped",
+    "terminal": true,
+    "title": "Enforce Knots refs with trusted GitHub Actions",
+    "type": "work",
+    "updated_at": "2026-08-27T13:40:33.140823Z",
+    "workflow_id": "work_sdlc"
+  }
+}

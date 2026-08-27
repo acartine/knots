@@ -1,0 +1,15 @@
+{
+  "event_id": "01a04373-6c91-7fb1-879d-90d709cb6319",
+  "occurred_at": "2026-08-27T13:40:33.041524Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment review APPROVE. Exact live readback proves all active v2 rulesets have zero bypass, legacy remains disabled, immutable operations deny rewrite/delete, exact OIDC attestation verifies, and unattested lookalikes reject.",
+    "datetime": "2026-08-27T13:40:33.041524Z",
+    "entry_id": "01a04373-6c91-7fb1-879d-90ced7e2acad",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

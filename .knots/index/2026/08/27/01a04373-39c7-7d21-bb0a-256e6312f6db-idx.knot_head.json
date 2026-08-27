@@ -1,0 +1,35 @@
+{
+  "event_id": "01a04373-39c7-7d21-bb0a-256e6312f6db",
+  "occurred_at": "2026-08-27T13:40:20.039916Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-6182",
+    "lease_expiry_ts": 1787838620,
+    "profile_id": "lease",
+    "state": "lease_active",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: ship-74e2-final",
+    "type": "lease",
+    "updated_at": "2026-08-27T13:40:20.024913Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

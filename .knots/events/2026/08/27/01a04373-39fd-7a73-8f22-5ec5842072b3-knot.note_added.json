@@ -1,0 +1,15 @@
+{
+  "event_id": "01a04373-39fd-7a73-8f22-5ec5842072b3",
+  "occurred_at": "2026-08-27T13:40:20.092902Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "Shipment verified live: GitHub main 52d3ba2, exact authority 7eeaa578, canary run 33074737591, rulesets 21654494-21654496 active with bypass_actors [], and legacy freeze 21654493 disabled.",
+    "datetime": "2026-08-27T13:40:20.092902Z",
+    "entry_id": "01a04373-39fd-7a73-8f22-5ebc78dc237e",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

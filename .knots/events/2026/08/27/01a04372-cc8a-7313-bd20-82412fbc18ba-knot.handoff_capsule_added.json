@@ -1,0 +1,15 @@
+{
+  "event_id": "01a04372-cc8a-7313-bd20-82412fbc18ba",
+  "occurred_at": "2026-08-27T13:39:52.074166Z",
+  "knot_id": "knots-4521",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Compaction activation dependency is satisfied on GitHub main 52d3ba2. Exact OIDC canary passed and production v2 rulesets are active with zero bypass; legacy freeze remains disabled for d6e4.",
+    "datetime": "2026-08-27T13:39:52.074166Z",
+    "entry_id": "01a04372-cc8a-7313-bd20-82377dfc72ee",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

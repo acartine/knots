@@ -1,0 +1,22 @@
+{
+  "event_id": "01a04373-6d34-7f31-8c53-58a9ed5bb8ab",
+  "occurred_at": "2026-08-27T13:40:33.204464Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-36df",
+    "lease_expiry_ts": 1787841633,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: shipment-review-74e2",
+    "type": "lease",
+    "updated_at": "2026-08-27T13:40:33.204464Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

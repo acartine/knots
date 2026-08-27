@@ -1,0 +1,15 @@
+{
+  "event_id": "01a04372-cc5e-73d3-9f73-469e94000778",
+  "occurred_at": "2026-08-27T13:39:52.030499Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Provider integration may proceed against GitHub main 52d3ba2. Consume immutable c472 proposal refs directly. Production proposal/generation/control rulesets are active with zero bypass; legacy freeze remains disabled.",
+    "datetime": "2026-08-27T13:39:52.030499Z",
+    "entry_id": "01a04372-cc5e-73d3-9f73-4682ee4e911c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "01a04372-b115-7250-8461-1d2b54049aae",
+  "occurred_at": "2026-08-27T13:39:45.044813Z",
+  "knot_id": "knots-74e2",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "Codex",
+    "content": "GitHub main 52d3ba2 includes PRs #115, #116, and #117. Full sanity passed at 95.26%. Live canary run 33074737591 verified exact OIDC authority and all eight evidence booleans. Production rulesets 21654494-21654496 are active with zero bypass; legacy freeze 21654493 remains disabled.",
+    "datetime": "2026-08-27T13:39:45.044813Z",
+    "entry_id": "01a04372-b115-7250-8461-1d1dda158a9b",
+    "model": "gpt-5.6-sol",
+    "username": "OpenAI",
+    "version": "5.6"
+  }
+}

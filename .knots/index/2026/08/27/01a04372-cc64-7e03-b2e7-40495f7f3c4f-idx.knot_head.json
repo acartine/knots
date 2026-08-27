@@ -1,0 +1,22 @@
+{
+  "event_id": "01a04372-cc64-7e03-b2e7-40495f7f3c4f",
+  "occurred_at": "2026-08-27T13:39:52.030499Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": "ready_for_implementation",
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-d6dd",
+    "lease_expiry_ts": 0,
+    "profile_id": "autopilot",
+    "state": "blocked",
+    "terminal": false,
+    "title": "Run trusted Knots generation integration",
+    "type": "work",
+    "updated_at": "2026-08-27T13:39:52.030499Z",
+    "workflow_id": "work_sdlc"
+  }
+}
