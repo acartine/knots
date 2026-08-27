@@ -1,0 +1,9 @@
+{
+  "spec": "sneka-agents/1",
+  "agent": "claude-code",
+  "created_at": "2026-08-20T11:44:01Z",
+  "session_id": "8221c289-dd30-4fda-9bee-ef57c1490228",
+  "model": "claude-opus-5[1m]",
+  "nickname": "Claude Code",
+  "harness": { "name": "claude-code", "version": "2.1.237" }
+}
