@@ -188,6 +188,7 @@ fn production_apply_requires_complete_attested_canary_evidence() {
         "verify-knots-v2-control-epoch.sh",
         "refs/heads/main",
         "canary evidence does not bind the reviewed authority tuple",
+        "epochs\\/.+-([0-9a-f]{64})$",
     ] {
         assert!(script.contains(signal), "missing canary signal {signal}");
     }

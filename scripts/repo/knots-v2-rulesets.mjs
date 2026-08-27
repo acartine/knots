@@ -109,7 +109,7 @@ function requireCanaryEvidence() {
   const sha = /^[0-9a-f]{40}$/;
   const digest = /^[0-9a-f]{64}$/;
   const runId = /^[1-9][0-9]*$/;
-  const controlRef = /^refs\/heads\/knots-v2-canary\/control\/epochs\/.+\/([0-9a-f]{64})$/;
+  const controlRef = /^refs\/heads\/knots-v2-canary\/control\/epochs\/.+-([0-9a-f]{64})$/;
   const immutableRef = /^refs\/heads\/knots-v2-canary\/immutable\/[a-z0-9-]+$/;
   if (!sha.test(evidence.main_sha)
       || !sha.test(evidence.authority_sha)
