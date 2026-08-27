@@ -150,6 +150,8 @@ generation_oid="$(jq -er .manifest.generation.oid <<<"${verified}")"
 [[ "$(git ls-remote "${github_remote}" "${generation_ref}" | awk '{print $1}')" \
   == "${generation_oid}" ]]
 
+git fetch --quiet --no-tags "${github_remote}" "${control_ref}"
+[[ "$(git rev-parse FETCH_HEAD)" == "${control_oid}" ]]
 control_rewrite="$(printf '%s\n' 'Forbidden ordinary control rewrite' | \
   git commit-tree "${control_oid}^{tree}" -p "${control_oid}")"
 if git push --no-verify "${github_remote}" "${control_rewrite}:${control_ref}"; then
