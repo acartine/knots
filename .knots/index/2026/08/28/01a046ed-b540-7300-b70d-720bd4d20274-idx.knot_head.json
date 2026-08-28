@@ -1,0 +1,48 @@
+{
+  "event_id": "01a046ed-b540-7300-b70d-720bd4d20274",
+  "occurred_at": "2026-08-28T05:52:58.688576Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-8b1c",
+    "lease_expiry_ts": 1787896978,
+    "next_step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "lease_active",
+      "output": {
+        "artifact_type": ""
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Lease: active-compaction-fix",
+    "type": "lease",
+    "updated_at": "2026-08-28T05:52:58.656345Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

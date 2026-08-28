@@ -1,0 +1,15 @@
+{
+  "event_id": "01a0472b-52c2-7963-aad7-a37d41d8fd44",
+  "occurred_at": "2026-08-28T07:00:16.705733Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.note_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Root cause confirmed: released sync never invokes v2 compaction, while Diffinite v8 binds inbox ownership to a random per-connection SSH credential UUID. The production provider-evidence prerequisite shipped at Quilt d59b506019222225a94cd96e0c42a7491f6bd982 and correctly fails closed until v9. Activation now needs operator approval for a persistent Git authorization change to stable SHA-256 SSH-public-key inbox scopes.",
+    "datetime": "2026-08-28T07:00:16.705733Z",
+    "entry_id": "01a0472b-52c2-7963-aad7-a36e49b8907c",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "event_id": "01a0472a-c8c8-7692-b3e7-f988888c3e83",
+  "occurred_at": "2026-08-28T06:59:41.384957Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-8b1c",
+    "lease_expiry_ts": 1787896983,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: active-compaction-fix",
+    "type": "lease",
+    "updated_at": "2026-08-28T06:59:41.384957Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

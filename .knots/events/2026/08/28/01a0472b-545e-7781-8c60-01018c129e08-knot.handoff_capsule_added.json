@@ -1,0 +1,15 @@
+{
+  "event_id": "01a0472b-545e-7781-8c60-01018c129e08",
+  "occurred_at": "2026-08-28T07:00:17.118602Z",
+  "knot_id": "knots-d6dd",
+  "type": "knot.handoff_capsule_added",
+  "data": {
+    "agentname": "unknown",
+    "content": "Partial implementation is preserved at /private/tmp/knots-active-compaction on branch codex/active-event-compaction: bounded App startup, durable incremental legacy push, exact-OID adapters, generation builder, checkpoint loader, and CAS orchestration. Focused tests pass: startup 1, legacy push 4, provider runtime 17. Do not activate until Diffinite hook v9 uses stable public-key scopes and live provider evidence succeeds. Knots currently has only a GitHub remote, which operator rules forbid publishing without explicit GitHub authorization.",
+    "datetime": "2026-08-28T07:00:17.118602Z",
+    "entry_id": "01a0472b-545e-7781-8c60-00fcab3ea407",
+    "model": "unknown",
+    "username": "unknown",
+    "version": "unknown"
+  }
+}

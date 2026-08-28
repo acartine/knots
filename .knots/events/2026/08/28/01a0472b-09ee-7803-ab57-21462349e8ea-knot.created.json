@@ -1,0 +1,17 @@
+{
+  "event_id": "01a0472b-09ee-7803-ab57-21462349e8ea",
+  "occurred_at": "2026-08-28T06:59:58.062651Z",
+  "knot_id": "knots-6808",
+  "type": "knot.created",
+  "data": {
+    "body": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "profile_id": "lease",
+    "state": "lease_ready",
+    "title": "Lease: active-compaction-handoff",
+    "type": "lease",
+    "workflow_id": "lease_sdlc"
+  }
+}

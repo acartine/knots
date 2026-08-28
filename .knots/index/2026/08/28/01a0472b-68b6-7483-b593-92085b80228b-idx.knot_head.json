@@ -1,0 +1,22 @@
+{
+  "event_id": "01a0472b-68b6-7483-b593-92085b80228b",
+  "occurred_at": "2026-08-28T07:00:22.326329Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": null,
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-6808",
+    "lease_expiry_ts": 1787901017,
+    "profile_id": "lease",
+    "state": "lease_terminated",
+    "terminal": true,
+    "title": "Lease: active-compaction-handoff",
+    "type": "lease",
+    "updated_at": "2026-08-28T07:00:22.326329Z",
+    "workflow_id": "lease_sdlc"
+  }
+}

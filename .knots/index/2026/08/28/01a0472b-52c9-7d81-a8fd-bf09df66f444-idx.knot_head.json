@@ -1,0 +1,48 @@
+{
+  "event_id": "01a0472b-52c9-7d81-a8fd-bf09df66f444",
+  "occurred_at": "2026-08-28T07:00:16.705733Z",
+  "type": "idx.knot_head",
+  "data": {
+    "blocked_from_state": "ready_for_implementation",
+    "deferred_from_state": null,
+    "gate": {
+      "owner_kind": "agent"
+    },
+    "invariants": [],
+    "knot_id": "knots-d6dd",
+    "lease_expiry_ts": 0,
+    "next_step_metadata": {
+      "action_kind": "gate",
+      "action_state": "implementation_review",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "profile_id": "autopilot",
+    "state": "implementation",
+    "step_metadata": {
+      "action_kind": "produce",
+      "action_state": "implementation",
+      "output": {
+        "artifact_type": "remote_main"
+      },
+      "owner": {
+        "agent_model": null,
+        "agent_name": null,
+        "agent_version": null,
+        "kind": "agent"
+      }
+    },
+    "terminal": false,
+    "title": "Run trusted Knots generation integration",
+    "type": "work",
+    "updated_at": "2026-08-28T07:00:16.705733Z",
+    "workflow_id": "work_sdlc"
+  }
+}
