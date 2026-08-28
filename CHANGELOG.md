@@ -1,5 +1,12 @@
 # kno
 
+## 0.18.2
+
+### Patch Changes
+
+- 62247b5: Activate lossless event-record compaction with bounded retained packs, generation-aware sync, and
+  safe removal of verified loose event and index files.
+
 ## 0.18.1
 
 ### Patch Changes
