@@ -1,5 +1,12 @@
 # kno
 
+## 0.18.1
+
+### Patch Changes
+
+- f9fb89f: Refresh the checked-in Claude and Codex managed skill mirrors so contributor checkouts use the
+  current fresh-lease workflow guidance.
+
 ## 0.18.0
 
 ### Minor Changes
