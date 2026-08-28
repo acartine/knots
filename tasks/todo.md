@@ -1,5 +1,12 @@
 # Compaction redesign
 
+## Publish active compaction CLI release
+
+- [x] Add the missing `knots` patch changeset covering active event compaction.
+- [x] Run sanity and release version consistency checks.
+- [ ] Publish the changeset and merge the refreshed Version Packages PR.
+- [ ] Verify the GitHub release body, checksums, and all platform archives.
+
 ## Active event-record compaction repair
 
 - [x] Batch Git path operations so six-figure legacy histories cannot exceed the OS argument limit.
