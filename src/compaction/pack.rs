@@ -48,6 +48,7 @@ pub(crate) fn build_pack(events: &[RawEvent]) -> Result<BuiltPack, PackError> {
     let mut decoded = Vec::new();
     let mut index = Vec::with_capacity(ordered.len());
     for event in ordered {
+        let event_path = event.path.clone();
         append_len(&mut decoded, event.path.len())?;
         decoded.extend_from_slice(event.path.as_bytes());
         append_len(&mut decoded, event.event_id.len())?;
@@ -56,6 +57,7 @@ pub(crate) fn build_pack(events: &[RawEvent]) -> Result<BuiltPack, PackError> {
         let offset = decoded.len() as u64;
         decoded.extend_from_slice(&event.bytes);
         index.push(EventIndexEntry {
+            path: event_path,
             event_id: event.event_id,
             content_sha256: digest(&event.bytes),
             offset,
@@ -63,7 +65,7 @@ pub(crate) fn build_pack(events: &[RawEvent]) -> Result<BuiltPack, PackError> {
         });
     }
     let compressed =
-        zstd::stream::encode_all(Cursor::new(&decoded), 19).map_err(|_| PackError::Compression)?;
+        zstd::stream::encode_all(Cursor::new(&decoded), 3).map_err(|_| PackError::Compression)?;
     let sha256 = digest(&compressed);
     let pack_id = format!("pack-{sha256}");
     Ok(BuiltPack {

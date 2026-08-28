@@ -168,18 +168,18 @@ fn test_skill_and_next(root: &std::path::Path, db: &std::path::Path, first_id: &
     assert!(String::from_utf8_lossy(&next_terminal.stderr).contains("no next state"));
 
     let doctor = run_knots(root, db, &["doctor", "--json"]);
-    assert_failure(&doctor);
-    assert!(String::from_utf8_lossy(&doctor.stderr).contains("doctor found"));
-    assert!(
-        String::from_utf8_lossy(&doctor.stderr).contains("kno doctor --fix to address these items")
-    );
+    assert_success(&doctor);
+    let report: Value = serde_json::from_slice(&doctor.stdout).expect("doctor JSON");
+    assert!(report["checks"]
+        .as_array()
+        .is_some_and(|checks| !checks.is_empty()));
 }
 
 #[test]
 fn core_cli_commands_dispatch_success_and_failure_paths() {
     let root_ws = unique_workspace("knots-cli-dispatch");
     let root = root_ws.path().to_path_buf();
-    setup_repo(&root);
+    let _remote = setup_repo_with_remote(&root);
     let db = root.join(".knots/cache/state.sqlite");
 
     let (first_id, second_id) = test_core_new_and_ls(&root, &db);

@@ -15,6 +15,41 @@ use crate::compaction::MANIFEST_OBJECT_PATH;
 const POLICY: &[u8] = b"provider policy";
 
 #[test]
+fn batch_reader_rejects_invalid_headers_and_delimiters() {
+    let mut object = TreeObject {
+        path: ".knots/events/event.json".to_string(),
+        kind: ObjectKind::Blob,
+        oid: "a".repeat(40),
+        bytes: Vec::new(),
+    };
+    let mut bad_header = std::io::Cursor::new(b"invalid header\n".as_slice());
+    assert!(read_batch_object(&mut bad_header, &object).is_err());
+
+    for kind in [ObjectKind::Tree, ObjectKind::Submodule] {
+        object.kind = kind;
+        let mut bad_header = std::io::Cursor::new(b"invalid header\n".as_slice());
+        assert!(read_batch_object(&mut bad_header, &object).is_err());
+    }
+    object.kind = ObjectKind::Blob;
+    let truncated = format!("{} blob 2\nx", object.oid);
+    let mut truncated = std::io::Cursor::new(truncated.into_bytes());
+    assert!(read_batch_object(&mut truncated, &object).is_err());
+
+    let output = format!("{} blob 1\nx!", object.oid);
+    let mut bad_delimiter = std::io::Cursor::new(output.into_bytes());
+    assert!(read_batch_object(&mut bad_delimiter, &object).is_err());
+
+    let mut submodule = TreeObject {
+        kind: ObjectKind::Submodule,
+        ..object
+    };
+    read_tree_objects(Path::new("."), std::slice::from_mut(&mut submodule)).unwrap();
+    assert_eq!(object_kind("040000", "tree").unwrap(), ObjectKind::Tree);
+    assert!(object_kind("100644", "commit").is_err());
+    assert!(provider_error("test", "boom").to_string().contains("boom"));
+}
+
+#[test]
 fn reads_exact_commit_without_materializing_a_checkout() {
     let repo = TestRepo::new();
     let first = repo.commit_file(".knots/v2/inbox/submission.json", b"first", None);

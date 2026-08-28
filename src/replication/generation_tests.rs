@@ -3,7 +3,7 @@ use crate::project::StorePaths;
 use crate::sync::{GitAdapter, SyncError};
 
 #[test]
-fn generation_two_fails_closed_without_provider_protection() {
+fn generation_two_fails_closed_without_an_active_manifest() {
     let repo = knots_test_support::workspace("knots-v2-fail-closed-repo");
     let store = knots_test_support::workspace("knots-v2-fail-closed-store");
     let store_paths = StorePaths {
@@ -16,9 +16,9 @@ fn generation_two_fails_closed_without_provider_protection() {
         repo.path(),
         "1111111111111111111111111111111111111111",
     )
-    .expect_err("an unverified configured ref is not provider protection");
+    .expect_err("a generation without a manifest must fail closed");
     assert!(matches!(error, SyncError::Compaction { .. }));
-    assert!(error.to_string().contains("local deletion disabled"));
+    assert!(error.to_string().contains("compaction"));
 }
 
 #[test]

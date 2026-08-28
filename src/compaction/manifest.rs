@@ -37,6 +37,7 @@ pub(crate) struct SnapshotSet {
 #[derive(Debug, Clone, Deserialize, Eq, PartialEq, Ord, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct EventIndexEntry {
+    pub path: String,
     pub event_id: String,
     pub content_sha256: String,
     pub offset: u64,

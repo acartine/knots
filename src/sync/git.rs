@@ -233,6 +233,28 @@ impl GitAdapter {
         Ok(())
     }
 
+    pub fn remote_ref_oid(
+        &self,
+        cwd: &Path,
+        remote: &str,
+        remote_ref: &str,
+    ) -> Result<Option<String>, SyncError> {
+        let output = self.run_checked(
+            cwd,
+            vec![
+                "ls-remote".to_string(),
+                "--refs".to_string(),
+                remote.to_string(),
+                remote_ref.to_string(),
+            ],
+        )?;
+        Ok(output
+            .split_whitespace()
+            .next()
+            .filter(|value| value.len() == 40)
+            .map(str::to_string))
+    }
+
     fn run_checked(&self, cwd: &Path, args: Vec<String>) -> Result<String, SyncError> {
         let phase_name = trace_name(&args);
         let output =
@@ -274,6 +296,7 @@ fn trace_name(args: &[String]) -> String {
         Some("add") => "git_add".to_string(),
         Some("commit") => "git_commit".to_string(),
         Some("push") => "git_push".to_string(),
+        Some("ls-remote") => "git_ls_remote".to_string(),
         Some(other) => format!("git_{other}"),
         None => "git".to_string(),
     }
