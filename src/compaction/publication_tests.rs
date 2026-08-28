@@ -196,6 +196,7 @@ fn context<'a>(
         projections: Some(projections),
         packs,
         source: SourceFacts {
+            legacy_ref: LEGACY_REF,
             cutoff_resolves: true,
             cutoff_is_ancestor: true,
             index_tree: Some(INDEX_TREE),

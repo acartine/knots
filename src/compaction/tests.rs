@@ -96,6 +96,7 @@ fn context<'a>(
         projections: Some(fixture_projection_bytes()),
         packs,
         source: SourceFacts {
+            legacy_ref: LEGACY_REF,
             cutoff_resolves: true,
             cutoff_is_ancestor: true,
             index_tree: Some(INDEX_TREE),

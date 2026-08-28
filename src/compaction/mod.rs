@@ -10,6 +10,7 @@ mod pack;
 mod projections;
 mod protection;
 mod protocol;
+mod provider_runtime;
 mod publication;
 mod refs;
 mod submission;
@@ -46,6 +47,15 @@ pub(crate) use protection::{
     ValidatedProtection,
 };
 pub(crate) use protocol::{ControlKind, ControlRecord, ProtocolError, ProtocolModel};
+pub(crate) use provider_runtime::{
+    load_checkpoint_objects, load_untrusted_inbox, orchestrate_generation,
+    validate_provider_evidence, CanonicalMode, CasOutcome, ControlMode, ControlState,
+    ExactObjectReader, GenerationCandidate, GenerationObjectWriter, GenerationPlanBuilder,
+    GenerationProvider, GenerationRefKind, GitObjectProvider, IntegratingGenerationPlanBuilder,
+    LoadedCheckpointObjects, LoadedInbox, ObjectKind, ProviderEvidenceInput, ProviderKind,
+    ProviderRefLayout, RuntimeError, SealedProviderEvidence, SubmissionMode, TreeObject,
+    CONTROL_OBJECT_PATH, MANIFEST_OBJECT_PATH,
+};
 pub(crate) use publication::{GenerationPublisher, PublicationTarget};
 pub(crate) use refs::{V2RefLayout, CANONICAL_REF_PREFIX, LEGACY_REF, PROPOSAL_REF_PREFIX};
 pub(crate) use submission::{

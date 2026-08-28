@@ -448,3 +448,24 @@ fn edge_commands_update_cache_and_round_trip() {
         .expect("edges should list after removal");
     assert!(after.is_empty());
 }
+
+#[test]
+fn opening_app_does_not_inventory_the_complete_legacy_tree() {
+    let root_ws = unique_workspace();
+    let root = root_ws.path().to_path_buf();
+    let event = root.join(".knots/events/2026/08/28/legacy.json");
+    std::fs::create_dir_all(event.parent().expect("legacy parent"))
+        .expect("create legacy directory");
+    std::fs::write(event, b"legacy").expect("write legacy event");
+    let db_path = root.join(".knots/cache/state.sqlite");
+
+    let app = App::open(db_path.to_str().expect("utf8 path"), root).expect("app should open");
+    let inventoried: i64 = app
+        .conn
+        .query_row("SELECT COUNT(*) FROM v2_legacy_quarantine", [], |row| {
+            row.get(0)
+        })
+        .expect("count legacy inventory");
+
+    assert_eq!(inventoried, 0);
+}

@@ -26,6 +26,7 @@ pub(crate) struct CheckpointInput<'a> {
     pub expected_predecessor: Option<&'a str>,
     pub expected_previous_control_head: Option<&'a str>,
     pub expected_control_epoch: u64,
+    pub expected_archive_ref: &'a str,
     pub protection: &'a ValidatedProtection,
 }
 
@@ -168,7 +169,7 @@ fn validate_control(
         && control.epoch == manifest.predecessor_control_epoch.saturating_add(1)
         && control.previous_control_head.as_deref() == input.expected_previous_control_head
         && control.active_generation_id == manifest.generation_id
-        && control.archive_ref == manifest.archive_ref()
+        && control.archive_ref == input.expected_archive_ref
         && control.acknowledged_writer_heads == manifest.writer_heads
         && control.protection_policy_sha256 == input.protection.policy_sha256();
     if valid {

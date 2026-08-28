@@ -1,5 +1,16 @@
 # Compaction redesign
 
+## Active event-record compaction repair
+
+- [ ] Replace unconditional legacy inventory with a durable incremental boundary.
+- [ ] Make push publish pending records without scanning the complete legacy tree.
+- [ ] Wire provider-validated generation fetch, checkpoint installation, and retained-delta replay.
+- [ ] Stop active writers from adding compatibility files after validated v2 activation.
+- [ ] Preserve fail-closed behavior for legacy writers, leases, interrupted activation, and recovery.
+- [ ] Add integration and performance tests proving history-size-independent steady-state sync.
+- [ ] Run focused tests, `make sanity`, and a live large-history fixture demonstration.
+- [ ] Commit with agent attribution and ship only through an operator-authorized repository rail.
+
 - [x] Prove current old-client behavior against a pruned generation.
 - [x] Define the steady-state writer, checkpoint, and garbage-collection protocol.
 - [x] Define a lossless v1 compatibility bridge and enforced retirement boundary.

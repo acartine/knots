@@ -13,6 +13,7 @@ use super::{
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct SourceFacts<'a> {
+    pub legacy_ref: &'a str,
     pub cutoff_resolves: bool,
     pub cutoff_is_ancestor: bool,
     pub index_tree: Option<&'a str>,
@@ -167,7 +168,7 @@ fn validate_source(
     source: &SourceCheckpoint,
     facts: &SourceFacts<'_>,
 ) -> Result<(), ValidationError> {
-    if source.legacy_ref != V2RefLayout::default().legacy {
+    if source.legacy_ref != facts.legacy_ref {
         return Err(ValidationError::InvalidLegacyRef);
     }
     for (name, object_id) in [

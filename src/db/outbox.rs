@@ -1,5 +1,7 @@
 use rusqlite::{params, Connection, OptionalExtension, Result};
+#[cfg(test)]
 use sha2::{Digest, Sha256};
+#[cfg(test)]
 use std::path::{Path, PathBuf};
 
 use super::now_utc_rfc3339;
@@ -27,10 +29,20 @@ pub(crate) struct OutboxRecord {
     pub proposal_base_generation: Option<String>,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub(crate) struct LegacyQuarantineRecord {
     pub relative_path: String,
     pub content_sha256: String,
+}
+
+pub(crate) fn list_outbox_paths_after(conn: &Connection, rowid: i64) -> Result<Vec<(i64, String)>> {
+    let mut statement =
+        conn.prepare("SELECT rowid, relative_path FROM v2_outbox WHERE rowid > ?1 ORDER BY rowid")?;
+    let rows = statement
+        .query_map([rowid], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect();
+    rows
 }
 
 pub(crate) fn record_outbox_event(
@@ -269,6 +281,7 @@ pub(crate) fn acknowledge_outbox(
     Ok(changed)
 }
 
+#[cfg(test)]
 pub(crate) fn record_legacy_quarantine(
     conn: &Connection,
     record: &LegacyQuarantineRecord,
@@ -300,6 +313,7 @@ pub(crate) fn record_legacy_quarantine(
     Ok(())
 }
 
+#[cfg(test)]
 pub(crate) fn inventory_legacy_files(conn: &Connection, store_root: &Path) -> Result<usize> {
     let mut files = Vec::new();
     for directory in ["events", "index"] {
@@ -333,6 +347,7 @@ pub(crate) fn inventory_legacy_files(conn: &Connection, store_root: &Path) -> Re
     Ok(files.len())
 }
 
+#[cfg(test)]
 fn collect_json_files(root: &Path, files: &mut Vec<PathBuf>) -> std::io::Result<()> {
     if !root.exists() {
         return Ok(());

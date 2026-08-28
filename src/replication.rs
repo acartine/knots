@@ -7,6 +7,7 @@ use crate::project::StorePaths;
 use crate::sync::{GitAdapter, KnotsWorktree, SyncError, SyncService, SyncSummary};
 
 mod generation;
+mod legacy_push;
 mod outbox;
 mod summary;
 
@@ -131,23 +132,16 @@ impl<'a> ReplicationService<'a> {
         worktree: &KnotsWorktree,
         reporter: &mut Option<&mut dyn ProgressReporter>,
     ) -> Result<PushAttemptResult, SyncError> {
-        let local_files = self.prepare_push_files(worktree, reporter)?;
-        let local_event_files = local_files.len() as u64;
-        if local_event_files == 0 {
-            emit_progress(
+        let selection = self.prepare_push_files(worktree, reporter)?;
+        let local_event_files = selection.physical_count;
+        if selection.files.is_empty() {
+            return self.already_synced(
+                &selection,
                 reporter,
-                ProgressKind::Success,
+                0,
                 "no eligible local knots events found; nothing to push",
-            )?;
-            return Ok(PushAttemptResult::AlreadySynced(PushSummary {
-                local_event_files,
-                copied_files: 0,
-                committed: false,
-                pushed: false,
-                commit: None,
-            }));
+            );
         }
-
         emit_progress(
             reporter,
             ProgressKind::Info,
@@ -156,7 +150,8 @@ impl<'a> ReplicationService<'a> {
                  against the publish worktree"
             ),
         )?;
-        let copied_files = self.copy_files_into_worktree(worktree.path(), &local_files)?;
+        let copied_paths = self.copy_files_into_worktree(worktree.path(), &selection.files)?;
+        let copied_files = copied_paths.len() as u64;
         if copied_files > 0 {
             emit_progress(
                 reporter,
@@ -164,37 +159,27 @@ impl<'a> ReplicationService<'a> {
                 format!("copied {copied_files} local knot file(s) into the publish worktree"),
             )?;
         }
-        let stage_paths = stage_paths(worktree.path());
-        if stage_paths.is_empty() {
-            emit_progress(
+        if copied_paths.is_empty() {
+            return self.already_synced(
+                &selection,
                 reporter,
-                ProgressKind::Success,
-                "remote knots already includes the local events",
-            )?;
-            return Ok(PushAttemptResult::AlreadySynced(PushSummary {
-                local_event_files,
                 copied_files,
-                committed: false,
-                pushed: false,
-                commit: None,
-            }));
+                "remote knots already includes the local events",
+            );
         }
 
-        self.git.add_paths(worktree.path(), &stage_paths)?;
+        self.git.add_path_bufs(worktree.path(), &copied_paths)?;
 
-        if !self.git.has_staged_changes(worktree.path(), &stage_paths)? {
-            emit_progress(
+        if !self
+            .git
+            .has_staged_path_bufs(worktree.path(), &copied_paths)?
+        {
+            return self.already_synced(
+                &selection,
                 reporter,
-                ProgressKind::Success,
-                "remote knots already includes the local events",
-            )?;
-            return Ok(PushAttemptResult::AlreadySynced(PushSummary {
-                local_event_files,
                 copied_files,
-                committed: false,
-                pushed: false,
-                commit: None,
-            }));
+                "remote knots already includes the local events",
+            );
         }
 
         emit_progress(reporter, ProgressKind::Info, "creating a publish commit")?;
@@ -212,6 +197,7 @@ impl<'a> ReplicationService<'a> {
             .push_refspec(worktree.path(), worktree.remote(), &worktree.push_refspec())
         {
             Ok(()) => {
+                self.save_push_baseline(&selection)?;
                 emit_progress(
                     reporter,
                     ProgressKind::Success,
@@ -231,11 +217,36 @@ impl<'a> ReplicationService<'a> {
         }
     }
 
+    fn already_synced(
+        &self,
+        selection: &legacy_push::Selection,
+        reporter: &mut Option<&mut dyn ProgressReporter>,
+        copied_files: u64,
+        message: &str,
+    ) -> Result<PushAttemptResult, SyncError> {
+        self.save_push_baseline(selection)?;
+        emit_progress(reporter, ProgressKind::Success, message)?;
+        Ok(PushAttemptResult::AlreadySynced(PushSummary {
+            local_event_files: selection.physical_count,
+            copied_files,
+            committed: false,
+            pushed: false,
+            commit: None,
+        }))
+    }
+
+    fn save_push_baseline(&self, selection: &legacy_push::Selection) -> Result<(), SyncError> {
+        if let Some(baseline) = &selection.baseline {
+            legacy_push::save_baseline(self.conn, baseline)?;
+        }
+        Ok(())
+    }
+
     fn prepare_push_files(
         &self,
         worktree: &KnotsWorktree,
         reporter: &mut Option<&mut dyn ProgressReporter>,
-    ) -> Result<Vec<PathBuf>, SyncError> {
+    ) -> Result<legacy_push::Selection, SyncError> {
         let active_head = self.reset_worktree_to_remote_or_local(worktree, reporter)?;
         worktree.ensure_clean(&self.git)?;
         if worktree.is_generation_two() {
@@ -257,7 +268,7 @@ impl<'a> ReplicationService<'a> {
             ProgressKind::Info,
             "scanning local knots event files",
         )?;
-        self.collect_local_event_files()
+        legacy_push::select(self.conn, &self.store_paths)
     }
 
     pub fn sync(&self) -> Result<ReplicationSummary, SyncError> {
@@ -309,7 +320,7 @@ impl<'a> ReplicationService<'a> {
         self.reset_worktree_to_remote_or_local(&worktree, &mut reporter)?;
         worktree.ensure_clean(&self.git)?;
 
-        let local_files = self.collect_local_event_files()?;
+        let local_files = legacy_push::select(self.conn, &self.store_paths)?.files;
         let mut unpushed = 0u64;
         for relative in local_files {
             if self.event_file_missing_or_changed(worktree.path(), &relative)? {
@@ -367,46 +378,12 @@ impl<'a> ReplicationService<'a> {
         }
     }
 
-    fn collect_local_event_files(&self) -> Result<Vec<PathBuf>, SyncError> {
-        let mut files = Vec::new();
-        for rel_root in ["index", "events", "snapshots"] {
-            let root = self.store_paths.root.join(rel_root);
-            if !root.exists() {
-                continue;
-            }
-            let mut stack = vec![root];
-            while let Some(dir) = stack.pop() {
-                for entry in std::fs::read_dir(&dir)? {
-                    let path = entry?.path();
-                    if path.is_dir() {
-                        stack.push(path);
-                        continue;
-                    }
-                    if path.extension().is_none_or(|ext| ext != "json") {
-                        continue;
-                    }
-                    let relative = path
-                        .strip_prefix(&self.store_paths.root)
-                        .map_err(|err| SyncError::InvalidEvent {
-                            path: path.clone(),
-                            message: format!("failed to relativize event file: {}", err),
-                        })?
-                        .to_path_buf();
-                    files.push(Path::new(".knots").join(relative));
-                }
-            }
-        }
-
-        files.sort();
-        Ok(files)
-    }
-
     fn copy_files_into_worktree(
         &self,
         worktree_root: &Path,
         relative_files: &[PathBuf],
-    ) -> Result<u64, SyncError> {
-        let mut copied = 0u64;
+    ) -> Result<Vec<PathBuf>, SyncError> {
+        let mut copied = Vec::new();
         for relative in relative_files {
             let src = self.local_store_file_path(relative)?;
             if !src.exists() {
@@ -429,7 +406,7 @@ impl<'a> ReplicationService<'a> {
             }
 
             std::fs::write(&dst, src_bytes)?;
-            copied += 1;
+            copied.push(relative.clone());
         }
 
         Ok(copied)
@@ -468,16 +445,6 @@ impl<'a> ReplicationService<'a> {
 
 fn short_commit(commit: &str) -> &str {
     &commit[..commit.len().min(12)]
-}
-
-fn stage_paths(worktree_root: &Path) -> Vec<&'static str> {
-    let mut out = Vec::new();
-    for path in [".knots/index", ".knots/events", ".knots/snapshots"] {
-        if worktree_root.join(path).exists() {
-            out.push(path);
-        }
-    }
-    out
 }
 
 #[cfg(test)]

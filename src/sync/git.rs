@@ -144,25 +144,21 @@ impl GitAdapter {
         Ok(parse_lines(&stdout))
     }
 
-    pub fn add_paths(&self, cwd: &Path, paths: &[&str]) -> Result<(), SyncError> {
+    pub fn add_path_bufs(&self, cwd: &Path, paths: &[PathBuf]) -> Result<(), SyncError> {
         let mut args = vec!["add".to_string(), "-f".to_string(), "--".to_string()];
-        for path in paths {
-            args.push((*path).to_string());
-        }
+        args.extend(paths.iter().map(|path| path.to_string_lossy().into_owned()));
         self.run_checked(cwd, args)?;
         Ok(())
     }
 
-    pub fn has_staged_changes(&self, cwd: &Path, paths: &[&str]) -> Result<bool, SyncError> {
+    pub fn has_staged_path_bufs(&self, cwd: &Path, paths: &[PathBuf]) -> Result<bool, SyncError> {
         let mut args = vec![
             "diff".to_string(),
             "--cached".to_string(),
             "--quiet".to_string(),
             "--".to_string(),
         ];
-        for path in paths {
-            args.push((*path).to_string());
-        }
+        args.extend(paths.iter().map(|path| path.to_string_lossy().into_owned()));
         let output = self.run_allow_failure(cwd, args.clone())?;
         match output.status.code() {
             Some(0) => Ok(false),
