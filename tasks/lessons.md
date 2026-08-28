@@ -9,3 +9,5 @@
   protect a random immutable code ref before a later commit allowlists its exact ref and SHA.
 - Never call protocol scaffolding event compaction. Compaction is complete only when production
   sync uses a bounded retained set and live proof shows history size no longer drives sync time.
+- Rebase test-binary fixes onto current main before rebuilding, rerunning the large-history proof,
+  and publishing the branch.

@@ -1,8 +1,31 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::db;
 
-use super::SyncService;
+use super::{GitAdapter, SyncService};
+
+#[test]
+fn git_path_operations_batch_large_file_sets() {
+    let workspace = unique_workspace();
+    let root = workspace.path();
+    init_repo(root);
+    let mut paths = Vec::new();
+    for ordinal in 0..600 {
+        let relative = PathBuf::from(format!("events/{ordinal:04}.json"));
+        let absolute = root.join(&relative);
+        std::fs::create_dir_all(absolute.parent().unwrap()).unwrap();
+        std::fs::write(&absolute, b"{}\n").unwrap();
+        paths.push(relative);
+    }
+    let git = GitAdapter::new();
+
+    git.add_path_bufs(root, &paths)
+        .expect("batched add succeeds");
+
+    assert!(git
+        .has_staged_path_bufs(root, &paths)
+        .expect("batched diff succeeds"));
+}
 
 fn unique_workspace() -> knots_test_support::TestWorkspace {
     knots_test_support::workspace("knots-sync-test")
