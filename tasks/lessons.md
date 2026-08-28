@@ -11,3 +11,6 @@
   sync uses a bounded retained set and live proof shows history size no longer drives sync time.
 - Rebase test-binary fixes onto current main before rebuilding, rerunning the large-history proof,
   and publishing the branch.
+- Do not ship incidental sync fixes as the answer to a compaction request. The acceptance test must
+  show fewer active records and history-independent sync before publication.
+- Test realistic compaction volume early; archival compression must not dominate the migration.

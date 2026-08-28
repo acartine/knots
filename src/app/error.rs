@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
+use crate::compaction::ActiveCompactionError;
 use crate::doctor::DoctorError;
 use crate::events::EventWriteError;
 use crate::fsck::FsckError;
@@ -22,6 +23,7 @@ pub enum AppError {
     RemoteInit(RemoteInitError),
     Fsck(FsckError),
     Doctor(DoctorError),
+    Compaction(ActiveCompactionError),
     Snapshot(SnapshotError),
     Perf(PerfError),
     Workflow(ProfileError),
@@ -61,6 +63,7 @@ impl fmt::Display for AppError {
             }
             AppError::Fsck(err) => write!(f, "fsck error: {}", err),
             AppError::Doctor(err) => write!(f, "doctor error: {}", err),
+            AppError::Compaction(err) => write!(f, "{}", err),
             AppError::Snapshot(err) => write!(f, "snapshot error: {}", err),
             AppError::Perf(err) => write!(f, "perf error: {}", err),
             AppError::Workflow(err) => write!(f, "workflow error: {}", err),
@@ -125,6 +128,7 @@ impl Error for AppError {
             AppError::RemoteInit(err) => Some(err),
             AppError::Fsck(err) => Some(err),
             AppError::Doctor(err) => Some(err),
+            AppError::Compaction(err) => Some(err),
             AppError::Snapshot(err) => Some(err),
             AppError::Perf(err) => Some(err),
             AppError::Workflow(err) => Some(err),
@@ -184,6 +188,12 @@ impl From<FsckError> for AppError {
 impl From<DoctorError> for AppError {
     fn from(value: DoctorError) -> Self {
         AppError::Doctor(value)
+    }
+}
+
+impl From<ActiveCompactionError> for AppError {
+    fn from(value: ActiveCompactionError) -> Self {
+        AppError::Compaction(value)
     }
 }
 

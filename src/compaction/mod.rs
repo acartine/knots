@@ -1,6 +1,12 @@
 // This module is the shared contract for the publication and bootstrap follow-on knots.
 #![allow(dead_code, unused_imports)]
 
+mod active;
+mod active_publish;
+mod active_recovery;
+mod active_resume;
+mod active_source;
+mod active_store;
 mod checkpoint;
 mod checkpoint_store;
 mod inbox;
@@ -16,6 +22,9 @@ mod refs;
 mod submission;
 mod validation;
 
+pub(crate) use active::{
+    activate_generation, validate_active_generation, ActiveCompactionError, ActiveCompactionSummary,
+};
 pub(crate) use checkpoint::{
     install_checkpoint, prepare_checkpoint, CheckpointError, CheckpointInput, CheckpointSummary,
     PreparedCheckpoint,

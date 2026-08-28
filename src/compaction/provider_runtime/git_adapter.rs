@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
@@ -161,7 +161,7 @@ impl GitObjectProvider {
         }
     }
 
-    pub(super) fn git_input(&self, args: &[&str], input: &[u8]) -> Result<Vec<u8>, RuntimeError> {
+    pub(crate) fn git_input(&self, args: &[&str], input: &[u8]) -> Result<Vec<u8>, RuntimeError> {
         let mut child = Command::new("git")
             .arg("-C")
             .arg(&self.repo)
@@ -314,14 +314,16 @@ fn latest_epoch_ref<'a>(
 }
 
 fn parse_tree(repo: &Path, bytes: &[u8]) -> Result<Vec<TreeObject>, RuntimeError> {
-    bytes
+    let mut objects = bytes
         .split(|byte| *byte == 0)
         .filter(|entry| !entry.is_empty())
-        .map(|entry| parse_tree_entry(repo, entry))
-        .collect()
+        .map(parse_tree_entry)
+        .collect::<Result<Vec<_>, _>>()?;
+    read_tree_objects(repo, &mut objects)?;
+    Ok(objects)
 }
 
-fn parse_tree_entry(repo: &Path, entry: &[u8]) -> Result<TreeObject, RuntimeError> {
+fn parse_tree_entry(entry: &[u8]) -> Result<TreeObject, RuntimeError> {
     let tab = entry
         .iter()
         .position(|byte| *byte == b'\t')
@@ -344,17 +346,109 @@ fn parse_tree_entry(repo: &Path, entry: &[u8]) -> Result<TreeObject, RuntimeErro
     let path = std::str::from_utf8(&entry[tab + 1..])
         .map_err(|_| RuntimeError::InvalidObject("non-UTF-8 tree path"))?;
     let kind = object_kind(mode, git_kind)?;
-    let bytes = if kind == ObjectKind::Submodule {
-        Vec::new()
-    } else {
-        git_blob(repo, oid)?
-    };
     Ok(TreeObject {
         path: path.to_string(),
         kind,
         oid: oid.to_string(),
-        bytes,
+        bytes: Vec::new(),
     })
+}
+
+fn read_tree_objects(repo: &Path, objects: &mut [TreeObject]) -> Result<(), RuntimeError> {
+    let requested = objects
+        .iter_mut()
+        .filter(|object| object.kind != ObjectKind::Submodule)
+        .collect::<Vec<_>>();
+    if requested.is_empty() {
+        return Ok(());
+    }
+    let mut child = Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(["cat-file", "--batch"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| provider_error("start batched blob reader", error))?;
+    let mut stdin = child
+        .stdin
+        .take()
+        .ok_or_else(|| RuntimeError::Provider("git stdin is unavailable".to_string()))?;
+    let oids = requested
+        .iter()
+        .map(|object| object.oid.clone())
+        .collect::<Vec<_>>();
+    let writer = std::thread::spawn(move || -> std::io::Result<()> {
+        for oid in oids {
+            writeln!(stdin, "{oid}")?;
+        }
+        Ok(())
+    });
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| RuntimeError::Provider("git stdout is unavailable".to_string()))?;
+    let mut reader = BufReader::new(stdout);
+    for object in requested {
+        object.bytes = read_batch_object(&mut reader, object)?;
+    }
+    writer
+        .join()
+        .map_err(|_| RuntimeError::Provider("git object writer panicked".to_string()))?
+        .map_err(|error| provider_error("write batched object IDs", error))?;
+    let mut stderr = String::new();
+    if let Some(mut pipe) = child.stderr.take() {
+        pipe.read_to_string(&mut stderr)
+            .map_err(|error| provider_error("read git object errors", error))?;
+    }
+    let status = child
+        .wait()
+        .map_err(|error| provider_error("wait for batched object reader", error))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(RuntimeError::Provider(format!(
+            "git cat-file failed: {}",
+            stderr.trim()
+        )))
+    }
+}
+
+fn read_batch_object(
+    reader: &mut impl BufRead,
+    object: &TreeObject,
+) -> Result<Vec<u8>, RuntimeError> {
+    let mut header = String::new();
+    reader
+        .read_line(&mut header)
+        .map_err(|error| provider_error("read object header", error))?;
+    let mut fields = header.split_whitespace();
+    let oid = fields.next();
+    let kind = fields.next();
+    let size = fields.next().and_then(|value| value.parse::<usize>().ok());
+    let expected_kind = match object.kind {
+        ObjectKind::Blob | ObjectKind::Symlink => "blob",
+        ObjectKind::Tree => "tree",
+        ObjectKind::Submodule => "commit",
+    };
+    if oid != Some(object.oid.as_str()) || kind != Some(expected_kind) || size.is_none() {
+        return Err(RuntimeError::InvalidObject("invalid batched object header"));
+    }
+    let mut bytes = vec![0; size.expect("checked object size")];
+    reader
+        .read_exact(&mut bytes)
+        .map_err(|error| provider_error("read object body", error))?;
+    let mut delimiter = [0];
+    reader
+        .read_exact(&mut delimiter)
+        .map_err(|error| provider_error("read object delimiter", error))?;
+    if delimiter != *b"\n" {
+        return Err(RuntimeError::InvalidObject(
+            "invalid batched object delimiter",
+        ));
+    }
+    Ok(bytes)
 }
 
 fn object_kind(mode: &str, git_kind: &str) -> Result<ObjectKind, RuntimeError> {
@@ -364,20 +458,6 @@ fn object_kind(mode: &str, git_kind: &str) -> Result<ObjectKind, RuntimeError> {
         (_, "blob") => Ok(ObjectKind::Blob),
         (_, "tree") => Ok(ObjectKind::Tree),
         _ => Err(RuntimeError::InvalidObject("unsupported tree object")),
-    }
-}
-
-fn git_blob(repo: &Path, oid: &str) -> Result<Vec<u8>, RuntimeError> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(repo)
-        .args(["cat-file", "blob", oid])
-        .output()
-        .map_err(|error| provider_error("read blob", error))?;
-    if output.status.success() {
-        Ok(output.stdout)
-    } else {
-        Err(RuntimeError::InvalidObject("unable to read exact blob"))
     }
 }
 

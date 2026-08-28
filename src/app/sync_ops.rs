@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use crate::compaction::ActiveCompactionSummary;
 use crate::doctor::{run_doctor_with_fix_at_with_progress, DoctorReport};
 use crate::fsck::{run_fsck_at_store, FsckReport};
 use crate::locks::FileLock;
@@ -7,7 +8,6 @@ use crate::perf::{run_perf_harness, PerfReport};
 use crate::progress::ProgressReporter;
 use crate::remote_init::init_remote_knots_branch;
 use crate::replication::{PushSummary, ReplicationService, ReplicationSummary, SyncOutcome};
-use crate::snapshots::{write_snapshots_at_store, SnapshotWriteSummary};
 use crate::sync::SyncSummary;
 
 use super::error::AppError;
@@ -161,13 +161,29 @@ impl App {
         )?)
     }
 
-    pub fn compact_write_snapshots(&self) -> Result<SnapshotWriteSummary, AppError> {
+    pub fn compact_activate_generation(&self) -> Result<ActiveCompactionSummary, AppError> {
+        self.require_git_distribution("compact")?;
         let _repo_guard = FileLock::acquire(&self.repo_lock_path(), Duration::from_millis(5_000))?;
+        let service = ReplicationService::with_store_paths(
+            &self.conn,
+            self.repo_root.clone(),
+            self.store_paths.clone(),
+        );
+        service.push()?;
         let _cache_guard =
             FileLock::acquire(&self.cache_lock_path(), Duration::from_millis(5_000))?;
-        Ok(write_snapshots_at_store(
+        let pull = service.pull()?;
+        if !pull.held_back_knots.is_empty() {
+            return Err(AppError::InvalidArgument(
+                "compact requires every fetched event to be applied; release local leases first"
+                    .to_string(),
+            ));
+        }
+        Ok(crate::compaction::activate_generation(
             &self.conn,
+            &self.repo_root,
             &self.store_paths.root,
+            &pull.target_head,
         )?)
     }
 

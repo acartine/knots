@@ -3,14 +3,13 @@
 ## Active event-record compaction repair
 
 - [x] Batch Git path operations so six-figure legacy histories cannot exceed the OS argument limit.
-- [ ] Replace unconditional legacy inventory with a durable incremental boundary.
-- [ ] Make push publish pending records without scanning the complete legacy tree.
-- [ ] Wire provider-validated generation fetch, checkpoint installation, and retained-delta replay.
-- [ ] Stop active writers from adding compatibility files after validated v2 activation.
-- [ ] Preserve fail-closed behavior for legacy writers, leases, interrupted activation, and recovery.
-- [ ] Add integration and performance tests proving history-size-independent steady-state sync.
-- [ ] Run focused tests, `make sanity`, and a live large-history fixture demonstration.
-- [ ] Commit with agent attribution and ship only through an operator-authorized repository rail.
+- [x] Make `compact --write-snapshots` activate a complete local generation and bounded active set.
+- [x] Make sync publish and consume the activated generation without enumerating legacy history.
+- [x] Retain raw recovery data outside active legacy scan roots and fence stale compatibility writers.
+- [x] Preserve leases, interrupted activation, rollback, and exact-byte recovery fail closed.
+- [x] Add integration and performance tests proving active file reduction and bounded steady-state sync.
+- [x] Rebuild the release binary and prove compaction on at least 120,000 event/index files.
+- [ ] Rebase onto current main, run `make sanity`, publish, and verify the exact remote SHA.
 
 - [x] Prove current old-client behavior against a pruned generation.
 - [x] Define the steady-state writer, checkpoint, and garbage-collection protocol.

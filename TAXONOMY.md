@@ -441,8 +441,8 @@ Atomically grab a claimable knot, move it from its queue state into its action s
 - Related: *poll*, *peek*, *next*, *bind*.
 
 ### compact <!-- auto -->
-Write append-only snapshots to shrink future cold-sync cost.
-- `src/app/sync_ops.rs:153` — `compact_write_snapshots`
+Activate a bounded sync generation containing snapshots and lossless raw-event packs.
+- `src/app/sync_ops.rs` — `compact_activate_generation`
 - `src/run_commands.rs:304` — `run_compact`
 
 ### create <!-- auto -->

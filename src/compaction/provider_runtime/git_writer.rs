@@ -6,7 +6,7 @@ use super::object_loader::valid_oid;
 use super::{GenerationObjectWriter, RuntimeError, CONTROL_OBJECT_PATH, MANIFEST_OBJECT_PATH};
 
 impl GitObjectProvider {
-    pub(super) fn write_commit(
+    pub(crate) fn write_commit(
         &self,
         files: BTreeMap<String, Vec<u8>>,
         parent: Option<&str>,

@@ -269,17 +269,22 @@ pub fn run_compact(app: &app::App, args: CompactArgs) -> Result<(), app::AppErro
             "compact currently requires --write-snapshots".to_string(),
         ));
     }
-    let summary = app.compact_write_snapshots()?;
+    let summary = app.compact_activate_generation()?;
     if args.json {
         print_json(&summary);
     } else {
         println!(
-            "snapshots written hot={} warm={} cold={} active={} cold_path={}",
-            summary.hot_count,
-            summary.warm_count,
-            summary.cold_count,
-            summary.active_path.display(),
-            summary.cold_path.display()
+            concat!(
+                "compacted legacy_files={} retained_packs={} ref={} commit={} ",
+                "hot={} warm={} cold={}"
+            ),
+            summary.legacy_files,
+            summary.retained_packs,
+            summary.compacted_ref,
+            summary.compacted_commit,
+            summary.snapshot.hot_count,
+            summary.snapshot.warm_count,
+            summary.snapshot.cold_count
         );
     }
     Ok(())
