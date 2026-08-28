@@ -3,6 +3,8 @@ use std::process::{Command, Output};
 
 use super::SyncError;
 
+const PATHSPEC_BATCH_SIZE: usize = 256;
+
 #[derive(Debug, Clone, Default)]
 pub struct GitAdapter;
 
@@ -145,33 +147,38 @@ impl GitAdapter {
     }
 
     pub fn add_path_bufs(&self, cwd: &Path, paths: &[PathBuf]) -> Result<(), SyncError> {
-        let mut args = vec!["add".to_string(), "-f".to_string(), "--".to_string()];
-        args.extend(paths.iter().map(|path| path.to_string_lossy().into_owned()));
-        self.run_checked(cwd, args)?;
+        for paths in paths.chunks(PATHSPEC_BATCH_SIZE) {
+            let mut args = vec!["add".to_string(), "-f".to_string(), "--".to_string()];
+            args.extend(paths.iter().map(|path| path.to_string_lossy().into_owned()));
+            self.run_checked(cwd, args)?;
+        }
         Ok(())
     }
 
     pub fn has_staged_path_bufs(&self, cwd: &Path, paths: &[PathBuf]) -> Result<bool, SyncError> {
-        let mut args = vec![
-            "diff".to_string(),
-            "--cached".to_string(),
-            "--quiet".to_string(),
-            "--".to_string(),
-        ];
-        args.extend(paths.iter().map(|path| path.to_string_lossy().into_owned()));
-        let output = self.run_allow_failure(cwd, args.clone())?;
-        match output.status.code() {
-            Some(0) => Ok(false),
-            Some(1) => Ok(true),
-            _ => {
-                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-                Err(SyncError::GitCommandFailed {
-                    command: display_command(cwd, &args),
-                    code: output.status.code(),
-                    stderr,
-                })
+        for paths in paths.chunks(PATHSPEC_BATCH_SIZE) {
+            let mut args = vec![
+                "diff".to_string(),
+                "--cached".to_string(),
+                "--quiet".to_string(),
+                "--".to_string(),
+            ];
+            args.extend(paths.iter().map(|path| path.to_string_lossy().into_owned()));
+            let output = self.run_allow_failure(cwd, args.clone())?;
+            match output.status.code() {
+                Some(0) => {}
+                Some(1) => return Ok(true),
+                _ => {
+                    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                    return Err(SyncError::GitCommandFailed {
+                        command: display_command(cwd, &args),
+                        code: output.status.code(),
+                        stderr,
+                    });
+                }
             }
         }
+        Ok(false)
     }
 
     pub fn commit(&self, cwd: &Path, message: &str) -> Result<String, SyncError> {

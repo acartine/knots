@@ -2,6 +2,7 @@
 
 ## Active event-record compaction repair
 
+- [x] Batch Git path operations so six-figure legacy histories cannot exceed the OS argument limit.
 - [ ] Replace unconditional legacy inventory with a durable incremental boundary.
 - [ ] Make push publish pending records without scanning the complete legacy tree.
 - [ ] Wire provider-validated generation fetch, checkpoint installation, and retained-delta replay.
