@@ -7,3 +7,5 @@
 - Prefer immutable create-only refs with cryptographic authority over persistent bypass credentials.
 - Bootstrap workflow authority in two reviewed phases: ship an empty fail-closed allowlist, then
   protect a random immutable code ref before a later commit allowlists its exact ref and SHA.
+- Never call protocol scaffolding event compaction. Compaction is complete only when production
+  sync uses a bounded retained set and live proof shows history size no longer drives sync time.

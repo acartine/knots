@@ -46,6 +46,18 @@ pub(crate) struct ValidatedProtection {
 }
 
 impl ValidatedProtection {
+    pub(crate) fn from_provider_evidence(
+        evidence: &super::SealedProviderEvidence,
+        control_head: &str,
+    ) -> Self {
+        Self {
+            repository_id: evidence.repository_id().to_string(),
+            integrator_id: evidence.integrator_id().to_string(),
+            control_head: Some(control_head.to_string()),
+            policy_sha256: evidence.policy_sha256().to_string(),
+        }
+    }
+
     pub(crate) fn repository_id(&self) -> &str {
         &self.repository_id
     }

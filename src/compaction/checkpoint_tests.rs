@@ -19,6 +19,7 @@ pub(super) struct Fixture {
     cold: Vec<u8>,
     projections: Vec<u8>,
     pack: BuiltPack,
+    archive_ref: String,
     protection: ValidatedProtection,
 }
 struct CatalogArtifacts {
@@ -38,6 +39,7 @@ impl Fixture {
             projections: &self.projections,
             packs: vec![(self.pack.descriptor.pack_id.as_str(), &self.pack.compressed)],
             source: SourceFacts {
+                legacy_ref: LEGACY_REF,
                 cutoff_resolves: true,
                 cutoff_is_ancestor: true,
                 index_tree: Some(INDEX_TREE),
@@ -46,6 +48,7 @@ impl Fixture {
             expected_predecessor: None,
             expected_previous_control_head: None,
             expected_control_epoch: 0,
+            expected_archive_ref: &self.archive_ref,
             protection: &self.protection,
         }
     }
@@ -73,6 +76,7 @@ pub(super) fn fixture() -> Fixture {
         cold: artifacts.cold,
         projections: artifacts.projections,
         pack: artifacts.pack,
+        archive_ref: manifest.archive_ref(),
         protection: protection(policy),
     }
 }
@@ -354,15 +358,17 @@ fn corrupt_or_projection_incomplete_generation_is_rejected_before_sqlite_changes
     let mut manifest: CompactionManifest = serde_json::from_slice(&fixture.manifest).unwrap();
     manifest.projections = projection_descriptor(&mismatch, manifest.projections.records - 1);
     manifest = manifest.seal();
+    let expected_archive_ref = manifest.archive_ref();
     let mut control: ControlRecord = serde_json::from_slice(&fixture.control).unwrap();
     control.active_generation_id = manifest.generation_id.clone();
-    control.archive_ref = manifest.archive_ref();
+    control.archive_ref = expected_archive_ref.clone();
     let manifest_bytes = serde_json::to_vec(&manifest).unwrap();
     let control_bytes = serde_json::to_vec(&control).unwrap();
     let mut mismatch_input = fixture.input();
     mismatch_input.manifest = &manifest_bytes;
     mismatch_input.control = &control_bytes;
     mismatch_input.projections = &mismatch;
+    mismatch_input.expected_archive_ref = &expected_archive_ref;
     assert!(matches!(
         prepare_checkpoint(mismatch_input),
         Err(CheckpointError::Projection(_))

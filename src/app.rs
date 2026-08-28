@@ -93,7 +93,6 @@ impl App {
         }
         helpers::ensure_parent_dir(db_path)?;
         let conn = crate::trace::measure("db_open", || db::open_connection(db_path))?;
-        db::inventory_legacy_files(&conn, &context.store_paths.root)?;
         let workflow_config_path =
             installed_workflows::workflows_root(context.workflow_root()).join("current");
         if !workflow_config_path.exists()
